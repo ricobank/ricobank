@@ -1,0 +1,8 @@
+{
+  "name": "autobank",
+  "version": "0.0.1",
+  "license": "GPL-3.0",
+  "devDependencies": {
+    "hardhat": "^2.6.3"
+  }
+}
