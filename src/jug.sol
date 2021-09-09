@@ -17,7 +17,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity >=0.5.12;
+pragma solidity 0.8.6;
 
 // FIXME: This contract was altered compared to the production version.
 // It doesn't use LibNote anymore.
@@ -102,10 +102,10 @@ contract Jug {
         Ilk storage i = ilks[ilk];
         require(i.duty == 0, "Jug/ilk-already-init");
         i.duty = ONE;
-        i.rho  = now;
+        i.rho  = block.timestamp;
     }
     function file(bytes32 ilk, bytes32 what, uint data) external auth {
-        require(now == ilks[ilk].rho, "Jug/rho-not-updated");
+        require(block.timestamp == ilks[ilk].rho, "Jug/rho-not-updated");
         if (what == "duty") ilks[ilk].duty = data;
         else revert("Jug/file-unrecognized-param");
     }
@@ -120,10 +120,10 @@ contract Jug {
 
     // --- Stability Fee Collection ---
     function drip(bytes32 ilk) external returns (uint rate) {
-        require(now >= ilks[ilk].rho, "Jug/invalid-now");
+        require(block.timestamp >= ilks[ilk].rho, "Jug/invalid-now");
         (, uint prev) = vat.ilks(ilk);
-        rate = rmul(rpow(add(base, ilks[ilk].duty), now - ilks[ilk].rho, ONE), prev);
+        rate = rmul(rpow(add(base, ilks[ilk].duty), block.timestamp - ilks[ilk].rho, ONE), prev);
         vat.fold(ilk, vow, diff(rate, prev));
-        ilks[ilk].rho = now;
+        ilks[ilk].rho = block.timestamp;
     }
 }
