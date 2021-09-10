@@ -6,9 +6,11 @@
     "test": "ts-mocha"
   },
   "devDependencies": {
+    "@nomiclabs/hardhat-ethers": "^2.0.2",
     "@types/chai": "^4.2.21",
     "@types/mocha": "^9.0.0",
     "@types/node": "^16.9.1",
+    "bn.js": "^4.12.0",
     "chai": "^4.3.4",
     "hardhat": "^2.6.3",
     "ts-node": "^10.2.1",
