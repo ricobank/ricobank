@@ -45,10 +45,13 @@ contract Vat is Math {
     // --- Data ---
     struct Ilk {
         uint256 Art;   // Total Normalised Debt     [wad]
-        uint256 rate;  // Accumulated Rates         [ray]
+        uint256 rate;  // Accumulated Rates         [ray]  // TODO replace with rfee+drip
         uint256 spot;  // Price with Safety Margin  [ray]
         uint256 line;  // Debt Ceiling              [rad]
         uint256 dust;  // Urn Debt Floor            [rad]
+
+        uint256 duty;  // Collateral-specific, per-second compounding rate [ray]
+        uint256  rho;  // Time of last drip [unix epoch time]
     }
     struct Urn {
         uint256 ink;   // Locked Collateral  [wad]
@@ -69,6 +72,8 @@ contract Vat is Math {
     uint256 public par;   // System Price (dai/ref)        [wad]
     uint256 public way;   // System Rate (SP growth rate)  [ray]
     uint256 public tau;   // Last prod
+
+    address public vow;   // Debt/surplus auction house
 
     // --- Init ---
     constructor() {
@@ -229,6 +234,19 @@ contract Vat is Math {
     function mold(uint256 r) external auth {
         prod();
         way = r;
+    }
+
+    function drip(bytes32 i) public {
+        Ilk storage ilk = ilks[i];
+        require(block.timestamp >= ilk.rho, 'Vat/invalid-now');
+        if (block.timestamp == ilk.rho) return;
+        uint256 prev = ilk.rate;
+        uint256 rate = grow(prev, ilk.duty, block.timestamp - ilk.rho);
+        int256  delt = diff(rate, prev);
+        ilk.rate     = add(ilk.rate, delt);
+        int256  rad  = mul(ilk.Art, delt);
+        dai[vow]     = add(dai[vow], rad);
+        debt         = add(debt, rad);
     }
 
     function prod() public {
