@@ -88,18 +88,7 @@ contract Vat is Math {
         require(ilks[ilk].rate == 0, "Vat/ilk-already-init");
         ilks[ilk].rate = 10 ** 27;
     }
-    function file(bytes32 what, uint data) external auth {
-        require(live == 1, "Vat/not-live");
-        if (what == "Line") Line = data;
-        else revert("Vat/file-unrecognized-param");
-    }
-    function file(bytes32 ilk, bytes32 what, uint data) external auth {
-        require(live == 1, "Vat/not-live");
-        if (what == "spot") ilks[ilk].spot = data;
-        else if (what == "line") ilks[ilk].line = data;
-        else if (what == "dust") ilks[ilk].dust = data;
-        else revert("Vat/file-unrecognized-param");
-    }
+
     function cage() external auth {
         live = 0;
     }
@@ -231,15 +220,15 @@ contract Vat is Math {
         debt     = add(debt,   rad);
     }
 
-    function mold(uint256 r) external auth {
+    function sway(uint256 r) external auth {
         prod();
         way = r;
     }
 
     function drip(bytes32 i) public {
+        if (block.timestamp == ilks[i].rho) return;
         Ilk storage ilk = ilks[i];
         require(block.timestamp >= ilk.rho, 'Vat/invalid-now');
-        if (block.timestamp == ilk.rho) return;
         uint256 prev = ilk.rate;
         uint256 rate = grow(prev, ilk.duty, block.timestamp - ilk.rho);
         int256  delt = diff(rate, prev);
@@ -250,8 +239,32 @@ contract Vat is Math {
     }
 
     function prod() public {
+        if (block.timestamp == tau) return;
         par = grow(par, way, block.timestamp - tau);
         tau = block.timestamp;
+    }
+
+    // TODO decide require live per file func
+    function file_Line(uint Line_) external auth {
+        // require(live == 1, "Vat/not-live");
+        Line = Line_;
+    }
+    function file_vow(address vow_) external auth {
+        vow = vow_;
+    }
+    function file_line(bytes32 i, uint line) external auth {
+        ilks[i].line = line;
+    }
+    function file_dust(bytes32 i, uint dust) external auth {
+        ilks[i].dust = dust;
+    }
+    function file_duty(bytes32 i, uint duty) external auth {
+        require(block.timestamp == ilks[i].rho, 'err-not-prorated');
+        ilks[i].duty = duty;
+    }
+    // TODO file_spot is special and corresponds to `feed`
+    function file_spot(bytes32 i, uint spot) external auth {
+        ilks[i].spot = spot;
     }
 
 }

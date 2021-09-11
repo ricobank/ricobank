@@ -6,7 +6,15 @@ import { ethers, artifacts, network } from 'hardhat'
 
 import { BN } from 'bn.js'
 
-const UMAX = (new BN(2)).pow(new BN(256)).sub(new BN(1));
+let bn = (n) => new BN(n)
+
+const UMAX = bn(2).pow(bn(256)).sub(bn(1));
+
+let wad = (n: number) => bn(n).mul(bn(10).pow(bn(18)))
+let ray = (n: number) => bn(n).mul(bn(10).pow(bn(27)))
+let rad = (n: number) => bn(n).mul(bn(10).pow(bn(45)))
+
+let i0 = Buffer.alloc(32); // ilk 0 id
 
 describe('Vat', () => {
   let ali, bob, cat;
@@ -55,10 +63,10 @@ describe('Vat', () => {
     const tx_approve_gem = await gem.approve(gemjoin.address, '0x' + UMAX.toString('hex'));
     await tx_approve_gem.wait();
 
-    const tx_mint_dai = await dai.mint(ALI, 1000);
+    const tx_mint_dai = await dai.mint(ALI, wad(1000).toString());
     await tx_mint_dai.wait();
 
-    const tx_mint_gem = await gem.mint(ALI, 1000);
+    const tx_mint_gem = await gem.mint(ALI, wad(1000).toString());
     await tx_mint_gem.wait();
 
   });
@@ -67,15 +75,35 @@ describe('Vat', () => {
     const isWarded = await vat.wards(ALI);
     want(isWarded.eq(1)).true
     const initDai = await dai.balanceOf(ALI);
-    want(initDai.eq(1000)).true
+    want(initDai.eq(wad(1000))).true
   });
 
   it('gem join', async() => {
-    const tx_join = await gemjoin.join(ALI, 500);
+    const tx_join = await gemjoin.join(ALI, wad(500).toString());
     await tx_join.wait();
 
     const gembal = await vat.gem(Buffer.alloc(32), ALI);
-    want(gembal.eq(500)).true
+    want(gembal.eq(wad(500))).true
+    const bal = await gem.balanceOf(ALI);
+    want(bal.eq(wad(500))).true;
+  });
+
+  it('frob', async() => {
+    const tx_file_Line = await vat.file_Line(rad(1000).toString());
+    await tx_file_Line.wait();
+
+    const tx_file_line = await vat.file_line(i0, rad(1000).toString());
+    await tx_file_line.wait();
+
+    const tx_file_spot = await vat.file_spot(i0, ray(1).toString());
+    await tx_file_spot.wait();
+
+    const tx_join = await gemjoin.join(ALI, wad(1000).toString());
+    await tx_join.wait();
+
+    const gemjoinbal = await gem.balanceOf(gemjoin.address);
+    debug(gemjoinbal);
+    want(gemjoinbal.eq(wad(1000).toString())).true;
   });
 
 });

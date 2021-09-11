@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "license": "GPL-3.0",
   "scripts": {
-    "test": "ts-mocha"
+    "test": "ts-mocha test/*"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.2",
@@ -13,6 +13,7 @@
     "bn.js": "^4.12.0",
     "chai": "^4.3.4",
     "hardhat": "^2.6.3",
+    "ts-mocha": "^8.0.0",
     "ts-node": "^10.2.1",
     "typescript": "^4.4.2"
   }
