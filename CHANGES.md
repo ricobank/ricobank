@@ -25,3 +25,4 @@ To do:
 * `vox` TRFM
 * join flash loans
 * oracle data flow abstracted behind feedbase
+* `gemcap` parameter caps gem deposits, is a way to control smart contract risk

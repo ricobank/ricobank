@@ -34,12 +34,30 @@ contract Math {
     function add(uint256 x, uint256 y) internal pure returns (uint256 z) {
         require((z = x + y) >= x);
     }
+    function add(uint x, int y) internal pure returns (uint z) {
+        z = x + uint(y);
+        require(y >= 0 || z <= x);
+        require(y <= 0 || z >= x);
+    }
+
     function sub(uint256 x, uint256 y) internal pure returns (uint256 z) {
         require((z = x - y) <= x);
     }
+    function sub(uint x, int y) internal pure returns (uint z) {
+        z = x - uint(y);
+        require(y <= 0 || z <= x);
+        require(y >= 0 || z >= x);
+    }
+
     function diff(uint x, uint y) internal pure returns (int z) {
         z = int(x) - int(y);
         require(int(x) >= 0 && int(y) >= 0);
+    }
+
+    function mul(uint x, int y) internal pure returns (int z) {
+        z = int(x) * y;
+        require(int(x) >= 0);
+        require(y == 0 || z / y == int(x));
     }
     function mul(uint256 x, uint256 y) internal pure returns (uint256 z) {
         require(y == 0 || (z = x * y) / y == x);
@@ -57,6 +75,15 @@ contract Math {
     }
     function rdiv(uint256 x, uint256 y) internal pure returns (uint256 z) {
         z = mul(x, RAY) / y;
+    }
+
+    function grow(uint256 amt, uint256 ray, uint256 dt) internal pure returns (uint256 z) {
+        z = mul(amt, rpow(ray, dt)) / RAY;
+    }
+
+    function rpow(uint256 x, uint256 n) public pure returns (uint256 z) {
+      return rpow1(x, n, RAY);
+      //return rpow2(x, n, RAY);
     }
 
     function rpow1(uint256 x, uint256 n, uint256 b) internal pure returns (uint256 z) {

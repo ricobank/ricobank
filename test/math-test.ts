@@ -38,4 +38,19 @@ describe('math.sol', ()=>{
     want(c.eq(RAY.mul(4))).true
   });
 
+  it('grow', async() => {
+    const a = await stub._grow(WAD, RAY, 1);
+    want(a.eq(WAD)).true
+
+    const b = await stub._grow(WAD, RAY, 0);
+    want(b.eq(WAD)).true
+
+    const c = await stub._grow(WAD.mul(2), RAY.mul(2), 1);
+    want(c.eq(WAD.mul(4))).true
+
+    const d = await stub._grow(WAD.mul(2), RAY.mul(2), 2);
+    want(d.eq(WAD.mul(8))).true
+
+  });
+
 });

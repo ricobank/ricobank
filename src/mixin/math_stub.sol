@@ -42,8 +42,10 @@ contract MathStub is Math {
       return rdiv(x, y);
     }
     function _rpow(uint256 x, uint256 n) public pure returns (uint256 z) {
-      return rpow1(x, n, _RAY);
-      //return rpow2(x, n, _RAY);
+      return rpow(x, n);
     }
 
+    function _grow(uint256 amt, uint256 ray, uint256 dt) public pure returns (uint256 z) {
+      return grow(amt, ray, dt);
+    }
 }

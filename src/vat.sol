@@ -23,7 +23,9 @@ pragma solidity 0.8.6;
 // It doesn't use LibNote anymore.
 // New deployments of this contract will need to include custom events (TO DO).
 
-contract Vat {
+import './mixin/math.sol';
+
+contract Vat is Math {
     // --- Auth ---
     mapping (address => uint) public wards;
     function rely(address usr) external auth { require(live == 1, "Vat/not-live"); wards[usr] = 1; }
@@ -64,36 +66,16 @@ contract Vat {
     uint256 public Line;  // Total Debt Ceiling  [rad]
     uint256 public live;  // Active Flag
 
+    uint256 public par;   // System Price (dai/ref)        [wad]
+    uint256 public way;   // System Rate (SP growth rate)  [ray]
+    uint256 public tau;   // Last prod
+
     // --- Init ---
-    constructor() public {
+    constructor() {
         wards[msg.sender] = 1;
         live = 1;
-    }
-
-    // --- Math ---
-    function add(uint x, int y) internal pure returns (uint z) {
-        z = x + uint(y);
-        require(y >= 0 || z <= x);
-        require(y <= 0 || z >= x);
-    }
-    function sub(uint x, int y) internal pure returns (uint z) {
-        z = x - uint(y);
-        require(y <= 0 || z <= x);
-        require(y >= 0 || z >= x);
-    }
-    function mul(uint x, int y) internal pure returns (int z) {
-        z = int(x) * y;
-        require(int(x) >= 0);
-        require(y == 0 || z / y == int(x));
-    }
-    function add(uint x, uint y) internal pure returns (uint z) {
-        require((z = x + y) >= x);
-    }
-    function sub(uint x, uint y) internal pure returns (uint z) {
-        require((z = x - y) <= x);
-    }
-    function mul(uint x, uint y) internal pure returns (uint z) {
-        require(y == 0 || (z = x * y) / y == x);
+        par = WAD;
+        way = RAY;
     }
 
     // --- Administration ---
@@ -243,4 +225,15 @@ contract Vat {
         dai[u]   = add(dai[u], rad);
         debt     = add(debt,   rad);
     }
+
+    function mold(uint256 r) external auth {
+        prod();
+        way = r;
+    }
+
+    function prod() public {
+        par = grow(par, way, block.timestamp - tau);
+        tau = block.timestamp;
+    }
+
 }
