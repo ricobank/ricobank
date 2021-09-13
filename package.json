@@ -3,7 +3,8 @@
   "version": "0.0.1",
   "license": "GPL-3.0",
   "scripts": {
-    "test": "ts-mocha test/*"
+    "build": "hh compile",
+    "test": "hh compile && ts-mocha test/*"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.2",

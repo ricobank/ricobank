@@ -6,7 +6,7 @@ import { ethers, artifacts, network } from 'hardhat'
 
 import { BN } from 'bn.js'
 
-let bn = (n) => new BN(n)
+let bn = (n) => ethers.BigNumber.from(n)
 
 const UMAX = bn(2).pow(bn(256)).sub(bn(1));
 
@@ -57,10 +57,10 @@ describe('Vat', () => {
     const tx_rely4 = await gem.rely(gemjoin.address);
     await tx_rely4.wait();
 
-    const tx_approve_dai = await dai.approve(daijoin.address, '0x' + UMAX.toString('hex'));
+    const tx_approve_dai = await dai.approve(daijoin.address, UMAX);
     await tx_approve_dai.wait();
 
-    const tx_approve_gem = await gem.approve(gemjoin.address, '0x' + UMAX.toString('hex'));
+    const tx_approve_gem = await gem.approve(gemjoin.address, UMAX);
     await tx_approve_gem.wait();
 
     const tx_mint_dai = await dai.mint(ALI, wad(1000).toString());
@@ -102,8 +102,21 @@ describe('Vat', () => {
     await tx_join.wait();
 
     const gemjoinbal = await gem.balanceOf(gemjoin.address);
-    debug(gemjoinbal);
     want(gemjoinbal.eq(wad(1000).toString())).true;
+
+    // lock 6 wads
+    const tx_frob1 = await vat.frob(i0, ALI, ALI, ALI, wad(6), 0);
+    await tx_frob1.wait();
+
+    const [ink, art] = await vat.urns(i0, ALI);
+    want(ink.eq(wad(6))).true
+    const gembal = await vat.gem(i0, ALI);
+    want(gembal.eq(wad(994))).true
+
+    const _6 = bn(0).sub(wad(6));
+    debug(_6);
+    const tx_frob2 = await vat.frob(i0, ALI, ALI, ALI, bn(0).sub(wad(6)), 0)
+    await tx_frob2.wait();
   });
 
 });

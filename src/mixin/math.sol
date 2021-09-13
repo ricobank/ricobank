@@ -35,7 +35,9 @@ contract Math {
         require((z = x + y) >= x);
     }
     function add(uint x, int y) internal pure returns (uint z) {
-        z = x + uint(y);
+        unchecked { // TODO explain
+          z = x + uint(y);
+        }
         require(y >= 0 || z <= x);
         require(y <= 0 || z >= x);
     }
@@ -44,7 +46,9 @@ contract Math {
         require((z = x - y) <= x);
     }
     function sub(uint x, int y) internal pure returns (uint z) {
-        z = x - uint(y);
+        unchecked { // TODO explain
+          z = x - uint(y);
+        }
         require(y <= 0 || z <= x);
         require(y >= 0 || z >= x);
     }

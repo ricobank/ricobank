@@ -28,7 +28,6 @@ describe('math.sol', ()=>{
 
   it('rpow', async()=>{
     const a = await stub._rpow(RAY, 1);
-    debug(a);
     want(a.eq(RAY)).true
 
     const b = await stub._rpow(RAY, 0);
