@@ -40,14 +40,21 @@ contract Vat is Math, Ward {
     // --- Data ---
     struct Ilk {
         uint256 Art;   // Total Normalised Debt     [wad]
-        uint256 rate;  // Accumulated Rates         [ray]  // TODO replace with rfee+drip
+        uint256 rack;  // Accumulated Rate          [ray]
         uint256 spot;  // Price with Safety Margin  [ray]
+
+        uint256 liqr;  // Liquidation Ratio         [ray]
+        uint256 chop;  // Liquidation Penalty       [ray]
+
         uint256 line;  // Debt Ceiling              [rad]
         uint256 dust;  // Urn Debt Floor            [rad]
 
         uint256 duty;  // Collateral-specific, per-second compounding rate [ray]
         uint256  rho;  // Time of last drip [unix epoch time]
+
+        bool    open;  // Don't require ACL
     }
+
     struct Urn {
         uint256 ink;   // Locked Collateral  [wad]
         uint256 art;   // Normalised Debt    [wad]
@@ -58,6 +65,8 @@ contract Vat is Math, Ward {
     mapping (bytes32 => mapping (address => uint)) public gem;  // [wad]
     mapping (address => uint256)                   public dai;  // [rad]
     mapping (address => uint256)                   public sin;  // [rad]
+
+    mapping (bytes32 => mapping (address => bool)) public acl;
 
     uint256 public debt;  // Total Dai Issued    [rad]
     uint256 public vice;  // Total Unbacked Dai  [rad]
@@ -80,10 +89,11 @@ contract Vat is Math, Ward {
 
     // --- Administration ---
     function init(bytes32 ilk) external auth {
-        require(ilks[ilk].rate == 0, "Vat/ilk-already-init");
-        ilks[ilk].rate = RAY;
+        require(ilks[ilk].rack == 0, "Vat/ilk-already-init");
+        ilks[ilk].rack = RAY;
         ilks[ilk].duty = RAY;
         ilks[ilk].rho = block.timestamp;
+        ilks[ilk].open = true; // TODO consider defaults
     }
 
     function cage() external auth {
@@ -127,24 +137,28 @@ contract Vat is Math, Ward {
 
     // --- CDP Manipulation ---
     function frob(bytes32 i, address u, address v, address w, int dink, int dart) public {
-        // system is live
-        require(live == 1, "Vat/not-live");
-
+        // TODO drip?
+        // TODO prod?
         Urn memory urn = urns[i][u];
         Ilk memory ilk = ilks[i];
+
+        // system is live
+        require(live == 1, "Vat/not-live");
+        require(ilk.open || acl[i][msg.sender], 'err-acl');
+
         // ilk has been initialised
-        require(ilk.rate != 0, "Vat/ilk-not-init");
+        require(ilk.rack != 0, "Vat/ilk-not-init");
 
         urn.ink = add(urn.ink, dink);
         urn.art = add(urn.art, dart);
         ilk.Art = add(ilk.Art, dart);
 
-        int dtab = mul(ilk.rate, dart);
-        uint tab = mul(ilk.rate, urn.art);
+        int dtab = mul(ilk.rack, dart);
+        uint tab = mul(ilk.rack, urn.art);
         debt     = add(debt, dtab);
 
         // either debt has decreased, or debt ceilings are not exceeded
-        require(either(dart <= 0, both(mul(ilk.Art, ilk.rate) <= ilk.line, debt <= Line)), "Vat/ceiling-exceeded");
+        require(either(dart <= 0, both(mul(ilk.Art, ilk.rack) <= ilk.line, debt <= Line)), "Vat/ceiling-exceeded");
         // urn is either less risky than before, or it is safe
         require(either(both(dart <= 0, dink >= 0), tab <= mul(urn.ink, ilk.spot)), "Vat/not-safe");
 
@@ -165,18 +179,23 @@ contract Vat is Math, Ward {
         ilks[i]    = ilk;
     }
     // --- CDP Fungibility ---
+    // TODO `give` helper:  give(i, u) = fork(i, caller, u, u.ink, u.art)
     function fork(bytes32 ilk, address src, address dst, int dink, int dart) external {
+        // TODO drip?
+        // TODO prod?
         Urn storage u = urns[ilk][src];
         Urn storage v = urns[ilk][dst];
         Ilk storage i = ilks[ilk];
+
+        require(i.open || acl[ilk][msg.sender], 'err-acl');
 
         u.ink = sub(u.ink, dink);
         u.art = sub(u.art, dart);
         v.ink = add(v.ink, dink);
         v.art = add(v.art, dart);
 
-        uint utab = mul(u.art, i.rate);
-        uint vtab = mul(v.art, i.rate);
+        uint utab = mul(u.art, i.rack);
+        uint vtab = mul(v.art, i.rack);
 
         // both sides consent
         require(both(wish(src, msg.sender), wish(dst, msg.sender)), "Vat/not-allowed");
@@ -191,6 +210,9 @@ contract Vat is Math, Ward {
     }
     // --- CDP Confiscation ---
     function grab(bytes32 i, address u, address v, address w, int dink, int dart) external auth {
+        // TODO acl?
+        // TODO drip?
+        // TODO prod?
         Urn storage urn = urns[i][u];
         Ilk storage ilk = ilks[i];
 
@@ -198,7 +220,7 @@ contract Vat is Math, Ward {
         urn.art = add(urn.art, dart);
         ilk.Art = add(ilk.Art, dart);
 
-        int dtab = mul(ilk.rate, dart);
+        int dtab = mul(ilk.rack, dart);
 
         gem[i][v] = sub(gem[i][v], dink);
         sin[w]    = sub(sin[w],    dtab);
@@ -222,7 +244,7 @@ contract Vat is Math, Ward {
 
     function owed(bytes32 i, address u) public returns (uint256 rad) {
       drip(i);
-      return mul(ilks[i].rate, urns[i][u].art);
+      return mul(ilks[i].rack, urns[i][u].art);
     }
     function rowed(bytes32 i, address u) public returns (uint256 ray) {
       return owed(i, u) / WAD;
@@ -253,19 +275,19 @@ contract Vat is Math, Ward {
         if (block.timestamp == ilks[i].rho) return;
         Ilk storage ilk = ilks[i];
         require(block.timestamp >= ilk.rho, 'Vat/invalid-now');
-        uint256 prev = ilk.rate;
+        uint256 prev = ilk.rack;
 
         //console.log("prev", prev);
         //console.log("dt", block.timestamp - ilk.rho);
         //console.log("duty", ilk.duty);
 
         // TODO grow first arg type
-        //uint256 rate = grow(prev, ilk.duty, block.timestamp - ilk.rho);
-        uint256 rate = BLN * grow(prev / BLN, ilk.duty, block.timestamp - ilk.rho);
-        //console.log(rate);
+        //uint256 rack = grow(prev, ilk.duty, block.timestamp - ilk.rho);
+        uint256 rack = BLN * grow(prev / BLN, ilk.duty, block.timestamp - ilk.rho);
+        //console.log(rack);
 
-        int256  delt = diff(rate, prev);
-        ilk.rate     = add(ilk.rate, delt);
+        int256  delt = diff(rack, prev);
+        ilk.rack     = add(ilk.rack, delt);
         int256  rad  = mul(ilk.Art, delt);
         dai[vow]     = add(dai[vow], rad);
         debt         = add(debt, rad);
@@ -300,6 +322,13 @@ contract Vat is Math, Ward {
     // TODO file_spot is special and corresponds to `feed`
     function file_spot(bytes32 i, uint spot) external auth {
         ilks[i].spot = spot;
+    }
+
+    function file_open(bytes32 i, bool open) external auth {
+        ilks[i].open = open;
+    }
+    function file_acl(bytes32 i, address u, bool bit) external auth {
+        acl[i][u] = bit;
     }
 
     function time() public view returns (uint256) {
