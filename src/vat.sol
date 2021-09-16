@@ -29,7 +29,6 @@ import './mixin/ward.sol';
 import 'hardhat/console.sol';
 
 contract Vat is Math, Ward {
-    // --- Auth ---
     mapping(address => mapping (address => uint)) public can;
     function hope(address usr) external { can[msg.sender][usr] = 1; }
     function nope(address usr) external { can[msg.sender][usr] = 0; }
@@ -71,7 +70,7 @@ contract Vat is Math, Ward {
     uint256 public debt;  // Total Dai Issued    [rad]
     uint256 public vice;  // Total Unbacked Dai  [rad]
     uint256 public Line;  // Total Debt Ceiling  [rad]
-    uint256 public live;  // Active Flag
+    bool    public live;  // Active Flag
 
     uint256 public par;   // System Price (dai/ref)        [wad]
     uint256 public way;   // System Rate (SP growth rate)  [ray]
@@ -82,7 +81,7 @@ contract Vat is Math, Ward {
     // --- Init ---
     constructor() {
         wards[msg.sender] = true;
-        live = 1;
+        live = true;
         par = WAD;
         way = RAY;
     }
@@ -97,7 +96,7 @@ contract Vat is Math, Ward {
     }
 
     function cage() external auth {
-        live = 0;
+        live = false;
     }
 
     // --- Fungibility ---
@@ -113,13 +112,6 @@ contract Vat is Math, Ward {
         require(wish(src, msg.sender), "Vat/not-allowed");
         dai[src] = sub(dai[src], rad);
         dai[dst] = add(dai[dst], rad);
-    }
-
-    function either(bool x, bool y) internal pure returns (bool z) {
-        assembly{ z := or(x, y)}
-    }
-    function both(bool x, bool y) internal pure returns (bool z) {
-        assembly{ z := and(x, y)}
     }
 
     function lock(bytes32 i, address u, uint amt) external {
@@ -143,7 +135,7 @@ contract Vat is Math, Ward {
         Ilk memory ilk = ilks[i];
 
         // system is live
-        require(live == 1, "Vat/not-live");
+        require(live, "Vat/not-live");
         require(ilk.open || acl[i][msg.sender], 'err-acl');
 
         // ilk has been initialised
@@ -178,8 +170,8 @@ contract Vat is Math, Ward {
         urns[i][u] = urn;
         ilks[i]    = ilk;
     }
+
     // --- CDP Fungibility ---
-    // TODO `give` helper:  give(i, u) = fork(i, caller, u, u.ink, u.art)
     function fork(bytes32 ilk, address src, address dst, int dink, int dart) external {
         // TODO drip?
         // TODO prod?
@@ -208,6 +200,7 @@ contract Vat is Math, Ward {
         require(either(utab >= i.dust, u.art == 0), "Vat/dust-src");
         require(either(vtab >= i.dust, v.art == 0), "Vat/dust-dst");
     }
+
     // --- CDP Confiscation ---
     function grab(bytes32 i, address u, address v, address w, int dink, int dart) external auth {
         // TODO acl?
@@ -255,17 +248,6 @@ contract Vat is Math, Ward {
 
 
     // --- Rates ---
-/* replaced by `drip`/`prod`
-    function fold(bytes32 i, address u, int rate) external auth {
-        require(live == 1, "Vat/not-live");
-        Ilk storage ilk = ilks[i];
-        ilk.rate = add(ilk.rate, rate);
-        int rad  = mul(ilk.Art, rate);
-        dai[u]   = add(dai[u], rad);
-        debt     = add(debt,   rad);
-    }
-*/
-
     function sway(uint256 r) external auth {
         prod();
         way = r;
@@ -292,7 +274,6 @@ contract Vat is Math, Ward {
         dai[vow]     = add(dai[vow], rad);
         debt         = add(debt, rad);
     }
-
     function prod() public {
         if (block.timestamp == tau) return;
         par = grow(par, way, block.timestamp - tau);

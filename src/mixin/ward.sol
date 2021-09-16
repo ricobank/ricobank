@@ -8,8 +8,11 @@ contract Ward {
     function deny(address usr) external auth {
       wards[usr] = false;
     }
+    function ward() internal view {
+      require(wards[msg.sender], 'err-ward');
+    }
     modifier auth { 
-      require(wards[msg.sender], "err-auth");
+      ward();
       _;
     }
 }
