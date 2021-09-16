@@ -18,7 +18,7 @@ To do:
 * par/way in vat
 * drop `fold`
 * move price / liq ratio into vat (division for spot in vat)
-* per-ilk accessor address. Most generic form of auth (all actions by proxy)
+* per-ilk accessor addresses. (supports most generic form of auth (all actions by proxy))
 * events
 * Math mixin
 * Ward mixin (auth)
@@ -26,3 +26,6 @@ To do:
 * join flash loans
 * oracle data flow abstracted behind feedbase
 * `gemcap` parameter caps gem deposits, is a way to control smart contract risk
+* `rate` -> `racc` name
+* `duty/rho` in Ilk type instead of outside CDP
+* `owed` exposed debt, `feed` on top of `spot`

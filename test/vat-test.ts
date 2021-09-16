@@ -10,6 +10,8 @@ let bn = (n) => ethers.BigNumber.from(n)
 
 const UMAX = bn(2).pow(bn(256)).sub(bn(1));
 
+const YEAR = ((365 * 24) + 6) * 3600;
+
 let wad = (n: number) => bn(n).mul(bn(10).pow(bn(18)))
 let ray = (n: number) => bn(n).mul(bn(10).pow(bn(27)))
 let rad = (n: number) => bn(n).mul(bn(10).pow(bn(45)))
@@ -37,9 +39,6 @@ describe('Vat', () => {
     gem = await gem_type.deploy('gem', 'GEM');
     daijoin = await daijoin_type.deploy(vat.address, dai.address);
     gemjoin = await gemjoin_type.deploy(vat.address, Buffer.alloc(32), gem.address);
-
-    const tx_init = await vat.init(Buffer.alloc(32));
-    await tx_init.wait();
 
     // vat.rely(daijoin)
     const tx_rely1 = await vat.rely(daijoin.address);
@@ -69,26 +68,9 @@ describe('Vat', () => {
     const tx_mint_gem = await gem.mint(ALI, wad(1000).toString());
     await tx_mint_gem.wait();
 
-  });
+    const tx_init = await vat.init(Buffer.alloc(32));
+    await tx_init.wait();
 
-  it('init conditions', async()=>{
-    const isWarded = await vat.wards(ALI);
-    want(isWarded.eq(1)).true
-    const initDai = await dai.balanceOf(ALI);
-    want(initDai.eq(wad(1000))).true
-  });
-
-  it('gem join', async() => {
-    const tx_join = await gemjoin.join(ALI, wad(500).toString());
-    await tx_join.wait();
-
-    const gembal = await vat.gem(Buffer.alloc(32), ALI);
-    want(gembal.eq(wad(500))).true
-    const bal = await gem.balanceOf(ALI);
-    want(bal.eq(wad(500))).true;
-  });
-
-  it('frob', async() => {
     const tx_file_Line = await vat.file_Line(rad(1000).toString());
     await tx_file_Line.wait();
 
@@ -100,10 +82,21 @@ describe('Vat', () => {
 
     const tx_join = await gemjoin.join(ALI, wad(1000).toString());
     await tx_join.wait();
+  });
 
-    const gemjoinbal = await gem.balanceOf(gemjoin.address);
-    want(gemjoinbal.eq(wad(1000).toString())).true;
+  it('init conditions', async()=>{
+    const isWarded = await vat.wards(ALI);
+    want(isWarded).true
+  });
 
+  it('gem join', async() => {
+    const gembal = await vat.gem(Buffer.alloc(32), ALI);
+    want(gembal.eq(wad(1000))).true
+    const bal = await gem.balanceOf(ALI);
+    want(bal.eq(wad(0))).true;
+  });
+
+  it('frob', async() => {
     // lock 6 wads
     const tx_frob1 = await vat.frob(i0, ALI, ALI, ALI, wad(6), 0);
     await tx_frob1.wait();
@@ -114,9 +107,41 @@ describe('Vat', () => {
     want(gembal.eq(wad(994))).true
 
     const _6 = bn(0).sub(wad(6));
-    debug(_6);
     const tx_frob2 = await vat.frob(i0, ALI, ALI, ALI, bn(0).sub(wad(6)), 0)
     await tx_frob2.wait();
+
+    const [ink2, art2] = await vat.urns(i0, ALI);
+    want((await vat.gem(i0, ALI)).eq(wad(1000))).true
+  });
+
+  it('drip', async () => {
+    const _2pc = ray(1).add(ray(1).div(50));
+
+    const [_, rateparam] = await vat.ilks(i0);
+
+    const t0 = (await vat.time()).toNumber();
+
+    await network.provider.request({ method: 'evm_setNextBlockTimestamp', params: [t0 + 1] })
+
+    const tx_file_duty = await vat.file_duty(i0, _2pc);
+    await tx_file_duty.wait();
+
+    const t1 = (await vat.time()).toNumber();
+
+    const [_, rateparam2] = await vat.ilks(i0);
+
+    await network.provider.request({ method: 'evm_setNextBlockTimestamp', params: [t0 + 2] })
+
+    const tx_frob1 = await vat.frob(i0, ALI, ALI, ALI, wad(100), wad(50));
+    await tx_frob1.wait();
+
+    const debt1 = await vat.callStatic.wowed(i0, ALI);
+
+    await network.provider.request({ method: 'evm_setNextBlockTimestamp', params: [t0 + 3] })
+
+    const debt2 = await vat.callStatic.wowed(i0, ALI);
+
+
   });
 
 });

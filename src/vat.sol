@@ -24,17 +24,12 @@ pragma solidity 0.8.6;
 // New deployments of this contract will need to include custom events (TO DO).
 
 import './mixin/math.sol';
+import './mixin/ward.sol';
 
-contract Vat is Math {
+import 'hardhat/console.sol';
+
+contract Vat is Math, Ward {
     // --- Auth ---
-    mapping (address => uint) public wards;
-    function rely(address usr) external auth { require(live == 1, "Vat/not-live"); wards[usr] = 1; }
-    function deny(address usr) external auth { require(live == 1, "Vat/not-live"); wards[usr] = 0; }
-    modifier auth {
-        require(wards[msg.sender] == 1, "Vat/not-authorized");
-        _;
-    }
-
     mapping(address => mapping (address => uint)) public can;
     function hope(address usr) external { can[msg.sender][usr] = 1; }
     function nope(address usr) external { can[msg.sender][usr] = 0; }
@@ -77,7 +72,7 @@ contract Vat is Math {
 
     // --- Init ---
     constructor() {
-        wards[msg.sender] = 1;
+        wards[msg.sender] = true;
         live = 1;
         par = WAD;
         way = RAY;
@@ -86,7 +81,9 @@ contract Vat is Math {
     // --- Administration ---
     function init(bytes32 ilk) external auth {
         require(ilks[ilk].rate == 0, "Vat/ilk-already-init");
-        ilks[ilk].rate = 10 ** 27;
+        ilks[ilk].rate = RAY;
+        ilks[ilk].duty = RAY;
+        ilks[ilk].rho = block.timestamp;
     }
 
     function cage() external auth {
@@ -115,8 +112,21 @@ contract Vat is Math {
         assembly{ z := and(x, y)}
     }
 
+    function lock(bytes32 i, address u, uint amt) external {
+        frob(i, u, u, u, int(amt), 0);
+    }
+    function free(bytes32 i, address u, uint amt) external {
+        frob(i, u, u, u, -int(amt), 0);
+    }
+    function draw(bytes32 i, address u, uint amt) external {
+        frob(i, u, u, u, 0, int(amt));
+    }
+    function wipe(bytes32 i, address u, uint amt) external {
+        frob(i, u, u, u, 0, -int(amt));
+    }
+
     // --- CDP Manipulation ---
-    function frob(bytes32 i, address u, address v, address w, int dink, int dart) external {
+    function frob(bytes32 i, address u, address v, address w, int dink, int dart) public {
         // system is live
         require(live == 1, "Vat/not-live");
 
@@ -210,7 +220,20 @@ contract Vat is Math {
         debt   = add(debt,   rad);
     }
 
+    function owed(bytes32 i, address u) public returns (uint256 rad) {
+      drip(i);
+      return mul(ilks[i].rate, urns[i][u].art);
+    }
+    function rowed(bytes32 i, address u) public returns (uint256 ray) {
+      return owed(i, u) / WAD;
+    }
+    function wowed(bytes32 i, address u) public returns (uint256 wad) {
+      return owed(i, u) / RAY;
+    }
+
+
     // --- Rates ---
+/* replaced by `drip`/`prod`
     function fold(bytes32 i, address u, int rate) external auth {
         require(live == 1, "Vat/not-live");
         Ilk storage ilk = ilks[i];
@@ -219,6 +242,7 @@ contract Vat is Math {
         dai[u]   = add(dai[u], rad);
         debt     = add(debt,   rad);
     }
+*/
 
     function sway(uint256 r) external auth {
         prod();
@@ -230,7 +254,16 @@ contract Vat is Math {
         Ilk storage ilk = ilks[i];
         require(block.timestamp >= ilk.rho, 'Vat/invalid-now');
         uint256 prev = ilk.rate;
-        uint256 rate = grow(prev, ilk.duty, block.timestamp - ilk.rho);
+
+        //console.log("prev", prev);
+        //console.log("dt", block.timestamp - ilk.rho);
+        //console.log("duty", ilk.duty);
+
+        // TODO grow first arg type
+        //uint256 rate = grow(prev, ilk.duty, block.timestamp - ilk.rho);
+        uint256 rate = BLN * grow(prev / BLN, ilk.duty, block.timestamp - ilk.rho);
+        //console.log(rate);
+
         int256  delt = diff(rate, prev);
         ilk.rate     = add(ilk.rate, delt);
         int256  rad  = mul(ilk.Art, delt);
@@ -258,8 +291,10 @@ contract Vat is Math {
     function file_dust(bytes32 i, uint dust) external auth {
         ilks[i].dust = dust;
     }
+    // TODO file_duty might be special considering drip requirement
     function file_duty(bytes32 i, uint duty) external auth {
-        require(block.timestamp == ilks[i].rho, 'err-not-prorated');
+        //require(block.timestamp == ilks[i].rho, 'err-not-prorated');
+        drip(i);
         ilks[i].duty = duty;
     }
     // TODO file_spot is special and corresponds to `feed`
@@ -267,4 +302,7 @@ contract Vat is Math {
         ilks[i].spot = spot;
     }
 
+    function time() public view returns (uint256) {
+        return block.timestamp;
+    }
 }

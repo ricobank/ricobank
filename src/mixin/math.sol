@@ -54,6 +54,7 @@ contract Math {
     }
 
     function diff(uint x, uint y) internal pure returns (int z) {
+        // TODO figure out intent of this old type cast
         z = int(x) - int(y);
         require(int(x) >= 0 && int(y) >= 0);
     }
