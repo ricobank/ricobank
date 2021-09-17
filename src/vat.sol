@@ -82,7 +82,7 @@ contract Vat is Math, Ward {
     constructor() {
         wards[msg.sender] = true;
         live = true;
-        par = WAD;
+        par = RAY;
         way = RAY;
     }
 
@@ -91,12 +91,19 @@ contract Vat is Math, Ward {
         require(ilks[ilk].rack == 0, "Vat/ilk-already-init");
         ilks[ilk].rack = RAY;
         ilks[ilk].duty = RAY;
-        ilks[ilk].rho = block.timestamp;
+        ilks[ilk].liqr = RAY;
         ilks[ilk].open = true; // TODO consider defaults
+        ilks[ilk].rho  = block.timestamp;
     }
 
     function cage() external auth {
         live = false;
+    }
+
+    function feed(bytes32 ilk, uint pray) external auth {
+        uint256 refs = rmul(pray, par);
+        uint256 spot = rmul(refs, ilks[ilk].liqr);
+        ilks[ilk].spot = spot;
     }
 
     // --- Fungibility ---

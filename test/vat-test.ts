@@ -4,8 +4,6 @@ import { expect as want } from 'chai'
 
 import { ethers, artifacts, network } from 'hardhat'
 
-import { BN } from 'bn.js'
-
 let bn = (n) => ethers.BigNumber.from(n)
 
 const UMAX = bn(2).pow(bn(256)).sub(bn(1));
@@ -141,7 +139,25 @@ describe('Vat', () => {
 
     const debt2 = await vat.callStatic.wowed(i0, ALI);
 
-
   });
+
+  it('feed spot', async () => {
+    const tx_frob1 = await vat.frob(i0, ALI, ALI, ALI, wad(100), wad(50));
+    await tx_frob1.wait();
+
+    const [ink, art] = await vat.urns(i0, ALI);
+    want(ink.eq(wad(100))).true
+    want(art.eq(wad(50))).true
+
+    const [,,spot0] = await vat.ilks(i0);
+    want(spot0.eq(ray(1))).true
+
+    const tx_feed1 = await vat.feed(i0, ray(1));
+    await tx_feed1.wait();
+
+    const [,,spot1] = await vat.ilks(i0);
+    want(spot1.eq(ray(1))).true
+
+  })
 
 });
