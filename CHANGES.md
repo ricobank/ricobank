@@ -29,3 +29,4 @@ To do:
 * `rate` -> `racc` name
 * `duty/rho` in Ilk type instead of outside CDP
 * `owed` exposed debt, `feed` on top of `spot`
+* `spot` -> `mark`/`plot`

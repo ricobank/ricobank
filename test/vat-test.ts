@@ -75,8 +75,8 @@ describe('Vat', () => {
     const tx_file_line = await vat.file_line(i0, rad(1000).toString());
     await tx_file_line.wait();
 
-    const tx_file_spot = await vat.file_spot(i0, ray(1).toString());
-    await tx_file_spot.wait();
+    const tx_plot = await vat.plot(i0, ray(1).toString());
+    await tx_plot.wait();
 
     const tx_join = await gemjoin.join(ALI, wad(1000).toString());
     await tx_join.wait();
@@ -141,22 +141,37 @@ describe('Vat', () => {
 
   });
 
-  it('feed spot', async () => {
+  it('feed plot safe', async () => {
+    const safe0 = await vat.callStatic.safe(i0, ALI);
+    want(safe0).true
+
     const tx_frob1 = await vat.frob(i0, ALI, ALI, ALI, wad(100), wad(50));
     await tx_frob1.wait();
+
+    const safe1 = await vat.callStatic.safe(i0, ALI);
+    want(safe1).true
 
     const [ink, art] = await vat.urns(i0, ALI);
     want(ink.eq(wad(100))).true
     want(art.eq(wad(50))).true
 
-    const [,,spot0] = await vat.ilks(i0);
-    want(spot0.eq(ray(1))).true
+    const [,,mark0] = await vat.ilks(i0);
+    want(mark0.eq(ray(1))).true
 
-    const tx_feed1 = await vat.feed(i0, ray(1));
-    await tx_feed1.wait();
+    const tx_plot1 = await vat.plot(i0, ray(1));
+    await tx_plot1.wait();
 
-    const [,,spot1] = await vat.ilks(i0);
-    want(spot1.eq(ray(1))).true
+    const [,,mark0] = await vat.ilks(i0);
+    want(mark0.eq(ray(1))).true
+
+    const safe2 = await vat.callStatic.safe(i0, ALI);
+    want(safe2).true
+
+    const tx_plot2 = await vat.plot(i0, ray(1).div(5))
+    await tx_plot2.wait();
+
+    const safe3 = await vat.callStatic.safe(i0, ALI);
+    want(safe3).false
 
   })
 

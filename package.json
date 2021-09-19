@@ -3,15 +3,16 @@
   "version": "0.0.1",
   "license": "GPL-3.0",
   "scripts": {
+    "init": "git submodule update --init --recursive && cd lib/feedbase && npm i",
     "build": "hh compile",
-    "test": "hh compile && ts-mocha test/*"
+    "build:deps": "cd lib/feedbase && npm run build",
+    "test": "hh compile && ts-mocha --timeout 10000 test/*"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.2",
     "@types/chai": "^4.2.21",
     "@types/mocha": "^9.0.0",
     "@types/node": "^16.9.1",
-    "bn.js": "^4.12.0",
     "chai": "^4.3.4",
     "hardhat": "^2.6.3",
     "ts-mocha": "^8.0.0",

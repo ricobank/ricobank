@@ -51,7 +51,6 @@ describe('math.sol', ()=>{
     want(d.eq(WAD.mul(8))).true
 
     const e = await stub._grow(RAY.div(BLN), RAY, 5);
-    debug(e);
 
   });
 

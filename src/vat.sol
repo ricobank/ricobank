@@ -29,18 +29,12 @@ import './mixin/ward.sol';
 import 'hardhat/console.sol';
 
 contract Vat is Math, Ward {
-    mapping(address => mapping (address => uint)) public can;
-    function hope(address usr) external { can[msg.sender][usr] = 1; }
-    function nope(address usr) external { can[msg.sender][usr] = 0; }
-    function wish(address bit, address usr) internal view returns (bool) {
-        return either(bit == usr, can[bit][usr] == 1);
-    }
-
     // --- Data ---
     struct Ilk {
         uint256 Art;   // Total Normalised Debt     [wad]
         uint256 rack;  // Accumulated Rate          [ray]
-        uint256 spot;  // Price with Safety Margin  [ray]
+
+        uint256 mark;  // Last poked price          [ray]
 
         uint256 liqr;  // Liquidation Ratio         [ray]
         uint256 chop;  // Liquidation Penalty       [ray]
@@ -65,12 +59,11 @@ contract Vat is Math, Ward {
     mapping (address => uint256)                   public dai;  // [rad]
     mapping (address => uint256)                   public sin;  // [rad]
 
-    mapping (bytes32 => mapping (address => bool)) public acl;
-
     uint256 public debt;  // Total Dai Issued    [rad]
     uint256 public vice;  // Total Unbacked Dai  [rad]
     uint256 public Line;  // Total Debt Ceiling  [rad]
     bool    public live;  // Active Flag
+
 
     uint256 public par;   // System Price (dai/ref)        [wad]
     uint256 public way;   // System Rate (SP growth rate)  [ray]
@@ -80,7 +73,6 @@ contract Vat is Math, Ward {
 
     // --- Init ---
     constructor() {
-        wards[msg.sender] = true;
         live = true;
         par = RAY;
         way = RAY;
@@ -89,21 +81,18 @@ contract Vat is Math, Ward {
     // --- Administration ---
     function init(bytes32 ilk) external auth {
         require(ilks[ilk].rack == 0, "Vat/ilk-already-init");
-        ilks[ilk].rack = RAY;
-        ilks[ilk].duty = RAY;
-        ilks[ilk].liqr = RAY;
-        ilks[ilk].open = true; // TODO consider defaults
-        ilks[ilk].rho  = block.timestamp;
+        ilks[ilk] = Ilk({
+            rack: RAY,
+            duty: RAY,
+            liqr: RAY,
+            open: true, // TODO consider defaults
+            rho : time(),
+            Art: 0, mark: 0, chop: 0, line: 0, dust: 0
+        });
     }
 
     function cage() external auth {
         live = false;
-    }
-
-    function feed(bytes32 ilk, uint pray) external auth {
-        uint256 refs = rmul(pray, par);
-        uint256 spot = rmul(refs, ilks[ilk].liqr);
-        ilks[ilk].spot = spot;
     }
 
     // --- Fungibility ---
@@ -121,17 +110,17 @@ contract Vat is Math, Ward {
         dai[dst] = add(dai[dst], rad);
     }
 
-    function lock(bytes32 i, address u, uint amt) external {
-        frob(i, u, u, u, int(amt), 0);
+    function lock(bytes32 i, uint amt) external {
+        frob(i, msg.sender, msg.sender, msg.sender, int(amt), 0);
     }
-    function free(bytes32 i, address u, uint amt) external {
-        frob(i, u, u, u, -int(amt), 0);
+    function free(bytes32 i, uint amt) external {
+        frob(i, msg.sender, msg.sender, msg.sender, -int(amt), 0);
     }
-    function draw(bytes32 i, address u, uint amt) external {
-        frob(i, u, u, u, 0, int(amt));
+    function draw(bytes32 i, uint amt) external {
+        frob(i, msg.sender, msg.sender, msg.sender, 0, int(amt));
     }
-    function wipe(bytes32 i, address u, uint amt) external {
-        frob(i, u, u, u, 0, -int(amt));
+    function wipe(bytes32 i, uint amt) external {
+        frob(i, msg.sender, msg.sender, msg.sender, 0, -int(amt));
     }
 
     // --- CDP Manipulation ---
@@ -141,8 +130,6 @@ contract Vat is Math, Ward {
         Urn memory urn = urns[i][u];
         Ilk memory ilk = ilks[i];
 
-        // system is live
-        require(live, "Vat/not-live");
         require(ilk.open || acl[i][msg.sender], 'err-acl');
 
         // ilk has been initialised
@@ -159,7 +146,7 @@ contract Vat is Math, Ward {
         // either debt has decreased, or debt ceilings are not exceeded
         require(either(dart <= 0, both(mul(ilk.Art, ilk.rack) <= ilk.line, debt <= Line)), "Vat/ceiling-exceeded");
         // urn is either less risky than before, or it is safe
-        require(either(both(dart <= 0, dink >= 0), tab <= mul(urn.ink, ilk.spot)), "Vat/not-safe");
+        require(either(both(dart <= 0, dink >= 0), safe(i, u)), "Vat/not-safe");
 
         // urn is either more safe, or the owner consents
         require(either(both(dart <= 0, dink >= 0), wish(u, msg.sender)), "Vat/not-allowed-u");
@@ -200,8 +187,8 @@ contract Vat is Math, Ward {
         require(both(wish(src, msg.sender), wish(dst, msg.sender)), "Vat/not-allowed");
 
         // both sides safe
-        require(utab <= mul(u.ink, i.spot), "Vat/not-safe-src");
-        require(vtab <= mul(v.ink, i.spot), "Vat/not-safe-dst");
+        require(safe(ilk, src), "Vat/not-safe-src");
+        require(safe(ilk, dst), "Vat/not-safe-dst");
 
         // both sides non-dusty
         require(either(utab >= i.dust, u.art == 0), "Vat/dust-src");
@@ -261,35 +248,24 @@ contract Vat is Math, Ward {
     }
 
     function drip(bytes32 i) public {
-        if (block.timestamp == ilks[i].rho) return;
         Ilk storage ilk = ilks[i];
-        require(block.timestamp >= ilk.rho, 'Vat/invalid-now');
+        if (time() == ilk.rho) return;
+        require(time() >= ilk.rho, 'Vat/invalid-now');
         uint256 prev = ilk.rack;
-
-        //console.log("prev", prev);
-        //console.log("dt", block.timestamp - ilk.rho);
-        //console.log("duty", ilk.duty);
-
-        // TODO grow first arg type
-        //uint256 rack = grow(prev, ilk.duty, block.timestamp - ilk.rho);
-        uint256 rack = BLN * grow(prev / BLN, ilk.duty, block.timestamp - ilk.rho);
-        //console.log(rack);
-
+        uint256 rack = grow(prev, ilk.duty, time() - ilk.rho);
         int256  delt = diff(rack, prev);
-        ilk.rack     = add(ilk.rack, delt);
         int256  rad  = mul(ilk.Art, delt);
+        ilk.rack     = add(ilk.rack, delt);
         dai[vow]     = add(dai[vow], rad);
         debt         = add(debt, rad);
     }
     function prod() public {
-        if (block.timestamp == tau) return;
-        par = grow(par, way, block.timestamp - tau);
-        tau = block.timestamp;
+        if (time() == tau) return;
+        par = grow(par, way, time() - tau);
+        tau = time();
     }
 
-    // TODO decide require live per file func
     function file_Line(uint Line_) external auth {
-        // require(live == 1, "Vat/not-live");
         Line = Line_;
     }
     function file_vow(address vow_) external auth {
@@ -303,13 +279,8 @@ contract Vat is Math, Ward {
     }
     // TODO file_duty might be special considering drip requirement
     function file_duty(bytes32 i, uint duty) external auth {
-        //require(block.timestamp == ilks[i].rho, 'err-not-prorated');
         drip(i);
         ilks[i].duty = duty;
-    }
-    // TODO file_spot is special and corresponds to `feed`
-    function file_spot(bytes32 i, uint spot) external auth {
-        ilks[i].spot = spot;
     }
 
     function file_open(bytes32 i, bool open) external auth {
@@ -322,4 +293,34 @@ contract Vat is Math, Ward {
     function time() public view returns (uint256) {
         return block.timestamp;
     }
+
+    function safe(bytes32 i, address u) public returns (bool) {
+        prod();
+        drip(i);
+        Urn memory urn = urns[i][u];
+        Ilk memory ilk = ilks[i];
+        uint256    ref = rmul(par, ilk.mark);
+        uint256    liq = rmul(ref, ilk.liqr);
+        uint256    tab = mul(urn.art, ilk.rack);
+        uint256    cut = mul(urn.ink, liq);
+        return (tab <= cut);
+    }
+
+    function plot(bytes32 ilk, uint mark) external auth {
+        ilks[ilk].mark = mark;
+    }
+
+    mapping (bytes32 => mapping (address => bool)) public acl;
+
+    mapping (address => mapping (address => bool)) public can;
+    function hope(address usr) external {
+        can[msg.sender][usr] = true;
+    }
+    function nope(address usr) external {
+        can[msg.sender][usr] = false;
+    }
+    function wish(address bit, address usr) internal view returns (bool) {
+        return either(bit == usr, can[bit][usr] == true);
+    }
+
 }
