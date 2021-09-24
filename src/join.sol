@@ -19,17 +19,20 @@
 
 pragma solidity 0.8.6;
 
+import './mixin/math.sol';
+import './mixin/ward.sol';
+
 // FIXME: This contract was altered compared to the production version.
 // It doesn't use LibNote anymore.
 // New deployments of this contract will need to include custom events (TO DO).
 
-interface GemLike {
+interface ERC20 {
     function decimals() external view returns (uint);
     function transfer(address,uint) external returns (bool);
     function transferFrom(address,address,uint) external returns (bool);
 }
 
-interface DSTokenLike {
+interface MintBurn {
     function mint(address,uint) external;
     function burn(address,uint) external;
 }
@@ -63,28 +66,18 @@ interface VatLike {
 
 */
 
-contract GemJoin {
-    // --- Auth ---
-    mapping (address => uint) public wards;
-    function rely(address usr) external auth { wards[usr] = 1; }
-    function deny(address usr) external auth { wards[usr] = 0; }
-    modifier auth {
-        require(wards[msg.sender] == 1, "GemJoin/not-authorized");
-        _;
-    }
-
+contract GemJoin is Ward {
     VatLike public vat;   // CDP Engine
     bytes32 public ilk;   // Collateral Type
-    GemLike public gem;
+    ERC20 public gem;
     uint    public dec;
     uint    public live;  // Active Flag
 
-    constructor(address vat_, bytes32 ilk_, address gem_) public {
-        wards[msg.sender] = 1;
+    constructor(address vat_, bytes32 ilk_, address gem_) {
         live = 1;
         vat = VatLike(vat_);
         ilk = ilk_;
-        gem = GemLike(gem_);
+        gem = ERC20(gem_);
         dec = gem.decimals();
     }
     function cage() external auth {
@@ -103,40 +96,26 @@ contract GemJoin {
     }
 }
 
-contract DaiJoin {
-    // --- Auth ---
-    mapping (address => uint) public wards;
-    function rely(address usr) external auth { wards[usr] = 1; }
-    function deny(address usr) external auth { wards[usr] = 0; }
-    modifier auth {
-        require(wards[msg.sender] == 1, "DaiJoin/not-authorized");
-        _;
-    }
-
+contract DaiJoin is Math, Ward {
     VatLike public vat;      // CDP Engine
-    DSTokenLike public dai;  // Stablecoin Token
+    MintBurn public dai;  // Stablecoin Token
     uint    public live;     // Active Flag
 
-    constructor(address vat_, address dai_) public {
-        wards[msg.sender] = 1;
+    constructor(address vat_, address dai_) {
         live = 1;
         vat = VatLike(vat_);
-        dai = DSTokenLike(dai_);
+        dai = MintBurn(dai_);
     }
     function cage() external auth {
         live = 0;
     }
-    uint constant ONE = 10 ** 27;
-    function mul(uint x, uint y) internal pure returns (uint z) {
-        require(y == 0 || (z = x * y) / y == x);
-    }
     function join(address usr, uint wad) external {
-        vat.move(address(this), usr, mul(ONE, wad));
+        vat.move(address(this), usr, mul(RAY, wad));
         dai.burn(msg.sender, wad);
     }
     function exit(address usr, uint wad) external {
         require(live == 1, "DaiJoin/not-live");
-        vat.move(msg.sender, address(this), mul(ONE, wad));
+        vat.move(msg.sender, address(this), mul(RAY, wad));
         dai.mint(usr, wad);
     }
 }

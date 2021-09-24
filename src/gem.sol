@@ -18,6 +18,8 @@
 
 pragma solidity 0.8.6;
 
+import './mixin/ward.sol';
+
 // FIXME: This contract was altered compared to the production version.
 // It doesn't use LibNote anymore.
 // New deployments of this contract will need to include custom events (TO DO).
@@ -37,7 +39,7 @@ contract GemFab {
   }
 }
 
-contract Gem {
+contract Gem is Ward {
     string  public name;
     string  public symbol;
     uint8   public decimals;
@@ -49,21 +51,17 @@ contract Gem {
     mapping (address => mapping (address => uint)) public allowance;
     mapping (address => uint)                      public nonces;
 
-    mapping (address => uint)                      public wards;
-
-    bytes32 public constant PERMIT_TYPEHASH = 0xea2aa0a1be11a07ed86d755c93467f4f82362b452371d1ba94d1715123511acb;
-    // = keccak256("Permit(address holder,address spender,uint256 nonce,uint256 expiry,bool allowed)");
+    bytes32 public constant PERMIT_TYPEHASH = 0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9;
+    // = keccak256('Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)');
     bytes32 public DOMAIN_SEPARATOR;
 
     event Approval(address indexed src, address indexed usr, uint wad);
     event Transfer(address indexed src, address indexed dst, uint wad);
-    event Ward(address indexed caller, address indexed trusts, bool bit);
 
     constructor(string memory name_, string memory symbol_) {
         name = name_;
         symbol = symbol_;
         decimals = 18;
-        wards[msg.sender] = 1;
         chainId = block.chainid;
         DOMAIN_SEPARATOR = keccak256(abi.encode(
             keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
@@ -73,21 +71,6 @@ contract Gem {
             address(this)
         ));
     }
-
-    function auth(string memory reason) internal view {
-      require(wards[msg.sender] == 1, reason);
-    }
-    function rely(address usr) external {
-      auth('auth-rely');
-      wards[usr] = 1;
-      emit Ward(msg.sender, usr, true);
-    }
-    function deny(address usr) external {
-      auth('auth-deny');
-      wards[usr] = 0;
-      emit Ward(msg.sender, usr, false);
-    }
-
 
     // --- Token ---
     function transfer(address dst, uint wad) public returns (bool) {
@@ -108,13 +91,13 @@ contract Gem {
         return true;
     }
     function mint(address usr, uint wad) external {
-        auth('auth-mint');
+        ward('auth-mint');
         balanceOf[usr] += wad;
         totalSupply    += wad;
         emit Transfer(address(0), usr, wad);
     }
     function burn(address usr, uint wad) external {
-        auth('auth-burn');
+        ward('auth-burn');
         balanceOf[usr] -= wad;
         totalSupply    -= wad;
         emit Transfer(usr, address(0), wad);
@@ -137,27 +120,27 @@ contract Gem {
     }
 
     // --- Approve by signature ---
-    function permit(address holder, address spender, uint256 nonce, uint256 expiry,
-                    bool allowed, uint8 v, bytes32 r, bytes32 s) external
+    // EIP-2612
+    function permit(address owner, address spender, uint256 value, uint256 deadline,
+                    uint8 v, bytes32 r, bytes32 s) external
     {
+        uint nonce = nonces[owner];
+        nonces[owner]++;
         bytes32 digest =
             keccak256(abi.encodePacked(
                 "\x19\x01",
                 DOMAIN_SEPARATOR,
                 keccak256(abi.encode(PERMIT_TYPEHASH,
-                                     holder,
+                                     owner,
                                      spender,
+                                     value,
                                      nonce,
-                                     expiry,
-                                     allowed))
+                                     deadline))
         ));
-
-        require(holder != address(0), "Dai/invalid-address-0");
-        require(holder == ecrecover(digest, v, r, s), "Dai/invalid-permit");
-        require(expiry == 0 || block.timestamp <= expiry, "Dai/permit-expired");
-        require(nonce == nonces[holder]++, "Dai/invalid-nonce");
-        uint wad = allowed ? type(uint256).max : 0;
-        allowance[holder][spender] = wad;
-        emit Approval(holder, spender, wad);
+        address signer = ecrecover(digest, v, r, s);
+        require(signer != address(0) && owner == signer, "gem-permit-bad-sig");
+        require(block.timestamp <= deadline, "gem-permit-expired");
+        allowance[owner][spender] = value;
+        emit Approval(owner, spender, value);
     }
 }

@@ -26,8 +26,6 @@ pragma solidity 0.8.6;
 import './mixin/math.sol';
 import './mixin/ward.sol';
 
-import 'hardhat/console.sol';
-
 contract Vat is Math, Ward {
     // --- Data ---
     struct Ilk {

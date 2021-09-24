@@ -4,13 +4,17 @@ pragma solidity 0.8.6;
 
 contract Ward {
     mapping (address => bool) public wards;
+    event Ward(address indexed caller, address indexed trusts, bool bit);
     constructor() {
       wards[msg.sender] = true;
+      emit Ward(msg.sender, msg.sender, true);
     }
     function rely(address usr) external auth {
+      emit Ward(msg.sender, usr, true);
       wards[usr] = true;
     }
     function deny(address usr) external auth {
+      emit Ward(msg.sender, usr, true);
       wards[usr] = false;
     }
     function ward(string memory reason) internal view {

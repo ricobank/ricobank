@@ -19,6 +19,8 @@
 
 pragma solidity 0.8.6;
 
+import './mixin/ward.sol';
+
 // FIXME: This contract was altered compared to the production version.
 // It doesn't use LibNote anymore.
 // New deployments of this contract will need to include custom events (TO DO).
@@ -43,16 +45,7 @@ interface VatLike {
     function nope(address) external;
 }
 
-contract Vow {
-    // --- Auth ---
-    mapping (address => uint) public wards;
-    function rely(address usr) external auth { require(live == 1, "Vow/not-live"); wards[usr] = 1; }
-    function deny(address usr) external auth { wards[usr] = 0; }
-    modifier auth {
-        require(wards[msg.sender] == 1, "Vow/not-authorized");
-        _;
-    }
-
+contract Vow is Ward {
     // --- Data ---
     VatLike public vat;        // CDP Engine
     FlapLike public flapper;   // Surplus Auction House
@@ -73,7 +66,6 @@ contract Vow {
 
     // --- Init ---
     constructor(address vat_, address flapper_, address flopper_) public {
-        wards[msg.sender] = 1;
         vat     = VatLike(vat_);
         flapper = FlapLike(flapper_);
         flopper = FlopLike(flopper_);
