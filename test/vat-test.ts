@@ -4,15 +4,12 @@ import { expect as want } from 'chai'
 
 import { ethers, artifacts, network } from 'hardhat'
 
-let bn = (n) => ethers.BigNumber.from(n)
+import { send, wad, ray, rad, N } from './helpers';
 
-const UMAX = bn(2).pow(bn(256)).sub(bn(1));
+
+const UMAX = N(2).pow(N(256)).sub(N(1));
 
 const YEAR = ((365 * 24) + 6) * 3600;
-
-let wad = (n: number) => bn(n).mul(bn(10).pow(bn(18)))
-let ray = (n: number) => bn(n).mul(bn(10).pow(bn(27)))
-let rad = (n: number) => bn(n).mul(bn(10).pow(bn(45)))
 
 let i0 = Buffer.alloc(32); // ilk 0 id
 
@@ -38,48 +35,23 @@ describe('Vat', () => {
     daijoin = await daijoin_type.deploy(vat.address, dai.address);
     gemjoin = await gemjoin_type.deploy(vat.address, Buffer.alloc(32), gem.address);
 
-    // vat.rely(daijoin)
-    const tx_rely1 = await vat.rely(daijoin.address);
-    await tx_rely1.wait();
+    await send(vat.rely, daijoin.address);
+    await send(vat.rely, gemjoin.address);
+    await send(dai.rely, daijoin.address);
+    await send(gem.rely, gemjoin.address);
 
-    // vat.rely(gemjoin)
-    const tx_rely2 = await vat.rely(gemjoin.address);
-    await tx_rely2.wait();
+    await send(dai.approve, daijoin.address, UMAX);
+    await send(gem.approve, gemjoin.address, UMAX);
+    await send(dai.mint, ALI, wad(1000).toString());
+    await send(gem.mint, ALI, wad(1000).toString());
 
-    // dai.rely(daijoin)
-    const tx_rely3 = await vat.rely(gemjoin.address);
-    await tx_rely3.wait();
+    await send(vat.init, i0);
+    await send(vat.file_Line, rad(1000).toString());
+    await send(vat.file_line, i0, rad(1000).toString());
 
-    // gem.rely(gemjoin)
-    const tx_rely4 = await gem.rely(gemjoin.address);
-    await tx_rely4.wait();
+    await send(vat.plot, i0, ray(1).toString());
 
-    const tx_approve_dai = await dai.approve(daijoin.address, UMAX);
-    await tx_approve_dai.wait();
-
-    const tx_approve_gem = await gem.approve(gemjoin.address, UMAX);
-    await tx_approve_gem.wait();
-
-    const tx_mint_dai = await dai.mint(ALI, wad(1000).toString());
-    await tx_mint_dai.wait();
-
-    const tx_mint_gem = await gem.mint(ALI, wad(1000).toString());
-    await tx_mint_gem.wait();
-
-    const tx_init = await vat.init(Buffer.alloc(32));
-    await tx_init.wait();
-
-    const tx_file_Line = await vat.file_Line(rad(1000).toString());
-    await tx_file_Line.wait();
-
-    const tx_file_line = await vat.file_line(i0, rad(1000).toString());
-    await tx_file_line.wait();
-
-    const tx_plot = await vat.plot(i0, ray(1).toString());
-    await tx_plot.wait();
-
-    const tx_join = await gemjoin.join(ALI, wad(1000).toString());
-    await tx_join.wait();
+    await send(gemjoin.join, ALI, wad(1000).toString());
   });
 
   it('init conditions', async()=>{
@@ -96,17 +68,15 @@ describe('Vat', () => {
 
   it('frob', async() => {
     // lock 6 wads
-    const tx_frob1 = await vat.frob(i0, ALI, ALI, ALI, wad(6), 0);
-    await tx_frob1.wait();
+    await send(vat.frob, i0, ALI, ALI, ALI, wad(6), 0);
 
     const [ink, art] = await vat.urns(i0, ALI);
     want(ink.eq(wad(6))).true
     const gembal = await vat.gem(i0, ALI);
     want(gembal.eq(wad(994))).true
 
-    const _6 = bn(0).sub(wad(6));
-    const tx_frob2 = await vat.frob(i0, ALI, ALI, ALI, bn(0).sub(wad(6)), 0)
-    await tx_frob2.wait();
+    const _6 = N(0).sub(wad(6));
+    await send(vat.frob, i0, ALI, ALI, ALI, _6, 0);
 
     const [ink2, art2] = await vat.urns(i0, ALI);
     want((await vat.gem(i0, ALI)).eq(wad(1000))).true

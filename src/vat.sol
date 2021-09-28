@@ -292,6 +292,13 @@ contract Vat is Math, Ward {
         return block.timestamp;
     }
 
+    function jam_par(uint256 jam) external auth {
+        par = jam;
+    }
+
+    // TODO force `spot` value without loss of precision  ?
+    //function jam_spot
+
     function safe(bytes32 i, address u) public returns (bool) {
         prod();
         drip(i);
