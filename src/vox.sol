@@ -18,8 +18,11 @@ pragma solidity 0.8.6;
 import './mixin/math.sol';
 import './mixin/ward.sol';
 
+import 'hardhat/console.sol';
+
 interface VatLike {
     function par() external returns (uint256);
+    function way() external returns (uint256);
     function prod() external;
     function sway(uint256 r) external;
 }
@@ -28,20 +31,51 @@ interface FeedbaseLike {
     function read(address src, bytes32 tag) external returns (bytes32 val, uint ttl);
 }
 
+// RicoLikeVox
 contract Vox is Math, Ward {
-    uint256 public how; // [ray] sensitivity paramater
-    VatLike public vat;
+    VatLike      public vat;
     FeedbaseLike public fb;
 
     address public msrc; // feedbase `src` address
     bytes32 public mtag; // feedbase `tag` bytes32
 
-    function poke() public {
-        (bytes32 mp, uint ttl) = fb.read(msrc, mtag);
-        uint256 m = uint256(mp);
+    uint256 public how;  // [ray] sensitivity paramater
 
-        vat.prod();
+    uint256 public delt; // [ray] ratio at last tick
+    uint256 public tau;  // [sec] last tick
+
+    constructor() {
+      how  = RAY;
+      delt = RAY;
+      tau  = block.timestamp;
+    }
+
+    function poke() public {
+        console.log("POKE (timestamp: ", block.timestamp);
+        uint256 way = vat.way();
+        console.log("  way0:", way);
+        console.log("  delt:", delt);
+        console.log("  tau0:", tau);
+        console.log("  how :", how);
+        // change the rate according to last tp/mp
+        if (delt < RAY) {
+          way = grow(way, how, block.timestamp - tau);
+        } else if (delt > RAY) {
+          way = grow(way, rdiv(RAY, how), block.timestamp - tau);
+        } else {
+          // no change
+        }
+        console.log("  way1:", way);
+
+        // vat.prod(); called by sway
+        vat.sway(way);
+
+        (bytes32 mp_,) = fb.read(msrc, mtag);
+        uint256 mp = uint256(mp_);
         uint256 par = vat.par();
+
+        delt = rdiv(mp, par);
+        tau = block.timestamp;
     }
 
     function file_vat(VatLike vl) external auth {
@@ -62,5 +96,3 @@ contract Vox is Math, Ward {
     }
 
 }
-
-

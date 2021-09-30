@@ -5,7 +5,7 @@ import { expect as want } from 'chai'
 import { ethers, artifacts, network } from 'hardhat'
 const { hexZeroPad } = ethers.utils
 
-import { send, N, wad, ray, rad } from './helpers'
+import { send, N, wad, ray, rad, BANKYEAR } from './helpers'
 
 const bn2b32 = (bn) => hexZeroPad(bn.toHexString(), 32);
 
@@ -15,6 +15,11 @@ const TAG = Buffer.from("feed".repeat(16), 'hex');
 
 const wait = async (t) => await network.provider.request({
   method: 'evm_increaseTime',
+  params: [t]
+});
+
+const warp = async (t) => await network.provider.request({
+  method: 'evm_setNextBlockTimestamp',
   params: [t]
 });
 
@@ -64,11 +69,9 @@ describe('Vox', ()=> {
 
   it('sway', async() => {
     const tx_jam_par = await vat.jam_par(wad(7));
+    await tx_jam_par.wait();
 
-    await network.provider.request({
-      method: 'evm_setNextBlockTimestamp',
-      params: [10**10]
-    });
+    await warp(10**10);
     await mine();
 
     const t0 = await vat.time();
@@ -100,6 +103,40 @@ describe('Vox', ()=> {
 
     const par2 = await vat.par();
     want(par2.eq(wad(14))).true
+
+  });
+
+  it('ricolike vox', async() => {
+    const t0 = 10**11;
+    await warp(t0);
+    await mine();
+    const t10 = t0 + 10;
+    await warp(t10);
+    await mine();
+    const t10_ = await vat.time();
+    want(t10_.toNumber()).equals(t10);
+
+    await send(vat.jam_par, wad(1.24));
+    await send(vox.file_how, ray(1.00000001));
+
+    await send(fb.push, TAG, bn2b32(wad(1.25)), 10**12, ADDRZERO);
+    await send(vox.poke);
+
+    await warp(t0 + 3600);
+    await mine();
+
+    await send(vox.poke);
+    const par2 = await vat.par();
+
+    debug('par2', par2.toString())
+
+    await warp(t0 + 2*3600);
+    await mine();
+
+    await send(vox.poke);
+    const par3 = await vat.par();
+    debug('par3', par3.toString());
+
 
   });
 

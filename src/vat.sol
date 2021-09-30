@@ -2,6 +2,7 @@
 
 /// vat.sol -- Dai CDP database
 
+// Copyright (C) 2021 monospace
 // Copyright (C) 2018 Rain <rainbreak@riseup.net>
 //
 // This program is free software: you can redistribute it and/or modify
@@ -19,9 +20,7 @@
 
 pragma solidity 0.8.6;
 
-// FIXME: This contract was altered compared to the production version.
-// It doesn't use LibNote anymore.
-// New deployments of this contract will need to include custom events (TO DO).
+import 'hardhat/console.sol';
 
 import './mixin/math.sol';
 import './mixin/ward.sol';
@@ -74,6 +73,7 @@ contract Vat is Math, Ward {
         live = true;
         par = RAY;
         way = RAY;
+        tau = block.timestamp;
     }
 
     // --- Administration ---
@@ -241,8 +241,11 @@ contract Vat is Math, Ward {
 
     // --- Rates ---
     function sway(uint256 r) external auth {
+        console.log("SWAY");
+        console.log("  way0", way);
         prod();
         way = r;
+        console.log("  way1", way);
     }
 
     function drip(bytes32 i) public {
@@ -258,9 +261,14 @@ contract Vat is Math, Ward {
         debt         = add(debt, rad);
     }
     function prod() public {
+        console.log("PROD");
         if (time() == tau) return;
+        console.log("  par0", par);
+        console.log("  tau0", tau);
         par = grow(par, way, time() - tau);
         tau = time();
+        console.log("  par1", par);
+        console.log("  tau1", tau);
     }
 
     function file_Line(uint Line_) external auth {

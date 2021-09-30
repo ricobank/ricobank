@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-// Copyright (C) rico
+// Copyright (C) monospace
 // Copyright (C) 2017, 2018, 2019 dbrock, rain, mrchico
 
 // This program is free software: you can redistribute it and/or modify
@@ -20,10 +20,6 @@ pragma solidity 0.8.6;
 
 import './mixin/ward.sol';
 
-// FIXME: This contract was altered compared to the production version.
-// It doesn't use LibNote anymore.
-// New deployments of this contract will need to include custom events (TO DO).
-
 contract GemFab {
   mapping(address=>uint) built;
   event Build(address indexed caller, address indexed gem);
@@ -35,6 +31,7 @@ contract GemFab {
     gem.rely(msg.sender);
     gem.deny(address(this));
     built[address(gem)] = block.timestamp;
+    emit Build(msg.sender, address(gem));
     return gem;
   }
 }
@@ -42,8 +39,8 @@ contract GemFab {
 contract Gem is Ward {
     string  public name;
     string  public symbol;
-    uint8   public decimals;
     uint256 public totalSupply;
+    uint8   public constant decimals = 18;
 
     uint256 public chainId;
 
@@ -61,7 +58,6 @@ contract Gem is Ward {
     constructor(string memory name_, string memory symbol_) {
         name = name_;
         symbol = symbol_;
-        decimals = 18;
         chainId = block.chainid;
         DOMAIN_SEPARATOR = keccak256(abi.encode(
             keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),

@@ -14,7 +14,7 @@ contract Ward {
       wards[usr] = true;
     }
     function deny(address usr) external auth {
-      emit Ward(msg.sender, usr, true);
+      emit Ward(msg.sender, usr, false);
       wards[usr] = false;
     }
     function ward(string memory reason) internal view {
