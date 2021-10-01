@@ -123,8 +123,8 @@ contract Vat is Math, Ward {
 
     // --- CDP Manipulation ---
     function frob(bytes32 i, address u, address v, address w, int dink, int dart) public {
-        // TODO drip?
-        // TODO prod?
+        drip(i);
+        prod();
         Urn memory urn = urns[i][u];
         Ilk memory ilk = ilks[i];
 
@@ -165,8 +165,8 @@ contract Vat is Math, Ward {
 
     // --- CDP Fungibility ---
     function fork(bytes32 ilk, address src, address dst, int dink, int dart) external {
-        // TODO drip?
-        // TODO prod?
+        drip(i);
+        prod();
         Urn storage u = urns[ilk][src];
         Urn storage v = urns[ilk][dst];
         Ilk storage i = ilks[ilk];
@@ -196,8 +196,8 @@ contract Vat is Math, Ward {
     // --- CDP Confiscation ---
     function grab(bytes32 i, address u, address v, address w, int dink, int dart) external auth {
         // TODO acl?
-        // TODO drip?
-        // TODO prod?
+        drip(i);
+        prod();
         Urn storage urn = urns[i][u];
         Ilk storage ilk = ilks[i];
 
