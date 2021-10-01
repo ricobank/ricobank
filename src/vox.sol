@@ -18,8 +18,6 @@ pragma solidity 0.8.6;
 import './mixin/math.sol';
 import './mixin/ward.sol';
 
-import 'hardhat/console.sol';
-
 interface VatLike {
     function par() external returns (uint256);
     function way() external returns (uint256);
@@ -51,12 +49,7 @@ contract Vox is Math, Ward {
     }
 
     function poke() public {
-        console.log("POKE (timestamp: ", block.timestamp);
         uint256 way = vat.way();
-        console.log("  way0:", way);
-        console.log("  delt:", delt);
-        console.log("  tau0:", tau);
-        console.log("  how :", how);
         // change the rate according to last tp/mp
         if (delt < RAY) {
           way = grow(way, how, block.timestamp - tau);
@@ -65,7 +58,6 @@ contract Vox is Math, Ward {
         } else {
           // no change
         }
-        console.log("  way1:", way);
 
         // vat.prod(); called by sway
         vat.sway(way);

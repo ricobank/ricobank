@@ -20,8 +20,6 @@
 
 pragma solidity 0.8.6;
 
-import 'hardhat/console.sol';
-
 import './mixin/math.sol';
 import './mixin/ward.sol';
 
@@ -234,11 +232,8 @@ contract Vat is Math, Ward {
     }
 
     function sway(uint256 r) external auth {
-        console.log("SWAY");
-        console.log("  way0", way);
         prod();
         way = r;
-        console.log("  way1", way);
     }
 
     function drip(bytes32 i) public {
@@ -255,14 +250,9 @@ contract Vat is Math, Ward {
     }
 
     function prod() public {
-        console.log("PROD");
         if (time() == tau) return;
-        console.log("  par0", par);
-        console.log("  tau0", tau);
         par = grow(par, way, time() - tau);
         tau = time();
-        console.log("  par1", par);
-        console.log("  tau1", tau);
     }
 
     function time() public view returns (uint256) {
