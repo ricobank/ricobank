@@ -103,11 +103,11 @@ describe('Vat', () => {
     const tx_frob1 = await vat.frob(i0, ALI, ALI, ALI, wad(100), wad(50));
     await tx_frob1.wait();
 
-    const debt1 = await vat.callStatic.wowed(i0, ALI);
+    const debt1 = await vat.callStatic.owed(i0, ALI);
 
     await network.provider.request({ method: 'evm_setNextBlockTimestamp', params: [t0 + 3] })
 
-    const debt2 = await vat.callStatic.wowed(i0, ALI);
+    const debt2 = await vat.callStatic.owed(i0, ALI);
 
   });
 

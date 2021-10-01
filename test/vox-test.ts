@@ -68,8 +68,7 @@ describe('Vox', ()=> {
   });
 
   it('sway', async() => {
-    const tx_jam_par = await vat.jam_par(wad(7));
-    await tx_jam_par.wait();
+    await send(vat.jam_par, wad(7));
 
     await warp(10**10);
     await mine();

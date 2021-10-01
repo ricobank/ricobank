@@ -56,11 +56,13 @@ contract Vat is Math, Ward {
     mapping (address => uint256)                   public dai;  // [rad]
     mapping (address => uint256)                   public sin;  // [rad]
 
+    mapping (bytes32 => mapping (address => bool)) public acl;  // ilk ACL
+    mapping (address => mapping (address => bool)) public can;  // urn approval
+
     uint256 public debt;  // Total Dai Issued    [rad]
     uint256 public vice;  // Total Unbacked Dai  [rad]
     uint256 public Line;  // Total Debt Ceiling  [rad]
     bool    public live;  // Active Flag
-
 
     uint256 public par;   // System Price (dai/ref)        [wad]
     uint256 public way;   // System Rate (SP growth rate)  [ray]
@@ -73,7 +75,7 @@ contract Vat is Math, Ward {
         live = true;
         par = RAY;
         way = RAY;
-        tau = block.timestamp;
+        tau = time();
     }
 
     // --- Administration ---
@@ -227,19 +229,10 @@ contract Vat is Math, Ward {
         debt   = add(debt,   rad);
     }
 
-    function owed(bytes32 i, address u) public returns (uint256 rad) {
-      drip(i);
-      return mul(ilks[i].rack, urns[i][u].art);
-    }
-    function rowed(bytes32 i, address u) public returns (uint256 ray) {
-      return owed(i, u) / WAD;
-    }
-    function wowed(bytes32 i, address u) public returns (uint256 wad) {
-      return owed(i, u) / RAY;
+    function plot(bytes32 ilk, uint mark) external auth {
+        ilks[ilk].mark = mark;
     }
 
-
-    // --- Rates ---
     function sway(uint256 r) external auth {
         console.log("SWAY");
         console.log("  way0", way);
@@ -260,6 +253,7 @@ contract Vat is Math, Ward {
         dai[vow]     = add(dai[vow], rad);
         debt         = add(debt, rad);
     }
+
     function prod() public {
         console.log("PROD");
         if (time() == tau) return;
@@ -269,6 +263,37 @@ contract Vat is Math, Ward {
         tau = time();
         console.log("  par1", par);
         console.log("  tau1", tau);
+    }
+
+    function time() public view returns (uint256) {
+        return block.timestamp;
+    }
+
+    function owed(bytes32 i, address u) public returns (uint256 rad) {
+      drip(i);
+      return mul(ilks[i].rack, urns[i][u].art);
+    }
+
+    function safe(bytes32 i, address u) public returns (bool) {
+        prod();
+        drip(i);
+        Urn memory urn = urns[i][u];
+        Ilk memory ilk = ilks[i];
+        uint256    ref = rmul(par, ilk.mark);
+        uint256    liq = rmul(ref, ilk.liqr);
+        uint256    tab = mul(urn.art, ilk.rack);
+        uint256    cut = mul(urn.ink, liq);
+        return (tab <= cut);
+    }
+
+    function hope(address usr) external {
+        can[msg.sender][usr] = true;
+    }
+    function nope(address usr) external {
+        can[msg.sender][usr] = false;
+    }
+    function wish(address bit, address usr) internal view returns (bool) {
+        return either(bit == usr, can[bit][usr] == true);
     }
 
     function file_Line(uint Line_) external auth {
@@ -288,7 +313,6 @@ contract Vat is Math, Ward {
         drip(i);
         ilks[i].duty = duty;
     }
-
     function file_open(bytes32 i, bool open) external auth {
         ilks[i].open = open;
     }
@@ -296,44 +320,12 @@ contract Vat is Math, Ward {
         acl[i][u] = bit;
     }
 
-    function time() public view returns (uint256) {
-        return block.timestamp;
-    }
-
     function jam_par(uint256 jam) external auth {
         par = jam;
     }
-
     // TODO force `spot` value without loss of precision  ?
     //function jam_spot
-
-    function safe(bytes32 i, address u) public returns (bool) {
-        prod();
-        drip(i);
-        Urn memory urn = urns[i][u];
-        Ilk memory ilk = ilks[i];
-        uint256    ref = rmul(par, ilk.mark);
-        uint256    liq = rmul(ref, ilk.liqr);
-        uint256    tab = mul(urn.art, ilk.rack);
-        uint256    cut = mul(urn.ink, liq);
-        return (tab <= cut);
-    }
-
-    function plot(bytes32 ilk, uint mark) external auth {
-        ilks[ilk].mark = mark;
-    }
-
-    mapping (bytes32 => mapping (address => bool)) public acl;
-
-    mapping (address => mapping (address => bool)) public can;
-    function hope(address usr) external {
-        can[msg.sender][usr] = true;
-    }
-    function nope(address usr) external {
-        can[msg.sender][usr] = false;
-    }
-    function wish(address bit, address usr) internal view returns (bool) {
-        return either(bit == usr, can[bit][usr] == true);
-    }
+    // TODO jam_time for consistent model spec ?
+    //function jam_time
 
 }
