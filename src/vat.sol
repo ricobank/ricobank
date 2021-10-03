@@ -165,7 +165,7 @@ contract Vat is Math, Ward {
 
     // --- CDP Fungibility ---
     function fork(bytes32 ilk, address src, address dst, int dink, int dart) external {
-        drip(i);
+        drip(ilk);
         prod();
         Urn storage u = urns[ilk][src];
         Urn storage v = urns[ilk][dst];

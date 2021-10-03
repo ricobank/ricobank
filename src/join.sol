@@ -94,6 +94,13 @@ contract GemJoin is Ward {
         vat.slip(ilk, msg.sender, -int(wad));
         require(gem.transfer(usr, wad), "GemJoin/failed-transfer");
     }
+
+    function flash(uint amt, address code, bytes calldata data) external returns (bytes memory result) {
+        gem.transfer(code, amt);
+        bool ok; (ok, result) = code.call(data);
+        gem.transferFrom(code, address(this), amt);
+        return result;
+    }
 }
 
 contract DaiJoin is Math, Ward {
