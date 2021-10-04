@@ -27,7 +27,6 @@ import './mixin/ward.sol';
 // New deployments of this contract will need to include custom events (TO DO).
 
 interface ERC20 {
-    function decimals() external view returns (uint);
     function transfer(address,uint) external returns (bool);
     function transferFrom(address,address,uint) external returns (bool);
 }
@@ -69,8 +68,7 @@ interface VatLike {
 contract GemJoin is Ward {
     VatLike public vat;   // CDP Engine
     bytes32 public ilk;   // Collateral Type
-    ERC20 public gem;
-    uint    public dec;
+    ERC20   public gem;
     uint    public live;  // Active Flag
 
     constructor(address vat_, bytes32 ilk_, address gem_) {
@@ -78,7 +76,6 @@ contract GemJoin is Ward {
         vat = VatLike(vat_);
         ilk = ilk_;
         gem = ERC20(gem_);
-        dec = gem.decimals();
     }
     function cage() external auth {
         live = 0;
@@ -101,6 +98,54 @@ contract GemJoin is Ward {
         gem.transferFrom(code, address(this), amt);
         return result;
     }
+}
+
+// TODO `live` / `cage` behavior
+contract GemMultiJoin is Ward {
+    VatLike public vat;   // CDP Engine
+    mapping(bytes32=>address) public gems;
+
+    constructor(address vat_) {
+        vat = VatLike(vat_);
+    }
+    function join(bytes32 ilk, address usr, uint wad) external {
+        require(int(wad) >= 0, "GemJoin/overflow");
+        require(gems[ilk] != address(0), "GemJoin/no-ilk-gem");
+        ERC20 gem = ERC20(gems[ilk]);
+        vat.slip(ilk, usr, int(wad));
+        require(gem.transferFrom(msg.sender, address(this), wad), "GemJoin/failed-transfer");
+    }
+    function exit(bytes32 ilk, address usr, uint wad) external {
+        require(wad <= 2 ** 255, "GemJoin/overflow");
+        require(gems[ilk] != address(0), "GemJoin/no-ilk-gem");
+        ERC20 gem = ERC20(gems[ilk]);
+        vat.slip(ilk, msg.sender, -int(wad));
+        require(gem.transfer(usr, wad), "GemJoin/failed-transfer");
+    }
+
+    function flash(address gem, uint amt, address code, bytes calldata data)
+      external returns (bool ok, bytes memory result)
+    {
+        ERC20(gem).transfer(code, amt);
+        (ok, result) = code.call(data);
+        ERC20(gem).transferFrom(code, address(this), amt);
+        return (ok, result);
+    }
+
+    function multiFlash(address[] calldata gems, uint[] calldata amts, address code, bytes calldata data)
+      external returns (bool ok, bytes memory result)
+    {
+        require(gems.length == amts.length, 'ERR_INVALID_LENGTHS');
+        for(uint i = 0; i < gems.length; i++) {
+          ERC20(gems[i]).transfer(code, amts[i]);
+        }
+        (ok, result) = code.call(data);
+        for(uint i = 0; i < gems.length; i++) {
+          ERC20(gems[i]).transferFrom(code, address(this), amts[i]);
+        }
+        return (ok, result);
+    }
+
 }
 
 contract DaiJoin is Math, Ward {
