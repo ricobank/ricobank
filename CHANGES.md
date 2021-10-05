@@ -30,3 +30,5 @@ To do:
 * `duty/rho` in Ilk type instead of outside CDP
 * `owed` exposed debt, `feed` on top of `spot`
 * `spot` -> `mark`/`plot`
+* multi-join
+* `dot` for external reference basket
