@@ -1,6 +1,6 @@
 import '@nomiclabs/hardhat-ethers'
 
-import './tasks/deploy'
+import './task/deploy'
 
 const { PRIVKEY, INFURA_PROJECT_ID } = process.env
 
