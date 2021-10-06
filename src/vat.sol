@@ -66,8 +66,6 @@ contract Vat is Math, Ward {
     uint256 public way;   // System Rate (SP growth rate)  [ray]
     uint256 public tau;   // Last prod
 
-    address public vow;   // Debt/surplus auction house
-
     // --- Init ---
     constructor() {
         live = true;
@@ -236,10 +234,11 @@ contract Vat is Math, Ward {
         way = r;
     }
 
-    function drip(bytes32 i) public {
+    function drip(bytes32 i) public auth {
         Ilk storage ilk = ilks[i];
         if (time() == ilk.rho) return;
         require(time() >= ilk.rho, 'Vat/invalid-now');
+        address vow  = msg.sender;
         uint256 prev = ilk.rack;
         uint256 rack = grow(prev, ilk.duty, time() - ilk.rho);
         int256  delt = diff(rack, prev);
@@ -288,9 +287,6 @@ contract Vat is Math, Ward {
 
     function file_Line(uint Line_) external auth {
         Line = Line_;
-    }
-    function file_vow(address vow_) external auth {
-        vow = vow_;
     }
     function file_line(bytes32 i, uint line) external auth {
         ilks[i].line = line;
