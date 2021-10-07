@@ -102,24 +102,23 @@ contract GemJoin is Ward {
 
 // TODO `live` / `cage` behavior
 contract GemMultiJoin is Ward {
-    VatLike public vat;   // CDP Engine
+    mapping(address=>bool)    public vats;
     mapping(bytes32=>address) public gems;
 
-    constructor(address vat_) {
-        vat = VatLike(vat_);
-    }
-    function join(bytes32 ilk, address usr, uint wad) external {
+    function join(address vat, bytes32 ilk, address usr, uint wad) external {
         require(int(wad) >= 0, "GemJoin/overflow");
         require(gems[ilk] != address(0), "GemJoin/no-ilk-gem");
+        require(vats[vat], "GemJoin/invalid-vat");
         ERC20 gem = ERC20(gems[ilk]);
-        vat.slip(ilk, usr, int(wad));
+        VatLike(vat).slip(ilk, usr, int(wad));
         require(gem.transferFrom(msg.sender, address(this), wad), "GemJoin/failed-transfer");
     }
-    function exit(bytes32 ilk, address usr, uint wad) external {
+    function exit(address vat, bytes32 ilk, address usr, uint wad) external {
         require(wad <= 2 ** 255, "GemJoin/overflow");
         require(gems[ilk] != address(0), "GemJoin/no-ilk-gem");
+        require(vats[vat], "GemJoin/invalid-vat");
         ERC20 gem = ERC20(gems[ilk]);
-        vat.slip(ilk, msg.sender, -int(wad));
+        VatLike(vat).slip(ilk, msg.sender, -int(wad));
         require(gem.transfer(usr, wad), "GemJoin/failed-transfer");
     }
 
@@ -145,6 +144,17 @@ contract GemMultiJoin is Ward {
         }
         return (ok, result);
     }
+
+    function file_gem(bytes32 ilk, address gem) external {
+        ward();
+        gems[ilk] = gem;
+    }
+
+    function file_vat(address vat, bool bit) external {
+        ward();
+        vats[vat] = bit;
+    }
+
 
 }
 
