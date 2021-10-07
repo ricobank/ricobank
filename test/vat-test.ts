@@ -6,6 +6,8 @@ import { ethers, artifacts, network } from 'hardhat'
 
 import { send, wad, ray, rad, N } from './helpers';
 
+const gempack = require('../lib/gemfab')
+let gemfab
 
 const UMAX = N(2).pow(N(256)).sub(N(1));
 
@@ -21,12 +23,15 @@ describe('Vat', () => {
   let daijoin; let daijoin_type;
   let gemjoin; let gemjoin_type;
   before(async() => {
+    await gempack.init();
     [ali, bob, cat] = await ethers.getSigners();
     [ALI, BOB, CAT] = [ali, bob, cat].map(signer => signer.address);
     vat_type = await ethers.getContractFactory('./src/vat.sol:Vat', ali);
-    gem_type = await ethers.getContractFactory('./src/gem.sol:Gem', ali);
+    const gem_artifacts = gempack.dapp._raw.types.Gem.artifacts
+    gem_type = ethers.ContractFactory.fromSolidity(gem_artifacts, ali);
     daijoin_type = await ethers.getContractFactory('./src/join.sol:DaiJoin', ali);
     gemjoin_type = await ethers.getContractFactory('./src/join.sol:GemJoin', ali);
+
   });
   beforeEach(async() => {
     vat = await vat_type.deploy();
