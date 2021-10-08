@@ -51,7 +51,7 @@ contract Vat is Math, Ward {
     mapping (bytes32 => Ilk)                       public ilks;
     mapping (bytes32 => mapping (address => Urn )) public urns;
     mapping (bytes32 => mapping (address => uint)) public gem;  // [wad]
-    mapping (address => uint256)                   public dai;  // [rad]
+    mapping (address => uint256)                   public joy;  // [rad]
     mapping (address => uint256)                   public sin;  // [rad]
 
     mapping (bytes32 => mapping (address => bool)) public acl;  // ilk ACL
@@ -62,7 +62,7 @@ contract Vat is Math, Ward {
     uint256 public Line;  // Total Debt Ceiling  [rad]
     bool    public live;  // Active Flag
 
-    uint256 public par;   // System Price (dai/ref)        [wad]
+    uint256 public par;   // System Price (joy/ref)        [wad]
     uint256 public way;   // System Rate (SP growth rate)  [ray]
     uint256 public tau;   // Last prod
 
@@ -102,8 +102,8 @@ contract Vat is Math, Ward {
     }
     function move(address src, address dst, uint256 rad) external {
         require(wish(src, msg.sender), "Vat/not-allowed");
-        dai[src] = sub(dai[src], rad);
-        dai[dst] = add(dai[dst], rad);
+        joy[src] = sub(joy[src], rad);
+        joy[dst] = add(joy[dst], rad);
     }
 
     function lock(bytes32 i, uint amt) external {
@@ -154,7 +154,7 @@ contract Vat is Math, Ward {
         require(either(urn.art == 0, tab >= ilk.dust), "Vat/dust");
 
         gem[i][v] = sub(gem[i][v], dink);
-        dai[w]    = add(dai[w],    dtab);
+        joy[w]    = add(joy[w],    dtab);
 
         urns[i][u] = urn;
         ilks[i]    = ilk;
@@ -210,13 +210,13 @@ contract Vat is Math, Ward {
     function heal(uint rad) external {
         address u = msg.sender;
         sin[u] = sub(sin[u], rad);
-        dai[u] = sub(dai[u], rad);
+        joy[u] = sub(joy[u], rad);
         vice   = sub(vice,   rad);
         debt   = sub(debt,   rad);
     }
     function suck(address u, address v, uint rad) external auth {
         sin[u] = add(sin[u], rad);
-        dai[v] = add(dai[v], rad);
+        joy[v] = add(joy[v], rad);
         vice   = add(vice,   rad);
         debt   = add(debt,   rad);
     }
@@ -241,7 +241,7 @@ contract Vat is Math, Ward {
         int256  rad  = mul(ilk.Art, delt);
         ilk.rho      = time();
         ilk.rack     = add(ilk.rack, delt);
-        dai[vow]     = add(dai[vow], rad);
+        joy[vow]     = add(joy[vow], rad);
         debt         = add(debt, rad);
     }
 

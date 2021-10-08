@@ -6,8 +6,9 @@
     "init": "git submodule update --init --recursive && npm run init:feedbase && npm run init:gemfab",
     "init:feedbase": "cd lib/feedbase && npm i",
     "init:gemfab": "cd lib/gemfab && npm i",
-    "build:all": "npm run build:sol && npm run build:feedbase && npm run build:gemfab",
+    "build:all": "npm run build:ts && npm run build:sol && npm run build:feedbase && npm run build:gemfab",
     "build:sol": "hh compile",
+    "build:ts": "tsc",
     "build:feedbase": "cd lib/feedbase && npm run build",
     "build:gemfab": "cd lib/gemfab && npm run build",
     "test": "npm run build:sol && ts-mocha --timeout 10000 test/*"

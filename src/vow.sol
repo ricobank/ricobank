@@ -3,7 +3,7 @@
 pragma solidity 0.8.6;
 
 interface VatLike {
-  function dai() external returns (uint);
+  function joy() external returns (uint);
   function vice() external returns (uint);
   function heal(uint amt) external;
   function drip(bytes32 ilk) external;
@@ -15,9 +15,9 @@ interface BPool {
     function view_exactAmountOut(address gem, uint amt) external returns (uint);
 }
 
-interface DaiJoin {
-    function exit(uint amt) external;
-    function join(uint amt) external;
+interface JointLike {
+    function joy_exit(address vat, address joy, address usr, uint amt) external;
+    function joy_join(address vat, address joy, address usr, uint amt) external;
 }
 
 interface GemLike {
@@ -29,7 +29,7 @@ interface GemLike {
 
 contract Vow {
     VatLike public vat;
-    DaiJoin public daijoin;
+    JointLike public joint;
     GemLike public RICO;
     GemLike public BANK;
     BPool public pool;
@@ -38,8 +38,8 @@ contract Vow {
         for(uint i = 0; i < ilks.length; i++) {
             vat.drip(ilks[i]);
         }
-        uint dai = vat.dai();
-        daijoin.exit(dai);
+        uint joy = vat.joy();
+        joint.joy_exit(address(vat), address(RICO), address(this), joy);
     }
 
     // sell surplus rico for bank, burn bank
@@ -54,12 +54,12 @@ contract Vow {
         uint need = pool.view_exactAmountOut(address(RICO), vice);
         BANK.mint(address(this), need);
         pool.swap_exactAmountOut(address(RICO), vice);
-        daijoin.join(vice);
+        joint.joy_exit(address(vat), address(RICO), address(this), vice);
         vat.heal(vice);
     }
 
     function reapprove() public {
-        RICO.approve(address(daijoin), type(uint256).max);
+        RICO.approve(address(joint), type(uint256).max);
         RICO.approve(address(pool), type(uint256).max);
         BANK.approve(address(pool), type(uint256).max);
     }

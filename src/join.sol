@@ -22,16 +22,12 @@ pragma solidity 0.8.6;
 import './mixin/math.sol';
 import './mixin/ward.sol';
 
-// FIXME: This contract was altered compared to the production version.
-// It doesn't use LibNote anymore.
-// New deployments of this contract will need to include custom events (TO DO).
-
 interface ERC20 {
     function transfer(address,uint) external returns (bool);
     function transferFrom(address,address,uint) external returns (bool);
 }
 
-interface MintBurn {
+interface GemLike {
     function mint(address,uint) external;
     function burn(address,uint) external;
 }
@@ -40,30 +36,6 @@ interface VatLike {
     function slip(bytes32,address,int) external;
     function move(address,address,uint) external;
 }
-
-/*
-    Here we provide *adapters* to connect the Vat to arbitrary external
-    token implementations, creating a bounded context for the Vat. The
-    adapters here are provided as working examples:
-
-      - `GemJoin`: For well behaved ERC20 tokens, with simple transfer
-                   semantics.
-
-      - `ETHJoin`: For native Ether.
-
-      - `DaiJoin`: For connecting internal Dai balances to an external
-                   `DSToken` implementation.
-
-    In practice, adapter implementations will be varied and specific to
-    individual collateral types, accounting for different transfer
-    semantics and token standards.
-
-    Adapters need to implement two basic methods:
-
-      - `join`: enter collateral into the system
-      - `exit`: remove collateral from the system
-
-*/
 
 contract GemJoin is Ward {
     VatLike public vat;   // CDP Engine
@@ -100,84 +72,27 @@ contract GemJoin is Ward {
     }
 }
 
-// TODO `live` / `cage` behavior
-contract GemMultiJoin is Ward {
-    mapping(address=>bool)    public vats;
-    mapping(bytes32=>address) public gems;
-
-    function join(address vat, bytes32 ilk, address usr, uint wad) external {
-        require(int(wad) >= 0, "GemJoin/overflow");
-        require(gems[ilk] != address(0), "GemJoin/no-ilk-gem");
-        require(vats[vat], "GemJoin/invalid-vat");
-        ERC20 gem = ERC20(gems[ilk]);
-        VatLike(vat).slip(ilk, usr, int(wad));
-        require(gem.transferFrom(msg.sender, address(this), wad), "GemJoin/failed-transfer");
-    }
-    function exit(address vat, bytes32 ilk, address usr, uint wad) external {
-        require(wad <= 2 ** 255, "GemJoin/overflow");
-        require(gems[ilk] != address(0), "GemJoin/no-ilk-gem");
-        require(vats[vat], "GemJoin/invalid-vat");
-        ERC20 gem = ERC20(gems[ilk]);
-        VatLike(vat).slip(ilk, msg.sender, -int(wad));
-        require(gem.transfer(usr, wad), "GemJoin/failed-transfer");
-    }
-
-    function flash(address gem, uint amt, address code, bytes calldata data)
-      external returns (bool ok, bytes memory result)
-    {
-        ERC20(gem).transfer(code, amt);
-        (ok, result) = code.call(data);
-        ERC20(gem).transferFrom(code, address(this), amt);
-        return (ok, result);
-    }
-
-    function multiFlash(address[] calldata gems, uint[] calldata amts, address code, bytes calldata data)
-      external returns (bool ok, bytes memory result)
-    {
-        require(gems.length == amts.length, 'ERR_INVALID_LENGTHS');
-        for(uint i = 0; i < gems.length; i++) {
-          ERC20(gems[i]).transfer(code, amts[i]);
-        }
-        (ok, result) = code.call(data);
-        for(uint i = 0; i < gems.length; i++) {
-          ERC20(gems[i]).transferFrom(code, address(this), amts[i]);
-        }
-        return (ok, result);
-    }
-
-    function file_gem(bytes32 ilk, address gem) external {
-        ward();
-        gems[ilk] = gem;
-    }
-
-    function file_vat(address vat, bool bit) external {
-        ward();
-        vats[vat] = bit;
-    }
-
-
-}
-
 contract DaiJoin is Math, Ward {
     VatLike public vat;      // CDP Engine
-    MintBurn public dai;  // Stablecoin Token
+    GemLike public joy;  // Stablecoin Token
     uint    public live;     // Active Flag
 
-    constructor(address vat_, address dai_) {
+    constructor(address vat_, address joy_) {
         live = 1;
         vat = VatLike(vat_);
-        dai = MintBurn(dai_);
+        joy = GemLike(joy_);
     }
     function cage() external auth {
         live = 0;
     }
     function join(address usr, uint wad) external {
         vat.move(address(this), usr, mul(RAY, wad));
-        dai.burn(msg.sender, wad);
+        joy.burn(msg.sender, wad);
     }
     function exit(address usr, uint wad) external {
         require(live == 1, "DaiJoin/not-live");
         vat.move(msg.sender, address(this), mul(RAY, wad));
-        dai.mint(usr, wad);
+        joy.mint(usr, wad);
     }
 }
+
