@@ -24,7 +24,6 @@ import './mixin/math.sol';
 import './mixin/ward.sol';
 
 contract Vat is Math, Ward {
-    // --- Data ---
     struct Ilk {
         uint256 Art;   // Total Normalised Debt     [wad]
         uint256 rack;  // Accumulated Rate          [ray]
@@ -54,7 +53,7 @@ contract Vat is Math, Ward {
     mapping (address => uint256)                   public joy;  // [rad]
     mapping (address => uint256)                   public sin;  // [rad]
 
-    mapping (bytes32 => mapping (address => bool)) public acl;  // ilk ACL
+    mapping (bytes32 => mapping (address => bool)) public sys;  // ilk ACL
     mapping (address => mapping (address => bool)) public can;  // urn approval
 
     uint256 public debt;  // Total Dai Issued    [rad]
@@ -66,7 +65,6 @@ contract Vat is Math, Ward {
     uint256 public way;   // System Rate (SP growth rate)  [ray]
     uint256 public tau;   // Last prod
 
-    // --- Init ---
     constructor() {
         live = true;
         par = RAY;
@@ -74,8 +72,23 @@ contract Vat is Math, Ward {
         tau = time();
     }
 
-    // --- Administration ---
-    function init(bytes32 ilk) external auth {
+    function trip() internal view {
+        require(live, 'ERR_LIVE');
+    }
+
+    function stop() external {
+        ward();
+        live = false;
+    }
+
+    function flow() external {
+        ward();
+        live = true;
+    }
+
+    function init(bytes32 ilk) external {
+        ward();
+        trip();
         require(ilks[ilk].rack == 0, "Vat/ilk-already-init");
         ilks[ilk] = Ilk({
             rack: RAY,
@@ -87,23 +100,21 @@ contract Vat is Math, Ward {
         });
     }
 
-    function cage() external auth {
-        live = false;
+    function owed(bytes32 i, address u) public returns (uint256 rad) {
+      drip(i);
+      return mul(ilks[i].rack, urns[i][u].art);
     }
 
-    // --- Fungibility ---
-    function slip(bytes32 ilk, address usr, int256 wad) external auth {
-        gem[ilk][usr] = add(gem[ilk][usr], wad);
-    }
-    function flux(bytes32 ilk, address src, address dst, uint256 wad) external {
-        require(wish(src, msg.sender), "Vat/not-allowed");
-        gem[ilk][src] = sub(gem[ilk][src], wad);
-        gem[ilk][dst] = add(gem[ilk][dst], wad);
-    }
-    function move(address src, address dst, uint256 rad) external {
-        require(wish(src, msg.sender), "Vat/not-allowed");
-        joy[src] = sub(joy[src], rad);
-        joy[dst] = add(joy[dst], rad);
+    function safe(bytes32 i, address u) public returns (bool) {
+        prod();
+        drip(i);
+        Urn memory urn = urns[i][u];
+        Ilk memory ilk = ilks[i];
+        uint256    ref = rmul(par, ilk.mark);
+        uint256    liq = rmul(ref, ilk.liqr);
+        uint256    tab = mul(urn.art, ilk.rack);
+        uint256    cut = mul(urn.ink, liq);
+        return (tab <= cut);
     }
 
     function lock(bytes32 i, uint amt) external {
@@ -119,13 +130,13 @@ contract Vat is Math, Ward {
         frob(i, msg.sender, msg.sender, msg.sender, 0, -int(amt));
     }
 
-    // --- CDP Manipulation ---
     function frob(bytes32 i, address u, address v, address w, int dink, int dart) public {
+        trip();
         drip(i);
         Urn memory urn = urns[i][u];
         Ilk memory ilk = ilks[i];
 
-        require(ilk.open || acl[i][msg.sender], 'err-acl');
+        require(ilk.open || sys[i][msg.sender], 'err-sys');
 
         // ilk has been initialised
         require(ilk.rack != 0, "Vat/ilk-not-init");
@@ -160,14 +171,14 @@ contract Vat is Math, Ward {
         ilks[i]    = ilk;
     }
 
-    // --- CDP Fungibility ---
     function fork(bytes32 ilk, address src, address dst, int dink, int dart) external {
+        trip();
         drip(ilk);
         Urn storage u = urns[ilk][src];
         Urn storage v = urns[ilk][dst];
         Ilk storage i = ilks[ilk];
 
-        require(i.open || acl[ilk][msg.sender], 'err-acl');
+        require(i.open || sys[ilk][msg.sender], 'err-sys');
 
         u.ink = sub(u.ink, dink);
         u.art = sub(u.art, dart);
@@ -189,8 +200,9 @@ contract Vat is Math, Ward {
         require(either(vtab >= i.dust, v.art == 0), "Vat/dust-dst");
     }
 
-    // --- CDP Confiscation ---
-    function grab(bytes32 i, address u, address v, address w, int dink, int dart) external auth {
+    function grab(bytes32 i, address u, address v, address w, int dink, int dart) external {
+        ward();
+        trip();
         drip(i);
         Urn storage urn = urns[i][u];
         Ilk storage ilk = ilks[i];
@@ -206,31 +218,29 @@ contract Vat is Math, Ward {
         vice      = sub(vice,      dtab);
     }
 
-    // --- Settlement ---
-    function heal(uint rad) external {
-        address u = msg.sender;
-        sin[u] = sub(sin[u], rad);
-        joy[u] = sub(joy[u], rad);
-        vice   = sub(vice,   rad);
-        debt   = sub(debt,   rad);
-    }
-    function suck(address u, address v, uint rad) external auth {
-        sin[u] = add(sin[u], rad);
-        joy[v] = add(joy[v], rad);
-        vice   = add(vice,   rad);
-        debt   = add(debt,   rad);
-    }
-
-    function plot(bytes32 ilk, uint mark) external auth {
+    function plot(bytes32 ilk, uint mark) external {
+        ward();
+        trip();
         ilks[ilk].mark = mark;
     }
 
-    function sway(uint256 r) external auth {
+    function sway(uint256 r) external {
+        ward();
+        trip();
         prod();
         way = r;
     }
 
-    function drip(bytes32 i) public auth {
+    function spar(uint256 jam) external {
+        ward();
+        trip();
+        prod();
+        par = jam;
+    }
+
+    function drip(bytes32 i) public {
+        ward();
+        trip();
         Ilk storage ilk = ilks[i];
         if (time() == ilk.rho) return;
         require(time() >= ilk.rho, 'Vat/invalid-now');
@@ -246,30 +256,45 @@ contract Vat is Math, Ward {
     }
 
     function prod() public {
+        trip();
         if (time() == tau) return;
         par = grow(par, way, time() - tau);
         tau = time();
     }
 
-    function time() public view returns (uint256) {
-        return block.timestamp;
+    function slip(bytes32 ilk, address usr, int256 wad) external {
+        ward();
+        trip();
+        gem[ilk][usr] = add(gem[ilk][usr], wad);
+    }
+    function flux(bytes32 ilk, address src, address dst, uint256 wad) external {
+        trip(); // TODO
+        require(wish(src, msg.sender), "Vat/not-allowed");
+        gem[ilk][src] = sub(gem[ilk][src], wad);
+        gem[ilk][dst] = add(gem[ilk][dst], wad);
+    }
+    function move(address src, address dst, uint256 rad) external {
+        trip(); // TODO
+        require(wish(src, msg.sender), "Vat/not-allowed");
+        joy[src] = sub(joy[src], rad);
+        joy[dst] = add(joy[dst], rad);
     }
 
-    function owed(bytes32 i, address u) public returns (uint256 rad) {
-      drip(i);
-      return mul(ilks[i].rack, urns[i][u].art);
+    function heal(uint rad) external {
+        trip();
+        address u = msg.sender;
+        sin[u] = sub(sin[u], rad);
+        joy[u] = sub(joy[u], rad);
+        vice   = sub(vice,   rad);
+        debt   = sub(debt,   rad);
     }
-
-    function safe(bytes32 i, address u) public returns (bool) {
-        prod();
-        drip(i);
-        Urn memory urn = urns[i][u];
-        Ilk memory ilk = ilks[i];
-        uint256    ref = rmul(par, ilk.mark);
-        uint256    liq = rmul(ref, ilk.liqr);
-        uint256    tab = mul(urn.art, ilk.rack);
-        uint256    cut = mul(urn.ink, liq);
-        return (tab <= cut);
+    function suck(address u, address v, uint rad) external {
+        ward();
+        trip();
+        sin[u] = add(sin[u], rad);
+        joy[v] = add(joy[v], rad);
+        vice   = add(vice,   rad);
+        debt   = add(debt,   rad);
     }
 
     function hope(address usr) external {
@@ -282,33 +307,29 @@ contract Vat is Math, Ward {
         return either(bit == usr, can[bit][usr] == true);
     }
 
-    function file_Line(uint Line_) external auth {
-        Line = Line_;
-    }
-    function file_line(bytes32 i, uint line) external auth {
-        ilks[i].line = line;
-    }
-    function file_dust(bytes32 i, uint dust) external auth {
-        ilks[i].dust = dust;
-    }
-    // TODO file_duty might be special considering drip requirement
-    function file_duty(bytes32 i, uint duty) external auth {
-        drip(i);
-        ilks[i].duty = duty;
-    }
-    function file_open(bytes32 i, bool open) external auth {
-        ilks[i].open = open;
-    }
-    function file_acl(bytes32 i, address u, bool bit) external auth {
-        acl[i][u] = bit;
+    function wire(bytes32 i, address u, bool bit) external {
+        ward();
+        sys[i][u] = bit;
     }
 
-    function jam_par(uint256 jam) external auth {
-        par = jam;
+    function file(bytes32 key, uint256 val) external {
+        ward();
+        trip();
+        if (key == "Line") { Line = val;
+        } else { revert("ERR_FILE_KEY"); }
     }
-    // TODO force `spot` value without loss of precision  ?
-    //function jam_spot
-    // TODO jam_time for consistent model spec ?
-    //function jam_time
+    function filk(bytes32 ilk, bytes32 key, uint val) external {
+        ward();
+        trip();
+        Ilk storage i = ilks[ilk];
+               if (key == "line") { i.line = val;
+        } else if (key == "dust") { i.dust = val;
+        } else if (key == "duty") { drip(ilk); i.duty = val; // TODO check
+        } else if (key == "open") { i.open = (val == 0 ? false : true); // TODO check
+        } else { revert("ERR_FILK_KEY"); }
+    }
 
+    function time() public view returns (uint256) {
+        return block.timestamp;
+    }
 }

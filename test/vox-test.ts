@@ -64,11 +64,11 @@ describe('Vox', ()=> {
     await send(vox.file_vat, vat.address);
     await send(vox.file_feed, ALI, TAG);
 
-    await send(vat.jam_par, wad(7));
+    await send(vat.spar, wad(7));
   });
 
   it('sway', async() => {
-    await send(vat.jam_par, wad(7));
+    await send(vat.spar, wad(7));
 
     await warp(10**10);
     await mine();
@@ -115,7 +115,7 @@ describe('Vox', ()=> {
     const t10_ = await vat.time();
     want(t10_.toNumber()).equals(t10);
 
-    await send(vat.jam_par, wad(1.24));
+    await send(vat.spar, wad(1.24));
     await send(vox.file_how, ray(1.00000001));
 
     await send(fb.push, TAG, bn2b32(wad(1.25)), 10**12, ADDRZERO);

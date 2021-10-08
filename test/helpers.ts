@@ -2,13 +2,27 @@ import _debug from 'debug'
 const debug = _debug('rico:test');
 import { expect as want } from 'chai'
 
-import { BigNumber } from 'ethers';
+import { BigNumber, utils } from 'ethers';
 import { BigDecimal } from 'bigdecimal';
 
 export const BANKYEAR = ((365 * 24) + 6) * 3600;
 export const WAD = N(10).pow(N(18))
 export const RAY = N(10).pow(N(27))
 export const RAD = N(10).pow(N(45))
+
+export function b32 (arg: any): Buffer {
+  if (arg._isBigNumber) {
+    const hex = arg.toHexString()
+    const buff = Buffer.from(hex.slice(2), 'hex')
+    const b32 = utils.zeroPad(buff, 32)
+    return b32
+  } else if (typeof(arg) == 'string') {
+    const b32 = Buffer.from(arg + '\0'.repeat(32 - arg.length));
+    return b32
+  } else {
+    throw new Error(`b32 takes a BigNumber or string, got ${arg}, a ${typeof (arg)}`)
+  }
+}
 
 export async function send(...args) {
   const f = args[0];

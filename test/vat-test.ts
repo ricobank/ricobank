@@ -4,7 +4,7 @@ import { expect as want } from 'chai'
 
 import { ethers, artifacts, network } from 'hardhat'
 
-import { send, wad, ray, rad, N } from './helpers';
+import { send, wad, ray, rad, N, b32 } from './helpers';
 
 const gempack = require('../lib/gemfab')
 let gemfab
@@ -47,16 +47,16 @@ describe('Vat', () => {
 
     await send(dai.approve, daijoin.address, UMAX);
     await send(gem.approve, gemjoin.address, UMAX);
-    await send(dai.mint, ALI, wad(1000).toString());
-    await send(gem.mint, ALI, wad(1000).toString());
+    await send(dai.mint, ALI, wad(1000));
+    await send(gem.mint, ALI, wad(1000));
 
     await send(vat.init, i0);
-    await send(vat.file_Line, rad(1000).toString());
-    await send(vat.file_line, i0, rad(1000).toString());
+    await send(vat.file, b32("Line"), rad(1000));
+    await send(vat.filk, i0, b32("line"), rad(1000));
 
     await send(vat.plot, i0, ray(1).toString());
 
-    await send(gemjoin.join, ALI, wad(1000).toString());
+    await send(gemjoin.join, ALI, wad(1000));
   });
 
   it('init conditions', async()=>{
@@ -96,8 +96,7 @@ describe('Vat', () => {
 
     await network.provider.request({ method: 'evm_setNextBlockTimestamp', params: [t0 + 1] })
 
-    const tx_file_duty = await vat.file_duty(i0, _2pc);
-    await tx_file_duty.wait();
+    await send(vat.filk, i0, b32("duty"), _2pc);
 
     const t1 = (await vat.time()).toNumber();
 

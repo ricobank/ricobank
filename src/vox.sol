@@ -70,20 +70,24 @@ contract Vox is Math, Ward {
         tau = block.timestamp;
     }
 
-    function file_vat(VatLike vl) external auth {
+    function file_vat(VatLike vl) external {
+        ward();
         vat = vl;
     }
 
-    function file_feedbase(FeedbaseLike fbl) external auth {
+    function file_feedbase(FeedbaseLike fbl) external {
+        ward();
         fb = fbl;
     }
 
-    function file_feed(address src, bytes32 tag) external auth {
+    function file_feed(address src, bytes32 tag) external {
+        ward();
         msrc = src;
         mtag = tag;
     }
 
-    function file_how(uint256 how_) external auth {
+    function file_how(uint256 how_) external {
+        ward();
         how = how_;
     }
 

@@ -49,7 +49,8 @@ contract GemJoin is Ward {
         ilk = ilk_;
         gem = ERC20(gem_);
     }
-    function cage() external auth {
+    function cage() external {
+        ward();
         live = 0;
     }
     function join(address usr, uint wad) external {
@@ -82,7 +83,8 @@ contract DaiJoin is Math, Ward {
         vat = VatLike(vat_);
         joy = GemLike(joy_);
     }
-    function cage() external auth {
+    function cage() external {
+        ward();
         live = 0;
     }
     function join(address usr, uint wad) external {
