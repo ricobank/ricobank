@@ -19,9 +19,8 @@ describe('Vat', () => {
   let ali, bob, cat;
   let ALI, BOB, CAT;
   let vat; let vat_type;
-  let dai, gem; let gem_type;
-  let daijoin; let daijoin_type;
-  let gemjoin; let gemjoin_type;
+  let joy, gem; let gem_type;
+  let vault; let vault_type;
   before(async() => {
     await gempack.init();
     [ali, bob, cat] = await ethers.getSigners();
@@ -29,34 +28,34 @@ describe('Vat', () => {
     vat_type = await ethers.getContractFactory('./src/vat.sol:Vat', ali);
     const gem_artifacts = gempack.dapp._raw.types.Gem.artifacts
     gem_type = ethers.ContractFactory.fromSolidity(gem_artifacts, ali);
-    daijoin_type = await ethers.getContractFactory('./src/join.sol:DaiJoin', ali);
-    gemjoin_type = await ethers.getContractFactory('./src/join.sol:GemJoin', ali);
+    vault_type = await ethers.getContractFactory('./src/vault.sol:Vault', ali);
 
   });
   beforeEach(async() => {
     vat = await vat_type.deploy();
-    dai = await gem_type.deploy('dai', 'DAI');
+    joy = await gem_type.deploy('joy', 'JOY');
     gem = await gem_type.deploy('gem', 'GEM');
-    daijoin = await daijoin_type.deploy(vat.address, dai.address);
-    gemjoin = await gemjoin_type.deploy(vat.address, Buffer.alloc(32), gem.address);
+    vault = await vault_type.deploy();
 
-    await send(vat.rely, daijoin.address);
-    await send(vat.rely, gemjoin.address);
-    await send(dai.rely, daijoin.address);
-    await send(gem.rely, gemjoin.address);
+    await send(vat.rely, vault.address);
+    await send(joy.rely, vault.address);
+    await send(gem.rely, vault.address);
 
-    await send(dai.approve, daijoin.address, UMAX);
-    await send(gem.approve, gemjoin.address, UMAX);
-    await send(dai.mint, ALI, wad(1000));
+    await send(joy.approve, vault.address, UMAX);
+    await send(gem.approve, vault.address, UMAX);
+    await send(joy.mint, ALI, wad(1000));
     await send(gem.mint, ALI, wad(1000));
+
+    await send(vault.file_gem, i0, gem.address);
+    await send(vault.file_vat, vat.address, true);
+    await send(vault.file_joy, joy.address, true);
+    await send(vault.gem_join, vat.address, i0, ALI, wad(1000));
 
     await send(vat.init, i0);
     await send(vat.file, b32("Line"), rad(1000));
     await send(vat.filk, i0, b32("line"), rad(1000));
 
     await send(vat.plot, i0, ray(1).toString());
-
-    await send(gemjoin.join, ALI, wad(1000));
   });
 
   it('init conditions', async()=>{

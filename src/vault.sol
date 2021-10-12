@@ -20,7 +20,7 @@ interface VatLike {
     function move(address,address,uint) external;
 }
 
-contract MultiJoin is Math, Ward {
+contract Vault is Math, Ward {
     mapping(address=>bool)    public vats;
     mapping(address=>bool)    public joys;
     mapping(bytes32=>address) public gems;
@@ -57,16 +57,7 @@ contract MultiJoin is Math, Ward {
         GemLike(joy).mint(usr, wad);
     }
 
-    function flash(address gem, uint amt, address code, bytes calldata data)
-      external returns (bool ok, bytes memory result)
-    {
-        GemLike(gem).transfer(code, amt);
-        (ok, result) = code.call(data);
-        GemLike(gem).transferFrom(code, address(this), amt);
-        return (ok, result);
-    }
-
-    function multiFlash(address[] calldata gems, uint[] calldata amts, address code, bytes calldata data)
+    function flash(address[] calldata gems, uint[] calldata amts, address code, bytes calldata data)
       external returns (bool ok, bytes memory result)
     {
         require(gems.length == amts.length, 'ERR_INVALID_LENGTHS');
