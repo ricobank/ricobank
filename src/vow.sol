@@ -2,11 +2,14 @@
 
 pragma solidity 0.8.9;
 
+import './mixin/math.sol';
+
 interface VatLike {
-  function joy() external returns (uint);
-  function vice() external returns (uint);
-  function heal(uint amt) external;
-  function drip(bytes32 ilk) external;
+    function joy() external returns (uint);
+    function vice() external returns (uint);
+    function heal(uint amt) external;
+    function drip(bytes32 ilk) external;
+    function rake() external returns (uint);
 }
 
 interface BPool {
@@ -27,7 +30,7 @@ interface GemLike {
     function balanceOf(address usr) external returns (uint);
 }
 
-contract Vow {
+contract Vow is Math {
     VatLike public vat;
     VaultLike public joint;
     GemLike public RICO;
@@ -38,8 +41,8 @@ contract Vow {
         for(uint i = 0; i < ilks.length; i++) {
             vat.drip(ilks[i]);
         }
-        uint joy = vat.joy();
-        joint.joy_exit(address(vat), address(RICO), address(this), joy);
+        uint rake = vat.rake() / RAY;
+        joint.joy_exit(address(vat), address(RICO), address(this), rake);
     }
 
     // sell surplus rico for bank, burn bank

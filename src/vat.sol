@@ -239,20 +239,31 @@ contract Vat is Math, Ward {
     }
 
     function drip(bytes32 i) public {
-        ward();
-        trip();
         Ilk storage ilk = ilks[i];
-        if (time() == ilk.rho) return;
-        require(time() >= ilk.rho, 'Vat/invalid-now');
-        address vow  = msg.sender;
+        uint256 t = time();
+        if (t == ilk.rho) return;
+        require(t >= ilk.rho, 'Vat/invalid-now');
+
+        trip();
+
+        address vow  = address(0);
         uint256 prev = ilk.rack;
-        uint256 rack = grow(prev, ilk.duty, time() - ilk.rho);
+        uint256 rack = grow(prev, ilk.duty, t - ilk.rho);
         int256  delt = diff(rack, prev);
         int256  rad  = mul(ilk.Art, delt);
         ilk.rho      = time();
         ilk.rack     = add(ilk.rack, delt);
         joy[vow]     = add(joy[vow], rad);
         debt         = add(debt, rad);
+    }
+
+    function rake() external returns (uint256) {
+        ward();
+        trip();
+        uint256 amt = joy[address(0)];
+        joy[msg.sender] = add(joy[msg.sender], amt);
+        joy[address(0)] = 0;
+        return amt;
     }
 
     function prod() public {
