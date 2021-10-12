@@ -2,7 +2,7 @@
 
 /// dot.sol -- Reference Basket Calculator
 
-pragma solidity 0.8.6;
+pragma solidity 0.8.9;
 
 import './mixin/math.sol';
 

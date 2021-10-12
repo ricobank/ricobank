@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-pragma solidity 0.8.6;
+pragma solidity 0.8.9;
 
 interface VatLike {
   function joy() external returns (uint);
@@ -15,7 +15,7 @@ interface BPool {
     function view_exactAmountOut(address gem, uint amt) external returns (uint);
 }
 
-interface JointLike {
+interface VaultLike {
     function joy_exit(address vat, address joy, address usr, uint amt) external;
     function joy_join(address vat, address joy, address usr, uint amt) external;
 }
@@ -29,7 +29,7 @@ interface GemLike {
 
 contract Vow {
     VatLike public vat;
-    JointLike public joint;
+    VaultLike public joint;
     GemLike public RICO;
     GemLike public BANK;
     BPool public pool;

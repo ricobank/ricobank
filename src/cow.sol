@@ -1,4 +1,4 @@
-pragma solidity 0.8.6;
+pragma solidity 0.8.9;
 
 interface GemLike {
     function transfer(address usr, uint amt) external;

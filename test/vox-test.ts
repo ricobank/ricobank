@@ -127,15 +127,11 @@ describe('Vox', ()=> {
     await send(vox.poke);
     const par2 = await vat.par();
 
-    debug('par2', par2.toString())
-
     await warp(t0 + 2*3600);
     await mine();
 
     await send(vox.poke);
     const par3 = await vat.par();
-    debug('par3', par3.toString());
-
 
   });
 

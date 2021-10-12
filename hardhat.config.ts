@@ -11,7 +11,7 @@ const privKey = PRIVKEY ?? Buffer.alloc(32).toString('hex')
  * @type import('hardhat/config').HardhatUserConfig
  */
 export default {
-  solidity: "0.8.6",
+  solidity: "0.8.9",
   paths: {
     sources: "./src"
   },

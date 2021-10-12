@@ -3,7 +3,7 @@
 // Copyright (C) 2021 the bank
 // Copyright (C) 2018 Rain <rainbreak@riseup.net>
 
-pragma solidity 0.8.6;
+pragma solidity 0.8.9;
 
 import './mixin/math.sol';
 import './mixin/ward.sol';
