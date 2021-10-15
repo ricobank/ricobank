@@ -5,6 +5,8 @@
 
 pragma solidity 0.8.9;
 
+import 'hardhat/console.sol';
+
 import './mixin/math.sol';
 import './mixin/ward.sol';
 
@@ -25,22 +27,26 @@ contract Vault is Math, Ward {
     mapping(address=>bool)    public joys;
     mapping(bytes32=>address) public gems;
 
-    function gem_join(address vat, bytes32 ilk, address usr, uint wad) external {
+    function gem_join(address vat, bytes32 ilk, address usr, uint wad) external returns (address) {
         require(int(wad) >= 0, "GemJoin/overflow");
         require(gems[ilk] != address(0), "GemJoin/no-ilk-gem");
         require(vats[vat], "GemJoin/invalid-vat");
         GemLike gem = GemLike(gems[ilk]);
+        console.log("gem_join wad", wad);
         VatLike(vat).slip(ilk, usr, int(wad));
         require(gem.transferFrom(msg.sender, address(this), wad), "GemJoin/failed-transfer");
+        return address(gem);
     }
 
-    function gem_exit(address vat, bytes32 ilk, address usr, uint wad) external {
+    function gem_exit(address vat, bytes32 ilk, address usr, uint wad) external returns (address) {
         require(wad <= 2 ** 255, "GemJoin/overflow");
         require(gems[ilk] != address(0), "GemJoin/no-ilk-gem");
         require(vats[vat], "GemJoin/invalid-vat");
+        console.log('gem_exit wad', wad);
         GemLike gem = GemLike(gems[ilk]);
-        VatLike(vat).slip(ilk, msg.sender, -int(wad));
+        VatLike(vat).slip(ilk, msg.sender, -int256(wad));
         require(gem.transfer(usr, wad), "GemJoin/failed-transfer");
+        return address(gem);
     }
 
     function joy_join(address vat, address joy, address usr, uint wad) external {

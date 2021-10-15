@@ -4,12 +4,9 @@ import { expect as want } from 'chai'
 
 import { ethers, artifacts, network } from 'hardhat'
 
-import { send, wad, ray, rad, N, b32 } from './helpers';
+import { send, wad, ray, rad, N, b32, MAXU256 } from './helpers';
 
 const gempack = require('../lib/gemfab')
-let gemfab
-
-const UMAX = N(2).pow(N(256)).sub(N(1));
 
 const YEAR = ((365 * 24) + 6) * 3600;
 
@@ -41,8 +38,8 @@ describe('Vat', () => {
     await send(joy.rely, vault.address);
     await send(gem.rely, vault.address);
 
-    await send(joy.approve, vault.address, UMAX);
-    await send(gem.approve, vault.address, UMAX);
+    await send(joy.approve, vault.address, MAXU256);
+    await send(gem.approve, vault.address, MAXU256);
     await send(joy.mint, ALI, wad(1000));
     await send(gem.mint, ALI, wad(1000));
 

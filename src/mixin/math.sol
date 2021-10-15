@@ -39,14 +39,21 @@ contract Math {
     }
 
     function add(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        require((z = x + y) >= x);
+        require((z = x + y) >= x, 'ERR_MATH_UUADD');
     }
     function add(uint x, int y) internal pure returns (uint z) {
+        require(x < uint(type(int256).max), 'ERR_MATH_UIADD');
+        int sz = int(x) + y;
+        require(sz >= 0, 'ERR_MATH_UIADD_NEG');
+        return uint(sz);
+//        return uint(int(x) + y);
+/*
         unchecked { // TODO explain
           z = x + uint(y);
         }
-        require(y >= 0 || z <= x);
-        require(y <= 0 || z >= x);
+        require(y >= 0 || z <= x, 'ERR_MATH_UIADD');
+        require(y <= 0 || z >= x, 'ERR_MATH_UIADD');
+*/
     }
 
     function sub(uint256 x, uint256 y) internal pure returns (uint256 z) {

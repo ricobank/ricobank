@@ -14,6 +14,7 @@
     "test": "npm run build:sol && ts-mocha --timeout 10000 test/*"
   },
   "devDependencies": {
+    "@balancer-labs/v2-deployments": "^2.3.0",
     "@nomiclabs/hardhat-ethers": "^2.0.2",
     "@types/chai": "^4.2.21",
     "@types/mocha": "^9.0.0",

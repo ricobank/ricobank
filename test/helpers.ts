@@ -5,10 +5,44 @@ import { expect as want } from 'chai'
 import { BigNumber, utils } from 'ethers';
 import { BigDecimal } from 'bigdecimal';
 
+const { network } = require('hardhat');
+
 export const BANKYEAR = ((365 * 24) + 6) * 3600;
 export const WAD = N(10).pow(N(18))
 export const RAY = N(10).pow(N(27))
 export const RAD = N(10).pow(N(45))
+export const MAXU256 = N(2).pow(N(256)).sub(N(1));
+ 
+export async function wait(t) {
+  await network.provider.request({
+    method: 'evm_increaseTime',
+    params: [t]
+  });
+}
+
+export async function warp(t) {
+  await network.provider.request({
+    method: 'evm_setNextBlockTimestamp',
+    params: [t]
+  });
+}
+
+export async function mine(t) {
+  if (t !== undefined) {
+    await wait(t);
+  }
+  await network.provider.request({
+    method: 'evm_mine'
+  });
+}
+
+
+export async function send(...args) {
+  const f = args[0];
+  const fargs = args.slice(1);
+  const tx = await f(...fargs);
+  await tx.wait();
+}
 
 export function b32 (arg: any): Buffer {
   if (arg._isBigNumber) {
@@ -22,13 +56,6 @@ export function b32 (arg: any): Buffer {
   } else {
     throw new Error(`b32 takes a BigNumber or string, got ${arg}, a ${typeof (arg)}`)
   }
-}
-
-export async function send(...args) {
-  const f = args[0];
-  const fargs = args.slice(1);
-  const tx = await f(...fargs);
-  await tx.wait();
 }
 
 export function N(n) : BigNumber {

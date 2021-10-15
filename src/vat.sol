@@ -20,6 +20,8 @@
 
 pragma solidity 0.8.9;
 
+import 'hardhat/console.sol';
+
 import './mixin/math.sol';
 import './mixin/ward.sol';
 
@@ -155,11 +157,11 @@ contract Vat is Math, Ward {
         require(either(both(dart <= 0, dink >= 0), safe(i, u)), "Vat/not-safe");
 
         // urn is either more safe, or the owner consents
-        require(either(both(dart <= 0, dink >= 0), wish(u, msg.sender)), "Vat/not-allowed-u");
+        require(either(both(dart <= 0, dink >= 0), wish(u, msg.sender)), "Vat/frob/not-allowed-u");
         // collateral src consents
-        require(either(dink <= 0, wish(v, msg.sender)), "Vat/not-allowed-v");
+        require(either(dink <= 0, wish(v, msg.sender)), "Vat/frob/not-allowed-v");
         // debt dst consents
-        require(either(dart >= 0, wish(w, msg.sender)), "Vat/not-allowed-w");
+        require(either(dart >= 0, wish(w, msg.sender)), "Vat/frob/not-allowed-w");
 
         // urn has no debt, or a non-dusty amount
         require(either(urn.art == 0, tab >= ilk.dust), "Vat/dust");
@@ -200,7 +202,7 @@ contract Vat is Math, Ward {
         require(either(vtab >= i.dust, v.art == 0), "Vat/dust-dst");
     }
 
-    function grab(bytes32 i, address u, address v, address w, int dink, int dart) external {
+    function grab(bytes32 i, address u, address v, address w, int dink, int dart) external returns (uint256) {
         ward();
         trip();
         drip(i);
@@ -216,6 +218,8 @@ contract Vat is Math, Ward {
         gem[i][v] = sub(gem[i][v], dink);
         sin[w]    = sub(sin[w],    dtab);
         vice      = sub(vice,      dtab);
+
+        return ilk.chop;
     }
 
     function plot(bytes32 ilk, uint mark) external {
@@ -276,6 +280,10 @@ contract Vat is Math, Ward {
     function slip(bytes32 ilk, address usr, int256 wad) external {
         ward();
         trip();
+        console.log("vat.slip usr", usr);
+        console.log("vat.slip wad");
+        console.log(uint(wad));
+        console.log("gem before", gem[ilk][usr]);
         gem[ilk][usr] = add(gem[ilk][usr], wad);
     }
     function flux(bytes32 ilk, address src, address dst, uint256 wad) external {
@@ -286,7 +294,7 @@ contract Vat is Math, Ward {
     }
     function move(address src, address dst, uint256 rad) external {
         trip(); // TODO
-        require(wish(src, msg.sender), "Vat/not-allowed");
+        require(wish(src, msg.sender), "Vat/move/not-allowed");
         joy[src] = sub(joy[src], rad);
         joy[dst] = add(joy[dst], rad);
     }
@@ -335,8 +343,10 @@ contract Vat is Math, Ward {
         Ilk storage i = ilks[ilk];
                if (key == "line") { i.line = val;
         } else if (key == "dust") { i.dust = val;
-        } else if (key == "duty") { drip(ilk); i.duty = val; // TODO check
-        } else if (key == "open") { i.open = (val == 0 ? false : true); // TODO check
+        } else if (key == "duty") { drip(ilk); i.duty = val; // TODO check drip call
+        } else if (key == "open") { i.open = (val == 0 ? false : true); // TODO check default
+        } else if (key == "liqr") { i.liqr = val;
+        } else if (key == "chop") { i.chop = val;
         } else { revert("ERR_FILK_KEY"); }
     }
 

@@ -5,32 +5,13 @@ import { expect as want } from 'chai'
 import { ethers, artifacts, network } from 'hardhat'
 const { hexZeroPad } = ethers.utils
 
-import { send, N, wad, ray, rad, BANKYEAR } from './helpers'
+import { send, N, wad, ray, rad, BANKYEAR, wait, warp, mine } from './helpers'
 
 const bn2b32 = (bn) => hexZeroPad(bn.toHexString(), 32);
 
 const i0 = Buffer.alloc(32); // ilk 0 id
 const ADDRZERO = "0x" + "00".repeat(20)
 const TAG = Buffer.from("feed".repeat(16), 'hex');
-
-const wait = async (t) => await network.provider.request({
-  method: 'evm_increaseTime',
-  params: [t]
-});
-
-const warp = async (t) => await network.provider.request({
-  method: 'evm_setNextBlockTimestamp',
-  params: [t]
-});
-
-const mine = async (t) => {
-  if (t !== undefined) {
-    await wait(t);
-  }
-  await network.provider.request({
-    method: 'evm_mine'
-  });
-}
 
 describe('Vox', ()=> {
   let ali, bob, cat;
