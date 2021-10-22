@@ -1,8 +1,13 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: AGPL-3.0
 
 pragma solidity 0.8.9;
 
+import 'hardhat/console.sol';
+
 import './mixin/math.sol';
+import './mixin/ward.sol';
+
+import './flow.sol';
 
 interface VatLike {
     function joy() external returns (uint);
@@ -10,17 +15,18 @@ interface VatLike {
     function heal(uint amt) external;
     function drip(bytes32 ilk) external;
     function rake() external returns (uint);
-}
-
-interface BPool {
-    function swap_exactAmountIn(address gem, uint amt) external returns (uint);
-    function swap_exactAmountOut(address gem, uint amt) external returns (uint);
-    function view_exactAmountOut(address gem, uint amt) external returns (uint);
+    function safe(bytes32,address) external returns (bool);
+    function urns(bytes32,address) external returns (uint,uint);
+    function grab(bytes32,address,address,address,int,int) external returns (uint);
+    function gem(bytes32,address) external returns (uint);
 }
 
 interface VaultLike {
+    function gem_join(address,bytes32,address,uint) external returns (address);
+    function gem_exit(address,bytes32,address,uint) external returns (address);
     function joy_exit(address vat, address joy, address usr, uint amt) external;
     function joy_join(address vat, address joy, address usr, uint amt) external;
+
 }
 
 interface GemLike {
@@ -28,44 +34,50 @@ interface GemLike {
     function burn(address usr, uint amt) external;
     function approve(address usr, uint amt) external;
     function balanceOf(address usr) external returns (uint);
+    function transfer(address usr, uint amt) external;
 }
 
-contract Vow is Math {
+contract Vow is Math, Ward {
     VatLike public vat;
-    VaultLike public joint;
+    VaultLike public vault;
     GemLike public RICO;
     GemLike public BANK;
-    BPool public pool;
+    mapping(bytes32=>address) public flippers;
 
-    function drip(bytes32[] calldata ilks) public {
-        for(uint i = 0; i < ilks.length; i++) {
-            vat.drip(ilks[i]);
-        }
-        uint rake = vat.rake() / RAY;
-        joint.joy_exit(address(vat), address(RICO), address(this), rake);
+    address pool;
+
+    Flopper flopper;
+    uint256 flopping;
+
+    Flapper flapper;
+    uint256 flapping;
+
+    function bail(bytes32 ilk, address urn) external {
+        require( !vat.safe(ilk, urn), 'ERR_SAFE' );
+        address flipper = flippers[ilk];
+        (uint ink, uint art) = vat.urns(ilk, urn);
+        uint chop = vat.grab(ilk, urn, address(this), address(this), -int(ink), -int(art));
+        address gem = vault.gem_exit(address(vat), ilk, address(this), ink);
+        GemLike(gem).transfer(flipper, ink);
+        //Flipper(flipper).flip(ilk, urn, gem, ink, art, chop);
     }
 
-    // sell surplus rico for bank, burn bank
-    function flap() public {
-        uint rico = RICO.balanceOf(address(this));
-        uint bank = pool.swap_exactAmountIn(address(RICO), rico);
-        BANK.burn(address(this), bank);
-    }
-
-    function flop() public {
-        uint vice = vat.vice();
-        uint need = pool.view_exactAmountOut(address(RICO), vice);
-        BANK.mint(address(this), need);
-        pool.swap_exactAmountOut(address(RICO), vice);
-        joint.joy_exit(address(vat), address(RICO), address(this), vice);
-        vat.heal(vice);
-    }
-
-    function reapprove() public {
-        RICO.approve(address(joint), type(uint256).max);
+    function reapprove() external {
+        RICO.approve(address(vault), type(uint256).max);
         RICO.approve(address(pool), type(uint256).max);
         BANK.approve(address(pool), type(uint256).max);
     }
+
+    function file_vat(address v) external {
+        ward(); vat = VatLike(v);
+    }
+    function file_vault(address v) external {
+        ward(); vault = VaultLike(v);
+    }
+    function file_flipper(bytes32 ilk, address f) external {
+        ward(); flippers[ilk] = f;
+    }
+
 }
 
 

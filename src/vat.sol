@@ -280,10 +280,6 @@ contract Vat is Math, Ward {
     function slip(bytes32 ilk, address usr, int256 wad) external {
         ward();
         trip();
-        console.log("vat.slip usr", usr);
-        console.log("vat.slip wad");
-        console.log(uint(wad));
-        console.log("gem before", gem[ilk][usr]);
         gem[ilk][usr] = add(gem[ilk][usr], wad);
     }
     function flux(bytes32 ilk, address src, address dst, uint256 wad) external {

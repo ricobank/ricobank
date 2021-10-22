@@ -108,20 +108,15 @@ describe('bal balancer setup test', ()=>{
 
     const weth_before = await WETH.balanceOf(ALI);
     const rico_before = await RICO.balanceOf(ALI);
-    debug(weth_before)
-    debug(rico_before)
 
     const tx_swap = await vault.swap(swapStruct, fundStruct, tokenLimit, Date.now() + 100000);
     await tx_swap.wait();
 
     const weth_after = await WETH.balanceOf(ALI);
     const rico_after = await RICO.balanceOf(ALI);
-    debug(weth_after)
-    debug(rico_after)
 
     want(weth_after.lt(weth_before)).true
     want(rico_after.gt(rico_before)).true
-
    
   });
 });
