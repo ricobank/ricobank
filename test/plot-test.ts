@@ -4,9 +4,6 @@ import { expect as want } from 'chai'
 
 import { ethers, artifacts, network } from 'hardhat'
 
-const fbpack = require('../lib/feedbase')
-let fb;
-
 const bn = (n) => ethers.BigNumber.from(n)
 const UMAX = bn(2).pow(bn(256)).sub(bn(1));
 const YEAR = ((365 * 24) + 6) * 3600;
@@ -24,17 +21,14 @@ describe('plot vat ilk mark via plotter', () => {
   let ALI, BOB, CAT;
   let vat; let vat_type;
   let plotter; let plotter_type;
-  let fb_deployer;
+  let fb_deployer; let fb;
   before(async()=>{
-    await fbpack.init();
     [ali, bob, cat] = await ethers.getSigners();
     [ALI, BOB, CAT] = [ali, bob, cat].map(signer => signer.address);
     vat_type = await ethers.getContractFactory('./src/vat.sol:Vat', ali);
     plotter_type = await ethers.getContractFactory('./src/plot.sol:Plotter', ali);
-    //await fbpack.dapp.useSigner(ali);
-    //await fbpack.dapp.useDefaultProvider();
-    const artifacts = fbpack.dapp._raw.types.Feedbase.artifacts;
-    fb_deployer = ethers.ContractFactory.fromSolidity(artifacts, ali);
+    const fb_artifacts = require('../lib/feedbase/artifacts/contracts/Feedbase.sol/Feedbase.json')
+    fb_deployer = ethers.ContractFactory.fromSolidity(fb_artifacts, ali);
   })
   beforeEach(async() => {
     vat = await vat_type.deploy();

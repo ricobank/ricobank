@@ -75,24 +75,19 @@ describe('liq liquidation cycle', () => {
     await send(vault.joy_exit, vat.address, RICO.address, ALI, wad(99));
     const bal = await RICO.balanceOf(ALI);
     want(bal.toString()).equals(wad(99).toString());
-    debug("safe 1");
     const safe1 = await vat.callStatic.safe(i0, ALI);
     want(safe1).true;
 
     await wait(BANKYEAR);
     await mine(BANKYEAR);
 
-    debug("safe 2");
     const safe2 = await vat.callStatic.safe(i0, ALI);
     want(safe2).false;
 
-    debug("calling bail...");
     await send(vow.bail, i0, ALI);
 
     const sin = await vat.sin(vow.address);
-    debug('vow sin', sin);
     const gembal = await WETH.balanceOf(FLIPPER);
-    debug('flipper gembal', gembal);
   });
 
 });

@@ -19,10 +19,8 @@ describe('Vox', ()=> {
   let vat; let vat_type;
   let vox; let vox_type;
 
-  const fbpack = require('../lib/feedbase')
   let fb_deployer;
   let fb;
-
 
   before(async() => {
     [ali, bob, cat] = await ethers.getSigners();
@@ -30,8 +28,7 @@ describe('Vox', ()=> {
     vat_type = await ethers.getContractFactory('./src/vat.sol:Vat', ali);
     vox_type = await ethers.getContractFactory('./src/vox.sol:Vox', ali);
 
-    await fbpack.init();
-    const fb_artifacts = fbpack.dapp._raw.types.Feedbase.artifacts;
+    const fb_artifacts = require('../lib/feedbase/artifacts/contracts/Feedbase.sol/Feedbase.json')
     fb_deployer = ethers.ContractFactory.fromSolidity(fb_artifacts, ali);
   });
   beforeEach(async() => {
