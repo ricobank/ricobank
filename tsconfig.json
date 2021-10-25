@@ -3,6 +3,6 @@
     "outDir": "dist"
   },
   "include": [
-    "./task"
+    "task/**/*.ts"
   ]
 }

@@ -27,7 +27,7 @@ export async function warp(t) {
   });
 }
 
-export async function mine(t) {
+export async function mine(t=undefined) {
   if (t !== undefined) {
     await wait(t);
   }
