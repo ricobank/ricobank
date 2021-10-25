@@ -6,8 +6,6 @@ import { ethers, artifacts, network } from 'hardhat'
 
 import { send, wad, ray, rad, N, b32, MAXU256 } from './helpers';
 
-const gempack = require('../lib/gemfab')
-
 const YEAR = ((365 * 24) + 6) * 3600;
 
 let i0 = Buffer.alloc(32); // ilk 0 id
@@ -19,11 +17,10 @@ describe('Vat', () => {
   let joy, gem; let gem_type;
   let vault; let vault_type;
   before(async() => {
-    await gempack.init();
     [ali, bob, cat] = await ethers.getSigners();
     [ALI, BOB, CAT] = [ali, bob, cat].map(signer => signer.address);
     vat_type = await ethers.getContractFactory('./src/vat.sol:Vat', ali);
-    const gem_artifacts = gempack.dapp._raw.types.Gem.artifacts
+    const gem_artifacts = require('../lib/gemfab/artifacts/sol/gem.sol/Gem.json')
     gem_type = ethers.ContractFactory.fromSolidity(gem_artifacts, ali);
     vault_type = await ethers.getContractFactory('./src/vault.sol:Vault', ali);
 

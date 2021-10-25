@@ -6,8 +6,6 @@ import { ethers } from 'hardhat'
 
 import { send, wait, mine, wad, ray, rad, apy, N, b32, BANKYEAR } from './helpers';
 
-const gempack = require('../lib/gemfab')
-
 const UMAX = N(2).pow(N(256)).sub(N(1));
 
 let i0 = Buffer.alloc(32); // ilk 0 id
@@ -21,10 +19,9 @@ describe('liq liquidation cycle', () => {
   let vow; let vow_type;
   let FLIPPER;
   before(async() => {
-    await gempack.init();
     [ali, bob, cat] = await ethers.getSigners();
     [ALI, BOB, CAT] = [ali, bob, cat].map(signer => signer.address);
-    const gem_artifacts = gempack.dapp._raw.types.Gem.artifacts
+    const gem_artifacts = require('../lib/gemfab/artifacts/sol/gem.sol/Gem.json')
     gem_type = ethers.ContractFactory.fromSolidity(gem_artifacts, ali);
     vat_type = await ethers.getContractFactory('./src/vat.sol:Vat', ali);
     vow_type = await ethers.getContractFactory('./src/vow.sol:Vow', ali);

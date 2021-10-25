@@ -5,8 +5,6 @@ const want = require('chai').expect
 
 const balancer = require('@balancer-labs/v2-deployments');
 
-const gempack = require('../lib/gemfab')
-
 import { send, wad, MAXU256 } from './helpers'
 
 import { ethers } from 'hardhat'
@@ -29,8 +27,7 @@ describe('bal balancer setup test', ()=>{
     [ali, bob, cat] = await ethers.getSigners();
     [ALI, BOB, CAT] = [ali, bob, cat].map(signer => signer.address);
 
-    await gempack.init();
-    const gem_artifacts = gempack.dapp._raw.types.Gem.artifacts
+    const gem_artifacts = require('../lib/gemfab/artifacts/sol/gem.sol/Gem.json')
     gem_type = ethers.ContractFactory.fromSolidity(gem_artifacts, ali);
 
     const vault_abi = await balancer.getBalancerContractAbi('20210418-vault', 'Vault');

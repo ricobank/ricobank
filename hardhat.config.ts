@@ -17,15 +17,5 @@ export default {
   },
   defaultNetwork: 'hardhat',
   networks: {
-    mainnet: {
-      url: `https://mainnet.infura.io/v3/${INFURA_PROJECT_ID}`,
-      chainId: 1,
-      accounts: [`0x${privKey}`]
-    },
-    ropsten: {
-      url: `https://ropsten.infura.io/v3/${INFURA_PROJECT_ID}`,
-      chainId: 3,
-      accounts: [`0x${privKey}`]
-    },
   }
 };
