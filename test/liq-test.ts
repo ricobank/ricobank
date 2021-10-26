@@ -1,9 +1,10 @@
 import { expect as want } from 'chai'
 
+import * as hh from 'hardhat'
 import { ethers } from 'hardhat'
 
-import { wait, mine, b32 } from './helpers'
-import { wad, ray, rad, apy, send, BANKYEAR, U256_MAX } from 'minihat'
+import { b32, snapshot, revert } from './helpers'
+import { wait, mine, wad, ray, rad, apy, send, BANKYEAR, U256_MAX } from 'minihat'
 const debug = require('debug')('rico:test')
 
 const i0 = Buffer.alloc(32) // ilk 0 id
@@ -24,8 +25,7 @@ describe('liq liquidation cycle', () => {
     vat_type = await ethers.getContractFactory('./src/vat.sol:Vat', ali)
     vow_type = await ethers.getContractFactory('./src/vow.sol:Vow', ali)
     vault_type = await ethers.getContractFactory('./src/vault.sol:Vault', ali)
-  })
-  beforeEach(async () => {
+
     vat = await vat_type.deploy()
     vault = await vault_type.deploy()
     vow = await vow_type.deploy()
@@ -60,6 +60,11 @@ describe('liq liquidation cycle', () => {
     await send(vow.file_vat, vat.address)
     await send(vow.file_vault, vault.address)
     await send(vow.file_flipper, i0, FLIPPER)
+
+    await snapshot(hh)
+  })
+  beforeEach(async () => {
+    await revert(hh)
   })
 
   it('init plot filk lock draw safe bail flip flap flop', async () => {
@@ -74,8 +79,8 @@ describe('liq liquidation cycle', () => {
     const safe1 = await vat.callStatic.safe(i0, ALI)
     want(safe1).true
 
-    await wait(BANKYEAR)
-    await mine(BANKYEAR)
+    await wait(hh, BANKYEAR)
+    await mine(hh, BANKYEAR)
 
     const safe2 = await vat.callStatic.safe(i0, ALI)
     want(safe2).false

@@ -1,11 +1,13 @@
-import _debug from 'debug'
+const debug = require('debug')('rico:test')
 import { expect as want } from 'chai'
 
-import { ethers, artifacts, network } from 'hardhat'
+import * as hh from 'hardhat'
+import {ethers, artifacts, network } from 'hardhat'
 
-import { send, N, wad, ray, rad, BANKYEAR, wait, warp, mine } from './helpers'
-const debug = _debug('rico:test')
+import { send, N, wad, ray, rad, BANKYEAR, wait, warp, mine } from 'minihat'
 const { hexZeroPad } = ethers.utils
+
+import { snapshot, revert } from './helpers'
 
 const bn2b32 = (bn) => hexZeroPad(bn.toHexString(), 32)
 
@@ -22,6 +24,8 @@ describe('Vox', () => {
   let fb_deployer
   let fb
 
+  let snap;
+
   before(async () => {
     [ali, bob, cat] = await ethers.getSigners();
     [ALI, BOB, CAT] = [ali, bob, cat].map(signer => signer.address)
@@ -30,8 +34,7 @@ describe('Vox', () => {
 
     const fb_artifacts = require('../lib/feedbase/artifacts/contracts/Feedbase.sol/Feedbase.json')
     fb_deployer = ethers.ContractFactory.fromSolidity(fb_artifacts, ali)
-  })
-  beforeEach(async () => {
+
     vat = await vat_type.deploy()
     vox = await vox_type.deploy()
     fb = await fb_deployer.deploy()
@@ -43,19 +46,25 @@ describe('Vox', () => {
     await send(vox.file_feed, ALI, TAG)
 
     await send(vat.spar, wad(7))
+
+    await snapshot(hh);
+  })
+
+  beforeEach(async () => {
+    await revert(hh);
   })
 
   it('sway', async () => {
     await send(vat.spar, wad(7))
 
-    await warp(10 ** 10)
-    await mine()
+    await warp(hh, 10 ** 10)
+    await mine(hh)
 
     const t0 = await vat.time()
     want(t0.toNumber()).equal(10 ** 10)
 
-    await wait(10)
-    await mine()
+    await wait(hh, 10)
+    await mine(hh)
 
     const t1 = await vat.time()
     want(t1.toNumber()).equal(10 ** 10 + 10)
@@ -75,8 +84,8 @@ describe('Vox', () => {
     await send(vat.sway, ray(2))// doubles every second (!)
     await send(vat.prod)
 
-    await wait(1)
-    await mine()
+    await wait(hh, 1)
+    await mine(hh)
 
     const par2 = await vat.par()
     want(par2.eq(wad(14))).true
@@ -84,11 +93,11 @@ describe('Vox', () => {
 
   it('ricolike vox', async () => {
     const t0 = 10 ** 11
-    await warp(t0)
-    await mine()
+    await warp(hh, t0)
+    await mine(hh)
     const t10 = t0 + 10
-    await warp(t10)
-    await mine()
+    await warp(hh, t10)
+    await mine(hh, )
     const t10_ = await vat.time()
     want(t10_.toNumber()).equals(t10)
 
@@ -98,14 +107,14 @@ describe('Vox', () => {
     await send(fb.push, TAG, bn2b32(wad(1.25)), 10 ** 12, ADDRZERO)
     await send(vox.poke)
 
-    await warp(t0 + 3600)
-    await mine()
+    await warp(hh, t0 + 3600)
+    await mine(hh)
 
     await send(vox.poke)
     const par2 = await vat.par()
 
-    await warp(t0 + 2 * 3600)
-    await mine()
+    await warp(hh, t0 + 2 * 3600)
+    await mine(hh)
 
     await send(vox.poke)
     const par3 = await vat.par()

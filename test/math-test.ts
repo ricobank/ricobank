@@ -1,8 +1,10 @@
-import _debug from 'debug'
 import { expect as want } from 'chai'
 
+import * as hh from 'hardhat'
 import { ethers, artifacts } from 'hardhat'
-const debug = _debug('rico:test')
+const debug = require('debug')('rico:test')
+
+import { snapshot, revert } from './helpers'
 
 describe('math.sol', () => {
   let ali, bob, cat
@@ -12,13 +14,17 @@ describe('math.sol', () => {
   before(async () => {
     [ali, bob, cat] = await ethers.getSigners();
     [ALI, BOB, CAT] = [ali, bob, cat].map(signer => signer.address)
-  })
-  beforeEach(async () => {
+
     const stub_type = await ethers.getContractFactory('./src/mixin/math_stub.sol:MathStub', ali)
     stub = await stub_type.deploy()
     BLN = await stub._BLN()
     WAD = await stub._WAD()
     RAY = await stub._RAY()
+
+    await snapshot(hh)
+  })
+  beforeEach(async () => {
+    await revert(hh)
   })
 
   it('add', async () => {
