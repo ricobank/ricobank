@@ -11,7 +11,9 @@
     "build:ts": "tsc",
     "build:feedbase": "cd lib/feedbase && npm run build",
     "build:gemfab": "cd lib/gemfab && npm run build",
-    "test": "npm run build:sol && ts-mocha --timeout 10000 test/*"
+    "pretest": "npm run build:sol",
+    "test": "ts-mocha --timeout 10000 test/*",
+    "fmt": "ts-standard --fix task test"
   },
   "devDependencies": {
     "@balancer-labs/v2-deployments": "^2.3.0",
@@ -23,8 +25,10 @@
     "bn.js": "^4.12.0",
     "chai": "^4.3.4",
     "hardhat": "^2.6.3",
+    "minihat": "^0.0.1",
     "ts-mocha": "^8.0.0",
     "ts-node": "^10.2.1",
+    "ts-standard": "^10.0.0",
     "typescript": "^4.4.2"
   }
 }
