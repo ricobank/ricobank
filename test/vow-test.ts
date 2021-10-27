@@ -9,14 +9,14 @@ const debug = require('debug')('rico:test')
 
 const i0 = Buffer.alloc(32) // ilk 0 id
 
-describe('liq liquidation cycle', () => {
+describe('vow / liq liquidation lifecycle', () => {
   let ali, bob, cat
   let ALI, BOB, CAT
   let RICO, RISK, WETH; let gem_type
   let vat; let vat_type
   let vault; let vault_type
   let vow; let vow_type
-  let FLIPPER
+  let flower; let flower_type;
   before(async () => {
     [ali, bob, cat] = await ethers.getSigners();
     [ALI, BOB, CAT] = [ali, bob, cat].map(signer => signer.address)
@@ -25,15 +25,15 @@ describe('liq liquidation cycle', () => {
     vat_type = await ethers.getContractFactory('./src/vat.sol:Vat', ali)
     vow_type = await ethers.getContractFactory('./src/vow.sol:Vow', ali)
     vault_type = await ethers.getContractFactory('./src/vault.sol:Vault', ali)
+    flower_type = await ethers.getContractFactory('./src/flow.sol:RicoFlowerV1', ali)
 
     vat = await vat_type.deploy()
     vault = await vault_type.deploy()
     vow = await vow_type.deploy()
+    flower = await flower_type.deploy();
     RICO = await gem_type.deploy('Rico', 'RICO')
     RISK = await gem_type.deploy('Rico Riskshare', 'RISK')
     WETH = await gem_type.deploy('Wrapped Ether', 'WETH')
-
-    FLIPPER = BOB
 
     await send(vat.hope, vault.address)
     await send(vat.rely, vault.address)
@@ -59,15 +59,9 @@ describe('liq liquidation cycle', () => {
 
     await send(vow.file_vat, vat.address)
     await send(vow.file_vault, vault.address)
-    await send(vow.file_flipper, i0, FLIPPER)
+    await send(vow.file_flipper, i0, flower.address)
 
-    await snapshot(hh)
-  })
-  beforeEach(async () => {
-    await revert(hh)
-  })
 
-  it('init plot filk lock draw safe bail flip flap flop', async () => {
     await send(vat.plot, i0, ray(1))
     await send(vat.filk, i0, b32('duty'), apy(1.05))
     await send(vat.lock, i0, wad(100))
@@ -79,15 +73,35 @@ describe('liq liquidation cycle', () => {
     const safe1 = await vat.callStatic.safe(i0, ALI)
     want(safe1).true
 
-    await wait(hh, BANKYEAR)
+    await snapshot(hh)
+  })
+  beforeEach(async () => {
+    await revert(hh)
+  })
+
+  it('vow 1yr not safe bail', async () => {
+
     await mine(hh, BANKYEAR)
 
     const safe2 = await vat.callStatic.safe(i0, ALI)
     want(safe2).false
 
+    const sin0 = await vat.sin(vow.address)
+    const gembal0 = await WETH.balanceOf(flower.address)
+    want(sin0.eq(0)).true
+    want(gembal0.eq(0)).true
+
     await send(vow.bail, i0, ALI)
 
-    const sin = await vat.sin(vow.address)
-    const gembal = await WETH.balanceOf(FLIPPER)
+    const sin1 = await vat.sin(vow.address)
+    const gembal1 = await WETH.balanceOf(flower.address)
+    want(sin1.gt(0)).true
+    want(gembal1.gt(0)).true
+  })
+
+  it('vow 1yr drip flap', async () => {
+    await mine(hh, BANKYEAR)
+
+    await send(vat.drip, i0);
   })
 })
