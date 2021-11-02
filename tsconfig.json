@@ -1,9 +1,11 @@
 {
   "compilerOptions": {
-    "outDir": "dist"
+    "outDir": "dist",
+    "esModuleInterop": true
   },
   "include": [
     "task/**/*.ts",
-    "test/**/*.ts"
+    "test/**/*.ts",
+    "hardhat.config.ts"
   ]
 }

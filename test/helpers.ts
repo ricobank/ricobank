@@ -9,7 +9,7 @@ export { snapshot, revert, send, wad, ray, rad, apy, N, BANKYEAR, WAD, RAY, RAD,
 
 const debug = require('debug')('rico:test')
 
-export function b32 (arg: any): Buffer {
+export function b32 (arg: any): Uint8Array {
   if (arg._isBigNumber) {
     const hex = arg.toHexString()
     const buff = Buffer.from(hex.slice(2), 'hex')

@@ -26,51 +26,59 @@ contract Vault is Math, Ward {
     mapping(address=>bool)    public vats;
     mapping(address=>bool)    public joys;
     mapping(bytes32=>address) public gems;
+    bool public live = true;
+
+    function cage() external {
+        ward();
+        live = false;
+    }
 
     function gem_join(address vat, bytes32 ilk, address usr, uint wad) external returns (address) {
-        require(int(wad) >= 0, "GemJoin/overflow");
-        require(gems[ilk] != address(0), "GemJoin/no-ilk-gem");
-        require(vats[vat], "GemJoin/invalid-vat");
+        require(live, "Vault/not-live");
+        require(int(wad) >= 0, "Vault/overflow");
+        require(gems[ilk] != address(0), "Vault/no-ilk-gem");
+        require(vats[vat], "Vault/invalid-vat");
         GemLike gem = GemLike(gems[ilk]);
         VatLike(vat).slip(ilk, usr, int(wad));
-        require(gem.transferFrom(msg.sender, address(this), wad), "GemJoin/failed-transfer");
+        require(gem.transferFrom(msg.sender, address(this), wad), "Vault/failed-transfer");
         return address(gem);
     }
 
     function gem_exit(address vat, bytes32 ilk, address usr, uint wad) external returns (address) {
-        require(wad <= 2 ** 255, "GemJoin/overflow");
-        require(gems[ilk] != address(0), "GemJoin/no-ilk-gem");
-        require(vats[vat], "GemJoin/invalid-vat");
+        require(wad <= 2 ** 255, "Vault/overflow");
+        require(gems[ilk] != address(0), "Vault/no-ilk-gem");
+        require(vats[vat], "Vault/invalid-vat");
         GemLike gem = GemLike(gems[ilk]);
         VatLike(vat).slip(ilk, msg.sender, -int256(wad));
-        require(gem.transfer(usr, wad), "GemJoin/failed-transfer");
+        require(gem.transfer(usr, wad), "Vault/failed-transfer");
         return address(gem);
     }
 
     function joy_join(address vat, address joy, address usr, uint wad) external {
-        require(vats[vat], "GemJoin/invalid-vat");
-        require(joys[joy], "GemJoin/invalid-joy");
+        require(vats[vat], "Vault/invalid-vat");
+        require(joys[joy], "Vault/invalid-joy");
         VatLike(vat).move(address(this), usr, mul(RAY, wad));
         GemLike(joy).burn(msg.sender, wad);
     }
 
     function joy_exit(address vat, address joy, address usr, uint wad) external {
-        require(vats[vat], "GemJoin/invalid-vat");
-        require(joys[joy], "GemJoin/invalid-joy");
+        require(live, "Vault/not-live");
+        require(vats[vat], "Vault/invalid-vat");
+        require(joys[joy], "Vault/invalid-joy");
         VatLike(vat).move(msg.sender, address(this), mul(RAY, wad));
         GemLike(joy).mint(usr, wad);
     }
 
-    function flash(address[] calldata gems, uint[] calldata amts, address code, bytes calldata data)
+    function flash(address[] calldata gems_, uint[] calldata amts, address code, bytes calldata data)
       external returns (bool ok, bytes memory result)
     {
-        require(gems.length == amts.length, 'ERR_INVALID_LENGTHS');
-        for(uint i = 0; i < gems.length; i++) {
-          GemLike(gems[i]).transfer(code, amts[i]);
+        require(gems_.length == amts.length, 'ERR_INVALID_LENGTHS');
+        for(uint i = 0; i < gems_.length; i++) {
+            GemLike(gems_[i]).transfer(code, amts[i]);
         }
         (ok, result) = code.call(data);
-        for(uint i = 0; i < gems.length; i++) {
-          GemLike(gems[i]).transferFrom(code, address(this), amts[i]);
+        for(uint i = 0; i < gems_.length; i++) {
+            GemLike(gems_[i]).transferFrom(code, address(this), amts[i]);
         }
         return (ok, result);
     }
@@ -91,5 +99,3 @@ contract Vault is Math, Ward {
     }
 
 }
-
-

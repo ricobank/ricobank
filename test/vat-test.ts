@@ -1,7 +1,7 @@
 import { expect as want } from 'chai'
 
 import * as hh from 'hardhat'
-import { ethers, artifacts, network } from 'hardhat'
+import { ethers, network } from 'hardhat'
 
 import { send, wad, ray, rad, N, U256_MAX, warp } from 'minihat'
 
@@ -62,7 +62,7 @@ describe('Vat', () => {
   })
 
   it('gem join', async () => {
-    const gembal = await vat.gem(Buffer.alloc(32), ALI)
+    const gembal = await vat.gem(i0, ALI)
     want(gembal.eq(wad(1000))).true
     const bal = await gem.balanceOf(ALI)
     want(bal.eq(wad(0))).true
@@ -128,8 +128,8 @@ describe('Vat', () => {
 
     await send(vat.plot, i0, ray(1))
 
-    const [,,mark0] = await vat.ilks(i0)
-    want(mark0.eq(ray(1))).true
+    const [,,mark1] = await vat.ilks(i0)
+    want(mark1.eq(ray(1))).true
 
     const safe2 = await vat.callStatic.safe(i0, ALI)
     want(safe2).true
