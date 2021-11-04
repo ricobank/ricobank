@@ -15,7 +15,7 @@ describe('math.sol', () => {
     [ali, bob, cat] = await ethers.getSigners();
     [ALI, BOB, CAT] = [ali, bob, cat].map(signer => signer.address)
 
-    const stub_type = await ethers.getContractFactory('./src/mixin/math_stub.sol:MathStub', ali)
+    const stub_type = await ethers.getContractFactory('MathStub', ali)
     stub = await stub_type.deploy()
     BLN = await stub._BLN()
     WAD = await stub._WAD()

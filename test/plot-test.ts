@@ -20,9 +20,9 @@ describe('plot vat ilk mark via plotter', () => {
   before(async () => {
     [ali, bob, cat] = await ethers.getSigners();
     [ALI, BOB, CAT] = [ali, bob, cat].map(signer => signer.address)
-    vat_type = await ethers.getContractFactory('./src/vat.sol:Vat', ali)
-    plotter_type = await ethers.getContractFactory('./src/plot.sol:Plotter', ali)
-    const fb_artifacts = require('../lib/feedbase/artifacts/contracts/Feedbase.sol/Feedbase.json')
+    vat_type = await ethers.getContractFactory('Vat', ali)
+    plotter_type = await ethers.getContractFactory('Plotter', ali)
+    const fb_artifacts = require('../lib/feedbase/artifacts/sol/Feedbase.sol/Feedbase.json')
     fb_deployer = ethers.ContractFactory.fromSolidity(fb_artifacts, ali)
   })
   beforeEach(async () => {

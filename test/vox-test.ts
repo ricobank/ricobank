@@ -29,10 +29,10 @@ describe('Vox', () => {
   before(async () => {
     [ali, bob, cat] = await ethers.getSigners();
     [ALI, BOB, CAT] = [ali, bob, cat].map(signer => signer.address)
-    vat_type = await ethers.getContractFactory('./src/vat.sol:Vat', ali)
-    vox_type = await ethers.getContractFactory('./src/vox.sol:Vox', ali)
+    vat_type = await ethers.getContractFactory('Vat', ali)
+    vox_type = await ethers.getContractFactory('Vox', ali)
 
-    const fb_artifacts = require('../lib/feedbase/artifacts/contracts/Feedbase.sol/Feedbase.json')
+    const fb_artifacts = require('../lib/feedbase/artifacts/sol/Feedbase.sol/Feedbase.json')
     fb_deployer = ethers.ContractFactory.fromSolidity(fb_artifacts, ali)
 
     vat = await vat_type.deploy()

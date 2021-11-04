@@ -20,10 +20,10 @@ describe('Vat', () => {
   before(async () => {
     [ali, bob, cat] = await ethers.getSigners();
     [ALI, BOB, CAT] = [ali, bob, cat].map(signer => signer.address)
-    vat_type = await ethers.getContractFactory('./src/vat.sol:Vat', ali)
+    vat_type = await ethers.getContractFactory('Vat', ali)
     const gem_artifacts = require('../lib/gemfab/artifacts/sol/gem.sol/Gem.json')
     gem_type = ethers.ContractFactory.fromSolidity(gem_artifacts, ali)
-    vault_type = await ethers.getContractFactory('./src/vault.sol:Vault', ali)
+    vault_type = await ethers.getContractFactory('Vault', ali)
 
     vat = await vat_type.deploy()
     joy = await gem_type.deploy('joy', 'JOY')

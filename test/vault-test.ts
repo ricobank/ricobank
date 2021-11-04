@@ -20,12 +20,11 @@ describe('Vault', () => {
     before(async () => {
         [ali, bob, cat] = await ethers.getSigners();
         [ALI, BOB, CAT] = [ali, bob, cat].map(signer => signer.address)
-        vat_type = await ethers.getContractFactory('./src/vat.sol:Vat', ali)
+        vat_type = await ethers.getContractFactory('Vat', ali)
         const gem_artifacts = require('../lib/gemfab/artifacts/sol/gem.sol/Gem.json')
         gem_type = ethers.ContractFactory.fromSolidity(gem_artifacts, ali)
-        vault_type = await ethers.getContractFactory('./src/vault.sol:Vault', ali)
-        flash_strategist_type = await ethers.getContractFactory(
-            './src/mocks/MockFlashStrategist.sol:MockFlashStrategist', ali)
+        vault_type = await ethers.getContractFactory('Vault', ali)
+        flash_strategist_type = await ethers.getContractFactory('MockFlashStrategist', ali)
         strategist_iface = new ethers.utils.Interface([
             "function approve_all(address[] memory gems, uint256[] memory amts)",
             "function welch(address[] memory gems, uint256[] memory amts)",
