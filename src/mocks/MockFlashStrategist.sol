@@ -55,6 +55,10 @@ contract MockFlashStrategist {
         }
     }
 
+    function failure(address[] memory gems, uint256[] memory amts) public {
+        revert("failure");
+    }
+
     function fast_lever(address gem, uint256 lock_amt, uint256 draw_amt) public {
         GemLike(gem).approve(address(vault), lock_amt);
         vault.gem_join(address(vat), ilk0, address(this), lock_amt);

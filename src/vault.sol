@@ -70,17 +70,19 @@ contract Vault is Math, Ward {
     }
 
     function flash(address[] calldata gems_, uint[] calldata amts, address code, bytes calldata data)
-      external returns (bool ok, bytes memory result)
+      external returns (bytes memory result)
     {
         require(gems_.length == amts.length, 'ERR_INVALID_LENGTHS');
         for(uint i = 0; i < gems_.length; i++) {
             GemLike(gems_[i]).transfer(code, amts[i]);
         }
+        bool ok;
         (ok, result) = code.call(data);
+        require(ok, "Vault/receiver-err");
         for(uint i = 0; i < gems_.length; i++) {
             GemLike(gems_[i]).transferFrom(code, address(this), amts[i]);
         }
-        return (ok, result);
+        return (result);
     }
 
     function file_gem(bytes32 ilk, address gem) external {

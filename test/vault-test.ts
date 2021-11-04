@@ -29,6 +29,7 @@ describe('Vault', () => {
         strategist_iface = new ethers.utils.Interface([
             "function approve_all(address[] memory gems, uint256[] memory amts)",
             "function welch(address[] memory gems, uint256[] memory amts)",
+            "function failure(address[] memory gems, uint256[] memory amts)",
             "function fast_lever(address gem, uint256 lock_amt, uint256 draw_amt)",
             "function fast_release(address gem, uint256 withdraw_amt, uint256 wipe_amt)",
         ])
@@ -177,6 +178,13 @@ describe('Vault', () => {
                 [wad(100), wad(100)] ])
             await fail('Transaction reverted', vault.flash, [gemA.address, gemB.address], [wad(100), wad(100)],
                 flash_strategist.address, welch_data)
+        });
+
+        it('revert when call within flash is unsuccessful', async () => {
+            let failure_data = strategist_iface.encodeFunctionData("failure", [ [gemA.address, gemB.address],
+                [wad(0), wad(0)] ])
+            await fail('receiver-err', vault.flash, [gemA.address, gemB.address], [wad(0), wad(0)],
+                flash_strategist.address, failure_data)
         });
 
         it('succeed with sufficient funds and approvals', async () => {
