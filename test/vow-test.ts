@@ -52,7 +52,7 @@ describe('vow / liq liquidation lifecycle', () => {
     await send(vault.gem_join, vat.address, i0, ALI, wad(1000))
 
     await send(vat.init, i0)
-    await send(vat.file, b32('Line'), rad(1000))
+    await send(vat.file, b32('ceil'), rad(1000))
     await send(vat.filk, i0, b32('line'), rad(1000))
     await send(vat.filk, i0, b32('liqr'), ray(1))
     await send(vat.filk, i0, b32('chop'), ray(1.1))
