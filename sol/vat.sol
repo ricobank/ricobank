@@ -27,7 +27,7 @@ import './mixin/ward.sol';
 
 contract Vat is Math, Ward {
     struct Ilk {
-        uint256 Art;   // Total Normalised Debt     [wad]
+        uint256 tart;   // Total Normalised Debt     [wad]
         uint256 rack;  // Accumulated Rate          [ray]
 
         uint256 mark;  // Last poked price          [ray]
@@ -60,7 +60,7 @@ contract Vat is Math, Ward {
 
     uint256 public debt;  // Total Dai Issued    [rad]
     uint256 public vice;  // Total Unbacked Dai  [rad]
-    uint256 public Line;  // Total Debt Ceiling  [rad]
+    uint256 public ceil;  // Total Debt Ceiling  [rad]
     bool    public live;  // Active Flag
 
     uint256 public par;   // System Price (joy/ref)        [wad]
@@ -98,7 +98,7 @@ contract Vat is Math, Ward {
             liqr: RAY,
             open: true, // TODO consider defaults
             rho : time(),
-            Art: 0, mark: 0, chop: 0, line: 0, dust: 0
+            tart: 0, mark: 0, chop: 0, line: 0, dust: 0
         });
     }
 
@@ -145,14 +145,14 @@ contract Vat is Math, Ward {
 
         urn.ink = add(urn.ink, dink);
         urn.art = add(urn.art, dart);
-        ilk.Art = add(ilk.Art, dart);
+        ilk.tart = add(ilk.tart, dart);
 
         int dtab = mul(ilk.rack, dart);
         uint tab = mul(ilk.rack, urn.art);
         debt     = add(debt, dtab);
 
         // either debt has decreased, or debt ceilings are not exceeded
-        require(either(dart <= 0, both(mul(ilk.Art, ilk.rack) <= ilk.line, debt <= Line)), "Vat/ceiling-exceeded");
+        require(either(dart <= 0, both(mul(ilk.tart, ilk.rack) <= ilk.line, debt <= ceil)), "Vat/ceiling-exceeded");
         // urn is either less risky than before, or it is safe
         require(either(both(dart <= 0, dink >= 0), safe(i, u)), "Vat/not-safe");
 
@@ -211,7 +211,7 @@ contract Vat is Math, Ward {
 
         urn.ink = add(urn.ink, dink);
         urn.art = add(urn.art, dart);
-        ilk.Art = add(ilk.Art, dart);
+        ilk.tart = add(ilk.tart, dart);
 
         int dtab = mul(ilk.rack, dart);
 
@@ -254,7 +254,7 @@ contract Vat is Math, Ward {
         uint256 prev = ilk.rack;
         uint256 rack = grow(prev, ilk.duty, t - ilk.rho);
         int256  delt = diff(rack, prev);
-        int256  rad  = mul(ilk.Art, delt);
+        int256  rad  = mul(ilk.tart, delt);
         ilk.rho      = time();
         ilk.rack     = add(ilk.rack, delt);
         joy[vow]     = add(joy[vow], rad);
@@ -330,7 +330,7 @@ contract Vat is Math, Ward {
     function file(bytes32 key, uint256 val) external {
         ward();
         trip();
-        if (key == "Line") { Line = val;
+        if (key == "ceil") { ceil = val;
         } else { revert("ERR_FILE_KEY"); }
     }
     function filk(bytes32 ilk, bytes32 key, uint val) external {
