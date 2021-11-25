@@ -14,6 +14,7 @@ interface VatLike {
     function sin(address) external returns (uint);
     function heal(uint amt) external;
     function drip(bytes32 ilk) external;
+    function hope(address) external;
     function rake() external returns (uint);
     function safe(bytes32,address) external returns (bool);
     function urns(bytes32,address) external returns (uint,uint);
@@ -54,8 +55,7 @@ contract Vow is Math, Ward {
         address flipper = flippers[ilk];
         (uint ink, uint art) = vat.urns(ilk, urn);
         uint chop = vat.grab(ilk, urn, address(this), address(this), -int(ink), -int(art));
-        address gem = vault.gem_exit(address(vat), ilk, address(this), ink);
-        GemLike(gem).transfer(flipper, ink);
+        address gem = vault.gem_exit(address(vat), ilk, flipper, ink);
         Flipper(flipper).flip(ilk, urn, gem, ink, art, chop);
     }
 
@@ -71,36 +71,42 @@ contract Vow is Math, Ward {
         uint joy = vat.joy(address(this));
 
         if (joy > sin) {
-          uint gain = joy - sin;
-          vat.heal(sin);
-          vault.joy_exit(address(vat), address(RICO), address(this), gain);
-          flapper.flap(gain);
-        } else if (sin < joy) {
-          uint loss = sin - joy;
-          vat.heal(joy);
-          RISK.mint(address(flopper), 777);
-          flopper.flop(loss);
+            uint gain = (joy - sin) / RAY;
+            vat.heal(sin);
+            vault.joy_exit(address(vat), address(RICO), address(this), gain);
+            flapper.flap(gain);
+        } else if (sin > joy) {
+            uint loss = (sin - joy) / RAY;
+            vat.heal(joy);
+            RISK.mint(address(flopper), 777);
+            flopper.flop(loss);
         } else if (sin != 0) {
-          vat.heal(sin);
+            vat.heal(sin);
         } else {} // joy == sin == 0
     }
 
     function reapprove() external {
+        vat.hope(address(vault));
         RICO.approve(address(vault), type(uint256).max);
         RICO.approve(address(pool), type(uint256).max);
         RISK.approve(address(pool), type(uint256).max);
     }
 
-    function file_vat(address v) external {
-        ward(); vat = VatLike(v);
+    function file(bytes32 key, address val) external {
+        ward();
+               if (key == "flapper") { flapper = Flapper(val);
+        } else if (key == "flopper") { flopper = Flopper(val);
+        } else if (key == "rico") { RICO = GemLike(val);
+        } else if (key == "risk") { RISK = GemLike(val);
+        } else if (key == "vat") { vat = VatLike(val);
+        } else if (key == "vault") { vault = VaultLike(val);
+        } else { revert("ERR_FILK_KEY"); }
     }
-    function file_vault(address v) external {
-        ward(); vault = VaultLike(v);
+    function filk(bytes32 ilk, bytes32 key, address val) external {
+        ward();
+        if (key == "flipper") { flippers[ilk] = val;
+        } else { revert("ERR_FILK_KEY"); }
     }
-    function file_flipper(bytes32 ilk, address f) external {
-        ward(); flippers[ilk] = f;
-    }
-
 }
 
 
