@@ -27,19 +27,19 @@ import './mixin/ward.sol';
 
 contract Vat is Math, Ward {
     struct Ilk {
-        uint256 tart;   // Total Normalised Debt     [wad]
+        uint256 tart;  // Total Normalised Debt     [wad]
         uint256 rack;  // Accumulated Rate          [ray]
 
         uint256 mark;  // Last poked price          [ray]
-
-        uint256 liqr;  // Liquidation Ratio         [ray]
-        uint256 chop;  // Liquidation Penalty       [ray]
 
         uint256 line;  // Debt Ceiling              [rad]
         uint256 dust;  // Urn Debt Floor            [rad]
 
         uint256 duty;  // Collateral-specific, per-second compounding rate [ray]
         uint256  rho;  // Time of last drip [unix epoch time]
+
+        uint256 chop;  // Liquidation Penalty       [ray]
+        uint256 liqr;  // Liquidation Ratio         [ray]
 
         bool    open;  // Don't require ACL
     }
@@ -61,36 +61,19 @@ contract Vat is Math, Ward {
     uint256 public debt;  // Total Dai Issued    [rad]
     uint256 public vice;  // Total Unbacked Dai  [rad]
     uint256 public ceil;  // Total Debt Ceiling  [rad]
-    bool    public live;  // Active Flag
 
     uint256 public par;   // System Price (joy/ref)        [wad]
     uint256 public way;   // System Rate (SP growth rate)  [ray]
     uint256 public tau;   // Last prod
 
     constructor() {
-        live = true;
         par = RAY;
         way = RAY;
         tau = time();
     }
 
-    function trip() internal view {
-        require(live, 'ERR_LIVE');
-    }
-
-    function stop() external {
-        ward();
-        live = false;
-    }
-
-    function flow() external {
-        ward();
-        live = true;
-    }
-
     function init(bytes32 ilk) external {
         ward();
-        trip();
         require(ilks[ilk].rack == 0, "Vat/ilk-already-init");
         ilks[ilk] = Ilk({
             rack: RAY,
@@ -133,7 +116,6 @@ contract Vat is Math, Ward {
     }
 
     function frob(bytes32 i, address u, address v, address w, int dink, int dart) public {
-        trip();
         drip(i);
         Urn memory urn = urns[i][u];
         Ilk memory ilk = ilks[i];
@@ -174,7 +156,6 @@ contract Vat is Math, Ward {
     }
 
     function fork(bytes32 ilk, address src, address dst, int dink, int dart) external {
-        trip();
         drip(ilk);
         Urn storage u = urns[ilk][src];
         Urn storage v = urns[ilk][dst];
@@ -204,7 +185,6 @@ contract Vat is Math, Ward {
 
     function grab(bytes32 i, address u, address v, address w, int dink, int dart) external returns (uint256) {
         ward();
-        trip();
         drip(i);
         Urn storage urn = urns[i][u];
         Ilk storage ilk = ilks[i];
@@ -224,20 +204,17 @@ contract Vat is Math, Ward {
 
     function plot(bytes32 ilk, uint mark) external {
         ward();
-        trip();
         ilks[ilk].mark = mark;
     }
 
     function sway(uint256 r) external {
         ward();
-        trip();
         prod();
         way = r;
     }
 
     function spar(uint256 jam) external {
         ward();
-        trip();
         prod();
         par = jam;
     }
@@ -248,7 +225,6 @@ contract Vat is Math, Ward {
         if (t == ilk.rho) return;
         require(t >= ilk.rho, 'Vat/invalid-now');
 
-        trip();
 
         address vow  = address(0);
         uint256 prev = ilk.rack;
@@ -263,7 +239,6 @@ contract Vat is Math, Ward {
 
     function rake() external returns (uint256) {
         ward();
-        trip();
         uint256 amt = joy[address(0)];
         joy[msg.sender] = add(joy[msg.sender], amt);
         joy[address(0)] = 0;
@@ -271,7 +246,6 @@ contract Vat is Math, Ward {
     }
 
     function prod() public {
-        trip();
         if (time() == tau) return;
         par = grow(par, way, time() - tau);
         tau = time();
@@ -279,24 +253,20 @@ contract Vat is Math, Ward {
 
     function slip(bytes32 ilk, address usr, int256 wad) external {
         ward();
-        trip();
         gem[ilk][usr] = add(gem[ilk][usr], wad);
     }
     function flux(bytes32 ilk, address src, address dst, uint256 wad) external {
-        trip(); // TODO
         require(wish(src, msg.sender), "Vat/not-allowed");
         gem[ilk][src] = sub(gem[ilk][src], wad);
         gem[ilk][dst] = add(gem[ilk][dst], wad);
     }
     function move(address src, address dst, uint256 rad) external {
-        trip(); // TODO
         require(wish(src, msg.sender), "Vat/move/not-allowed");
         joy[src] = sub(joy[src], rad);
         joy[dst] = add(joy[dst], rad);
     }
 
     function heal(uint rad) external {
-        trip();
         address u = msg.sender;
         sin[u] = sub(sin[u], rad);
         joy[u] = sub(joy[u], rad);
@@ -305,7 +275,6 @@ contract Vat is Math, Ward {
     }
     function suck(address u, address v, uint rad) external {
         ward();
-        trip();
         sin[u] = add(sin[u], rad);
         joy[v] = add(joy[v], rad);
         vice   = add(vice,   rad);
@@ -329,13 +298,11 @@ contract Vat is Math, Ward {
 
     function file(bytes32 key, uint256 val) external {
         ward();
-        trip();
         if (key == "ceil") { ceil = val;
         } else { revert("ERR_FILE_KEY"); }
     }
     function filk(bytes32 ilk, bytes32 key, uint val) external {
         ward();
-        trip();
         Ilk storage i = ilks[ilk];
                if (key == "line") { i.line = val;
         } else if (key == "dust") { i.dust = val;

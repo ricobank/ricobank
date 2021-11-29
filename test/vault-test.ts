@@ -125,7 +125,8 @@ describe('Vault', () => {
 
             want(postJoinRico.toString()).equals(initialRico.toString())
         });
-        
+       
+/* 
         describe('when frozen', () => {
             beforeEach(async () => {
                 await send(vat.lock, i0, wad(500))
@@ -150,6 +151,7 @@ describe('Vault', () => {
                 await fail('not-live', vault.gem_join, vat.address, i0, ALI, wad(1))
             });
         })
+*/
     })
 
     describe('flash loan', () => {

@@ -26,15 +26,8 @@ contract Vault is Math, Ward {
     mapping(address=>bool)    public vats;
     mapping(address=>bool)    public joys;
     mapping(bytes32=>address) public gems;
-    bool public live = true;
-
-    function cage() external {
-        ward();
-        live = false;
-    }
 
     function gem_join(address vat, bytes32 ilk, address usr, uint wad) external returns (address) {
-        require(live, "Vault/not-live");
         require(int(wad) >= 0, "Vault/overflow");
         require(gems[ilk] != address(0), "Vault/no-ilk-gem");
         require(vats[vat], "Vault/invalid-vat");
@@ -62,7 +55,6 @@ contract Vault is Math, Ward {
     }
 
     function joy_exit(address vat, address joy, address usr, uint wad) external {
-        require(live, "Vault/not-live");
         require(vats[vat], "Vault/invalid-vat");
         require(joys[joy], "Vault/invalid-joy");
         VatLike(vat).move(msg.sender, address(this), mul(RAY, wad));
