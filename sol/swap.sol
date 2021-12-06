@@ -65,6 +65,4 @@ abstract contract BalancerSwapper is BalancerV2Types, Ward {
         });
         bvault.swap(ss, fm, 0, block.timestamp);
     }
-
 }
-
