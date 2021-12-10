@@ -22,6 +22,7 @@ interface VatLike {
 }
 
 interface VaultLike {
+    function gem_join(address,bytes32,address,uint) external returns (address);
     function gem_exit(address,bytes32,address,uint) external returns (address);
     function joy_exit(address vat, address joy, address usr, uint amt) external;
     function joy_join(address vat, address joy, address usr, uint amt) external;
@@ -42,9 +43,14 @@ contract Vow is Math, Ward, Clipper {
         require( !vat.safe(ilk, urn), 'ERR_SAFE' );
         address flipper = flippers[ilk];
         (uint ink, uint art) = vat.urns(ilk, urn);
-        uint chop = vat.grab(ilk, urn, address(this), address(this), -int(ink), -int(art));
+        uint bill = vat.grab(ilk, urn, address(this), address(this), -int(ink), -int(art));
         address gem = vault.gem_exit(address(vat), ilk, flipper, ink);
-        Flipper(flipper).flip(ilk, urn, gem, ink, art, chop);
+        Flipper(flipper).flip(ilk, urn, gem, ink, bill);
+    }
+
+    function plop(bytes32 ilk, address urn, address gem, uint amt) external {
+        ward();
+        vault.gem_join(address(vat), ilk, urn, amt);
     }
 
     function keep() external {
@@ -81,6 +87,10 @@ contract Vow is Math, Ward, Clipper {
     function reapprove() external {
         vat.hope(address(vault));
         RICO.approve(address(vault), type(uint256).max);
+    }
+
+    function reapprove_gem(address gem) external {
+        GemLike(gem).approve(address(vault), type(uint256).max);
     }
 
     function file(bytes32 key, address val) external {

@@ -18,7 +18,7 @@ interface GemLike {
 }
 
 interface Flipper {
-    function flip(bytes32 ilk, address urn, address gem, uint ink, uint art, uint chop) external;
+    function flip(bytes32 ilk, address urn, address gem, uint ink, uint bill) external;
 }
 
 interface Flapper {
@@ -30,7 +30,7 @@ interface Flopper {
 }
 
 interface Plopper {
-    function plop(bytes32 ilk, address urn, uint amt) external;
+    function plop(bytes32 ilk, address urn, address gem, uint amt) external;
 }
 
 abstract contract Clipper {
@@ -50,7 +50,7 @@ contract RicoFlowerV1 is Math, BalancerSwapper
     address public RISK;
     address public vow;
 
-    function flip(bytes32 ilk, address urn, address gem, uint ink, uint art, uint chop) external {
+    function flip(bytes32 ilk, address urn, address gem, uint ink, uint bill) external {
         trade(gem, RICO);
     }
 

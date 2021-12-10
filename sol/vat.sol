@@ -189,6 +189,9 @@ contract Vat is Math, Ward {
         Urn storage urn = urns[i][u];
         Ilk storage ilk = ilks[i];
 
+        uint tab = rmul(urn.art, ilk.rack);
+        uint bill = rmul(ilk.chop, tab);
+
         urn.ink = add(urn.ink, dink);
         urn.art = add(urn.art, dart);
         ilk.tart = add(ilk.tart, dart);
@@ -199,7 +202,7 @@ contract Vat is Math, Ward {
         sin[w]    = sub(sin[w],    dtab);
         vice      = sub(vice,      dtab);
 
-        return ilk.chop;
+        return bill;
     }
 
     function plot(bytes32 ilk, uint mark) external {
