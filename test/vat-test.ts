@@ -31,8 +31,8 @@ describe('Vat', () => {
     vault = await vault_type.deploy()
 
     await send(vat.rely, vault.address)
-    await send(joy.rely, vault.address)
-    await send(gem.rely, vault.address)
+    await send(joy.ward, vault.address, true)
+    await send(gem.ward, vault.address, true)
 
     await send(joy.approve, vault.address, U256_MAX)
     await send(gem.approve, vault.address, U256_MAX)

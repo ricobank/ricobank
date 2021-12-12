@@ -42,11 +42,11 @@ describe('Vault', () => {
 
         await send(vat.hope, vault.address)
         await send(vat.rely, vault.address)
-        await send(RICO.rely, vault.address)
-        await send(gemA.rely, vault.address)
-        await send(gemB.rely, vault.address)
-        await send(RICO.rely, flash_strategist.address)
-        await send(gemA.rely, flash_strategist.address)
+        await send(RICO.ward, vault.address, true)
+        await send(gemA.ward, vault.address, true)
+        await send(gemB.ward, vault.address, true)
+        await send(RICO.ward, flash_strategist.address, true)
+        await send(gemA.ward, flash_strategist.address, true)
 
         await send(RICO.approve, vault.address, U256_MAX)
         await send(gemA.approve, vault.address, U256_MAX)

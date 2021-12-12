@@ -47,8 +47,8 @@ describe('vow / liq liquidation lifecycle', () => {
     await send(vat.hope, vow.address)
     await send(vat.rely, plug_join.address)
     await send(vat.rely, vow.address)
-    await send(RICO.rely, plug_join.address)
-    await send(RISK.rely, vow.address)
+    await send(RICO.ward, plug_join.address, true)
+    await send(RISK.ward, vow.address, true)
 
     await send(WETH.mint, ALI, wad(10000))
     await send(RICO.mint, ALI, wad(10000))
