@@ -9,8 +9,6 @@ chai.use(smock.matchers);
 
 import { b32, snapshot, revert } from './helpers'
 import { fail, mine, wad, ray, rad, apy, send, BANKYEAR, U256_MAX } from 'minihat'
-const debug = require('debug')('rico:test')
-const balancer = require('@balancer-labs/v2-deployments')
 const i0 = Buffer.alloc(32) // ilk 0 id
 
 describe('vow / liq liquidation lifecycle', () => {
@@ -22,10 +20,9 @@ describe('vow / liq liquidation lifecycle', () => {
   let vow; let vow_type
   let flower; let flower_type;
   let mock_flower_plopper; let mock_flower_plopper_type;
-  let vault; let vault_type
-  let poolfab; let poolfab_type
-  let pool; let pool_type
+  let vault
   let poolId_weth_rico
+  let poolId_risk_rico
   before(async () => {
     [ali, bob, cat] = await ethers.getSigners();
     [ALI, BOB, CAT] = [ali, bob, cat].map(signer => signer.address)
@@ -37,16 +34,6 @@ describe('vow / liq liquidation lifecycle', () => {
     flower_type = await smock.mock('RicoFlowerV1')
     mock_flower_plopper_type = await ethers.getContractFactory('MockFlowerPlopper', ali)
 
-    const vault_abi = await balancer.getBalancerContractAbi('20210418-vault', 'Vault')
-    const vault_code = await balancer.getBalancerContractBytecode('20210418-vault', 'Vault')
-    const pool_abi = await balancer.getBalancerContractAbi('20210418-weighted-pool', 'WeightedPool')
-    const pool_code = await balancer.getBalancerContractBytecode('20210418-weighted-pool', 'WeightedPool')
-    const poolfab_abi = await balancer.getBalancerContractAbi('20210418-weighted-pool', 'WeightedPoolFactory')
-    const poolfab_code = await balancer.getBalancerContractBytecode('20210418-weighted-pool', 'WeightedPoolFactory')
-    vault_type = new ethers.ContractFactory(vault_abi, vault_code, ali)
-    poolfab_type = new ethers.ContractFactory(poolfab_abi, poolfab_code, ali)
-    pool_type = new ethers.ContractFactory(pool_abi, pool_code, ali)
-
     vat = await vat_type.deploy()
     plug_join = await plug_join_type.deploy()
     vow = await vow_type.deploy()
@@ -55,8 +42,6 @@ describe('vow / liq liquidation lifecycle', () => {
     RICO = await gem_type.deploy('Rico', 'RICO')
     RISK = await gem_type.deploy('Rico Riskshare', 'RISK')
     WETH = await gem_type.deploy('Wrapped Ether', 'WETH')
-    vault = await vault_type.deploy(ALI, WETH.address, 1000, 1000)
-    poolfab = await poolfab_type.deploy(vault.address)
 
     await send(vat.hope, plug_join.address)
     await send(vat.hope, vow.address)
@@ -70,9 +55,6 @@ describe('vow / liq liquidation lifecycle', () => {
     await send(RISK.mint, ALI, wad(10000))
     await send(RICO.approve, plug_join.address, U256_MAX)
     await send(WETH.approve, plug_join.address, U256_MAX)
-    await send(WETH.approve, vault.address, U256_MAX)
-    await send(RICO.approve, vault.address, U256_MAX)
-    await send(RISK.approve, vault.address, U256_MAX)
 
     await send(plug_join.file_gem, i0, WETH.address)
     await send(plug_join.file_vat, vat.address, true)
@@ -108,65 +90,12 @@ describe('vow / liq liquidation lifecycle', () => {
     const safe1 = await vat.callStatic.safe(i0, ALI)
     want(safe1).true
 
-    // create and add liquidity to weth-rico balancer pool
-    let tokens = [WETH.address, RICO.address]
-    if (RICO.address < WETH.address) {
-      tokens = [RICO.address, WETH.address]
-    }
-    let tx_create = await poolfab.create(
-        'mock', 'MOCK',
-        tokens,
-        [wad(0.5), wad(0.5)],
-        wad(0.01),
-        ALI
-    )
-    let res = await tx_create.wait()
-    let event = res.events[res.events.length - 1]
-    let pool_addr = event.args.pool
-    pool = pool_type.attach(pool_addr)
-    poolId_weth_rico = await pool.getPoolId()
-    let JOIN_KIND_INIT = 0
-    let initUserData = ethers.utils.defaultAbiCoder.encode(
-        ['uint256', 'uint256[]'], [JOIN_KIND_INIT, [wad(2000), wad(2000)]]
-    )
-    let joinPoolRequest = {
-      assets: tokens,
-      maxAmountsIn: [wad(2000), wad(2000)],
-      userData: initUserData,
-      fromInternalBalance: false
-    }
-    let tx = await vault.joinPool(poolId_weth_rico, ALI, ALI, joinPoolRequest)
-    await tx.wait()
-
-    // create and add liquidity to risk-rico balancer pool
-    tokens = [RICO.address, RISK.address]
-    if (RISK.address < RICO.address) {
-      tokens = [RISK.address, RICO.address]
-    }
-    tx_create = await poolfab.create(
-        'mock', 'MOCK',
-        tokens,
-        [wad(0.5), wad(0.5)],
-        wad(0.01),
-        ALI
-    )
-    res = await tx_create.wait()
-    event = res.events[res.events.length - 1]
-    pool_addr = event.args.pool
-    pool = pool_type.attach(pool_addr)
-    const poolId_risk_rico = await pool.getPoolId()
-    JOIN_KIND_INIT = 0
-    initUserData = ethers.utils.defaultAbiCoder.encode(
-        ['uint256', 'uint256[]'], [JOIN_KIND_INIT, [wad(1000), wad(1000)]]
-    )
-    joinPoolRequest = {
-      assets: tokens,
-      maxAmountsIn: [wad(1000), wad(1000)],
-      userData: initUserData,
-      fromInternalBalance: false
-    }
-    tx = await vault.joinPool(poolId_risk_rico, ALI, ALI, joinPoolRequest)
-    await tx.wait()
+    // run the deploy balancer task which deploys balancer vault and creates pools
+    let task_args = {WETH: WETH, RICO: RICO, RISK: RISK}
+    let task_result = await hh.run('deploy-balancer', task_args)
+    vault = task_result.vault
+    poolId_weth_rico = task_result.poolId_weth_rico
+    poolId_risk_rico = task_result.poolId_risk_rico
 
     await send(flower.file_ramp, WETH.address, {vel:wad(1), rel:wad(0.001), bel:0, cel:600})
     await send(flower.file_ramp, RICO.address, {vel:wad(1), rel:wad(0.001), bel:0, cel:600})
@@ -385,12 +314,12 @@ describe('vow / liq liquidation lifecycle', () => {
 
       // confirm bail trades the weth for rico
       const vow_rico_0 = await RICO.balanceOf(vow.address)
-      const plug_weth_0 = await WETH.balanceOf(plug_join.address)
+      const join_weth_0 = await WETH.balanceOf(plug_join.address)
       await send(vow.bail, i0, ALI)
       const vow_rico_1 = await RICO.balanceOf(vow.address)
-      const plug_weth_1 = await WETH.balanceOf(plug_join.address)
+      const join_weth_1 = await WETH.balanceOf(plug_join.address)
       want(vow_rico_1.gt(vow_rico_0)).true
-      want(plug_weth_0.gt(plug_weth_1)).true
+      want(join_weth_0.gt(join_weth_1)).true
       want(flower.flip).to.have.callCount(1)
       want(flower.flop).to.have.callCount(0)
       want(flower.flap).to.have.callCount(2)
