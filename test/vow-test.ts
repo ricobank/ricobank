@@ -90,12 +90,20 @@ describe('vow / liq liquidation lifecycle', () => {
     const safe1 = await vat.callStatic.safe(i0, ALI)
     want(safe1).true
 
-    // run the deploy balancer task which deploys balancer vault and creates pools
-    let task_args = {WETH: WETH, RICO: RICO, RISK: RISK}
-    let task_result = await hh.run('deploy-balancer', task_args)
-    vault = task_result.vault
-    poolId_weth_rico = task_result.poolId_weth_rico
-    poolId_risk_rico = task_result.poolId_risk_rico
+    const task_args = { WETH: WETH }
+    const balancer_pack = await hh.run('deploy-mock-balancer', task_args)
+    vault = balancer_pack.vault
+
+    await send(WETH.approve, vault.address, U256_MAX)
+    await send(RICO.approve, vault.address, U256_MAX)
+    await send(RISK.approve, vault.address, U256_MAX)
+
+    const weth_rico_args = { balancer_pack: balancer_pack, token_a: WETH, token_b: RICO, name: 'mock', symbol: 'MOCK',
+      weights:[wad(0.5), wad(0.5)], swapFeePercentage:wad(0.01), amountsIn:[wad(2000), wad(2000)] }
+    const risk_rico_args = { balancer_pack: balancer_pack, token_a: RISK, token_b: RICO, name: 'mock', symbol: 'MOCK',
+      weights:[wad(0.5), wad(0.5)], swapFeePercentage:wad(0.01), amountsIn:[wad(2000), wad(2000)] }
+    poolId_weth_rico = (await hh.run('deploy-balancer-pool', weth_rico_args)).pool_id
+    poolId_risk_rico = (await hh.run('deploy-balancer-pool', risk_rico_args)).pool_id
 
     await send(flower.file_ramp, WETH.address, {vel:wad(1), rel:wad(0.001), bel:0, cel:600})
     await send(flower.file_ramp, RICO.address, {vel:wad(1), rel:wad(0.001), bel:0, cel:600})

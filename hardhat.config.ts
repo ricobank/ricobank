@@ -1,6 +1,7 @@
 import '@nomiclabs/hardhat-ethers'
 
-import './task/deploy-balancer'
+import './task/deploy-mock-balancer'
+import './task/deploy-balancer-pool'
 
 /**
  * @type import('hardhat/config').HardhatUserConfig

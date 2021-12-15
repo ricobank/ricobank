@@ -3,8 +3,8 @@ import { expect as want } from 'chai'
 import * as hh from 'hardhat'
 import { ethers } from 'hardhat'
 
-import { b32, snapshot, revert } from './helpers'
-import { mine, wad, send } from 'minihat'
+import { b32, revert, snapshot } from './helpers'
+import { mine, send, U256_MAX, wad } from 'minihat'
 
 describe('RicoFlowerV1 balancer interaction', () => {
   let ali, bob, cat
@@ -30,12 +30,20 @@ describe('RicoFlowerV1 balancer interaction', () => {
     await send(RICO.mint, ALI, wad(10000))
     await send(RISK.mint, ALI, wad(10000))
 
-    // run the deploy balancer task which deploys balancer vault and creates pools
-    let task_args = {WETH: WETH, RICO: RICO, RISK: RISK}
-    let task_result = await hh.run('deploy-balancer', task_args)
-    vault = task_result.vault
-    poolId_weth_rico = task_result.poolId_weth_rico
-    poolId_risk_rico = task_result.poolId_risk_rico
+    const task_args = { WETH: WETH }
+    const balancer_pack = await hh.run('deploy-mock-balancer', task_args)
+    vault = balancer_pack.vault
+
+    await send(WETH.approve, vault.address, U256_MAX)
+    await send(RICO.approve, vault.address, U256_MAX)
+    await send(RISK.approve, vault.address, U256_MAX)
+
+    const weth_rico_args = { balancer_pack: balancer_pack, token_a: WETH, token_b: RICO, name: 'mock', symbol: 'MOCK',
+      weights:[wad(0.5), wad(0.5)], swapFeePercentage:wad(0.01), amountsIn:[wad(2000), wad(2000)] }
+    const risk_rico_args = { balancer_pack: balancer_pack, token_a: RISK, token_b: RICO, name: 'mock', symbol: 'MOCK',
+      weights:[wad(0.5), wad(0.5)], swapFeePercentage:wad(0.01), amountsIn:[wad(2000), wad(2000)] }
+    poolId_weth_rico = (await hh.run('deploy-balancer-pool', weth_rico_args)).pool_id
+    poolId_risk_rico = (await hh.run('deploy-balancer-pool', risk_rico_args)).pool_id
 
     await send(flower.file_ramp, WETH.address, {vel:wad(1), rel:wad(0.001), bel:0, cel:600})
     await send(flower.file_ramp, RICO.address, {vel:wad(1), rel:wad(0.001), bel:0, cel:600})
