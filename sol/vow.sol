@@ -48,7 +48,7 @@ contract Vow is Math, Ward, Clipper {
         Flipper(flipper).flip(ilk, urn, gem, ink, bill);
     }
 
-    function plop(bytes32 ilk, address urn, address gem, uint amt) external {
+    function plop(bytes32 ilk, address urn, uint amt) external {
         ward();
         vault.gem_join(address(vat), ilk, urn, amt);
     }

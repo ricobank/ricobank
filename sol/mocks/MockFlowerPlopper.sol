@@ -17,7 +17,7 @@ contract MockFlowerPlopper is Math, BalancerSwapper, Flipper
         trade(gem, RICO, SwapKind.GIVEN_OUT, bill);
         uint refund = GemLike(gem).balanceOf(address(this));
         GemLike(gem).transfer(vow, refund);
-        Plopper(vow).plop(ilk, urn, gem, refund);
+        Plopper(vow).plop(ilk, urn, refund);
     }
 
     function trade(address tokIn, address tokOut, SwapKind kind, uint amt) internal {

@@ -30,7 +30,7 @@ interface Flopper {
 }
 
 interface Plopper {
-    function plop(bytes32 ilk, address urn, address gem, uint amt) external;
+    function plop(bytes32 ilk, address urn, uint amt) external;
 }
 
 abstract contract Clipper {
