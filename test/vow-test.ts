@@ -288,12 +288,16 @@ describe('vow / liq liquidation lifecycle', () => {
       const usr_gems_0 = await vat.gem(i0, ALI)
       await mine(hh, BANKYEAR)
       await send(vow.bail, i0, ALI)
+      await fail('ERR_SAFE', vow.bail, i0, ALI)
       const usr_gems_1 = await vat.gem(i0, ALI)
+      want(usr_gems_0.eq(usr_gems_1)).true
+      await send(mock_flower_plopper.complete_auction, 1)
+      const usr_gems_2 = await vat.gem(i0, ALI)
       const sin1 = await vat.sin(vow.address)
       const vow_rico1 = await RICO.balanceOf(vow.address)
       const sin_wad = sin1 / 10**27
       want(sin_wad < vow_rico1).true
-      want(usr_gems_0.lt(usr_gems_1)).true
+      want(usr_gems_0.lt(usr_gems_2)).true
     })
   })
 

@@ -10,17 +10,36 @@ import '../flow.sol';
 
 contract MockFlowerPlopper is Math, BalancerSwapper, Flipper
 {
+    struct Auction {
+        bytes32 ilk;
+        address urn;
+        address gem;
+        uint ink;
+        uint bill;
+    }
     address public RICO;
     address public vow;
+    mapping (uint => Auction) public auctions;
+    uint public counter;
 
     function flip(bytes32 ilk, address urn, address gem, uint ink, uint bill) external {
-        trade(gem, RICO, SwapKind.GIVEN_OUT, bill);
-        uint refund = GemLike(gem).balanceOf(address(this));
-        GemLike(gem).transfer(vow, refund);
-        Plopper(vow).plop(ilk, urn, refund);
+        uint id = ++counter;
+        auctions[id].ilk = ilk;
+        auctions[id].urn = urn;
+        auctions[id].gem = gem;
+        auctions[id].ink = ink;
+        auctions[id].bill = bill;
     }
 
-    function trade(address tokIn, address tokOut, SwapKind kind, uint amt) internal {
+    function complete_auction(uint id) external {
+        uint spill = trade(auctions[id].gem, RICO, SwapKind.GIVEN_OUT, auctions[id].bill);
+        uint refund = auctions[id].ink - spill;
+        GemLike(auctions[id].gem).transfer(vow, refund);
+        Plopper(vow).plop(auctions[id].ilk, auctions[id].urn, refund);
+        delete auctions[id];
+    }
+
+    function trade(address tokIn, address tokOut, SwapKind kind, uint amt) internal returns (uint256) {
         SingleSwap memory ss = SingleSwap({
         poolId: pools[tokIn][tokOut],
         kind: kind,
@@ -35,7 +54,7 @@ contract MockFlowerPlopper is Math, BalancerSwapper, Flipper
         recipient: payable(vow),
         toInternalBalance: false
         });
-        bvault.swap(ss, fm, type(uint256).max, block.timestamp);
+        return bvault.swap(ss, fm, type(uint256).max, block.timestamp);
     }
 
     function approve_gem(address gem) external {
