@@ -38,10 +38,25 @@ describe('RicoFlowerV1 balancer interaction', () => {
     await send(RICO.approve, vault.address, U256_MAX)
     await send(RISK.approve, vault.address, U256_MAX)
 
-    const weth_rico_args = { balancer_pack: balancer_pack, token_a: WETH, token_b: RICO, name: 'mock', symbol: 'MOCK',
-      weights:[wad(0.5), wad(0.5)], swapFeePercentage:wad(0.01), amountsIn:[wad(2000), wad(2000)] }
-    const risk_rico_args = { balancer_pack: balancer_pack, token_a: RISK, token_b: RICO, name: 'mock', symbol: 'MOCK',
-      weights:[wad(0.5), wad(0.5)], swapFeePercentage:wad(0.01), amountsIn:[wad(2000), wad(2000)] }
+    const weth_rico_tokens = [{token: WETH, weight: wad(0.5), amountIn: wad(2000)},
+                              {token: RICO, weight: wad(0.5), amountIn: wad(2000)}]
+    const risk_rico_tokens = [{token: RISK, weight: wad(0.5), amountIn: wad(2000)},
+                              {token: RICO, weight: wad(0.5), amountIn: wad(2000)}]
+
+    const weth_rico_args = {
+      balancer_pack: balancer_pack,
+      token_settings: weth_rico_tokens,
+      name: 'mock',
+      symbol: 'MOCK',
+      swapFeePercentage: wad(0.01)
+    }
+    const risk_rico_args = {
+      balancer_pack: balancer_pack,
+      token_settings: risk_rico_tokens,
+      name: 'mock',
+      symbol: 'MOCK',
+      swapFeePercentage: wad(0.01)
+    }
     poolId_weth_rico = (await hh.run('deploy-balancer-pool', weth_rico_args)).pool_id
     poolId_risk_rico = (await hh.run('deploy-balancer-pool', risk_rico_args)).pool_id
 

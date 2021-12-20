@@ -13,14 +13,15 @@ task('deploy-balancer-pool', 'create new balancer pool')
         const pool_code = await balancer.getBalancerContractBytecode('20210418-weighted-pool', 'WeightedPool')
         const pool_type = new ethers.ContractFactory(pool_abi, pool_code, acct)
 
-        let tokens = [args.token_a.address, args.token_b.address]
-        if (args.token_b.address < args.token_a.address) {
-            tokens = [args.token_b.address, args.token_a.address]
-        }
+        args.token_settings.sort((a, b) => (a.token.address > b.token.address) ? 1 : -1)
+        const tokens = args.token_settings.map(x => x.token.address)
+        const weights = args.token_settings.map(x => x.weight);
+        const amountsIn = args.token_settings.map(x => x.amountIn);
+
         let tx_create = await args.balancer_pack.poolfab.create(
             args.name, args.symbol,
             tokens,
-            args.weights,
+            weights,
             args.swapFeePercentage,
             deployer
         )
@@ -31,11 +32,11 @@ task('deploy-balancer-pool', 'create new balancer pool')
         const pool_id = await pool.getPoolId()
         const JOIN_KIND_INIT = 0
         const initUserData = ethers.utils.defaultAbiCoder.encode(
-            ['uint256', 'uint256[]'], [JOIN_KIND_INIT, args.amountsIn]
+            ['uint256', 'uint256[]'], [JOIN_KIND_INIT, amountsIn]
         )
         const joinPoolRequest = {
             assets: tokens,
-            maxAmountsIn: args.amountsIn,
+            maxAmountsIn: amountsIn,
             userData: initUserData,
             fromInternalBalance: false
         }
