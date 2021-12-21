@@ -1,5 +1,6 @@
 import {task} from 'hardhat/config'
 import {HardhatRuntimeEnvironment, TaskArguments} from 'hardhat/types'
+import {BigNumber} from 'ethers'
 
 const balancer = require('@balancer-labs/v2-deployments')
 
@@ -13,7 +14,8 @@ task('deploy-balancer-pool', 'create new balancer pool')
         const pool_code = await balancer.getBalancerContractBytecode('20210418-weighted-pool', 'WeightedPool')
         const pool_type = new ethers.ContractFactory(pool_abi, pool_code, acct)
 
-        args.token_settings.sort((a, b) => (a.token.address > b.token.address) ? 1 : -1)
+        args.token_settings.sort((a, b) =>
+            (BigNumber.from(a.token.address).gt(BigNumber.from(b.token.address))) ? 1 : -1)
         const tokens = args.token_settings.map(x => x.token.address)
         const weights = args.token_settings.map(x => x.weight);
         const amountsIn = args.token_settings.map(x => x.amountIn);

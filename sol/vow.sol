@@ -21,16 +21,20 @@ interface VatLike {
     function grab(bytes32,address,address,address,int,int) external returns (uint);
 }
 
-interface VaultLike {
-    function gem_join(address,bytes32,address,uint) external returns (address);
-    function gem_exit(address,bytes32,address,uint) external returns (address);
-    function joy_exit(address vat, address joy, address usr, uint amt) external;
-    function joy_join(address vat, address joy, address usr, uint amt) external;
+interface JoinLike {
+    function join(address,bytes32,address,uint) external returns (address);
+    function exit(address,bytes32,address,uint) external returns (address);
+}
+
+interface PlugLike {
+    function join(address vat, address joy, address usr, uint amt) external;
+    function exit(address vat, address joy, address usr, uint amt) external;
 }
 
 contract Vow is Math, Ward, Clipper {
     VatLike public vat;
-    VaultLike public vault;
+    JoinLike public join;
+    PlugLike public plug;
     GemLike public RICO;
     GemLike public RISK;
     Flopper public flopper;
@@ -44,13 +48,13 @@ contract Vow is Math, Ward, Clipper {
         address flipper = flippers[ilk];
         (uint ink, uint art) = vat.urns(ilk, urn);
         uint bill = vat.grab(ilk, urn, address(this), address(this), -int(ink), -int(art));
-        address gem = vault.gem_exit(address(vat), ilk, flipper, ink);
+        address gem = join.exit(address(vat), ilk, flipper, ink);
         Flipper(flipper).flip(ilk, urn, gem, ink, bill);
     }
 
     function plop(bytes32 ilk, address urn, uint amt) external {
         ward();
-        vault.gem_join(address(vat), ilk, urn, amt);
+        join.join(address(vat), ilk, urn, amt);
     }
 
     function keep() external {
@@ -59,7 +63,7 @@ contract Vow is Math, Ward, Clipper {
 
         vat.rake();
         RISK.burn(address(this), risk);
-        vault.joy_join(address(vat), address(RICO), address(this), rico);
+        plug.join(address(vat), address(RICO), address(this), rico);
 
         uint sin = vat.sin(address(this));
         uint joy = vat.joy(address(this));
@@ -67,7 +71,7 @@ contract Vow is Math, Ward, Clipper {
         if (joy > sin + bar) {
             vat.heal(sin);
             uint gain = (joy - sin - bar) / RAY;
-            vault.joy_exit(address(vat), address(RICO), address(flapper), gain);
+            plug.exit(address(vat), address(RICO), address(flapper), gain);
             flapper.flap(0);
         } else if (sin > joy) {
             vat.heal(joy);
@@ -85,12 +89,11 @@ contract Vow is Math, Ward, Clipper {
     }
 
     function reapprove() external {
-        vat.hope(address(vault));
-        RICO.approve(address(vault), type(uint256).max);
+        vat.hope(address(plug));
     }
 
     function reapprove_gem(address gem) external {
-        GemLike(gem).approve(address(vault), type(uint256).max);
+        GemLike(gem).approve(address(join), type(uint256).max);
     }
 
     function file(bytes32 key, address val) external {
@@ -100,7 +103,8 @@ contract Vow is Math, Ward, Clipper {
         } else if (key == "rico") { RICO = GemLike(val);
         } else if (key == "risk") { RISK = GemLike(val);
         } else if (key == "vat") { vat = VatLike(val);
-        } else if (key == "vault") { vault = VaultLike(val);
+        } else if (key == "join") { join = JoinLike(val);
+        } else if (key == "plug") { plug = PlugLike(val);
         } else { revert("ERR_FILE_KEY"); }
     }
     function file(bytes32 key, uint val) external {

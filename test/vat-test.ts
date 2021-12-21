@@ -1,7 +1,7 @@
 import { expect as want } from 'chai'
 
 import * as hh from 'hardhat'
-import { ethers, network } from 'hardhat'
+import { ethers } from 'hardhat'
 
 import { send, wad, ray, rad, N, U256_MAX, warp } from 'minihat'
 
@@ -16,33 +16,31 @@ describe('Vat', () => {
   let ALI, BOB, CAT
   let vat; let vat_type
   let joy, gem; let gem_type
-  let vault; let vault_type
+  let join, join_type
+  let plug, plug_type
   before(async () => {
     [ali, bob, cat] = await ethers.getSigners();
     [ALI, BOB, CAT] = [ali, bob, cat].map(signer => signer.address)
     vat_type = await ethers.getContractFactory('Vat', ali)
     const gem_artifacts = require('../lib/gemfab/artifacts/sol/gem.sol/Gem.json')
     gem_type = ethers.ContractFactory.fromSolidity(gem_artifacts, ali)
-    vault_type = await ethers.getContractFactory('Vault', ali)
+    join_type = await ethers.getContractFactory('Join', ali)
+    plug_type = await ethers.getContractFactory('Plug', ali)
 
     vat = await vat_type.deploy()
     joy = await gem_type.deploy('joy', 'JOY')
     gem = await gem_type.deploy('gem', 'GEM')
-    vault = await vault_type.deploy()
+    join = await join_type.deploy()
+    plug = await plug_type.deploy()
 
-    await send(vat.rely, vault.address)
-    await send(joy.ward, vault.address, true)
-    await send(gem.ward, vault.address, true)
-
-    await send(joy.approve, vault.address, U256_MAX)
-    await send(gem.approve, vault.address, U256_MAX)
+    await send(vat.rely, join.address)
+    await send(gem.approve, join.address, U256_MAX)
     await send(joy.mint, ALI, wad(1000))
     await send(gem.mint, ALI, wad(1000))
 
-    await send(vault.file_gem, i0, gem.address)
-    await send(vault.file_vat, vat.address, true)
-    await send(vault.file_joy, joy.address, true)
-    await send(vault.gem_join, vat.address, i0, ALI, wad(1000))
+    await send(join.bind, vat.address, i0, gem.address)
+    await send(plug.bind, vat.address, joy.address, true)
+    await send(join.join, vat.address, i0, ALI, wad(1000))
 
     await send(vat.init, i0)
     await send(vat.file, b32('ceil'), rad(1000))

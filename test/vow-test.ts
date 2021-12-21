@@ -16,7 +16,8 @@ describe('vow / liq liquidation lifecycle', () => {
   let ALI, BOB, CAT
   let RICO, RISK, WETH; let gem_type
   let vat; let vat_type
-  let plug_join; let plug_join_type
+  let join, join_type
+  let plug, plug_type
   let vow; let vow_type
   let flower; let flower_type;
   let mock_flower_plopper; let mock_flower_plopper_type;
@@ -30,12 +31,14 @@ describe('vow / liq liquidation lifecycle', () => {
     gem_type = ethers.ContractFactory.fromSolidity(gem_artifacts, ali)
     vat_type = await smock.mock('Vat', ali)
     vow_type = await ethers.getContractFactory('Vow', ali)
-    plug_join_type = await ethers.getContractFactory('Vault', ali)
+    join_type = await ethers.getContractFactory('Join', ali)
+    plug_type = await ethers.getContractFactory('Plug', ali)
     flower_type = await smock.mock('RicoFlowerV1')
     mock_flower_plopper_type = await ethers.getContractFactory('MockFlowerPlopper', ali)
 
     vat = await vat_type.deploy()
-    plug_join = await plug_join_type.deploy()
+    join = await join_type.deploy()
+    plug = await plug_type.deploy()
     vow = await vow_type.deploy()
     flower = await flower_type.deploy();
     mock_flower_plopper = await mock_flower_plopper_type.deploy();
@@ -43,24 +46,21 @@ describe('vow / liq liquidation lifecycle', () => {
     RISK = await gem_type.deploy('Rico Riskshare', 'RISK')
     WETH = await gem_type.deploy('Wrapped Ether', 'WETH')
 
-    await send(vat.hope, plug_join.address)
+    await send(vat.hope, plug.address)
     await send(vat.hope, vow.address)
-    await send(vat.rely, plug_join.address)
+    await send(vat.rely, join.address)
     await send(vat.rely, vow.address)
-    await send(RICO.ward, plug_join.address, true)
+    await send(RICO.ward, plug.address, true)
     await send(RISK.ward, vow.address, true)
 
     await send(WETH.mint, ALI, wad(10000))
     await send(RICO.mint, ALI, wad(10000))
     await send(RISK.mint, ALI, wad(10000))
-    await send(RICO.approve, plug_join.address, U256_MAX)
-    await send(WETH.approve, plug_join.address, U256_MAX)
+    await send(WETH.approve, join.address, U256_MAX)
 
-    await send(plug_join.file_gem, i0, WETH.address)
-    await send(plug_join.file_vat, vat.address, true)
-    await send(plug_join.file_joy, RICO.address, true)
-    await send(plug_join.gem_join, vat.address, i0, ALI, wad(1000))
-
+    await send(join.bind, vat.address, i0, WETH.address)
+    await send(plug.bind, vat.address, RICO.address, true)
+    await send(join.join, vat.address, i0, ALI, wad(1000))
     await send(vat.init, i0)
     await send(vat.file, b32('ceil'), rad(1000))
     await send(vat.filk, i0, b32('line'), rad(1000))
@@ -72,7 +72,8 @@ describe('vow / liq liquidation lifecycle', () => {
     await vow['file(bytes32,address)'](b32('rico'), RICO.address)
     await vow['file(bytes32,address)'](b32('risk'), RISK.address)
     await vow['file(bytes32,address)'](b32('vat'), vat.address)
-    await vow['file(bytes32,address)'](b32('vault'), plug_join.address)
+    await vow['file(bytes32,address)'](b32('join'), join.address)
+    await vow['file(bytes32,address)'](b32('plug'), plug.address)
     await vow['file(bytes32,uint256)'](b32('bar'), rad(1))
     await send(vow.filk, i0, b32('flipper'), flower.address)
     await send(vow.file_drop, {vel:wad(1), rel:wad(0.001), bel:0, cel:60})
@@ -84,7 +85,7 @@ describe('vow / liq liquidation lifecycle', () => {
     await send(vat.lock, i0, wad(100))
     await send(vat.draw, i0, wad(99))
 
-    await send(plug_join.joy_exit, vat.address, RICO.address, ALI, wad(99))
+    await send(plug.exit, vat.address, RICO.address, ALI, wad(99))
     const bal = await RICO.balanceOf(ALI)
     want(bal.toString()).equals(wad(10099).toString())
     const safe1 = await vat.callStatic.safe(i0, ALI)
@@ -102,7 +103,6 @@ describe('vow / liq liquidation lifecycle', () => {
                               {token: RICO, weight: wad(0.5), amountIn: wad(2000)}]
     const risk_rico_tokens = [{token: RISK, weight: wad(0.5), amountIn: wad(2000)},
                               {token: RICO, weight: wad(0.5), amountIn: wad(2000)}]
-
     const weth_rico_args = {
       balancer_pack: balancer_pack,
       token_settings: weth_rico_tokens,
@@ -341,10 +341,10 @@ describe('vow / liq liquidation lifecycle', () => {
 
       // confirm bail trades the weth for rico
       const vow_rico_0 = await RICO.balanceOf(vow.address)
-      const join_weth_0 = await WETH.balanceOf(plug_join.address)
+      const join_weth_0 = await WETH.balanceOf(join.address)
       await send(vow.bail, i0, ALI)
       const vow_rico_1 = await RICO.balanceOf(vow.address)
-      const join_weth_1 = await WETH.balanceOf(plug_join.address)
+      const join_weth_1 = await WETH.balanceOf(join.address)
       want(vow_rico_1.gt(vow_rico_0)).true
       want(join_weth_0.gt(join_weth_1)).true
       want(flower.flip).to.have.callCount(1)

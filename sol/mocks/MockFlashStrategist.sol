@@ -22,21 +22,26 @@ interface VatLike {
     function wipe(bytes32, uint) external;
 }
 
-interface VaultLike {
-    function gem_exit(address,bytes32,address,uint) external returns (address);
-    function gem_join(address,bytes32,address,uint) external returns (address);
-    function joy_exit(address vat, address joy, address usr, uint amt) external;
-    function joy_join(address vat, address joy, address usr, uint amt) external;
+interface JoinLike {
+    function join(address,bytes32,address,uint) external returns (address);
+    function exit(address,bytes32,address,uint) external returns (address);
+}
+
+interface PlugLike {
+    function join(address vat, address joy, address usr, uint amt) external;
+    function exit(address vat, address joy, address usr, uint amt) external;
 }
 
 contract MockFlashStrategist {
-    VaultLike public vault;
+    JoinLike public join;
+    PlugLike public plug;
     VatLike public vat;
     GemLike public rico;
     bytes32 ilk0;
 
-    constructor(address vault_, address vat_, address rico_, bytes32 ilk0_) {
-        vault = VaultLike(vault_);
+    constructor(address join_, address plug_, address vat_, address rico_, bytes32 ilk0_) {
+        join = JoinLike(join_);
+        plug = PlugLike(plug_);
         vat = VatLike(vat_);
         rico = GemLike(rico_);
         ilk0 = ilk0_;
@@ -44,7 +49,7 @@ contract MockFlashStrategist {
 
     function approve_all(address[] memory gems, uint256[] memory amts) public {
         for (uint256 i = 0; i < gems.length; i++) {
-            GemLike(gems[i]).approve(address(vault), amts[i]);
+            GemLike(gems[i]).approve(address(join), amts[i]);
         }
     }
 
@@ -60,23 +65,23 @@ contract MockFlashStrategist {
     }
 
     function fast_lever(address gem, uint256 lock_amt, uint256 draw_amt) public {
-        GemLike(gem).approve(address(vault), lock_amt);
-        vault.gem_join(address(vat), ilk0, address(this), lock_amt);
+        GemLike(gem).approve(address(join), lock_amt);
+        join.join(address(vat), ilk0, address(this), lock_amt);
         vat.lock(ilk0, lock_amt);
         vat.draw(ilk0, draw_amt);
-        vat.hope(address(vault));
-        vault.joy_exit(address(vat), address(rico), address(this), draw_amt);
+        vat.hope(address(plug));
+        plug.exit(address(vat), address(rico), address(this), draw_amt);
         buy_gem(gem, draw_amt);
-        GemLike(gem).approve(address(vault), draw_amt);
+        GemLike(gem).approve(address(join), draw_amt);
     }
 
     function fast_release(address gem, uint256 withdraw_amt, uint256 wipe_amt) public {
         sell_gem(gem, wipe_amt);
-        vault.joy_join(address(vat), address(rico), address(this), wipe_amt);
+        plug.join(address(vat), address(rico), address(this), wipe_amt);
         vat.wipe(ilk0, wipe_amt);
         vat.free(ilk0, withdraw_amt);
-        vault.gem_exit(address(vat), ilk0, address(this), withdraw_amt);
-        GemLike(gem).approve(address(vault), wipe_amt);
+        join.exit(address(vat), ilk0, address(this), withdraw_amt);
+        GemLike(gem).approve(address(join), wipe_amt);
     }
 
     function buy_gem(address gem, uint256 amount) internal {
