@@ -55,15 +55,16 @@ describe('Vox', () => {
   })
 
   it('sway', async () => {
+    let progress = 10 ** 10
     await send(vat.spar, wad(7))
 
-    await warp(hh, 10 ** 10)
+    await warp(hh, progress)
     await mine(hh)
 
     const t0 = await vat.time()
-    want(t0.toNumber()).equal(10 ** 10)
+    want(t0.toNumber()).equal(progress)
 
-    await wait(hh, 10)
+    await warp(hh, progress += 10)
     await mine(hh)
 
     const t1 = await vat.time()
@@ -84,7 +85,7 @@ describe('Vox', () => {
     await send(vat.sway, ray(2))// doubles every second (!)
     await send(vat.prod)
 
-    await wait(hh, 1)
+    await warp(hh, progress += 10)
     await mine(hh)
 
     const par2 = await vat.par()
