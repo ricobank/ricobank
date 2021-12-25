@@ -96,7 +96,17 @@ contract Vow is Math, Ward, Clipper {
         GemLike(gem).approve(address(join), type(uint256).max);
     }
 
-    function file(bytes32 key, address val) external {
+    function file(bytes32 key, uint val) external {
+        ward();
+               if (key == "bar") { bar = val;
+        } else if (key == "vel") { drop.vel = val;
+        } else if (key == "rel") { drop.rel = val;
+        } else if (key == "bel") { drop.bel = val;
+        } else if (key == "cel") { drop.cel = val;
+        } else { revert("ERR_FILE_KEY"); }
+    }
+
+    function link(bytes32 key, address val) external {
         ward();
                if (key == "flapper") { flapper = Flapper(val);
         } else if (key == "flopper") { flopper = Flopper(val);
@@ -105,20 +115,12 @@ contract Vow is Math, Ward, Clipper {
         } else if (key == "vat") { vat = VatLike(val);
         } else if (key == "join") { join = JoinLike(val);
         } else if (key == "plug") { plug = PlugLike(val);
-        } else { revert("ERR_FILE_KEY"); }
+        } else { revert("ERR_LINK_KEY"); }
     }
-    function file(bytes32 key, uint val) external {
-        ward();
-        if (key == "bar") { bar = val;
-        } else { revert("ERR_FILE_KEY"); }
-    }
-    function filk(bytes32 ilk, bytes32 key, address val) external {
+
+    function lilk(bytes32 ilk, bytes32 key, address val) external {
         ward();
         if (key == "flipper") { flippers[ilk] = val;
-        } else { revert("ERR_FILK_KEY"); }
-    }
-    function file_drop(Ramp memory ramp) external {
-        ward();
-        drop = ramp;
+        } else { revert("ERR_LILK_KEY"); }
     }
 }

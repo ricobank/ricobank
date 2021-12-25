@@ -86,15 +86,20 @@ contract RicoFlowerV1 is Math, BalancerSwapper
         GemLike(gem).approve(address(bvault), type(uint256).max);
     }
 
-    function file(bytes32 key, address val) external {
+    function link(bytes32 key, address val) external {
         ward();
                if (key == "rico")  { RICO  = val;
         } else if (key == "risk")  { RISK  = val;
         } else if (key == "vow")   { vow   = val;
-        } else { revert("ERR_FILE_KEY"); }
+        } else { revert("ERR_LINK_KEY"); }
     }
-    function file_ramp(address gem, Ramp memory ramp) external {
+
+    function filem(address gem, bytes32 key, uint val) external {
         ward();
-        ramps[gem] = ramp;
+               if (key == "vel") { ramps[gem].vel = val;
+        } else if (key == "rel") { ramps[gem].rel = val;
+        } else if (key == "bel") { ramps[gem].bel = val;
+        } else if (key == "cel") { ramps[gem].cel = val;
+        } else { revert("ERR_FILEM_KEY"); }
     }
 }

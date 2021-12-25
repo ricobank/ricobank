@@ -7,7 +7,7 @@ import { smock } from '@defi-wonderland/smock'
 const chai = require('chai');
 chai.use(smock.matchers);
 
-import { b32, snapshot, revert } from './helpers'
+import {b32, snapshot, revert, set_ramp} from './helpers'
 import { fail, mine, wad, ray, rad, apy, send, BANKYEAR, U256_MAX } from 'minihat'
 const i0 = Buffer.alloc(32) // ilk 0 id
 
@@ -67,16 +67,17 @@ describe('vow / liq liquidation lifecycle', () => {
     await send(vat.filk, i0, b32('liqr'), ray(1))
     await send(vat.filk, i0, b32('chop'), ray(1.1))
 
-    await vow['file(bytes32,address)'](b32('flapper'), flower.address)
-    await vow['file(bytes32,address)'](b32('flopper'), flower.address)
-    await vow['file(bytes32,address)'](b32('rico'), RICO.address)
-    await vow['file(bytes32,address)'](b32('risk'), RISK.address)
-    await vow['file(bytes32,address)'](b32('vat'), vat.address)
-    await vow['file(bytes32,address)'](b32('join'), join.address)
-    await vow['file(bytes32,address)'](b32('plug'), plug.address)
-    await vow['file(bytes32,uint256)'](b32('bar'), rad(1))
-    await send(vow.filk, i0, b32('flipper'), flower.address)
-    await send(vow.file_drop, {vel:wad(1), rel:wad(0.001), bel:0, cel:60})
+    await send(vow.file, b32('bar'), rad(1))
+    await send(vow.link, b32('flapper'), flower.address)
+    await send(vow.link, b32('flopper'), flower.address)
+    await send(vow.link, b32('join'), join.address)
+    await send(vow.link, b32('plug'), plug.address)
+    await send(vow.link, b32('rico'), RICO.address)
+    await send(vow.link, b32('risk'), RISK.address)
+    await send(vow.link, b32('vat'), vat.address)
+    await send(vow.lilk, i0, b32('flipper'), flower.address)
+    await set_ramp(vow, {'vel': wad(1), 'rel': wad(0.001), 'bel': 0, 'cel': 60})
+
     await send(vow.reapprove)
     await send(vow.reapprove_gem, WETH.address)
 
@@ -120,11 +121,11 @@ describe('vow / liq liquidation lifecycle', () => {
     poolId_weth_rico = (await hh.run('deploy-balancer-pool', weth_rico_args)).pool_id
     poolId_risk_rico = (await hh.run('deploy-balancer-pool', risk_rico_args)).pool_id
 
-    await send(flower.file_ramp, WETH.address, {vel:wad(1), rel:wad(0.001), bel:0, cel:600})
-    await send(flower.file_ramp, RICO.address, {vel:wad(1), rel:wad(0.001), bel:0, cel:600})
-    await send(flower.file, b32('rico'), RICO.address)
-    await send(flower.file, b32('risk'), RISK.address)
-    await send(flower.file, b32('vow'), vow.address)
+    await set_ramp(flower, {'vel': wad(1), 'rel': wad(0.001), 'bel': 0, 'cel': 600}, WETH)
+    await set_ramp(flower, {'vel': wad(1), 'rel': wad(0.001), 'bel': 0, 'cel': 600}, RICO)
+    await send(flower.link, b32('rico'), RICO.address)
+    await send(flower.link, b32('risk'), RISK.address)
+    await send(flower.link, b32('vow'), vow.address)
     await send(flower.setVault, vault.address)
     await send(flower.setPool, WETH.address, RICO.address, poolId_weth_rico)
     await send(flower.setPool, RICO.address, RISK.address, poolId_risk_rico)
@@ -248,7 +249,7 @@ describe('vow / liq liquidation lifecycle', () => {
       it('flop absolute rate', async () => {
         const risk_supply_0 = await RISK.totalSupply()
         await send(vat.filk, i0, b32('duty'), apy(2))
-        await send(vow.file_drop, {vel:wad(0.001), rel:wad(1000000), bel:0, cel:1000})
+        await set_ramp(vow, {'vel': wad(0.001), 'rel': wad(1000000), 'bel': 0, 'cel': 1000})
         await mine(hh, BANKYEAR)
         await send(vow.bail, i0, ALI)
         await send(vow.keep)
@@ -268,7 +269,7 @@ describe('vow / liq liquidation lifecycle', () => {
         const risk_supply_0 = await RISK.totalSupply()
         await send(vat.filk, i0, b32('duty'), apy(2))
         // for same results as above the rel rate is set to 1 / risk supply * vel used above
-        await send(vow.file_drop, {vel:wad(1000000), rel:wad(0.0000001), bel:0, cel:1000})
+        await set_ramp(vow, {'vel': wad(1000000), 'rel': wad(0.0000001), 'bel': 0, 'cel': 1000})
         await mine(hh, BANKYEAR)
         await send(vow.bail, i0, ALI)
         await send(vow.keep)
@@ -295,7 +296,7 @@ describe('vow / liq liquidation lifecycle', () => {
       await send(mock_flower_plopper.setPool, RICO.address, WETH.address, poolId_weth_rico)
       await send(mock_flower_plopper.approve_gem, WETH.address)
       await send(vow.rely, mock_flower_plopper.address)
-      await send(vow.filk, i0, b32('flipper'), mock_flower_plopper.address)
+      await send(vow.lilk, i0, b32('flipper'), mock_flower_plopper.address)
       await send(vat.filk, i0, b32('liqr'), ray(0.8))
       await send(vat.lock, i0, wad(25))
     })
