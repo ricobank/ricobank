@@ -2,7 +2,7 @@ import { expect as want } from 'chai'
 
 import { ethers, artifacts, network } from 'hardhat'
 
-import { wad, ray, send, ADDRZERO } from './helpers'
+import { b32, wad, ray, send, ADDRZERO } from './helpers'
 const debug = require('debug')('rico:test')
 
 const ZERO = Buffer.alloc(32)
@@ -32,10 +32,11 @@ describe('plot vat ilk mark via plotter', () => {
 
     await send(vat.rely, plotter.address)
 
-    await send(plotter.file_fb, fb.address)
-    await send(plotter.file_vat, vat.address)
+    await send(plotter.link, b32("fb"), fb.address)
+    await send(plotter.link, b32("vat"), vat.address)
+    await send(plotter.link, b32("tip"), ALI)
 
-    await send(plotter.wire, i0, ALI, TAG)
+    await send(plotter.wire, i0, TAG)
   })
 
   it('plot mark', async () => {

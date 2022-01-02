@@ -13,37 +13,33 @@ interface VatLike {
 }
 
 contract Plotter is Ward, Math {
-    struct Feed {
-        address src;
-        bytes32 tag;
-    }
-
     FeedbaseLike public fb;
+    address      public tip;
     VatLike      public vat;
     
-    // ilk -> Feed
-    mapping( bytes32 => Feed ) public routes;
+    // ilk -> tag
+    mapping( bytes32 => bytes32 ) public tags;
 
     function poke(bytes32 ilk) external {
-        Feed storage feed = routes[ilk];
-        (bytes32 val, uint256 ttl) = fb.read(feed.src, feed.tag);
-        uint wad = block.timestamp < ttl ? uint(val) : 0;
+        bytes32 tag = tags[ilk];
+        require(tag != 0x0, 'ERR_TAG');
+        (bytes32 val, uint256 ttl) = fb.read(tip, tag);
+        require(block.timestamp < ttl, 'ERR_TTL');
+        uint wad = uint256(val);
         vat.plot(ilk, wad * BLN);
     }
 
-    function wire(bytes32 ilk, address src, bytes32 tag) external {
+    function wire(bytes32 ilk, bytes32 tag) external {
         ward();
-        routes[ilk] = Feed({src: src, tag: tag});
+        tags[ilk] = tag;
     }
 
-    function file_fb(address fbl) external {
+    function link(bytes32 key, address val) external {
         ward();
-        fb = FeedbaseLike(fbl);
-    }
-
-    function file_vat(address vl) external {
-        ward();
-        vat = VatLike(vl);
+             if (key == "fb") { fb = FeedbaseLike(val); }
+        else if (key == "vat") { vat = VatLike(val); }
+        else if (key == "tip") { tip = val; }
+        else revert("ERR_LINK");
     }
 }
 
