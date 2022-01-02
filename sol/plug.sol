@@ -5,6 +5,7 @@
 
 pragma solidity 0.8.9;
 
+import './mixin/lock.sol';
 import './mixin/math.sol';
 import './mixin/ward.sol';
 
@@ -17,7 +18,7 @@ interface GemLike {
     function burn(address,uint) external;
 }
 
-contract Plug is Math, Ward {
+contract Plug is Lock, Math, Ward {
     uint public constant FLASH = 2**140;
     mapping(address=>mapping(address=>bool)) public plugs;
 
@@ -34,6 +35,7 @@ contract Plug is Math, Ward {
     }
 
     function flash(address joy, address code, bytes calldata data)
+      locks
       external returns (bytes memory)
     {
         GemLike(joy).mint(code, FLASH);

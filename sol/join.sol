@@ -5,6 +5,7 @@
 
 pragma solidity 0.8.9;
 
+import './mixin/lock.sol';
 import './mixin/math.sol';
 import './mixin/ward.sol';
 
@@ -17,10 +18,7 @@ interface VatLike {
     function slip(bytes32,address,int) external;
 }
 
-contract Join is Math, Ward {
-    uint private constant LOCKED = 1;
-    uint private constant UNLOCKED = 2;
-    uint private flash_status = UNLOCKED;
+contract Join is Lock, Math, Ward {
     mapping(address=>mapping(bytes32=>address)) public repr;
 
     function join(address vat, bytes32 ilk, address usr, uint wad) external returns (address) {
@@ -42,10 +40,9 @@ contract Join is Math, Ward {
     }
 
     function flash(address[] calldata gems_, uint[] calldata amts, address code, bytes calldata data)
+      locks
       external returns (bytes memory result)
     {
-        require(flash_status == UNLOCKED, 'Lend/reenter');
-        flash_status = LOCKED;
         require(gems_.length == amts.length, 'ERR_INVALID_LENGTHS');
         for(uint i = 0; i < gems_.length; i++) {
             require(GemLike(gems_[i]).transfer(code, amts[i]), "Join/failed-transfer");
@@ -56,7 +53,6 @@ contract Join is Math, Ward {
         for(uint i = 0; i < gems_.length; i++) {
             require(GemLike(gems_[i]).transferFrom(code, address(this), amts[i]), "Join/failed-transfer");
         }
-        flash_status = UNLOCKED;
         return (result);
     }
 
