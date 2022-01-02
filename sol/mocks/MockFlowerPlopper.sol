@@ -6,7 +6,9 @@ pragma solidity 0.8.9;
 
 import 'hardhat/console.sol';
 
-import '../flow.sol';
+import '../mixin/math.sol';
+import '../swap.sol';
+import '../abi.sol';
 
 contract MockFlowerPlopper is Math, BalancerSwapper, Flipper
 {

@@ -1,13 +1,10 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+/// SPDX-License-Identifier: AGPL-3.0-or-later
 
 // Copyright (C) 2021 the bank
 
 pragma solidity 0.8.9;
 
-import 'hardhat/console.sol';
-
-import "../interfaces/IERC3156FlashBorrower.sol";
-import "../interfaces/IERC3156FlashLender.sol";
+import { IERC3156FlashBorrower, IERC3156FlashLender } from '../abi.sol';
 
 interface GemLike {
     function approve(address usr, uint amt) external;

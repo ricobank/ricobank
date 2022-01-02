@@ -9,14 +9,7 @@ import './mixin/lock.sol';
 import './mixin/math.sol';
 import './mixin/ward.sol';
 
-interface VatLike {
-    function move(address,address,uint) external;
-}
-
-interface GemLike {
-    function mint(address,uint) external;
-    function burn(address,uint) external;
-}
+import { VatLike, GemLike } from './abi.sol';
 
 contract Plug is Lock, Math, Ward {
     uint public constant FLASH = 2**140;

@@ -20,33 +20,31 @@
 
 pragma solidity 0.8.9;
 
-import 'hardhat/console.sol';
-
 import './mixin/math.sol';
 import './mixin/ward.sol';
 
 contract Vat is Math, Ward {
     struct Ilk {
-        uint256 tart;  // Total Normalised Debt     [wad]
-        uint256 rack;  // Accumulated Rate          [ray]
+        uint256 tart;  // [wad] Total Normalised Debt
+        uint256 rack;  // [ray] Accumulated Rate
 
-        uint256 mark;  // Last poked price          [ray]
+        uint256 mark;  // [ray] Last poked price
 
-        uint256 line;  // Debt Ceiling              [rad]
-        uint256 dust;  // Urn Debt Floor            [rad]
+        uint256 line;  // [rad] Debt Ceiling
+        uint256 dust;  // [rad] Urn Debt Floor
 
-        uint256 duty;  // Collateral-specific, per-second compounding rate [ray]
-        uint256  rho;  // Time of last drip [unix epoch time]
+        uint256 duty;  // [ray] Collateral-specific, per-second compounding rate
+        uint256  rho;  // [sec] Time of last drip
 
-        uint256 chop;  // Liquidation Penalty       [ray]
-        uint256 liqr;  // Liquidation Ratio         [ray]
+        uint256 chop;  // [ray] Liquidation Penalty
+        uint256 liqr;  // [ray] Liquidation Ratio
 
-        bool    open;  // Don't require ACL
+        bool    open;  // [bit] Don't require ACL
     }
 
     struct Urn {
-        uint256 ink;   // Locked Collateral  [wad]
-        uint256 art;   // Normalised Debt    [wad]
+        uint256 ink;   // [wad] Locked Collateral
+        uint256 art;   // [wad] Normalised Debt
     }
 
     mapping (bytes32 => Ilk)                       public ilks;
@@ -58,13 +56,13 @@ contract Vat is Math, Ward {
     mapping (bytes32 => mapping (address => bool)) public sys;  // ilk ACL
     mapping (address => mapping (address => bool)) public can;  // urn approval
 
-    uint256 public debt;  // Total Dai Issued    [rad]
-    uint256 public vice;  // Total Unbacked Dai  [rad]
-    uint256 public ceil;  // Total Debt Ceiling  [rad]
+    uint256 public debt;  // [rad] Total Dai Issued
+    uint256 public vice;  // [rad] Total Unbacked Dai
+    uint256 public ceil;  // [rad] Total Debt Ceiling
 
-    uint256 public par;   // System Price (joy/ref)        [wad]
-    uint256 public way;   // System Rate (SP growth rate)  [ray]
-    uint256 public tau;   // Last prod
+    uint256 public par;   // [wad] System Price (joy/ref)
+    uint256 public way;   // [ray] System Rate (SP growth rate)
+    uint256 public tau;   // [sec] Last prod
 
     constructor() {
         par = RAY;

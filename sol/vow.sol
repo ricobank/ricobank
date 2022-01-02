@@ -9,39 +9,29 @@ import './mixin/ward.sol';
 
 import './flow.sol';
 
-interface VatLike {
-    function joy(address) external returns (uint);
-    function sin(address) external returns (uint);
-    function heal(uint amt) external;
-    function drip(bytes32 ilk) external;
-    function hope(address) external;
-    function rake() external returns (uint);
-    function safe(bytes32,address) external returns (bool);
-    function urns(bytes32,address) external returns (uint,uint);
-    function grab(bytes32,address,address,address,int,int) external returns (uint);
-}
+import { GemLike, JoinLike, PlugLike, VatLike } from './abi.sol';
 
-interface JoinLike {
-    function join(address,bytes32,address,uint) external returns (address);
-    function exit(address,bytes32,address,uint) external returns (address);
-}
+contract Vow is Math, Ward {
+    struct Ramp {
+        uint256 vel;  // [wad] Stream speed wei/sec
+        uint256 rel;  // [wad] Speed relative to supply
+        uint256 bel;  // [sec] Sec allowance last emptied
+        uint256 cel;  // [sec] Sec to recharge
+    }
 
-interface PlugLike {
-    function join(address vat, address joy, address usr, uint amt) external;
-    function exit(address vat, address joy, address usr, uint amt) external;
-}
-
-contract Vow is Math, Ward, Clipper {
-    VatLike public vat;
+    VatLike  public vat;
     JoinLike public join;
     PlugLike public plug;
+
     GemLike public RICO;
     GemLike public RISK;
+
     Flopper public flopper;
     Flapper public flapper;
-    Ramp public drop;  // Recharge flops.
     mapping(bytes32=>address) public flippers;
-    uint256 public bar;  // Surplus buffer          [rad]
+
+    Ramp    public drop; // Recharge flops.
+    uint256 public bar;  // [rad] Surplus buffer
 
     function bail(bytes32 ilk, address urn) external {
         require( !vat.safe(ilk, urn), 'ERR_SAFE' );

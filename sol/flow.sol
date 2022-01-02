@@ -8,43 +8,18 @@ import './mixin/math.sol';
 
 import './swap.sol';
 
-interface GemLike {
-    function mint(address usr, uint amt) external;
-    function burn(address usr, uint amt) external;
-    function approve(address usr, uint amt) external;
-    function balanceOf(address usr) external view returns (uint);
-    function transfer(address usr, uint amt) external;
-    function totalSupply() external view returns (uint);
-}
-
-interface Flipper {
-    function flip(bytes32 ilk, address urn, address gem, uint ink, uint bill) external;
-}
-
-interface Flapper {
-    function flap(uint surplus) external;
-}
-
-interface Flopper {
-    function flop(uint debt) external;
-}
-
-interface Plopper {
-    function plop(bytes32 ilk, address urn, uint amt) external;
-}
-
-abstract contract Clipper {
-    struct Ramp {
-        uint256 vel;  // Stream speed wei/sec       [wad]
-        uint256 rel;  // Speed relative to supply   [wad]
-        uint256 bel;  // Sec allowance last emptied [sec]
-        uint256 cel;  // Sec to recharge            [sec]
-    }
-}
+import { GemLike, Flipper, Flapper, Flopper } from './abi.sol';
 
 contract RicoFlowerV1 is Math, BalancerSwapper
-                       , Flipper, Flapper, Flopper, Clipper
+                       , Flipper, Flapper, Flopper
 {
+    struct Ramp {
+        uint256 vel;  // [wad] Stream speed wei/sec
+        uint256 rel;  // [wad] Speed relative to supply
+        uint256 bel;  // [sec] Sec allowance last emptied
+        uint256 cel;  // [sec] Sec to recharge
+    }
+
     mapping(address=>Ramp) public ramps;
     address public RICO;
     address public RISK;

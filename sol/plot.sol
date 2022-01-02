@@ -5,12 +5,7 @@ pragma solidity 0.8.9;
 import './mixin/ward.sol';
 import './mixin/math.sol';
 
-interface FeedbaseLike {
-    function read(address src, bytes32 tag) external returns (bytes32 val, uint ttl);
-}
-interface VatLike {
-    function plot(bytes32 ilk, uint256 ray) external;
-}
+import { VatLike, FeedbaseLike } from './abi.sol';
 
 contract Plotter is Ward, Math {
     FeedbaseLike public fb;

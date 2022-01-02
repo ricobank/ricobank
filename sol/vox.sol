@@ -18,16 +18,7 @@ pragma solidity 0.8.9;
 import './mixin/math.sol';
 import './mixin/ward.sol';
 
-interface VatLike {
-    function par() external returns (uint256);
-    function way() external returns (uint256);
-    function prod() external;
-    function sway(uint256 r) external;
-}
-
-interface FeedbaseLike {
-    function read(address src, bytes32 tag) external returns (bytes32 val, uint ttl);
-}
+import { VatLike, FeedbaseLike } from './abi.sol'; 
 
 // RicoLikeVox
 contract Vox is Math, Ward {

@@ -9,14 +9,7 @@ import './mixin/lock.sol';
 import './mixin/math.sol';
 import './mixin/ward.sol';
 
-interface GemLike {
-    function transfer(address,uint) external returns (bool);
-    function transferFrom(address,address,uint) external returns (bool);
-}
-
-interface VatLike {
-    function slip(bytes32,address,int) external;
-}
+import { GemLike, VatLike } from './abi.sol';
 
 contract Join is Lock, Math, Ward {
     mapping(address=>mapping(bytes32=>address)) public repr;
