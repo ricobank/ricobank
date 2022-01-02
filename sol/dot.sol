@@ -19,7 +19,7 @@ contract Dot is Math {
   }
   Dat[] public ps;
   Dat[] public qs;
-  function dot() public returns (uint) {
+  function dot() public view returns (uint) {
     uint sum = 0;
     for(uint i = 0; i < ps.length; i++) {
       uint p = uint(ps[i].val);

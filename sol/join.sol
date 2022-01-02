@@ -18,6 +18,9 @@ interface VatLike {
 }
 
 contract Join is Math, Ward {
+    uint private constant LOCKED = 1;
+    uint private constant UNLOCKED = 2;
+    uint private flash_status = UNLOCKED;
     mapping(address=>mapping(bytes32=>address)) public repr;
 
     function join(address vat, bytes32 ilk, address usr, uint wad) external returns (address) {
@@ -41,16 +44,19 @@ contract Join is Math, Ward {
     function flash(address[] calldata gems_, uint[] calldata amts, address code, bytes calldata data)
       external returns (bytes memory result)
     {
+        require(flash_status == UNLOCKED, 'Lend/reenter');
+        flash_status = LOCKED;
         require(gems_.length == amts.length, 'ERR_INVALID_LENGTHS');
         for(uint i = 0; i < gems_.length; i++) {
-            GemLike(gems_[i]).transfer(code, amts[i]);
+            require(GemLike(gems_[i]).transfer(code, amts[i]), "Join/failed-transfer");
         }
         bool ok;
         (ok, result) = code.call(data);
         require(ok, "Join/receiver-err");
         for(uint i = 0; i < gems_.length; i++) {
-            GemLike(gems_[i]).transferFrom(code, address(this), amts[i]);
+            require(GemLike(gems_[i]).transferFrom(code, address(this), amts[i]), "Join/failed-transfer");
         }
+        flash_status = UNLOCKED;
         return (result);
     }
 
@@ -58,5 +64,4 @@ contract Join is Math, Ward {
         ward();
         repr[vat][ilk] = gem;
     }
-
 }

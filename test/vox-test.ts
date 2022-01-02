@@ -7,12 +7,11 @@ import {ethers, artifacts, network } from 'hardhat'
 import { send, N, wad, ray, rad, BANKYEAR, wait, warp, mine } from 'minihat'
 const { hexZeroPad } = ethers.utils
 
-import { snapshot, revert } from './helpers'
+import { snapshot, revert, ADDRZERO } from './helpers'
 
 const bn2b32 = (bn) => hexZeroPad(bn.toHexString(), 32)
 
 const i0 = Buffer.alloc(32) // ilk 0 id
-const ADDRZERO = '0x' + '00'.repeat(20)
 const TAG = Buffer.from('feed'.repeat(16), 'hex')
 
 describe('Vox', () => {

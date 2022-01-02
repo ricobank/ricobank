@@ -7,7 +7,7 @@ import { smock } from '@defi-wonderland/smock'
 const chai = require('chai');
 chai.use(smock.matchers);
 
-import {b32, snapshot, revert, set_ramp} from './helpers'
+import {b32, snapshot, revert, file_ramp, filem_ramp} from './helpers'
 import { fail, mine, wad, ray, rad, apy, send, BANKYEAR, U256_MAX } from 'minihat'
 const i0 = Buffer.alloc(32) // ilk 0 id
 
@@ -76,7 +76,7 @@ describe('vow / liq liquidation lifecycle', () => {
     await send(vow.link, b32('risk'), RISK.address)
     await send(vow.link, b32('vat'), vat.address)
     await send(vow.lilk, i0, b32('flipper'), flower.address)
-    await set_ramp(vow, {'vel': wad(1), 'rel': wad(0.001), 'bel': 0, 'cel': 60})
+    await file_ramp(vow, {'vel': wad(1), 'rel': wad(0.001), 'bel': 0, 'cel': 60})
 
     await send(vow.reapprove)
     await send(vow.reapprove_gem, WETH.address)
@@ -121,8 +121,8 @@ describe('vow / liq liquidation lifecycle', () => {
     poolId_weth_rico = (await hh.run('deploy-balancer-pool', weth_rico_args)).pool_id
     poolId_risk_rico = (await hh.run('deploy-balancer-pool', risk_rico_args)).pool_id
 
-    await set_ramp(flower, {'vel': wad(1), 'rel': wad(0.001), 'bel': 0, 'cel': 600}, WETH)
-    await set_ramp(flower, {'vel': wad(1), 'rel': wad(0.001), 'bel': 0, 'cel': 600}, RICO)
+    await filem_ramp(WETH, flower, {'vel': wad(1), 'rel': wad(0.001), 'bel': 0, 'cel': 600})
+    await filem_ramp(RICO, flower, {'vel': wad(1), 'rel': wad(0.001), 'bel': 0, 'cel': 600})
     await send(flower.link, b32('rico'), RICO.address)
     await send(flower.link, b32('risk'), RISK.address)
     await send(flower.link, b32('vow'), vow.address)
@@ -249,7 +249,7 @@ describe('vow / liq liquidation lifecycle', () => {
       it('flop absolute rate', async () => {
         const risk_supply_0 = await RISK.totalSupply()
         await send(vat.filk, i0, b32('duty'), apy(2))
-        await set_ramp(vow, {'vel': wad(0.001), 'rel': wad(1000000), 'bel': 0, 'cel': 1000})
+        await file_ramp(vow, {'vel': wad(0.001), 'rel': wad(1000000), 'bel': 0, 'cel': 1000})
         await mine(hh, BANKYEAR)
         await send(vow.bail, i0, ALI)
         await send(vow.keep)
@@ -269,7 +269,7 @@ describe('vow / liq liquidation lifecycle', () => {
         const risk_supply_0 = await RISK.totalSupply()
         await send(vat.filk, i0, b32('duty'), apy(2))
         // for same results as above the rel rate is set to 1 / risk supply * vel used above
-        await set_ramp(vow, {'vel': wad(1000000), 'rel': wad(0.0000001), 'bel': 0, 'cel': 1000})
+        await file_ramp(vow, {'vel': wad(1000000), 'rel': wad(0.0000001), 'bel': 0, 'cel': 1000})
         await mine(hh, BANKYEAR)
         await send(vow.bail, i0, ALI)
         await send(vow.keep)

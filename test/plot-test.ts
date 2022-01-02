@@ -2,11 +2,10 @@ import { expect as want } from 'chai'
 
 import { ethers, artifacts, network } from 'hardhat'
 
-import { wad, ray, send } from './helpers'
+import { wad, ray, send, ADDRZERO } from './helpers'
 const debug = require('debug')('rico:test')
 
 const ZERO = Buffer.alloc(32)
-const ADDRZERO = '0x' + '00'.repeat(20)
 const i0 = ZERO // ilk 0 id
 
 const TAG = Buffer.from('feed'.repeat(16), 'hex')

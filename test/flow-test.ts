@@ -3,7 +3,7 @@ import { expect as want } from 'chai'
 import * as hh from 'hardhat'
 import { ethers } from 'hardhat'
 
-import { b32, revert, snapshot, set_ramp } from './helpers'
+import { b32, revert, snapshot, filem_ramp } from './helpers'
 import { mine, send, U256_MAX, wad } from 'minihat'
 
 describe('RicoFlowerV1 balancer interaction', () => {
@@ -60,8 +60,8 @@ describe('RicoFlowerV1 balancer interaction', () => {
     poolId_weth_rico = (await hh.run('deploy-balancer-pool', weth_rico_args)).pool_id
     poolId_risk_rico = (await hh.run('deploy-balancer-pool', risk_rico_args)).pool_id
 
-    await set_ramp(flower, {'vel': wad(1), 'rel': wad(0.001), 'bel': 0, 'cel': 600}, WETH)
-    await set_ramp(flower, {'vel': wad(1), 'rel': wad(0.001), 'bel': 0, 'cel': 600}, RICO)
+    await filem_ramp(WETH, flower, {'vel': wad(1), 'rel': wad(0.001), 'bel': 0, 'cel': 600})
+    await filem_ramp(RICO, flower, {'vel': wad(1), 'rel': wad(0.001), 'bel': 0, 'cel': 600})
     await send(flower.link, b32('rico'), RICO.address)
     await send(flower.link, b32('risk'), RISK.address)
     await send(flower.setVault, vault.address)
@@ -80,7 +80,7 @@ describe('RicoFlowerV1 balancer interaction', () => {
   describe('rate limiting', () => {
     describe('flap', () => {
       it('absolute rate', async () => {
-        await set_ramp(flower, {'vel': wad(0.1), 'rel': wad(1000), 'bel': 0, 'cel': 1000}, RICO)
+        await filem_ramp(RICO, flower, {'vel': wad(0.1), 'rel': wad(1000), 'bel': 0, 'cel': 1000})
         await send(RICO.transfer, flower.address, wad(50))
         const rico_liq_0 = await vault.getPoolTokens(poolId_risk_rico)
         // consume half the allowance
@@ -98,7 +98,7 @@ describe('RicoFlowerV1 balancer interaction', () => {
         want(sale_1).closeTo(parseInt(wad(75).toString()), parseInt(wad(0.5).toString()))
       })
       it('relative rate', async () => {
-        await set_ramp(flower, {'vel': wad(10000), 'rel': wad(0.00001), 'bel': 0, 'cel': 1000}, RICO)
+        await filem_ramp(RICO, flower, {'vel': wad(10000), 'rel': wad(0.00001), 'bel': 0, 'cel': 1000})
         await send(RICO.transfer, flower.address, wad(50))
         const rico_liq_0 = await vault.getPoolTokens(poolId_risk_rico)
         // consume half the allowance

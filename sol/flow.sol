@@ -12,9 +12,9 @@ interface GemLike {
     function mint(address usr, uint amt) external;
     function burn(address usr, uint amt) external;
     function approve(address usr, uint amt) external;
-    function balanceOf(address usr) external returns (uint);
+    function balanceOf(address usr) external view returns (uint);
     function transfer(address usr, uint amt) external;
-    function totalSupply() external returns(uint);
+    function totalSupply() external view returns (uint);
 }
 
 interface Flipper {

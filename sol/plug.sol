@@ -18,6 +18,7 @@ interface GemLike {
 }
 
 contract Plug is Math, Ward {
+    uint public constant FLASH = 2**140;
     mapping(address=>mapping(address=>bool)) public plugs;
 
     function join(address vat, address joy, address usr, uint wad) external {
@@ -32,7 +33,6 @@ contract Plug is Math, Ward {
         GemLike(joy).mint(usr, wad);
     }
 
-    uint public constant FLASH = 2**140;
     function flash(address joy, address code, bytes calldata data)
       external returns (bytes memory)
     {

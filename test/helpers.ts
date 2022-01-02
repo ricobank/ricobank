@@ -5,6 +5,7 @@ export { snapshot, revert, send, wad, ray, rad, apy, N, BANKYEAR, WAD, RAY, RAD,
 
 const debug = require('debug')('rico:test')
 const ramp_members = ['vel', 'rel', 'bel', 'cel']
+export const ADDRZERO = '0x' + '00'.repeat(20)
 
 export function b32 (arg: any): Uint8Array {
   if (arg._isBigNumber) {
@@ -20,9 +21,14 @@ export function b32 (arg: any): Uint8Array {
   }
 }
 
-export async function set_ramp(contract, vals, gem? ) {
+export async function file_ramp(contract, vals) {
   for (let ramp_member of ramp_members) {
-    if (gem) await send(contract.filem, gem.address, b32(ramp_member), vals[ramp_member]);
-    else await send(contract.file, b32(ramp_member), vals[ramp_member]);
+    await send(contract.file, b32(ramp_member), vals[ramp_member]);
+  }
+}
+
+export async function filem_ramp(gem, contract, vals) {
+  for (let ramp_member of ramp_members) {
+    await send(contract.filem, gem.address, b32(ramp_member), vals[ramp_member]);
   }
 }
