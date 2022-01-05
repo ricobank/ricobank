@@ -5,6 +5,8 @@ import {task} from 'hardhat/config'
 import {HardhatRuntimeEnvironment, TaskArguments} from 'hardhat/types'
 
 task('deploy-mock-balancer', 'deploys balancer Vault and WeightedPoolFactory')
+.addFlag('stdout', 'log the dpack to stdout')
+.addOptionalParam('outfile', 'write the dpack to an output file')
 .setAction(async (args: TaskArguments, hre: HardhatRuntimeEnvironment) => {
   const {ethers, network} = hre
   const [acct] = await hre.ethers.getSigners()
@@ -21,7 +23,6 @@ task('deploy-mock-balancer', 'deploys balancer Vault and WeightedPoolFactory')
 
   const vault = await vault_type.deploy(deployer, WETH.address, 1000, 1000)
   const poolfab = await poolfab_type.deploy(vault.address)
-
 
   const pb = new PackBuilder(network.name)
   await pb.packObject({
@@ -44,6 +45,12 @@ task('deploy-mock-balancer', 'deploys balancer Vault and WeightedPoolFactory')
   })
 
   const pack = await pb.build();
-  console.log(JSON.stringify(pack, null, 2))
+  const str = JSON.stringify(pack, null, 2)
+  if (args.stdout) {
+    console.log(str)
+  }
+  if (args.outfile) {
+    require('fs').writeFileSync(args.outfile)
+  }
   return pack
 })
