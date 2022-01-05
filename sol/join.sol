@@ -33,8 +33,7 @@ contract Join is Lock, Math, Ward {
     }
 
     function flash(address[] calldata gems_, uint[] calldata amts, address code, bytes calldata data)
-      locks
-      external returns (bytes memory result)
+      _lock_ external returns (bytes memory result)
     {
         require(gems_.length == amts.length, 'ERR_INVALID_LENGTHS');
         for(uint i = 0; i < gems_.length; i++) {
@@ -49,8 +48,8 @@ contract Join is Lock, Math, Ward {
         return (result);
     }
 
-    function bind(address vat, bytes32 ilk, address gem) external {
-        ward();
+    function bind(address vat, bytes32 ilk, address gem)
+      _ward_ external {
         repr[vat][ilk] = gem;
     }
 }

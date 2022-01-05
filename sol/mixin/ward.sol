@@ -3,24 +3,36 @@
 pragma solidity 0.8.9;
 
 contract Ward {
-    mapping (address => bool) public wards;
     event Ward(address indexed caller, address indexed trusts, bool bit);
+    error ErrWard(address caller, address object, bytes4 sig);
+
+    mapping (address => bool) public wards;
+
     constructor() {
         wards[msg.sender] = true;
-        emit Ward(msg.sender, msg.sender, true);
-    }
-    function rely(address usr) external {
-        ward();
-        emit Ward(msg.sender, usr, true);
-        wards[usr] = true;
-    }
-    function deny(address usr) external {
-        ward();
-        emit Ward(msg.sender, usr, false);
-        wards[usr] = false;
-    }
-    function ward() internal view {
-        require(wards[msg.sender], 'ERR_WARD');
+        emit Ward(address(this), msg.sender, true);
     }
 
+    function ward(address usr, bool bit)
+      _ward_ external
+    {
+        emit Ward(msg.sender, usr, bit);
+        wards[usr] = bit;
+    }
+
+    function give(address usr)
+      _ward_ external
+    {
+        wards[usr] = true;
+        emit Ward(msg.sender, usr, true);
+        wards[msg.sender] = false;
+        emit Ward(msg.sender, msg.sender, false);
+    }
+
+    modifier _ward_ {
+        if (!wards[msg.sender]) {
+            revert ErrWard(msg.sender, address(this), msg.sig);
+        }
+        _;
+    }
 }

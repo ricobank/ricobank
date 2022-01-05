@@ -5,10 +5,10 @@ contract Lock {
     uint256 private immutable UNLOCKED = 2;
     uint256 private _LOCK_STATUS = 2; // UNLOCKED
 
-    error ErrMutex();
+    error ErrLock();
 
-    modifier locks() {
-        if (_LOCK_STATUS != UNLOCKED) revert ErrMutex();
+    modifier _lock_ {
+        if (_LOCK_STATUS != UNLOCKED) revert ErrLock();
         _LOCK_STATUS = LOCKED;
         _;
         _LOCK_STATUS = UNLOCKED;

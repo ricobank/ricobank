@@ -25,8 +25,8 @@ contract Vox is Math, Ward {
     VatLike      public vat;
     FeedbaseLike public fb;
 
-    address public msrc; // feedbase `src` address
-    bytes32 public mtag; // feedbase `tag` bytes32
+    address public tip; // feedbase `src` address
+    bytes32 public tag; // feedbase `tag` bytes32
 
     uint256 public how;  // [ray] sensitivity paramater
 
@@ -39,7 +39,7 @@ contract Vox is Math, Ward {
       tau  = block.timestamp;
     }
 
-    function poke() public {
+    function poke() external {
         uint256 way = vat.way();
         // change the rate according to last tp/mp
         if (delt < RAY) {
@@ -53,7 +53,7 @@ contract Vox is Math, Ward {
         // vat.prod(); called by sway
         vat.sway(way);
 
-        (bytes32 mp_,) = fb.read(msrc, mtag);
+        (bytes32 mp_,) = fb.read(tip, tag);
         uint256 mp = uint256(mp_);
         uint256 par = vat.par();
 
@@ -61,25 +61,21 @@ contract Vox is Math, Ward {
         tau = block.timestamp;
     }
 
-    function file_vat(VatLike vl) external {
-        ward();
-        vat = vl;
+    function link(bytes32 key, address val)
+      _ward_ external
+    {
+             if (key == "vat") { vat = VatLike(val); }
+        else if (key == "fb") { fb = FeedbaseLike(val); }
+        else if (key == "tip") { tip = val; } // TODO consider putting in `file`
+        else revert("ERR_LINK_KEY");
     }
 
-    function file_feedbase(FeedbaseLike fbl) external {
-        ward();
-        fb = fbl;
-    }
-
-    function file_feed(address src, bytes32 tag) external {
-        ward();
-        msrc = src;
-        mtag = tag;
-    }
-
-    function file_how(uint256 how_) external {
-        ward();
-        how = how_;
+    function file(bytes32 key, bytes32 val)
+      _ward_ external
+    {
+             if (key == "tag") { tag = val; }
+        else if (key == "how") { how = uint256(val); }
+        else revert("ERR_FILE_KEY");
     }
 
 }

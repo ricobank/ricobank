@@ -17,7 +17,7 @@ describe('Vat', () => {
   let vat; let vat_type
   let joy, gem; let gem_type
   let join, join_type
-  let plug, plug_type
+  let port, port_type
   before(async () => {
     [ali, bob, cat] = await ethers.getSigners();
     [ALI, BOB, CAT] = [ali, bob, cat].map(signer => signer.address)
@@ -25,21 +25,21 @@ describe('Vat', () => {
     const gem_artifacts = require('../lib/gemfab/artifacts/sol/gem.sol/Gem.json')
     gem_type = ethers.ContractFactory.fromSolidity(gem_artifacts, ali)
     join_type = await ethers.getContractFactory('Join', ali)
-    plug_type = await ethers.getContractFactory('Plug', ali)
+    port_type = await ethers.getContractFactory('Port', ali)
 
     vat = await vat_type.deploy()
     joy = await gem_type.deploy('joy', 'JOY')
     gem = await gem_type.deploy('gem', 'GEM')
     join = await join_type.deploy()
-    plug = await plug_type.deploy()
+    port = await port_type.deploy()
 
-    await send(vat.rely, join.address)
+    await send(vat.ward, join.address, true)
     await send(gem.approve, join.address, U256_MAX)
     await send(joy.mint, ALI, wad(1000))
     await send(gem.mint, ALI, wad(1000))
 
     await send(join.bind, vat.address, i0, gem.address)
-    await send(plug.bind, vat.address, joy.address, true)
+    await send(port.bind, vat.address, joy.address, true)
     await send(join.join, vat.address, i0, ALI, wad(1000))
 
     await send(vat.init, i0)

@@ -30,7 +30,7 @@ describe('plot vat ilk mark via plotter', () => {
     fb = await fb_deployer.deploy()
     // fb = await fbpack.dapp.types.Feedbase.deploy();
 
-    await send(vat.rely, plotter.address)
+    await send(vat.ward, plotter.address, true)
 
     await send(plotter.link, b32("fb"), fb.address)
     await send(plotter.link, b32("vat"), vat.address)
@@ -41,7 +41,7 @@ describe('plot vat ilk mark via plotter', () => {
 
   it('plot mark', async () => {
     const p = Buffer.from(wad(1200).toHexString().slice(2).padStart(64, '0'), 'hex')
-    await send(fb.push, TAG, p, 10 ** 10, ADDRZERO)
+    await send(fb.push, TAG, p, 10 ** 10)
     await send(plotter.poke, i0)
 
     const [,,mark0] = await vat.ilks(i0)

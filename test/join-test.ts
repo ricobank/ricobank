@@ -11,7 +11,7 @@ describe('Join', () => {
     let ALI, BOB, CAT
     let vat, vat_type
     let join, join_type
-    let plug, plug_type
+    let port, port_type
     let RICO, gemA, gemB
     let gem_type
     let flash_strategist, flash_strategist_type
@@ -25,7 +25,7 @@ describe('Join', () => {
         const gem_artifacts = require('../lib/gemfab/artifacts/sol/gem.sol/Gem.json')
         gem_type = ethers.ContractFactory.fromSolidity(gem_artifacts, ali)
         join_type = await ethers.getContractFactory('Join', ali)
-        plug_type = await ethers.getContractFactory('Plug', ali)
+        port_type = await ethers.getContractFactory('Port', ali)
         flash_strategist_type = await ethers.getContractFactory('MockFlashStrategist', ali)
         strategist_iface = new ethers.utils.Interface([
             "function approve_all(address[] memory gems, uint256[] memory amts)",
@@ -42,11 +42,11 @@ describe('Join', () => {
         gemA = await gem_type.deploy('gemA', 'GEMA')
         gemB = await gem_type.deploy('gemB', 'GEMB')
         join = await join_type.deploy()
-        plug = await plug_type.deploy()
-        flash_strategist = await flash_strategist_type.deploy(join.address, plug.address, vat.address, RICO.address, i0)
+        port = await port_type.deploy()
+        flash_strategist = await flash_strategist_type.deploy(join.address, port.address, vat.address, RICO.address, i0)
 
-        await send(vat.rely, join.address)
-        await send(RICO.ward, plug.address, true)
+        await send(vat.ward, join.address, true)
+        await send(RICO.ward, port.address, true)
         await send(RICO.ward, flash_strategist.address, true)
         await send(gemA.ward, flash_strategist.address, true)
 
@@ -66,7 +66,7 @@ describe('Join', () => {
 
         await send(join.bind, vat.address, i0, gemA.address)
         await send(join.bind, vat.address, i1, gemB.address)
-        await send(plug.bind, vat.address, RICO.address, true)
+        await send(port.bind, vat.address, RICO.address, true)
         await send(join.join, vat.address, i0, ALI, wad(1000))
         await send(join.join, vat.address, i1, ALI, wad(500))
 
@@ -226,7 +226,7 @@ describe('Join', () => {
             const borrowerPreABal = await gemA.balanceOf(flash_strategist.address)
             const joinPreABal = await gemA.balanceOf(join.address)
             const borrowerPreRicoBal = await RICO.balanceOf(flash_strategist.address)
-            const plugPreRicoBal = await RICO.balanceOf(plug.address)
+            const portPreRicoBal = await RICO.balanceOf(port.address)
             const lock_amt = wad(1000)
             const draw_amt = wad(500)
             const lever_data = strategist_iface.encodeFunctionData("join_lever",
@@ -248,12 +248,12 @@ describe('Join', () => {
             const borrowerPostABal = await gemA.balanceOf(flash_strategist.address)
             const joinPostABal = await gemA.balanceOf(join.address)
             const borrowerPostRicoBal = await RICO.balanceOf(flash_strategist.address)
-            const plugPostRicoBal = await RICO.balanceOf(plug.address)
+            const portPostRicoBal = await RICO.balanceOf(port.address)
             // Balances for both the borrower and the join should be unchanged after the loan is complete.
             want(borrowerPreABal.toString()).equals(borrowerPostABal.toString())
             want(joinPreABal.toString()).equals(joinPostABal.toString())
             want(borrowerPreRicoBal.toString()).equals(borrowerPostRicoBal.toString())
-            want(plugPreRicoBal.toString()).equals(plugPostRicoBal.toString())
+            want(portPreRicoBal.toString()).equals(portPostRicoBal.toString())
         });
     })
 })

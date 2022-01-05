@@ -34,27 +34,27 @@ contract MockFlowerPlopper is Math, BalancerSwapper, Flipper
     }
 
     function complete_auction(uint id) external {
-        uint spill = trade(auctions[id].gem, RICO, SwapKind.GIVEN_OUT, auctions[id].bill);
+        uint spill = _trade(auctions[id].gem, RICO, SwapKind.GIVEN_OUT, auctions[id].bill);
         uint refund = auctions[id].ink - spill;
         GemLike(auctions[id].gem).transfer(vow, refund);
         Plopper(vow).plop(auctions[id].ilk, auctions[id].urn, refund);
         delete auctions[id];
     }
 
-    function trade(address tokIn, address tokOut, SwapKind kind, uint amt) internal returns (uint256) {
+    function _trade(address tokIn, address tokOut, SwapKind kind, uint amt) internal returns (uint256) {
         SingleSwap memory ss = SingleSwap({
-        poolId: pools[tokIn][tokOut],
-        kind: kind,
-        assetIn: IAsset(tokIn),
-        assetOut: IAsset(tokOut),
-        amount: amt,
-        userData: ""
+            poolId: pools[tokIn][tokOut],
+            kind: kind,
+            assetIn: IAsset(tokIn),
+            assetOut: IAsset(tokOut),
+            amount: amt,
+            userData: ""
         });
         FundManagement memory fm = FundManagement({
-        sender: address(this),
-        fromInternalBalance: false,
-        recipient: payable(vow),
-        toInternalBalance: false
+            sender: address(this),
+            fromInternalBalance: false,
+            recipient: payable(vow),
+            toInternalBalance: false
         });
         return bvault.swap(ss, fm, type(uint256).max, block.timestamp);
     }
@@ -64,8 +64,8 @@ contract MockFlowerPlopper is Math, BalancerSwapper, Flipper
         GemLike(gem).approve(vow, type(uint256).max);
     }
 
-    function file(bytes32 key, address val) external {
-        ward();
+    function file(bytes32 key, address val)
+      _ward_ external {
         if (key == "rico") {RICO = val;
         } else if (key == "vow") {vow = val;
         } else {revert("ERR_FILE_KEY");}

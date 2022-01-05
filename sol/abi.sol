@@ -13,7 +13,7 @@ interface GemLike is ERC20 {
 }
 
 interface VatLike {
-    // from Join/Plug
+    // from Join/Port
     function slip(bytes32,address,int) external;
     function move(address,address,uint) external;
 
@@ -43,7 +43,7 @@ interface JoinLike {
     function exit(address,bytes32,address,uint) external returns (address);
 }
 
-interface PlugLike {
+interface PortLike {
     function join(address vat, address joy, address usr, uint amt) external;
     function exit(address vat, address joy, address usr, uint amt) external;
 }

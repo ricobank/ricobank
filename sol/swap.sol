@@ -38,13 +38,13 @@ abstract contract BalancerSwapper is BalancerV2Types, Ward {
     // tokIn -> tokOut -> poolID
     mapping(address=>mapping(address=>bytes32)) public pools;
 
-    function setPool(address a, address b, bytes32 id) external {
-        ward();
+    function setPool(address a, address b, bytes32 id)
+      _ward_ external {
         pools[a][b] = id;
     }
 
-    function setVault(address v) external {
-        ward();
+    function setVault(address v)
+      _ward_ external {
         bvault = BalancerV2VaultLike(v);
     }
 

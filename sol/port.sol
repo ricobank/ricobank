@@ -11,25 +11,24 @@ import './mixin/ward.sol';
 
 import { VatLike, GemLike } from './abi.sol';
 
-contract Plug is Lock, Math, Ward {
+contract Port is Lock, Math, Ward {
     uint public constant FLASH = 2**140;
-    mapping(address=>mapping(address=>bool)) public plugs;
+    mapping(address=>mapping(address=>bool)) public ports;
 
     function join(address vat, address joy, address usr, uint wad) external {
-        require(plugs[vat][joy], "Plug/not-bound");
+        require(ports[vat][joy], "Port/not-bound");
         VatLike(vat).move(address(this), usr, mul(RAY, wad));
         GemLike(joy).burn(msg.sender, wad);
     }
 
     function exit(address vat, address joy, address usr, uint wad) external {
-        require(plugs[vat][joy], "Plug/not-bound");
+        require(ports[vat][joy], "Port/not-bound");
         VatLike(vat).move(msg.sender, address(this), mul(RAY, wad));
         GemLike(joy).mint(usr, wad);
     }
 
     function flash(address joy, address code, bytes calldata data)
-      locks
-      external returns (bytes memory)
+      _lock_ external returns (bytes memory)
     {
         GemLike(joy).mint(code, FLASH);
         (bool ok, bytes memory result) = code.call(data);
@@ -38,8 +37,8 @@ contract Plug is Lock, Math, Ward {
         return result;
     }
 
-    function bind(address vat, address joy, bool bound) external {
-        ward(); 
-        plugs[vat][joy] = bound;        
+    function bind(address vat, address joy, bool bound)
+      _ward_ external {
+        ports[vat][joy] = bound;        
     }
 }

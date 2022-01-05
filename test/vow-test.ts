@@ -17,7 +17,7 @@ describe('vow / liq liquidation lifecycle', () => {
   let RICO, RISK, WETH; let gem_type
   let vat; let vat_type
   let join, join_type
-  let plug, plug_type
+  let port, port_type
   let vow; let vow_type
   let flower; let flower_type;
   let mock_flower_plopper; let mock_flower_plopper_type;
@@ -32,13 +32,13 @@ describe('vow / liq liquidation lifecycle', () => {
     vat_type = await smock.mock('Vat', ali)
     vow_type = await ethers.getContractFactory('Vow', ali)
     join_type = await ethers.getContractFactory('Join', ali)
-    plug_type = await ethers.getContractFactory('Plug', ali)
+    port_type = await ethers.getContractFactory('Port', ali)
     flower_type = await smock.mock('RicoFlowerV1')
     mock_flower_plopper_type = await ethers.getContractFactory('MockFlowerPlopper', ali)
 
     vat = await vat_type.deploy()
     join = await join_type.deploy()
-    plug = await plug_type.deploy()
+    port = await port_type.deploy()
     vow = await vow_type.deploy()
     flower = await flower_type.deploy();
     mock_flower_plopper = await mock_flower_plopper_type.deploy();
@@ -46,11 +46,11 @@ describe('vow / liq liquidation lifecycle', () => {
     RISK = await gem_type.deploy('Rico Riskshare', 'RISK')
     WETH = await gem_type.deploy('Wrapped Ether', 'WETH')
 
-    await send(vat.hope, plug.address)
+    await send(vat.hope, port.address)
     await send(vat.hope, vow.address)
-    await send(vat.rely, join.address)
-    await send(vat.rely, vow.address)
-    await send(RICO.ward, plug.address, true)
+    await send(vat.ward, join.address, true)
+    await send(vat.ward, vow.address, true)
+    await send(RICO.ward, port.address, true)
     await send(RISK.ward, vow.address, true)
 
     await send(WETH.mint, ALI, wad(10000))
@@ -59,7 +59,7 @@ describe('vow / liq liquidation lifecycle', () => {
     await send(WETH.approve, join.address, U256_MAX)
 
     await send(join.bind, vat.address, i0, WETH.address)
-    await send(plug.bind, vat.address, RICO.address, true)
+    await send(port.bind, vat.address, RICO.address, true)
     await send(join.join, vat.address, i0, ALI, wad(1000))
     await send(vat.init, i0)
     await send(vat.file, b32('ceil'), rad(1000))
@@ -71,7 +71,7 @@ describe('vow / liq liquidation lifecycle', () => {
     await send(vow.link, b32('flapper'), flower.address)
     await send(vow.link, b32('flopper'), flower.address)
     await send(vow.link, b32('join'), join.address)
-    await send(vow.link, b32('plug'), plug.address)
+    await send(vow.link, b32('port'), port.address)
     await send(vow.link, b32('rico'), RICO.address)
     await send(vow.link, b32('risk'), RISK.address)
     await send(vow.link, b32('vat'), vat.address)
@@ -86,7 +86,7 @@ describe('vow / liq liquidation lifecycle', () => {
     await send(vat.lock, i0, wad(100))
     await send(vat.draw, i0, wad(99))
 
-    await send(plug.exit, vat.address, RICO.address, ALI, wad(99))
+    await send(port.exit, vat.address, RICO.address, ALI, wad(99))
     const bal = await RICO.balanceOf(ALI)
     want(bal.toString()).equals(wad(10099).toString())
     const safe1 = await vat.callStatic.safe(i0, ALI)
@@ -295,7 +295,7 @@ describe('vow / liq liquidation lifecycle', () => {
       await send(mock_flower_plopper.setPool, WETH.address, RICO.address, poolId_weth_rico)
       await send(mock_flower_plopper.setPool, RICO.address, WETH.address, poolId_weth_rico)
       await send(mock_flower_plopper.approve_gem, WETH.address)
-      await send(vow.rely, mock_flower_plopper.address)
+      await send(vow.ward, mock_flower_plopper.address, true)
       await send(vow.lilk, i0, b32('flipper'), mock_flower_plopper.address)
       await send(vat.filk, i0, b32('liqr'), ray(0.8))
       await send(vat.lock, i0, wad(25))

@@ -9,7 +9,7 @@ import './mixin/ward.sol';
 
 import './flow.sol';
 
-import { GemLike, JoinLike, PlugLike, VatLike } from './abi.sol';
+import { GemLike, JoinLike, PortLike, VatLike } from './abi.sol';
 
 contract Vow is Math, Ward {
     struct Ramp {
@@ -21,7 +21,7 @@ contract Vow is Math, Ward {
 
     VatLike  public vat;
     JoinLike public join;
-    PlugLike public plug;
+    PortLike public port;
 
     GemLike public RICO;
     GemLike public RISK;
@@ -42,8 +42,9 @@ contract Vow is Math, Ward {
         Flipper(flipper).flip(ilk, urn, gem, ink, bill);
     }
 
-    function plop(bytes32 ilk, address urn, uint amt) external {
-        ward();
+    function plop(bytes32 ilk, address urn, uint amt)
+      _ward_ external
+    {
         join.join(address(vat), ilk, urn, amt);
     }
 
@@ -53,7 +54,7 @@ contract Vow is Math, Ward {
 
         vat.rake();
         RISK.burn(address(this), risk);
-        plug.join(address(vat), address(RICO), address(this), rico);
+        port.join(address(vat), address(RICO), address(this), rico);
 
         uint sin = vat.sin(address(this));
         uint joy = vat.joy(address(this));
@@ -61,7 +62,7 @@ contract Vow is Math, Ward {
         if (joy > sin + bar) {
             vat.heal(sin);
             uint gain = (joy - sin - bar) / RAY;
-            plug.exit(address(vat), address(RICO), address(flapper), gain);
+            port.exit(address(vat), address(RICO), address(flapper), gain);
             flapper.flap(0);
         } else if (sin > joy) {
             vat.heal(joy);
@@ -79,15 +80,16 @@ contract Vow is Math, Ward {
     }
 
     function reapprove() external {
-        vat.hope(address(plug));
+        vat.hope(address(port));
     }
 
     function reapprove_gem(address gem) external {
         GemLike(gem).approve(address(join), type(uint256).max);
     }
 
-    function file(bytes32 key, uint val) external {
-        ward();
+    function file(bytes32 key, uint val)
+      _ward_ external
+    {
                if (key == "bar") { bar = val;
         } else if (key == "vel") { drop.vel = val;
         } else if (key == "rel") { drop.rel = val;
@@ -96,20 +98,22 @@ contract Vow is Math, Ward {
         } else { revert("ERR_FILE_KEY"); }
     }
 
-    function link(bytes32 key, address val) external {
-        ward();
+    function link(bytes32 key, address val)
+      _ward_ external
+    {
                if (key == "flapper") { flapper = Flapper(val);
         } else if (key == "flopper") { flopper = Flopper(val);
         } else if (key == "rico") { RICO = GemLike(val);
         } else if (key == "risk") { RISK = GemLike(val);
         } else if (key == "vat") { vat = VatLike(val);
         } else if (key == "join") { join = JoinLike(val);
-        } else if (key == "plug") { plug = PlugLike(val);
+        } else if (key == "port") { port = PortLike(val);
         } else { revert("ERR_LINK_KEY"); }
     }
 
-    function lilk(bytes32 ilk, bytes32 key, address val) external {
-        ward();
+    function lilk(bytes32 ilk, bytes32 key, address val)
+      _ward_ external
+    {
         if (key == "flipper") { flippers[ilk] = val;
         } else { revert("ERR_LILK_KEY"); }
     }

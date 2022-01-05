@@ -24,13 +24,15 @@ contract Plotter is Ward, Math {
         vat.plot(ilk, wad * BLN);
     }
 
-    function wire(bytes32 ilk, bytes32 tag) external {
-        ward();
+    function wire(bytes32 ilk, bytes32 tag)
+      _ward_ external
+    {
         tags[ilk] = tag;
     }
 
-    function link(bytes32 key, address val) external {
-        ward();
+    function link(bytes32 key, address val)
+      _ward_ external
+    {
              if (key == "fb") { fb = FeedbaseLike(val); }
         else if (key == "vat") { vat = VatLike(val); }
         else if (key == "tip") { tip = val; }

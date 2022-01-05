@@ -70,8 +70,9 @@ contract Vat is Math, Ward {
         tau = time();
     }
 
-    function init(bytes32 ilk) external {
-        ward();
+    function init(bytes32 ilk) external 
+      _ward_
+    {
         require(ilks[ilk].rack == 0, "Vat/ilk-already-init");
         ilks[ilk] = Ilk({
             rack: RAY,
@@ -181,9 +182,11 @@ contract Vat is Math, Ward {
         require(either(vtab >= i.dust, v.art == 0), "Vat/dust-dst");
     }
 
-    function grab(bytes32 i, address u, address v, address w, int dink, int dart) external returns (uint256) {
-        ward();
-        drip(i);
+    function grab(bytes32 i, address u, address v, address w, int dink, int dart)
+        //_ward_ _drip_(i) external returns (uint256)
+        _ward_ external returns (uint256)
+    {
+        drip(i); // TODO use modifiers; stack too deep
         Urn storage urn = urns[i][u];
         Ilk storage ilk = ilks[i];
 
@@ -203,57 +206,70 @@ contract Vat is Math, Ward {
         return bill;
     }
 
-    function plot(bytes32 ilk, uint mark) external {
-        ward();
+    function plot(bytes32 ilk, uint mark)
+      _ward_ external
+    {
         ilks[ilk].mark = mark;
     }
 
-    function sway(uint256 r) external {
-        ward();
-        prod();
+    function sway(uint256 r)
+      _ward_ _prod_ external
+    {
         way = r;
     }
 
-    function spar(uint256 jam) external {
-        ward();
-        prod();
+    function spar(uint256 jam)
+      _ward_ _prod_ external
+    {
         par = jam;
     }
 
-    function drip(bytes32 i) public {
-        Ilk storage ilk = ilks[i];
-        uint256 t = time();
-        if (t == ilk.rho) return;
-        require(t >= ilk.rho, 'Vat/invalid-now');
-
-
-        address vow  = address(0);
-        uint256 prev = ilk.rack;
-        uint256 rack = grow(prev, ilk.duty, t - ilk.rho);
-        int256  delt = diff(rack, prev);
-        int256  rad  = mul(ilk.tart, delt);
-        ilk.rho      = time();
-        ilk.rack     = add(ilk.rack, delt);
-        joy[vow]     = add(joy[vow], rad);
-        debt         = add(debt, rad);
+    modifier _prod_ {
+        uint256 t = block.timestamp;
+        if (t > tau) {
+            par = grow(par, way, t - tau);
+            tau = t;
+        }
+        _;
     }
+    function prod() public // TODO external
+      _prod_
+    {}
 
-    function rake() external returns (uint256) {
-        ward();
+    modifier _drip_(bytes32 i) {
+        Ilk storage ilk = ilks[i];
+        uint256 t = block.timestamp;
+        require(t >= ilk.rho, 'Vat/invalid-now');
+        if (t > ilk.rho) {
+            address vow  = address(0);
+            uint256 prev = ilk.rack;
+            uint256 rack = grow(prev, ilk.duty, t - ilk.rho);
+            int256  delt = diff(rack, prev);
+            int256  rad  = mul(ilk.tart, delt);
+            ilk.rho      = time();
+            ilk.rack     = add(ilk.rack, delt);
+            joy[vow]     = add(joy[vow], rad);
+            debt         = add(debt, rad);
+        }
+        _;
+    }
+    function drip(bytes32 i) public // TODO external
+      _drip_(i)
+    {}
+
+    function rake()
+      _ward_ external
+      returns (uint256)
+    {
         uint256 amt = joy[address(0)];
         joy[msg.sender] = add(joy[msg.sender], amt);
         joy[address(0)] = 0;
         return amt;
     }
 
-    function prod() public {
-        if (time() == tau) return;
-        par = grow(par, way, time() - tau);
-        tau = time();
-    }
-
-    function slip(bytes32 ilk, address usr, int256 wad) external {
-        ward();
+    function slip(bytes32 ilk, address usr, int256 wad)
+      _ward_ external
+    {
         gem[ilk][usr] = add(gem[ilk][usr], wad);
     }
     function flux(bytes32 ilk, address src, address dst, uint256 wad) external {
@@ -274,8 +290,9 @@ contract Vat is Math, Ward {
         vice   = sub(vice,   rad);
         debt   = sub(debt,   rad);
     }
-    function suck(address u, address v, uint rad) external {
-        ward();
+    function suck(address u, address v, uint rad)
+      _ward_ external
+    {
         sin[u] = add(sin[u], rad);
         joy[v] = add(joy[v], rad);
         vice   = add(vice,   rad);
@@ -292,18 +309,21 @@ contract Vat is Math, Ward {
         return either(bit == usr, can[bit][usr] == true);
     }
 
-    function wire(bytes32 i, address u, bool bit) external {
-        ward();
+    function wire(bytes32 i, address u, bool bit)
+      _ward_ external
+    {
         sys[i][u] = bit;
     }
 
-    function file(bytes32 key, uint256 val) external {
-        ward();
+    function file(bytes32 key, uint256 val)
+      _ward_ external
+    {
         if (key == "ceil") { ceil = val;
         } else { revert("ERR_FILE_KEY"); }
     }
-    function filk(bytes32 ilk, bytes32 key, uint val) external {
-        ward();
+    function filk(bytes32 ilk, bytes32 key, uint val)
+      _ward_ external
+    {
         Ilk storage i = ilks[ilk];
                if (key == "line") { i.line = val;
         } else if (key == "dust") { i.dust = val;

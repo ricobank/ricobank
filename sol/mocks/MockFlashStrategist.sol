@@ -29,7 +29,7 @@ interface JoinLike {
         external returns (bytes memory result);
 }
 
-interface PlugLike {
+interface PortLike {
     function join(address vat, address joy, address usr, uint amt) external;
     function exit(address vat, address joy, address usr, uint amt) external;
 }
@@ -38,14 +38,14 @@ contract MockFlashStrategist is IERC3156FlashBorrower {
     enum Action {NOP, APPROVE, WELCH, FAIL, FAIL2, REENTER, PLUG_LEVER, JOIN_LEVER, JOIN_RELEASE}
 
     JoinLike public join;
-    PlugLike public plug;
+    PortLike public port;
     VatLike public vat;
     GemLike public rico;
     bytes32 ilk0;
 
-    constructor(address join_, address plug_, address vat_, address rico_, bytes32 ilk0_) {
+    constructor(address join_, address port_, address vat_, address rico_, bytes32 ilk0_) {
         join = JoinLike(join_);
-        plug = PlugLike(plug_);
+        port = PortLike(port_);
         vat = VatLike(vat_);
         rico = GemLike(rico_);
         ilk0 = ilk0_;
@@ -59,7 +59,7 @@ contract MockFlashStrategist is IERC3156FlashBorrower {
         bytes calldata data
     ) external override returns (bytes32) {
         require(
-            msg.sender == address(plug) || msg.sender == address(join),
+            msg.sender == address(port) || msg.sender == address(join),
             "FlashBorrower: Untrusted lender"
         );
         require(
@@ -86,7 +86,7 @@ contract MockFlashStrategist is IERC3156FlashBorrower {
         } else if (action == Action.REENTER) {
             reenter(gems, amts);
         } else if (action == Action.PLUG_LEVER) {
-            plug_lever(token, uint_a, uint_b);
+            port_lever(token, uint_a, uint_b);
         } else if (action == Action.JOIN_LEVER) {
             join_lever(token, uint_a, uint_a / 2);
         } else if (action == Action.JOIN_RELEASE) {
@@ -123,22 +123,22 @@ contract MockFlashStrategist is IERC3156FlashBorrower {
         approve_all(gems, amts);
     }
 
-    function plug_lever(address gem, uint256 lock_amt, uint256 draw_amt) public {
-        buy_gem(gem, draw_amt);
+    function port_lever(address gem, uint256 lock_amt, uint256 draw_amt) public {
+        _buy_gem(gem, draw_amt);
         GemLike(gem).approve(address(join), lock_amt);
         join.join(address(vat), ilk0, address(this), lock_amt);
         vat.lock(ilk0, lock_amt);
         vat.draw(ilk0, draw_amt);
-        vat.hope(address(plug));
-        plug.exit(address(vat), address(rico), address(this), draw_amt);
+        vat.hope(address(port));
+        port.exit(address(vat), address(rico), address(this), draw_amt);
     }
 
-    function plug_release(address gem, uint256 free_amt, uint256 wipe_amt) public {
-        plug.join(address(vat), address(rico), address(this), wipe_amt);
+    function port_release(address gem, uint256 free_amt, uint256 wipe_amt) public {
+        port.join(address(vat), address(rico), address(this), wipe_amt);
         vat.wipe(ilk0, wipe_amt);
         vat.free(ilk0, free_amt);
         join.exit(address(vat), ilk0, address(this), free_amt);
-        sell_gem(gem, wipe_amt);
+        _sell_gem(gem, wipe_amt);
     }
 
     function join_lever(address gem, uint256 lock_amt, uint256 draw_amt) public {
@@ -146,27 +146,27 @@ contract MockFlashStrategist is IERC3156FlashBorrower {
         join.join(address(vat), ilk0, address(this), lock_amt);
         vat.lock(ilk0, lock_amt);
         vat.draw(ilk0, draw_amt);
-        vat.hope(address(plug));
-        plug.exit(address(vat), address(rico), address(this), draw_amt);
-        buy_gem(gem, draw_amt);
+        vat.hope(address(port));
+        port.exit(address(vat), address(rico), address(this), draw_amt);
+        _buy_gem(gem, draw_amt);
         GemLike(gem).approve(address(join), lock_amt);
     }
 
     function join_release(address gem, uint256 free_amt, uint256 wipe_amt) public {
-        sell_gem(gem, wipe_amt);
-        plug.join(address(vat), address(rico), address(this), wipe_amt);
+        _sell_gem(gem, wipe_amt);
+        port.join(address(vat), address(rico), address(this), wipe_amt);
         vat.wipe(ilk0, wipe_amt);
         vat.free(ilk0, free_amt);
         join.exit(address(vat), ilk0, address(this), free_amt);
         GemLike(gem).approve(address(join), wipe_amt);
     }
 
-    function buy_gem(address gem, uint256 amount) internal {
+    function _buy_gem(address gem, uint256 amount) internal {
         rico.burn(address(this), amount);
         GemLike(gem).mint(address(this), amount);
     }
 
-    function sell_gem(address gem, uint256 amount) internal {
+    function _sell_gem(address gem, uint256 amount) internal {
         GemLike(gem).burn(address(this), amount);
         rico.mint(address(this), amount);
     }

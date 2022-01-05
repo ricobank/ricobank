@@ -7,7 +7,7 @@ import {ethers, artifacts, network } from 'hardhat'
 import { send, N, wad, ray, rad, BANKYEAR, wait, warp, mine } from 'minihat'
 const { hexZeroPad } = ethers.utils
 
-import { snapshot, revert, ADDRZERO } from './helpers'
+import { b32, snapshot, revert } from './helpers'
 
 const bn2b32 = (bn) => hexZeroPad(bn.toHexString(), 32)
 
@@ -38,11 +38,12 @@ describe('Vox', () => {
     vox = await vox_type.deploy()
     fb = await fb_deployer.deploy()
 
-    await send(vat.rely, vox.address)
+    await send(vat.ward, vox.address, true)
 
-    await send(vox.file_feedbase, fb.address)
-    await send(vox.file_vat, vat.address)
-    await send(vox.file_feed, ALI, TAG)
+    await send(vox.link, b32("fb"), fb.address)
+    await send(vox.link, b32("vat"),  vat.address)
+    await send(vox.link, b32("tip"), ALI)
+    await send(vox.file, b32("tag"), TAG)
 
     await send(vat.spar, wad(7))
 
@@ -72,7 +73,7 @@ describe('Vox', () => {
     const par0 = await vat.par() // jammed to 7
     want(par0.eq(wad(7))).true
 
-    await send(fb.push, TAG, bn2b32(wad(7)), t1.toNumber() + 1000, ADDRZERO)
+    await send(fb.push, TAG, bn2b32(wad(7)), t1.toNumber() + 1000)
 
     await send(vat.prod)
 
@@ -102,9 +103,9 @@ describe('Vox', () => {
     want(t10_.toNumber()).equals(t10)
 
     await send(vat.spar, wad(1.24))
-    await send(vox.file_how, ray(1.00000001))
+    await send(vox.file, b32('how'), bn2b32(ray(1.00000001)))
 
-    await send(fb.push, TAG, bn2b32(wad(1.25)), 10 ** 12, ADDRZERO)
+    await send(fb.push, TAG, bn2b32(wad(1.25)), 10 ** 12)
     await send(vox.poke)
 
     await warp(hh, t0 + 3600)

@@ -26,26 +26,26 @@ contract RicoFlowerV1 is Math, BalancerSwapper
     address public vow;
 
     function flip(bytes32 ilk, address urn, address gem, uint ink, uint bill) external {
-        trade(gem, RICO);
+        _trade(gem, RICO);
     }
 
     function flap(uint surplus) external {
-        trade(RICO, RISK);
+        _trade(RICO, RISK);
     }
 
     function flop(uint debt) external {
         _swap(RISK, address(this), debt, RICO, vow);
     }
 
-    function trade(address tokIn, address tokOut) internal {
+    function _trade(address tokIn, address tokOut) internal {
         Ramp storage ramp = ramps[tokIn];
         uint bal = GemLike(tokIn).balanceOf(address(this));
         uint tot = GemLike(tokIn).totalSupply();
-        uint lot = clip(ramp, bal, tot);
+        uint lot = _clip(ramp, bal, tot);
         _swap(tokIn, address(this), lot, tokOut, vow);
     }
 
-    function clip(Ramp storage ramp, uint due, uint supply) internal returns (uint lot) {
+    function _clip(Ramp storage ramp, uint due, uint supply) internal returns (uint lot) {
         uint slope = min(ramp.vel, wmul(ramp.rel, supply));
         uint allowance = slope * min(ramp.cel, block.timestamp - ramp.bel);
         lot = min(allowance, due);
@@ -61,16 +61,18 @@ contract RicoFlowerV1 is Math, BalancerSwapper
         GemLike(gem).approve(address(bvault), type(uint256).max);
     }
 
-    function link(bytes32 key, address val) external {
-        ward();
+    function link(bytes32 key, address val)
+      _ward_ external
+    {
                if (key == "rico")  { RICO  = val;
         } else if (key == "risk")  { RISK  = val;
         } else if (key == "vow")   { vow   = val;
         } else { revert("ERR_LINK_KEY"); }
     }
 
-    function filem(address gem, bytes32 key, uint val) external {
-        ward();
+    function filem(address gem, bytes32 key, uint val)
+      _ward_ external
+    {
                if (key == "vel") { ramps[gem].vel = val;
         } else if (key == "rel") { ramps[gem].rel = val;
         } else if (key == "bel") { ramps[gem].bel = val;
