@@ -25,6 +25,7 @@
     "bigdecimal": "^0.6.1",
     "bn.js": "^4.12.0",
     "chai": "^4.3.4",
+    "dpack": "github:dapphub/dpack",
     "hardhat": "^2.6.3",
     "minihat": "^0.0.4",
     "ts-mocha": "^8.0.0",

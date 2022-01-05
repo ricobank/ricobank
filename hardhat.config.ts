@@ -1,7 +1,16 @@
 import '@nomiclabs/hardhat-ethers'
 
+import './lib/gemfab/task/deploy-gemfab'
+import './lib/feedbase/task/deploy-feedbase'
+
+import './task/deploy-mock-gemfab'
+import './task/deploy-mock-feedbase'
 import './task/deploy-mock-balancer'
-import './task/deploy-balancer-pool'
+
+import './task/build-weighted-bpool'
+
+import './task/deploy-mock-dependencies'
+import './task/deploy-ricobank'
 
 /**
  * @type import('hardhat/config').HardhatUserConfig
