@@ -3,7 +3,7 @@ import { expect as want } from 'chai'
 import * as hh from 'hardhat'
 import { ethers } from 'hardhat'
 
-import { send, wad, ray, rad, N, U256_MAX, warp } from 'minihat'
+import { fail, send, wad, ray, rad, N, U256_MAX, warp } from 'minihat'
 
 import { snapshot, revert, b32 } from './helpers'
 
@@ -80,6 +80,13 @@ describe('Vat', () => {
 
     const [ink2, art2] = await vat.urns(i0, ALI)
     want((await vat.gem(i0, ALI)).eq(wad(1000))).true
+  })
+
+  it('rejects unsafe frob', async () => {
+    const [ink, art] = await vat.urns(i0, ALI)
+    want(ink.toNumber()).to.eql(0)
+    want(art.toNumber()).to.eql(0)
+    await fail('Vat/not-safe', vat.frob, i0, ALI, ALI, ALI, 0, wad(1))
   })
 
   it('drip', async () => {

@@ -84,16 +84,17 @@ contract Vat is Math, Ward {
         });
     }
 
-    function owed(bytes32 i, address u) public returns (uint256 rad) {
-      drip(i);
-      return mul(ilks[i].rack, urns[i][u].art);
+    function owed(bytes32 i, address u) external
+      _drip_(i) returns (uint256 rad)
+    {
+        return mul(ilks[i].rack, urns[i][u].art);
     }
 
-    function safe(bytes32 i, address u) public returns (bool) {
-        prod();
-        drip(i);
-        Urn memory urn = urns[i][u];
-        Ilk memory ilk = ilks[i];
+    function safe(bytes32 i, address u) public
+      _prod_ _drip_(i) returns (bool)
+    {
+        Urn storage urn = urns[i][u];
+        Ilk storage ilk = ilks[i];
         uint256    ref = rmul(par, ilk.mark);
         uint256    liq = rmul(ref, ilk.liqr);
         uint256    tab = mul(urn.art, ilk.rack);
@@ -116,8 +117,8 @@ contract Vat is Math, Ward {
 
     function frob(bytes32 i, address u, address v, address w, int dink, int dart) public {
         drip(i);
-        Urn memory urn = urns[i][u];
-        Ilk memory ilk = ilks[i];
+        Urn storage urn = urns[i][u];
+        Ilk storage ilk = ilks[i];
 
         require(ilk.open || sys[i][msg.sender], 'err-sys');
 
@@ -150,8 +151,8 @@ contract Vat is Math, Ward {
         gem[i][v] = sub(gem[i][v], dink);
         joy[w]    = add(joy[w],    dtab);
 
-        urns[i][u] = urn;
-        ilks[i]    = ilk;
+        //urns[i][u] = urn;   `storage`
+        //ilks[i]    = ilk;   `storage`
     }
 
     function fork(bytes32 ilk, address src, address dst, int dink, int dart) external {
