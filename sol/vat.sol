@@ -90,8 +90,8 @@ contract Vat is Math, Ward {
         return mul(ilks[i].rack, urns[i][u].art);
     }
 
-    function safe(bytes32 i, address u) public
-      _prod_ _drip_(i) returns (bool)
+    function _safe(bytes32 i, address u)
+      internal returns (bool)
     {
         Urn storage urn = urns[i][u];
         Ilk storage ilk = ilks[i];
@@ -100,6 +100,10 @@ contract Vat is Math, Ward {
         uint256    tab = mul(urn.art, ilk.rack);
         uint256    cut = mul(urn.ink, liq);
         return (tab <= cut);
+    }
+    function safe(bytes32 i, address u) public
+      _prod_ _drip_(i) returns (bool) {
+        return _safe(i, u);
     }
 
     function lock(bytes32 i, uint amt) external {
@@ -115,8 +119,9 @@ contract Vat is Math, Ward {
         frob(i, msg.sender, msg.sender, msg.sender, 0, -int(amt));
     }
 
-    function frob(bytes32 i, address u, address v, address w, int dink, int dart) public {
-        drip(i);
+    function frob(bytes32 i, address u, address v, address w, int dink, int dart)
+      _prod_ _drip_(i) public
+    {
         Urn storage urn = urns[i][u];
         Ilk storage ilk = ilks[i];
 
@@ -136,7 +141,7 @@ contract Vat is Math, Ward {
         // either debt has decreased, or debt ceilings are not exceeded
         require(either(dart <= 0, both(mul(ilk.tart, ilk.rack) <= ilk.line, debt <= ceil)), "Vat/ceiling-exceeded");
         // urn is either less risky than before, or it is safe
-        require(either(both(dart <= 0, dink >= 0), safe(i, u)), "Vat/not-safe");
+        require(either(both(dart <= 0, dink >= 0), _safe(i, u)), "Vat/not-safe");
 
         // urn is either more safe, or the owner consents
         require(either(both(dart <= 0, dink >= 0), wish(u, msg.sender)), "Vat/frob/not-allowed-u");
@@ -150,13 +155,11 @@ contract Vat is Math, Ward {
 
         gem[i][v] = sub(gem[i][v], dink);
         joy[w]    = add(joy[w],    dtab);
-
-        //urns[i][u] = urn;   `storage`
-        //ilks[i]    = ilk;   `storage`
     }
 
-    function fork(bytes32 ilk, address src, address dst, int dink, int dart) external {
-        drip(ilk);
+    function fork(bytes32 ilk, address src, address dst, int dink, int dart)
+        _prod_ _drip_(ilk) external
+    {
         Urn storage u = urns[ilk][src];
         Urn storage v = urns[ilk][dst];
         Ilk storage i = ilks[ilk];
@@ -175,8 +178,8 @@ contract Vat is Math, Ward {
         require(both(wish(src, msg.sender), wish(dst, msg.sender)), "Vat/not-allowed");
 
         // both sides safe
-        require(safe(ilk, src), "Vat/not-safe-src");
-        require(safe(ilk, dst), "Vat/not-safe-dst");
+        require(_safe(ilk, src), "Vat/not-safe-src");
+        require(_safe(ilk, dst), "Vat/not-safe-dst");
 
         // both sides non-dusty
         require(either(utab >= i.dust, u.art == 0), "Vat/dust-src");
@@ -184,10 +187,8 @@ contract Vat is Math, Ward {
     }
 
     function grab(bytes32 i, address u, address v, address w, int dink, int dart)
-        //_ward_ _drip_(i) external returns (uint256)
-        _ward_ external returns (uint256)
+        _ward_ _drip_(i) external returns (uint256)
     {
-        drip(i); // TODO use modifiers; stack too deep
         Urn storage urn = urns[i][u];
         Ilk storage ilk = ilks[i];
 
@@ -233,38 +234,41 @@ contract Vat is Math, Ward {
         }
         _;
     }
-    function prod() public // TODO external
-      _prod_
-    {}
+    function prod() external
+      _prod_ returns (uint) {
+      return par;
+    }
 
     modifier _drip_(bytes32 i) {
-        Ilk storage ilk = ilks[i];
-        uint256 t = block.timestamp;
-        require(t >= ilk.rho, 'Vat/invalid-now');
-        if (t > ilk.rho) {
-            address vow  = address(0);
-            uint256 prev = ilk.rack;
-            uint256 rack = grow(prev, ilk.duty, t - ilk.rho);
+        // Ilk storage ilk = ilks[i];
+        require(block.timestamp >= ilks[i].rho, 'Vat/invalid-now');
+        if (block.timestamp > ilks[i].rho) {
+            address vat  = address(this);
+            uint256 prev = ilks[i].rack;
+            uint256 rack = grow(prev, ilks[i].duty, block.timestamp - ilks[i].rho);
             int256  delt = diff(rack, prev);
-            int256  rad  = mul(ilk.tart, delt);
-            ilk.rho      = time();
-            ilk.rack     = add(ilk.rack, delt);
-            joy[vow]     = add(joy[vow], rad);
+            int256  rad  = mul(ilks[i].tart, delt);
+            ilks[i].rho  = block.timestamp;
+            ilks[i].rack = add(ilks[i].rack, delt);
+            joy[vat]     = add(joy[vat], rad);
             debt         = add(debt, rad);
         }
         _;
     }
-    function drip(bytes32 i) public // TODO external
-      _drip_(i)
-    {}
+    function drip(bytes32 i) external
+      _drip_(i) returns (uint) {
+      return ilks[i].rack;
+    }
 
     function rake()
       _ward_ external
       returns (uint256)
     {
-        uint256 amt = joy[address(0)];
-        joy[msg.sender] = add(joy[msg.sender], amt);
-        joy[address(0)] = 0;
+        address vat = address(this);
+        address vow = msg.sender;
+        uint256 amt = joy[vat];
+        joy[vow] = add(joy[vow], amt);
+        joy[vat] = 0;
         return amt;
     }
 
@@ -306,8 +310,8 @@ contract Vat is Math, Ward {
     function nope(address usr) external {
         can[msg.sender][usr] = false;
     }
-    function wish(address bit, address usr) internal view returns (bool) {
-        return either(bit == usr, can[bit][usr] == true);
+    function wish(address urn, address usr) internal view returns (bool) {
+        return either(urn == usr, can[urn][usr] == true);
     }
 
     function wire(bytes32 i, address u, bool bit)
@@ -328,7 +332,7 @@ contract Vat is Math, Ward {
         Ilk storage i = ilks[ilk];
                if (key == "line") { i.line = val;
         } else if (key == "dust") { i.dust = val;
-        } else if (key == "duty") { drip(ilk); i.duty = val; // TODO check drip call
+        } else if (key == "duty") { i.duty = val; // WARN must drip yourself
         } else if (key == "open") { i.open = (val == 0 ? false : true); // TODO check default
         } else if (key == "liqr") { i.liqr = val;
         } else if (key == "chop") { i.chop = val;
