@@ -5,9 +5,10 @@ import { PackBuilder } from 'dpack'
 
 task('deploy-mock-dependencies', '')
 .setAction(async (args, hre) => {
+  const weth_pack = await hre.run('deploy-mock-weth9')
+  const bal2_pack = await hre.run('deploy-mock-balancer', {weth_pack: weth_pack})
   const fb_pack = await hre.run('deploy-mock-feedbase')
   const gf_pack = await hre.run('deploy-mock-gemfab')
-  const bal2_pack = await hre.run('deploy-mock-balancer', {WETH:{address:fb_pack.objects.feedbase.address}})
 
   const pb = new PackBuilder(hre.network.name)
   await pb.merge(fb_pack, gf_pack, bal2_pack);

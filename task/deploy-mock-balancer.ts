@@ -11,7 +11,7 @@ task('deploy-mock-balancer', 'deploys balancer Vault and WeightedPoolFactory')
   const {ethers, network} = hre
   const [acct] = await hre.ethers.getSigners()
   const deployer = acct.address
-  const WETH = args.WETH
+  const weth_pack = args.weth_pack
 
   const vault_abi = await balancer.getBalancerContractAbi('20210418-vault', 'Vault')
   const vault_code = await balancer.getBalancerContractBytecode('20210418-vault', 'Vault')
@@ -21,7 +21,7 @@ task('deploy-mock-balancer', 'deploys balancer Vault and WeightedPoolFactory')
   const vault_type = new ethers.ContractFactory(vault_abi, vault_code, acct)
   const poolfab_type = new ethers.ContractFactory(poolfab_abi, poolfab_code, acct)
 
-  const vault = await vault_type.deploy(deployer, WETH.address, 1000, 1000)
+  const vault = await vault_type.deploy(deployer, weth_pack.objects.weth9.address, 1000, 1000)
   const poolfab = await poolfab_type.deploy(vault.address)
 
   const pb = new PackBuilder(network.name)

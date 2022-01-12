@@ -4,3 +4,6 @@
 [submodule "lib/gemfab"]
 	path = lib/gemfab
 	url = https://github.com/ricobank/gemfab
+[submodule "lib/weth-pack"]
+	path = lib/weth-pack
+	url = https://github.com/etherpacks/weth-pack.git
