@@ -34,7 +34,7 @@ interface VatLike {
     // from Vox
     function par() external returns (uint256);
     function way() external returns (uint256);
-    function prod() external;
+    function prod() external returns (uint256);
     function sway(uint256 r) external;
 }
 

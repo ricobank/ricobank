@@ -37,6 +37,9 @@ contract Math {
     function min(uint256 x, uint256 y) internal pure returns (uint256 z) {
         z = x <= y ? x : y;
     }
+    function max(uint256 x, uint256 y) internal pure returns (uint256 z) {
+        z = x >= y ? x : y;
+    }
 
     function add(uint256 x, uint256 y) internal pure returns (uint256 z) {
         require((z = x + y) >= x, 'ERR_MATH_UUADD');
@@ -94,6 +97,9 @@ contract Math {
     }
     function rdiv(uint256 x, uint256 y) internal pure returns (uint256 z) {
         z = mul(x, RAY) / y;
+    }
+    function rinv(uint256 x) internal pure returns (uint256) {
+        return rdiv(RAY, x);
     }
 
     function grow(uint256 amt, uint256 ray, uint256 dt) internal pure returns (uint256 z) {

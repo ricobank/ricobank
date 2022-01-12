@@ -45,6 +45,8 @@ describe('Vox', () => {
     await send(vox.link, b32("tip"), ALI)
     await send(vox.file, b32("tag"), TAG)
 
+    await send(vox.file, b32("cap"), bn2b32(ray(3)))
+
     await send(vat.spar, wad(7))
 
     await snapshot(hh);
@@ -103,7 +105,7 @@ describe('Vox', () => {
     want(t10_.toNumber()).equals(t10)
 
     await send(vat.spar, wad(1.24))
-    await send(vox.file, b32('how'), bn2b32(ray(1.00000001)))
+    await send(vox.file, b32('how'), bn2b32(ray(1 + 1.2e-16)))
 
     await send(fb.push, TAG, bn2b32(wad(1.25)), 10 ** 12)
     await send(vox.poke)
@@ -113,11 +115,13 @@ describe('Vox', () => {
 
     await send(vox.poke)
     const par2 = await vat.par()
+    debug(par2.toString())
 
     await warp(hh, t0 + 2 * 3600)
     await mine(hh)
 
     await send(vox.poke)
     const par3 = await vat.par()
+    debug(par3.toString())
   })
 })

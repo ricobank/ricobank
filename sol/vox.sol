@@ -29,40 +29,37 @@ contract Vox is Math, Ward {
     bytes32 public tag; // feedbase `tag` bytes32
 
     uint256 public how;  // [ray] sensitivity paramater
-
-    uint256 public delt; // [ray] ratio at last tick
     uint256 public tau;  // [sec] last tick
 
+    uint256 public cap;  // [ray] `way` bound
+
     constructor() {
-      how  = RAY;
-      delt = RAY;
-      tau  = block.timestamp;
-    }
-
-    function poke() external {
-        uint256 way = vat.way();
-        // change the rate according to last tp/mp
-        if (delt < RAY) {
-          way = grow(way, how, block.timestamp - tau);
-        } else if (delt > RAY) {
-          way = grow(way, rdiv(RAY, how), block.timestamp - tau);
-        } else {
-          // no change
-        }
-
-        // vat.prod(); called by sway
-        vat.sway(way);
-
-        (bytes32 mp_,) = fb.read(tip, tag);
-        uint256 mp = uint256(mp_);
-        uint256 par = vat.par();
-
-        delt = rdiv(mp, par);
+        how = RAY;
         tau = block.timestamp;
     }
 
-    function link(bytes32 key, address val)
-      _ward_ external
+    function poke() external {
+        (bytes32 _mar,) = fb.read(tip, tag);
+        uint256 mar = uint256(_mar);
+        uint256 par = vat.prod();
+
+        uint256 err = rdiv(mar, par);
+        uint256 dt = block.timestamp - tau;
+
+        uint256 way = vat.way();
+
+        if (err < RAY) {
+            way = min(cap, grow(way, how, dt));
+        } else if (err > RAY) {
+            way = max(rinv(cap), grow(way, rinv(how), dt));
+        } else {}
+
+        vat.sway(way);
+        tau = block.timestamp;
+    }
+
+    function link(bytes32 key, address val) external
+      _ward_
     {
              if (key == "vat") { vat = VatLike(val); }
         else if (key == "fb") { fb = FeedbaseLike(val); }
@@ -70,11 +67,12 @@ contract Vox is Math, Ward {
         else revert("ERR_LINK_KEY");
     }
 
-    function file(bytes32 key, bytes32 val)
-      _ward_ external
+    function file(bytes32 key, bytes32 val) external
+      _ward_
     {
              if (key == "tag") { tag = val; }
         else if (key == "how") { how = uint256(val); }
+        else if (key == "cap") { cap = uint256(val); }
         else revert("ERR_FILE_KEY");
     }
 

@@ -7,6 +7,7 @@ task('deploy-ricobank', '')
 .addOptionalParam('mock', 'Ignore dependency args and deploy new mock dependencies')
 .addOptionalParam('dependencies', 'Pack with all required dependencies')
 .setAction(async (args, hre) => {
+  debug('network name in task:', hre.network.name)
   const [ALI] = await hre.ethers.getSigners();
 
   if (args.mock && args.dependencies) {
