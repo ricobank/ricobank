@@ -4,6 +4,7 @@ import * as hh from 'hardhat'
 import { ethers } from 'hardhat'
 import { smock } from '@defi-wonderland/smock'
 
+const dpack = require('dpack')
 const chai = require('chai');
 chai.use(smock.matchers);
 
@@ -44,7 +45,9 @@ describe('vow / liq liquidation lifecycle', () => {
     mock_flower_plopper = await mock_flower_plopper_type.deploy();
     RICO = await gem_type.deploy('Rico', 'RICO')
     RISK = await gem_type.deploy('Rico Riskshare', 'RISK')
-    WETH = await gem_type.deploy('Wrapped Ether', 'WETH')
+    const weth_pack = await hh.run('deploy-mock-weth9')
+    const weth_dapp = await dpack.Dapp.loadFromPack(weth_pack, ali, ethers)
+    WETH = weth_dapp.objects.weth9
 
     await send(vat.hope, port.address)
     await send(vat.hope, vow.address)
@@ -53,7 +56,7 @@ describe('vow / liq liquidation lifecycle', () => {
     await send(RICO.ward, port.address, true)
     await send(RISK.ward, vow.address, true)
 
-    await send(WETH.mint, ALI, wad(10000))
+    await send(WETH.deposit, {value: ethers.utils.parseEther("7000.0")})
     await send(RICO.mint, ALI, wad(10000))
     await send(RISK.mint, ALI, wad(10000))
     await send(WETH.approve, join.address, U256_MAX)
@@ -92,9 +95,10 @@ describe('vow / liq liquidation lifecycle', () => {
     const safe1 = await vat.callStatic.safe(i0, ALI)
     want(safe1).true
 
-    const task_args = { WETH: WETH }
+    const task_args = { weth_pack: weth_pack }
     const balancer_pack = await hh.run('deploy-mock-balancer', task_args)
-    vault = balancer_pack.vault
+    const balancer_dapp = await dpack.Dapp.loadFromPack(balancer_pack, ali, ethers)
+    vault = balancer_dapp.objects.bal2_vault
 
     await send(WETH.approve, vault.address, U256_MAX)
     await send(RICO.approve, vault.address, U256_MAX)
@@ -118,8 +122,8 @@ describe('vow / liq liquidation lifecycle', () => {
       symbol: 'MOCK',
       swapFeePercentage: wad(0.01)
     }
-    poolId_weth_rico = (await hh.run('deploy-balancer-pool', weth_rico_args)).pool_id
-    poolId_risk_rico = (await hh.run('deploy-balancer-pool', risk_rico_args)).pool_id
+    poolId_weth_rico = (await hh.run('build-weighted-bpool', weth_rico_args)).pool_id
+    poolId_risk_rico = (await hh.run('build-weighted-bpool', risk_rico_args)).pool_id
 
     await filem_ramp(WETH, flower, {'vel': wad(1), 'rel': wad(0.001), 'bel': 0, 'cel': 600})
     await filem_ramp(RICO, flower, {'vel': wad(1), 'rel': wad(0.001), 'bel': 0, 'cel': 600})

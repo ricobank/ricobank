@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "license": "GPL-3.0",
   "scripts": {
-    "init": "git submodule update --init --recursive && npm run init:feedbase && npm run init:gemfab && npm run init:weth-pack",
+    "init": "git submodule update --init --recursive --remote && npm run init:feedbase && npm run init:gemfab && npm run init:weth-pack",
     "init:feedbase": "cd lib/feedbase && npm i",
     "init:gemfab": "cd lib/gemfab && npm i",
     "init:weth-pack": "cd lib/weth-pack && npm i",
@@ -13,7 +13,7 @@
     "build:feedbase": "cd lib/feedbase && npm run build",
     "build:gemfab": "cd lib/gemfab && npm run build",
     "pretest": "npm run build:sol",
-    "test": "ts-mocha --timeout 10000 test/*",
+    "test": "ts-mocha --timeout 10000 test/* --openssl-legacy-provider",
     "fmt": "ts-standard --fix task test"
   },
   "devDependencies": {

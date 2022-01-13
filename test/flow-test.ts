@@ -3,6 +3,8 @@ import { expect as want } from 'chai'
 import * as hh from 'hardhat'
 import { ethers } from 'hardhat'
 
+const dpack = require('dpack')
+
 import { b32, revert, snapshot, filem_ramp } from './helpers'
 import { mine, send, U256_MAX, wad } from 'minihat'
 
@@ -24,15 +26,18 @@ describe('RicoFlowerV1 balancer interaction', () => {
     flower = await flower_type.deploy();
     RICO = await gem_type.deploy('Rico', 'RICO')
     RISK = await gem_type.deploy('Rico Riskshare', 'RISK')
-    WETH = await gem_type.deploy('Wrapped Ether', 'WETH')
+    const weth_pack = await hh.run('deploy-mock-weth9')
+    const weth_dapp = await dpack.Dapp.loadFromPack(weth_pack, ali, ethers)
+    WETH = weth_dapp.objects.weth9
 
-    await send(WETH.mint, ALI, wad(10000))
+    await send(WETH.deposit, {value: ethers.utils.parseEther("2100.0")})
     await send(RICO.mint, ALI, wad(10000))
     await send(RISK.mint, ALI, wad(10000))
 
-    const task_args = { WETH: WETH }
+    const task_args = { weth_pack: weth_pack }
     const balancer_pack = await hh.run('deploy-mock-balancer', task_args)
-    vault = balancer_pack.vault
+    const balancer_dapp = await dpack.Dapp.loadFromPack(balancer_pack, ali, ethers)
+    vault = balancer_dapp.objects.bal2_vault
 
     await send(WETH.approve, vault.address, U256_MAX)
     await send(RICO.approve, vault.address, U256_MAX)
@@ -57,8 +62,8 @@ describe('RicoFlowerV1 balancer interaction', () => {
       symbol: 'MOCK',
       swapFeePercentage: wad(0.01)
     }
-    poolId_weth_rico = (await hh.run('deploy-balancer-pool', weth_rico_args)).pool_id
-    poolId_risk_rico = (await hh.run('deploy-balancer-pool', risk_rico_args)).pool_id
+    poolId_weth_rico = (await hh.run('build-weighted-bpool', weth_rico_args)).pool_id
+    poolId_risk_rico = (await hh.run('build-weighted-bpool', risk_rico_args)).pool_id
 
     await filem_ramp(WETH, flower, {'vel': wad(1), 'rel': wad(0.001), 'bel': 0, 'cel': 600})
     await filem_ramp(RICO, flower, {'vel': wad(1), 'rel': wad(0.001), 'bel': 0, 'cel': 600})
