@@ -7,3 +7,6 @@
 [submodule "lib/weth-pack"]
 	path = lib/weth-pack
 	url = https://github.com/etherpacks/weth-pack.git
+[submodule "lib/balancer-pack"]
+	path = lib/balancer-pack
+	url = https://github.com/etherpacks/balancer-pack.git

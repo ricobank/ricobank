@@ -37,7 +37,7 @@ describe('RicoFlowerV1 balancer interaction', () => {
     const task_args = { weth_pack: weth_pack }
     const balancer_pack = await hh.run('deploy-mock-balancer', task_args)
     const balancer_dapp = await dpack.Dapp.loadFromPack(balancer_pack, ali, ethers)
-    vault = balancer_dapp.objects.bal2_vault
+    vault = balancer_dapp.objects.vault
 
     await send(WETH.approve, vault.address, U256_MAX)
     await send(RICO.approve, vault.address, U256_MAX)
