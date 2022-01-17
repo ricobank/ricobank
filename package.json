@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "license": "GPL-3.0",
   "scripts": {
-    "init": "npm run download-submodules && npm run install-submodules",
+    "init": "npm i && npm run download-submodules && npm run install-submodules",
     "download-submodules": "git submodule update --init --recursive",
     "install-submodules": "npm run init:feedbase && npm run init:gemfab && npm run init:weth-pack && npm run init:balancer-pack",
     "init:feedbase": "cd lib/feedbase && npm i",
