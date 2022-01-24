@@ -2,41 +2,34 @@ const debug = require('debug')('rico:test')
 import { expect as want } from 'chai'
 
 import * as hh from 'hardhat'
-import {ethers, artifacts, network } from 'hardhat'
+import { ethers } from 'hardhat'
 
 import { send, N, wad, ray, rad, BANKYEAR, wait, warp, mine } from 'minihat'
 const { hexZeroPad } = ethers.utils
 
 import { b32, snapshot, revert } from './helpers'
+const dpack = require('dpack')
 
 const bn2b32 = (bn) => hexZeroPad(bn.toHexString(), 32)
-
 const i0 = Buffer.alloc(32) // ilk 0 id
 const TAG = Buffer.from('feed'.repeat(16), 'hex')
 
 describe('Vox', () => {
   let ali, bob, cat
   let ALI, BOB, CAT
-  let vat; let vat_type
-  let vox; let vox_type
-
-  let fb_deployer
+  let vat
+  let vox
   let fb
-
-  let snap;
 
   before(async () => {
     [ali, bob, cat] = await ethers.getSigners();
     [ALI, BOB, CAT] = [ali, bob, cat].map(signer => signer.address)
-    vat_type = await ethers.getContractFactory('Vat', ali)
-    vox_type = await ethers.getContractFactory('Vox', ali)
+    const pack = await hh.run('deploy-ricobank', { mock: 'true' })
+    const dapp = await dpack.Dapp.loadFromPack(pack, ali, ethers)
 
-    const fb_artifacts = require('../lib/feedbase/artifacts/sol/Feedbase.sol/Feedbase.json')
-    fb_deployer = ethers.ContractFactory.fromSolidity(fb_artifacts, ali)
-
-    vat = await vat_type.deploy()
-    vox = await vox_type.deploy()
-    fb = await fb_deployer.deploy()
+    vat = dapp.objects.vat
+    vox = dapp.objects.vox
+    fb = dapp.objects.feedbase
 
     await send(vat.ward, vox.address, true)
 

@@ -7,6 +7,7 @@ import { fail, send, wad, ray, rad, N, U256_MAX, warp } from 'minihat'
 
 import { snapshot, revert, b32 } from './helpers'
 
+const dpack = require('dpack')
 const debug = require('debug')('rico:test')
 
 const i0 = Buffer.alloc(32) // ilk 0 id
@@ -14,32 +15,29 @@ const i0 = Buffer.alloc(32) // ilk 0 id
 describe('Vat', () => {
   let ali, bob, cat
   let ALI, BOB, CAT
-  let vat; let vat_type
-  let joy, gem; let gem_type
-  let join, join_type
-  let port, port_type
+  let vat
+  let RICO, WETH
+  let join
+  let port
   before(async () => {
     [ali, bob, cat] = await ethers.getSigners();
     [ALI, BOB, CAT] = [ali, bob, cat].map(signer => signer.address)
-    vat_type = await ethers.getContractFactory('Vat', ali)
-    const gem_artifacts = require('../lib/gemfab/artifacts/sol/gem.sol/Gem.json')
-    gem_type = ethers.ContractFactory.fromSolidity(gem_artifacts, ali)
-    join_type = await ethers.getContractFactory('Join', ali)
-    port_type = await ethers.getContractFactory('Port', ali)
+    const pack = await hh.run('deploy-ricobank', { mock: 'true' })
+    const dapp = await dpack.Dapp.loadFromPack(pack, ali, ethers)
 
-    vat = await vat_type.deploy()
-    joy = await gem_type.deploy('joy', 'JOY')
-    gem = await gem_type.deploy('gem', 'GEM')
-    join = await join_type.deploy()
-    port = await port_type.deploy()
+    join = dapp.objects.join
+    port = dapp.objects.port
+    vat = dapp.objects.vat
+    RICO = dapp.objects.rico
+    WETH = dapp.objects.weth9
 
     await send(vat.ward, join.address, true)
-    await send(gem.approve, join.address, U256_MAX)
-    await send(joy.mint, ALI, wad(1000))
-    await send(gem.mint, ALI, wad(1000))
+    await send(WETH.approve, join.address, U256_MAX)
+    await send(RICO.mint, ALI, wad(1000))
+    await send(WETH.deposit, { value: ethers.utils.parseEther('1000.0') })
 
-    await send(join.bind, vat.address, i0, gem.address)
-    await send(port.bind, vat.address, joy.address, true)
+    await send(join.bind, vat.address, i0, WETH.address)
+    await send(port.bind, vat.address, RICO.address, true)
     await send(join.join, vat.address, i0, ALI, wad(1000))
 
     await send(vat.init, i0)
@@ -62,7 +60,7 @@ describe('Vat', () => {
   it('gem join', async () => {
     const gembal = await vat.gem(i0, ALI)
     want(gembal.eq(wad(1000))).true
-    const bal = await gem.balanceOf(ALI)
+    const bal = await WETH.balanceOf(ALI)
     want(bal.eq(wad(0))).true
   })
 

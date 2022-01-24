@@ -3,15 +3,17 @@ import { ethers } from 'hardhat'
 import { fail, rad, ray, revert, send, snapshot, U256_MAX, wad, want } from 'minihat'
 import { ADDRZERO, b32 } from './helpers'
 
+const dpack = require('dpack')
+
 let i0 = Buffer.alloc(32, 1)  // ilk 0 id
 let i1 = Buffer.alloc(32, 2)  // ilk 1 id
 
 describe('Join', () => {
     let ali, bob, cat
     let ALI, BOB, CAT
-    let vat, vat_type
-    let join, join_type
-    let port, port_type
+    let vat
+    let join
+    let port
     let RICO, gemA, gemB
     let gem_type
     let flash_strategist, flash_strategist_type
@@ -21,11 +23,10 @@ describe('Join', () => {
     before(async () => {
         [ali, bob, cat] = await ethers.getSigners();
         [ALI, BOB, CAT] = [ali, bob, cat].map(signer => signer.address)
-        vat_type = await ethers.getContractFactory('Vat', ali)
+        const pack = await hh.run('deploy-ricobank', { mock: 'true' })
+        const dapp = await dpack.Dapp.loadFromPack(pack, ali, ethers)
         const gem_artifacts = require('../lib/gemfab/artifacts/sol/gem.sol/Gem.json')
         gem_type = ethers.ContractFactory.fromSolidity(gem_artifacts, ali)
-        join_type = await ethers.getContractFactory('Join', ali)
-        port_type = await ethers.getContractFactory('Port', ali)
         flash_strategist_type = await ethers.getContractFactory('MockFlashStrategist', ali)
         strategist_iface = new ethers.utils.Interface([
             "function approve_all(address[] memory gems, uint256[] memory amts)",
@@ -37,12 +38,13 @@ describe('Join', () => {
             "function onFlashLoan(address initiator, address token, uint256 amount, uint256 fee, bytes calldata data) returns (bytes32)"
         ])
 
-        vat = await vat_type.deploy()
-        RICO = await gem_type.deploy('Rico', 'RICO')
+        join = dapp.objects.join
+        port = dapp.objects.port
+        vat = dapp.objects.vat
+        RICO = dapp.objects.rico
+
         gemA = await gem_type.deploy('gemA', 'GEMA')
         gemB = await gem_type.deploy('gemB', 'GEMB')
-        join = await join_type.deploy()
-        port = await port_type.deploy()
         flash_strategist = await flash_strategist_type.deploy(join.address, port.address, vat.address, RICO.address, i0)
 
         await send(vat.ward, join.address, true)

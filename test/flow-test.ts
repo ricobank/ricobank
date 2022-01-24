@@ -11,33 +11,27 @@ import { mine, send, U256_MAX, wad } from 'minihat'
 describe('RicoFlowerV1 balancer interaction', () => {
   let ali, bob, cat
   let ALI, BOB, CAT
-  let RICO, RISK, WETH; let gem_type
-  let flower; let flower_type;
+  let RICO, RISK, WETH
+  let flower
   let vault
   let poolId_weth_rico
   let poolId_risk_rico
   before(async () => {
     [ali, bob, cat] = await ethers.getSigners();
     [ALI, BOB, CAT] = [ali, bob, cat].map(signer => signer.address)
-    const gem_artifacts = require('../lib/gemfab/artifacts/sol/gem.sol/Gem.json')
-    gem_type = ethers.ContractFactory.fromSolidity(gem_artifacts, ali)
-    flower_type = await ethers.getContractFactory('RicoFlowerV1', ali)
 
-    flower = await flower_type.deploy();
-    RICO = await gem_type.deploy('Rico', 'RICO')
-    RISK = await gem_type.deploy('Rico Riskshare', 'RISK')
-    const weth_pack = await hh.run('deploy-mock-weth9')
-    const weth_dapp = await dpack.Dapp.loadFromPack(weth_pack, ali, ethers)
-    WETH = weth_dapp.objects.weth9
+    const pack = await hh.run('deploy-ricobank', { mock: 'true' })
+    const dapp = await dpack.Dapp.loadFromPack(pack, ali, ethers)
+
+    flower = dapp.objects.ricoflowerv1
+    vault = dapp.objects.vault
+    RICO = dapp.objects.rico
+    RISK = dapp.objects.risk
+    WETH = dapp.objects.weth9
 
     await send(WETH.deposit, {value: ethers.utils.parseEther("2100.0")})
     await send(RICO.mint, ALI, wad(10000))
     await send(RISK.mint, ALI, wad(10000))
-
-    const task_args = { weth_pack: weth_pack }
-    const balancer_pack = await hh.run('deploy-mock-balancer', task_args)
-    const balancer_dapp = await dpack.Dapp.loadFromPack(balancer_pack, ali, ethers)
-    vault = balancer_dapp.objects.vault
 
     await send(WETH.approve, vault.address, U256_MAX)
     await send(RICO.approve, vault.address, U256_MAX)
@@ -49,14 +43,14 @@ describe('RicoFlowerV1 balancer interaction', () => {
                               {token: RICO, weight: wad(0.5), amountIn: wad(2000)}]
 
     const weth_rico_args = {
-      balancer_pack: balancer_pack,
+      balancer_pack: pack,
       token_settings: weth_rico_tokens,
       name: 'mock',
       symbol: 'MOCK',
       swapFeePercentage: wad(0.01)
     }
     const risk_rico_args = {
-      balancer_pack: balancer_pack,
+      balancer_pack: pack,
       token_settings: risk_rico_tokens,
       name: 'mock',
       symbol: 'MOCK',

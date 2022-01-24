@@ -1,8 +1,10 @@
 import { expect as want } from 'chai'
 
-import { ethers, artifacts, network } from 'hardhat'
+import { ethers } from 'hardhat'
 
-import { b32, wad, ray, send, ADDRZERO } from './helpers'
+import { b32, wad, ray, send } from './helpers'
+import * as hh from "hardhat"
+const dpack = require('dpack')
 const debug = require('debug')('rico:test')
 
 const ZERO = Buffer.alloc(32)
@@ -13,22 +15,20 @@ const TAG = Buffer.from('feed'.repeat(16), 'hex')
 describe('plot vat ilk mark via plotter', () => {
   let ali, bob, cat
   let ALI, BOB, CAT
-  let vat; let vat_type
-  let plotter; let plotter_type
-  let fb_deployer; let fb
+  let vat
+  let plotter
+  let fb
+  let dapp
   before(async () => {
     [ali, bob, cat] = await ethers.getSigners();
     [ALI, BOB, CAT] = [ali, bob, cat].map(signer => signer.address)
-    vat_type = await ethers.getContractFactory('Vat', ali)
-    plotter_type = await ethers.getContractFactory('Plotter', ali)
-    const fb_artifacts = require('../lib/feedbase/artifacts/sol/Feedbase.sol/Feedbase.json')
-    fb_deployer = ethers.ContractFactory.fromSolidity(fb_artifacts, ali)
+    const pack = await hh.run('deploy-ricobank', { mock: 'true' })
+    dapp = await dpack.Dapp.loadFromPack(pack, ali, ethers)
   })
   beforeEach(async () => {
-    vat = await vat_type.deploy()
-    plotter = await plotter_type.deploy()
-    fb = await fb_deployer.deploy()
-    // fb = await fbpack.dapp.types.Feedbase.deploy();
+    vat = dapp.objects.vat
+    plotter = dapp.objects.plotter
+    fb = dapp.objects.feedbase
 
     await send(vat.ward, plotter.address, true)
 

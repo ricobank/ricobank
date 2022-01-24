@@ -11,7 +11,7 @@ task('deploy-mock-dependencies', '')
   const gf_pack = await hre.run('deploy-mock-gemfab')
 
   const pb = new PackBuilder(hre.network.name)
-  await pb.merge(fb_pack, gf_pack, bal2_pack);
+  await pb.merge(weth_pack, bal2_pack, fb_pack, gf_pack);
   const pack = await pb.build();
 
   return pack
