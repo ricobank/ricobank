@@ -351,7 +351,7 @@ describe('Vat', () => {
         await fail('Vat/frob/not-allowed', vat.connect(cat).frob, i0, ALI, CAT, ALI, wad(0), wad(-1))
       })
 
-      it('test_hope', async () => {
+      it('test_trust', async () => {
         await Promise.all([ALI, BOB, CAT].map(usr => send(vat.slip, i0, usr, rad(20))))
 
         await send(vat.connect(ali).frob, i0, ALI, ALI, ALI, wad(10), wad(5))
@@ -361,9 +361,9 @@ describe('Vat', () => {
         await fail('Vat/frob/not-allowed', vat.connect(bob).frob, i0, ALI, BOB, BOB, wad(0), wad(1))
         await fail('Vat/frob/not-allowed', vat.connect(cat).frob, i0, ALI, CAT, CAT, wad(0), wad(1))
 
-        await send(vat.connect(ali).hope, BOB)
+        await send(vat.connect(ali).trust, BOB, true)
 
-        debug('unless they hope another user')
+        debug('unless they trust another user')
         await send(vat.connect(ali).frob, i0, ALI, ALI, ALI, wad(0), wad(1))
         await send(vat.connect(bob).frob, i0, ALI, BOB, BOB, wad(0), wad(1))
         await fail('Vat/frob/not-allowed', vat.connect(cat).frob, i0, ALI, CAT, CAT, wad(0), wad(1))
@@ -404,7 +404,7 @@ describe('Vat', () => {
 
       it('test_dai_exit', async () => {
         await send(vat.mint, ME, rad(100))
-        await send(vat.hope, port.address)
+        await send(vat.trust, port.address, true)
         debug('exiting...')
         await send(port.exit, vat.address, joy.address, ME, wad(40))
         want(await joy.balanceOf(ME)).to.eql(wad(40))
@@ -414,7 +414,7 @@ describe('Vat', () => {
 
       it('test_dai_exit_join', async () => {
         await send(vat.mint, ME, rad(100))
-        await send(vat.hope, port.address)
+        await send(vat.trust, port.address, true)
         debug('exiting')
         await send(port.exit, vat.address, joy.address, ME, wad(60))
         await send(joy.approve, port.address, constants.MaxUint256)
@@ -468,9 +468,9 @@ describe('Vat', () => {
         await send(vow.lilk, i0, b32('flipper'), flower.address)
         await send(vat.filk, i0, b32('chop'), ray(1)) // dss used wad, rico uses ray
 
-        debug('vat ward/hope vow, approve gov/gold')
+        debug('vat ward/trust vow, approve gov/gold')
         await send(vat.ward, vow.address, true)
-        await send(vat.hope, vow.address)
+        await send(vat.trust, vow.address, true)
         await send(gold.approve, vat.address, constants.MaxUint256)
         // gov approve flap N/A not sure what to do with gov atm...
 

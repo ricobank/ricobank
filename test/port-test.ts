@@ -49,7 +49,7 @@ describe('Port', () => {
         await send(RICO.ward, port.address, true)
         await send(RICO.ward, flash_strategist.address, true)
         await send(gemA.ward, flash_strategist.address, true)
-        await send(vat.hope, port.address)
+        await send(vat.trust, port.address, true)
         await send(gemA.approve, join.address, U256_MAX)
         await send(RICO.mint, ALI, wad(10))
         await send(gemA.mint, ALI, wad(1000))

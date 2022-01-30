@@ -17,8 +17,8 @@ interface VatLike {
     function draw(bytes32, uint) external;
     function drip(bytes32 ilk) external;
     function free(bytes32, uint) external;
-    function hope(address) external;
     function lock(bytes32, uint) external;
+    function trust(address, bool) external;
     function wipe(bytes32, uint) external;
 }
 
@@ -129,7 +129,7 @@ contract MockFlashStrategist is IERC3156FlashBorrower {
         join.join(address(vat), ilk0, address(this), lock_amt);
         vat.lock(ilk0, lock_amt);
         vat.draw(ilk0, draw_amt);
-        vat.hope(address(port));
+        vat.trust(address(port), true);
         port.exit(address(vat), address(rico), address(this), draw_amt);
     }
 
@@ -146,7 +146,7 @@ contract MockFlashStrategist is IERC3156FlashBorrower {
         join.join(address(vat), ilk0, address(this), lock_amt);
         vat.lock(ilk0, lock_amt);
         vat.draw(ilk0, draw_amt);
-        vat.hope(address(port));
+        vat.trust(address(port), true);
         port.exit(address(vat), address(rico), address(this), draw_amt);
         _buy_gem(gem, draw_amt);
         GemLike(gem).approve(address(join), lock_amt);

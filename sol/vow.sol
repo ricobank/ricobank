@@ -80,7 +80,7 @@ contract Vow is Math, Ward {
     }
 
     function reapprove() external {
-        vat.hope(address(port));
+        vat.trust(address(port), true);
     }
 
     function reapprove_gem(address gem) external {

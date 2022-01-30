@@ -25,7 +25,7 @@ interface VatLike {
     function sin(address) external returns (uint);
     function heal(uint amt) external;
     function drip(bytes32 ilk) external;
-    function hope(address) external;
+    function trust(address, bool) external;
     function rake() external returns (uint);
     function safe(bytes32,address) external returns (bool);
     function urns(bytes32,address) external returns (uint,uint);

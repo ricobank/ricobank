@@ -53,7 +53,7 @@ contract Vat is Math, Ward {
     mapping (address => uint256)                   public joy;  // [rad]
     mapping (address => uint256)                   public sin;  // [rad]
 
-    mapping (bytes32 => mapping (address => bool)) public sys;  // ilk ACL
+    mapping (bytes32 => mapping (address => bool)) public kin;  // ilk ACL
     mapping (address => mapping (address => bool)) public can;  // urn approval
 
     uint256 public debt;  // [rad] Total Dai Issued
@@ -125,7 +125,7 @@ contract Vat is Math, Ward {
         Urn storage urn = urns[i][u];
         Ilk storage ilk = ilks[i];
 
-        require(ilk.open || sys[i][msg.sender], 'err-sys');
+        require(ilk.open || kin[i][msg.sender], 'err-kin');
 
         // ilk has been initialised
         require(ilk.rack != 0, "Vat/ilk-not-init");
@@ -164,7 +164,7 @@ contract Vat is Math, Ward {
         Urn storage v = urns[ilk][dst];
         Ilk storage i = ilks[ilk];
 
-        require(i.open || sys[ilk][msg.sender], 'err-sys');
+        require(i.open || kin[ilk][msg.sender], 'err-kin');
 
         u.ink = sub(u.ink, dink);
         u.art = sub(u.art, dart);
@@ -304,20 +304,20 @@ contract Vat is Math, Ward {
         debt   = add(debt,   rad);
     }
 
-    function hope(address usr) external {
-        can[msg.sender][usr] = true;
+    function trusts(address usr, address urn) external view returns (bool) {
+        return can[usr][urn];
     }
-    function nope(address usr) external {
-        can[msg.sender][usr] = false;
+    function trust(address usr, bool bit) external {
+        can[msg.sender][usr] = bit;
     }
     function wish(address urn, address usr) internal view returns (bool) {
-        return either(urn == usr, can[urn][usr] == true);
+        return either(urn == usr, can[urn][usr]);
     }
 
-    function wire(bytes32 i, address u, bool bit)
+    function kind(bytes32 i, address u, bool bit)
       _ward_ external
     {
-        sys[i][u] = bit;
+        kin[i][u] = bit;
     }
 
     function file(bytes32 key, uint256 val)

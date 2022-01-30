@@ -49,8 +49,8 @@ describe('vow / liq liquidation lifecycle', () => {
     flower = await flower_type.deploy()
     mock_flower_plopper = await mock_flower_plopper_type.deploy()
 
-    await send(vat.hope, port.address)
-    await send(vat.hope, vow.address)
+    await send(vat.trust, port.address, true)
+    await send(vat.trust, vow.address, true)
     await send(vat.ward, join.address, true)
     await send(vat.ward, vow.address, true)
     await send(RICO.ward, port.address, true)
