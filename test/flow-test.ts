@@ -27,7 +27,7 @@ describe('RicoFlowerV1 balancer interaction', () => {
     vault = dapp.objects.vault
     RICO = dapp.objects.rico
     RISK = dapp.objects.risk
-    WETH = dapp.objects.weth9
+    WETH = dapp.objects.weth
 
     await send(WETH.deposit, {value: ethers.utils.parseEther("2100.0")})
     await send(RICO.mint, ALI, wad(10000))

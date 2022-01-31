@@ -52,7 +52,7 @@ describe('Vat', () => {
     vow = dapp.objects.vow
     RICO = dapp.objects.rico
     RISK = dapp.objects.risk
-    WETH = dapp.objects.weth9
+    WETH = dapp.objects.weth
 
     await send(vat.ward, plug.address, true)
     await send(WETH.approve, plug.address, U256_MAX)

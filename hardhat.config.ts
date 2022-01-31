@@ -2,8 +2,8 @@ import '@nomiclabs/hardhat-ethers'
 
 import './lib/gemfab/task/deploy-gemfab'
 import './lib/feedbase/task/deploy-feedbase'
-import './lib/weth-pack/task/deploy-mock-weth9'
-import './lib/balancer-pack/task/deploy-mock-balancer'
+import './lib/weth/task/deploy-mock-weth'
+import './lib/balancer2/task/deploy-mock-balancer'
 
 import './task/deploy-mock-gemfab'
 import './task/deploy-mock-feedbase'

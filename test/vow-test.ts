@@ -43,7 +43,7 @@ describe('vow / liq liquidation lifecycle', () => {
     vow = dapp.objects.vow
     RICO = dapp.objects.rico
     RISK = dapp.objects.risk
-    WETH = dapp.objects.weth9
+    WETH = dapp.objects.weth
 
     vat = await vat_type.deploy()
     flower = await flower_type.deploy()
