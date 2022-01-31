@@ -22,8 +22,9 @@ pragma solidity 0.8.9;
 
 import './mixin/math.sol';
 import './mixin/ward.sol';
+import './mixin/flog.sol';
 
-contract Vat is Math, Ward {
+contract Vat is Math, Ward, Flog {
     struct Ilk {
         uint256 tart;  // [wad] Total Normalised Debt
         uint256 rack;  // [ray] Accumulated Rate
@@ -71,7 +72,7 @@ contract Vat is Math, Ward {
     }
 
     function init(bytes32 ilk) external 
-      _ward_
+      _ward_ _flog_
     {
         require(ilks[ilk].rack == 0, "Vat/ilk-already-init");
         ilks[ilk] = Ilk({
@@ -120,7 +121,7 @@ contract Vat is Math, Ward {
     }
 
     function frob(bytes32 i, address u, address v, address w, int dink, int dart)
-      _prod_ _drip_(i) public
+      _prod_ _drip_(i) _flog_ public
     {
         Urn storage urn = urns[i][u];
         Ilk storage ilk = ilks[i];
@@ -158,7 +159,7 @@ contract Vat is Math, Ward {
     }
 
     function fork(bytes32 ilk, address src, address dst, int dink, int dart)
-        _prod_ _drip_(ilk) external
+        _prod_ _drip_(ilk) _flog_ external
     {
         Urn storage u = urns[ilk][src];
         Urn storage v = urns[ilk][dst];
@@ -187,7 +188,7 @@ contract Vat is Math, Ward {
     }
 
     function grab(bytes32 i, address u, address v, address w, int dink, int dart)
-        _ward_ _drip_(i) external returns (uint256)
+        _ward_ _drip_(i) _flog_ external returns (uint256)
     {
         Urn storage urn = urns[i][u];
         Ilk storage ilk = ilks[i];
@@ -209,19 +210,19 @@ contract Vat is Math, Ward {
     }
 
     function plot(bytes32 ilk, uint mark)
-      _ward_ external
+      _ward_ _flog_ external
     {
         ilks[ilk].mark = mark;
     }
 
     function sway(uint256 r)
-      _ward_ _prod_ external
+      _ward_ _prod_ _flog_ external
     {
         way = r;
     }
 
     function spar(uint256 jam)
-      _ward_ _prod_ external
+      _ward_ _prod_ _flog_ external
     {
         par = jam;
     }
@@ -235,7 +236,7 @@ contract Vat is Math, Ward {
         _;
     }
     function prod() external
-      _prod_ returns (uint) {
+      _prod_ _flog_ returns (uint) {
       return par;
     }
 
@@ -261,7 +262,7 @@ contract Vat is Math, Ward {
     }
 
     function rake()
-      _ward_ external
+      _ward_ _flog_ external
       returns (uint256)
     {
         address vat = address(this);
@@ -273,22 +274,22 @@ contract Vat is Math, Ward {
     }
 
     function slip(bytes32 ilk, address usr, int256 wad)
-      _ward_ external
+      _ward_ _flog_ external
     {
         gem[ilk][usr] = add(gem[ilk][usr], wad);
     }
-    function flux(bytes32 ilk, address src, address dst, uint256 wad) external {
+    function flux(bytes32 ilk, address src, address dst, uint256 wad) _flog_ external {
         require(wish(src, msg.sender), "Vat/not-allowed");
         gem[ilk][src] = sub(gem[ilk][src], wad);
         gem[ilk][dst] = add(gem[ilk][dst], wad);
     }
-    function move(address src, address dst, uint256 rad) external {
+    function move(address src, address dst, uint256 rad) _flog_ external {
         require(wish(src, msg.sender), "Vat/move/not-allowed");
         joy[src] = sub(joy[src], rad);
         joy[dst] = add(joy[dst], rad);
     }
 
-    function heal(uint rad) external {
+    function heal(uint rad) _flog_ external {
         address u = msg.sender;
         sin[u] = sub(sin[u], rad);
         joy[u] = sub(joy[u], rad);
@@ -296,7 +297,7 @@ contract Vat is Math, Ward {
         debt   = sub(debt,   rad);
     }
     function suck(address u, address v, uint rad)
-      _ward_ external
+      _ward_ _flog_ external
     {
         sin[u] = add(sin[u], rad);
         joy[v] = add(joy[v], rad);
@@ -321,13 +322,13 @@ contract Vat is Math, Ward {
     }
 
     function file(bytes32 key, uint256 val)
-      _ward_ external
+      _ward_ _flog_ external
     {
         if (key == "ceil") { ceil = val;
         } else { revert("ERR_FILE_KEY"); }
     }
     function filk(bytes32 ilk, bytes32 key, uint val)
-      _ward_ external
+      _ward_ _flog_ external
     {
         Ilk storage i = ilks[ilk];
                if (key == "line") { i.line = val;
