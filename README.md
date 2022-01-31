@@ -4,10 +4,11 @@
 You need `node`/`npm` and `ipfs`.
 This repo uses submodules for managing some dependencies.
 
-- `npm run download-submodules`
-- `npm run install-submodules`
-- `npm run build:all`
-
+- `npm run initialize` -- this will perform:
+    - `npm install`
+    - `npm run download-submodules`
+    - `npm run install-submodules`
+    - `npm run build:all`
 - `npm run test`
 
 Troubleshooting:
