@@ -4,9 +4,9 @@ import * as hh from 'hardhat'
 import { ethers } from 'hardhat'
 
 import { fail, send, wad, ray, rad, N, U256_MAX, warp } from 'minihat'
-import { BigNumber, constants } from 'ethers'
+import { constants } from 'ethers'
 
-import { snapshot, revert, b32 } from './helpers'
+import { b32 } from './helpers'
 
 const dpack = require('dpack')
 const debug = require('debug')('rico:test')
@@ -33,35 +33,32 @@ describe('Vat', () => {
   let ali, bob, cat, dan
   let ALI, BOB, CAT, DAN
   let vat; let vat_type
-  let joy, gem; let gem_type
-  let join, join_type
-  let port, port_type
-  let flower, flower_type
-  let vow, vow_type
+  let gem_type
+  let join, port, flower, vow
+  let RICO, RISK, WETH
   before(async () => {
     [ali, bob, cat, dan] = await ethers.getSigners();
     [ALI, BOB, CAT, DAN] = [ali, bob, cat, dan].map(signer => signer.address)
     vat_type = await ethers.getContractFactory('MockVat', ali)
     const gem_artifacts = require('../lib/gemfab/artifacts/sol/gem.sol/Gem.json')
     gem_type = ethers.ContractFactory.fromSolidity(gem_artifacts, ali)
-    join_type = await ethers.getContractFactory('Join', ali)
-    port_type = await ethers.getContractFactory('Port', ali)
-    flower_type = await ethers.getContractFactory('RicoFlowerV1', ali)
-    vow_type = await ethers.getContractFactory('Vow', ali)
+    const pack = await hh.run('deploy-ricobank', { mock: 'true' })
+    const dapp = await dpack.Dapp.loadFromPack(pack, ali, ethers)
 
     vat = await vat_type.deploy()
-    joy = await gem_type.deploy('joy', 'JOY')
-    gem = await gem_type.deploy('gem', 'GEM')
-    join = await join_type.deploy()
-    port = await port_type.deploy()
-    flower = await flower_type.deploy();
-    vow = await vow_type.deploy()
+    flower = dapp.objects.ricoflowerv1
+    join = dapp.objects.join
+    port = dapp.objects.port
+    vow = dapp.objects.vow
+    RICO = dapp.objects.rico
+    RISK = dapp.objects.risk
+    WETH = dapp.objects.weth9
 
     await send(vat.ward, join.address, true)
-    await send(gem.approve, join.address, U256_MAX)
+    await send(WETH.approve, join.address, U256_MAX)
 
-    await send(join.bind, vat.address, i0, gem.address)
-    await send(port.bind, vat.address, joy.address, true)
+    await send(join.bind, vat.address, i0, WETH.address)
+    await send(port.bind, vat.address, RICO.address, true)
 
     await send(vat.init, i0)
     await send(vat.file, b32('ceil'), rad(1000))
@@ -74,9 +71,9 @@ describe('Vat', () => {
 
   describe('non', () => {
     before(async () => {
-      await send(gem.mint, ALI, wad(1000))
+      await send(WETH.deposit, { value: ethers.utils.parseEther('1000.0') })
       await send(join.join, vat.address, i0, ALI, wad(1000))
-      await send(joy.mint, ALI, wad(1000))
+      await send(RICO.mint, ALI, wad(1000))
       await snapshot_name('non')
     })
     after(async () => {
@@ -94,7 +91,7 @@ describe('Vat', () => {
     it('gem join', async () => {
       const gembal = await vat.gem(i0, ALI)
       want(gembal.eq(wad(1000))).true
-      const bal = await gem.balanceOf(ALI)
+      const bal = await WETH.balanceOf(ALI)
       want(bal.eq(wad(0))).true
     })
 
@@ -207,8 +204,8 @@ describe('Vat', () => {
     describe('frob', () => {
       before(async () => {
         want(await vat.gem(i0, ME)).to.eql(constants.Zero) // unjoined
-        want(await gem.balanceOf(ME)).to.eql(constants.Zero)
-        await send(gem.mint, ME, wad(1000))
+        want(await WETH.balanceOf(ME)).to.eql(constants.Zero)
+        await send(WETH.deposit, { value: ethers.utils.parseEther('1000.0') })
         await send(join.join, vat.address, i0, ME, wad(1000))
         await send(vat.plot, i0, ray(1)) // dss file 'spot'
         await send(vat.filk, i0, b32('line'), rad(1000))
@@ -223,7 +220,7 @@ describe('Vat', () => {
       })
 
       it('test_setup', async () => {
-        want(await gem.balanceOf(join.address)).to.eql(wad(1000))
+        want(await WETH.balanceOf(join.address)).to.eql(wad(1000))
         want(await vat.gem(i0, ME)).to.eql(wad(1000))
       })
 
@@ -231,15 +228,15 @@ describe('Vat', () => {
         // urn  == (ALI, ilk)
         // gold == gem
         // i0 ~ 'gold'
-        await send(gem.mint, ME, wad(500))
-        want(await gem.balanceOf(ME)).to.eql(wad(500))
-        want(await gem.balanceOf(join.address)).to.eql(wad(1000))
+        await send(WETH.deposit, { value: ethers.utils.parseEther('500.0') })
+        want(await WETH.balanceOf(ME)).to.eql(wad(500))
+        want(await WETH.balanceOf(join.address)).to.eql(wad(1000))
         await send(join.join, vat.address, i0, ME, wad(500))
-        want(await gem.balanceOf(ME)).to.eql(wad(0))
-        want(await gem.balanceOf(join.address)).to.eql(wad(1500))
+        want(await WETH.balanceOf(ME)).to.eql(wad(0))
+        want(await WETH.balanceOf(join.address)).to.eql(wad(1500))
         await send(join.exit, vat.address, i0, ME, wad(250))
-        want(await gem.balanceOf(ME)).to.eql(wad(250))
-        want(await gem.balanceOf(join.address)).to.eql(wad(1250))
+        want(await WETH.balanceOf(ME)).to.eql(wad(250))
+        want(await WETH.balanceOf(join.address)).to.eql(wad(1250))
       })
 
       it('test_lock', async () => {
@@ -345,7 +342,7 @@ describe('Vat', () => {
         await send(vat.connect(ali).frob, i0, ALI, ALI, ALI, wad(0), wad(-1))
         await send(vat.connect(bob).frob, i0, ALI, BOB, BOB, wad(0), wad(-1))
         await send(vat.connect(cat).frob, i0, ALI, CAT, CAT, wad(0), wad(-1))
-        debug('but only with their own dai')
+        debug('but only with their own rico')
         await fail('Vat/frob/not-allowed', vat.connect(ali).frob, i0, ALI, ALI, BOB, wad(0), wad(-1))
         await fail('Vat/frob/not-allowed', vat.connect(bob).frob, i0, ALI, BOB, CAT, wad(0), wad(-1))
         await fail('Vat/frob/not-allowed', vat.connect(cat).frob, i0, ALI, CAT, ALI, wad(0), wad(-1))
@@ -382,7 +379,7 @@ describe('Vat', () => {
     describe('join', () => {
       before(async () => {
         await send(vat.ward, port.address, true)
-        await send(joy.ward, port.address, true)
+        await send(RICO.ward, port.address, true)
         await snapshot_name('dss/join')
       })
       after(async () => {
@@ -393,8 +390,8 @@ describe('Vat', () => {
       })
 
       it('test_gem_join', async () => {
-        await send(gem.mint, ME, wad(20))
-        await send(gem.approve, join.address, wad(20))
+        await send(WETH.deposit, { value: ethers.utils.parseEther('20.0') })
+        await send(WETH.approve, join.address, wad(20))
         debug('join 10')
         await send(join.join, vat.address, i0, ME, wad(10))
         want(await vat.gem(i0, ME)).to.eql(wad(10))
@@ -402,25 +399,25 @@ describe('Vat', () => {
       })
 
 
-      it('test_dai_exit', async () => {
+      it('test_rico_exit', async () => {
         await send(vat.mint, ME, rad(100))
         await send(vat.trust, port.address, true)
         debug('exiting...')
-        await send(port.exit, vat.address, joy.address, ME, wad(40))
-        want(await joy.balanceOf(ME)).to.eql(wad(40))
+        await send(port.exit, vat.address, RICO.address, ME, wad(40))
+        want(await RICO.balanceOf(ME)).to.eql(wad(40))
         want(await vat.joy(ME)).to.eql(rad(60))
         // no cage, rest is N/A
       })
 
-      it('test_dai_exit_join', async () => {
+      it('test_rico_exit_join', async () => {
         await send(vat.mint, ME, rad(100))
         await send(vat.trust, port.address, true)
         debug('exiting')
-        await send(port.exit, vat.address, joy.address, ME, wad(60))
-        await send(joy.approve, port.address, constants.MaxUint256)
+        await send(port.exit, vat.address, RICO.address, ME, wad(60))
+        await send(RICO.approve, port.address, constants.MaxUint256)
         debug('joining')
-        await send(port.join, vat.address, joy.address, ME, wad(30))
-        want(await joy.balanceOf(ME)).to.eql(wad(30))
+        await send(port.join, vat.address, RICO.address, ME, wad(30))
+        want(await RICO.balanceOf(ME)).to.eql(wad(30))
         want(await vat.joy(ME)).to.eql(rad(70))
       })
 
@@ -429,14 +426,13 @@ describe('Vat', () => {
     })
 
     describe('bite', () => {
-      let gov, gold
+      let gold
       before(async () => {
         await warp(hh, 16430421660)
         debug('creating gold')
-        gov = await gem_type.deploy('gov', 'GOV')
 
-        debug('minting gov tokens')
-        await send(gov.mint, ME, wad(100))
+        debug('minting RISK tokens')
+        await send(RISK.mint, ME, wad(100))
 
         debug('linking flow to vow')
         await send(vow.link, b32('flapper'), flower.address)
@@ -459,20 +455,20 @@ describe('Vat', () => {
         await send(vat.plot, i0, ray(1)) // dss file 'spot'
         await send(vat.filk, i0, b32('line'), rad(1000))
         // box [rad] -> flower.ramps[joy].vel [wad]
-        // max dai up for auction -> max joy being traded
+        // max rico up for auction -> max joy being traded
         // rico has no cat, so box stuff is moved to flow (aka flip/flap/flop)
         debug('setting vel (FKA box)')
-        await send(flower.filem, joy.address, b32('vel'), wad(10000000))
+        await send(flower.filem, RICO.address, b32('vel'), wad(10000000))
         await send(flower.ward, vow.address, true)
         await send(vow.ward, flower.address, true)
         await send(vow.lilk, i0, b32('flipper'), flower.address)
         await send(vat.filk, i0, b32('chop'), ray(1)) // dss used wad, rico uses ray
 
-        debug('vat ward/trust vow, approve gov/gold')
+        debug('vat ward/trust vow, approve RISK/gold')
         await send(vat.ward, vow.address, true)
         await send(vat.trust, vow.address, true)
         await send(gold.approve, vat.address, constants.MaxUint256)
-        // gov approve flap N/A not sure what to do with gov atm...
+        // RISK approve flap N/A not sure what to do with RISK atm...
 
         await snapshot_name('dss/bite')
       })
@@ -487,23 +483,23 @@ describe('Vat', () => {
         // rel and vel are *sort of* like dunk and bite
         want((await flower.ramps(gold.address)).rel).to.eql(wad(0))
         want((await flower.ramps(gold.address)).vel).to.eql(wad(0))
-        want((await flower.ramps(gov.address)).rel).to.eql(wad(0))
-        want((await flower.ramps(gov.address)).vel).to.eql(wad(0))
+        want((await flower.ramps(RISK.address)).rel).to.eql(wad(0))
+        want((await flower.ramps(RISK.address)).vel).to.eql(wad(0))
         await send(flower.filem, gold.address, b32('rel'), wad(0.01))
         await send(flower.filem, gold.address, b32('vel'), wad(0.02))
         want((await flower.ramps(gold.address)).rel).to.eql(wad(0.01))
         want((await flower.ramps(gold.address)).vel).to.eql(wad(0.02))
-        await send(flower.filem, gov.address, b32('rel'), wad(0.01))
-        await send(flower.filem, gov.address, b32('vel'), wad(0.02))
-        want((await flower.ramps(gov.address)).rel).to.eql(wad(0.01))
-        want((await flower.ramps(gov.address)).vel).to.eql(wad(0.02))
+        await send(flower.filem, RISK.address, b32('rel'), wad(0.01))
+        await send(flower.filem, RISK.address, b32('vel'), wad(0.02))
+        want((await flower.ramps(RISK.address)).rel).to.eql(wad(0.01))
+        want((await flower.ramps(RISK.address)).vel).to.eql(wad(0.02))
       })
 
       it('test_cat_set_box', async () => {
-        // rico analogue of box is flower.ramps[joy].vel
-        want((await flower.ramps(joy.address)).vel).to.eql(wad(10000000))
-        await send(flower.filem, joy.address, b32('vel'), wad(20000000))
-        want((await flower.ramps(joy.address)).vel).to.eql(wad(20000000))
+        // rico analogue of box is flower.ramps[RICO].vel
+        want((await flower.ramps(RICO.address)).vel).to.eql(wad(10000000))
+        await send(flower.filem, RICO.address, b32('vel'), wad(20000000))
+        want((await flower.ramps(RICO.address)).vel).to.eql(wad(20000000))
       })
 
       // test_bite_under_dunk
@@ -513,10 +509,6 @@ describe('Vat', () => {
       //   N/A no dunk analogue, vow can only bail entire urn
 
       // test_happy_bite
-
-
-
-
 
     })
   })
