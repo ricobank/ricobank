@@ -13,7 +13,7 @@ interface GemLike is ERC20 {
 }
 
 interface VatLike {
-    // from Join/Port
+    // from Plug/Port
     function slip(bytes32,address,int) external;
     function move(address,address,uint) external;
 
@@ -36,16 +36,32 @@ interface VatLike {
     function way() external returns (uint256);
     function prod() external returns (uint256);
     function sway(uint256 r) external;
+
+    // from User
+    function lock(bytes32 i, uint amt) external;
+    function free(bytes32 i, uint amt) external;
+    function draw(bytes32 i, uint amt) external;
+    function wipe(bytes32 i, uint amt) external;    
 }
 
-interface JoinLike {
+interface PlugLike {
     function join(address,bytes32,address,uint) external returns (address);
     function exit(address,bytes32,address,uint) external returns (address);
+    function bind(address vat, bytes32 ilk, address gem) external;
+    function flash(
+        address[] calldata gems_,
+        uint[] calldata amts,
+        address code,
+        bytes calldata data
+        ) external returns (bytes memory);
 }
 
 interface PortLike {
     function join(address vat, address joy, address usr, uint amt) external;
     function exit(address vat, address joy, address usr, uint amt) external;
+    function bind(address vat, address joy, bool bound) external;
+    function flash(address joy, address code, bytes calldata data)
+      external returns (bytes memory);
 }
 
 interface FeedbaseLike {

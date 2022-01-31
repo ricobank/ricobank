@@ -9,7 +9,7 @@ import './mixin/ward.sol';
 
 import './flow.sol';
 
-import { GemLike, JoinLike, PortLike, VatLike } from './abi.sol';
+import { GemLike, PlugLike, PortLike, VatLike } from './abi.sol';
 
 contract Vow is Math, Ward {
     struct Ramp {
@@ -20,7 +20,7 @@ contract Vow is Math, Ward {
     }
 
     VatLike  public vat;
-    JoinLike public join;
+    PlugLike public plug;
     PortLike public port;
 
     GemLike public RICO;
@@ -38,14 +38,14 @@ contract Vow is Math, Ward {
         address flipper = flippers[ilk];
         (uint ink, uint art) = vat.urns(ilk, urn);
         uint bill = vat.grab(ilk, urn, address(this), address(this), -int(ink), -int(art));
-        address gem = join.exit(address(vat), ilk, flipper, ink);
+        address gem = plug.exit(address(vat), ilk, flipper, ink);
         Flipper(flipper).flip(ilk, urn, gem, ink, bill);
     }
 
     function plop(bytes32 ilk, address urn, uint amt)
       _ward_ external
     {
-        join.join(address(vat), ilk, urn, amt);
+        plug.join(address(vat), ilk, urn, amt);
     }
 
     function keep() external {
@@ -84,7 +84,7 @@ contract Vow is Math, Ward {
     }
 
     function reapprove_gem(address gem) external {
-        GemLike(gem).approve(address(join), type(uint256).max);
+        GemLike(gem).approve(address(plug), type(uint256).max);
     }
 
     function file(bytes32 key, uint val)
@@ -106,7 +106,7 @@ contract Vow is Math, Ward {
         } else if (key == "rico") { RICO = GemLike(val);
         } else if (key == "risk") { RISK = GemLike(val);
         } else if (key == "vat") { vat = VatLike(val);
-        } else if (key == "join") { join = JoinLike(val);
+        } else if (key == "plug") { plug = PlugLike(val);
         } else if (key == "port") { port = PortLike(val);
         } else { revert("ERR_LINK_KEY"); }
     }

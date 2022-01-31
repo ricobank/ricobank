@@ -11,13 +11,13 @@ describe('Port', () => {
     let ali, bob, cat
     let ALI, BOB, CAT
     let vat
-    let join
+    let plug
     let port
     let RICO, gemA
     let gem_type
     let flash_strategist, flash_strategist_type
     let strategist_iface
-    enum Action {NOP, APPROVE, WELCH, FAIL, FAIL2, REENTER, PLUG_LEVER, JOIN_LEVER,
+    enum Action {NOP, APPROVE, WELCH, FAIL, FAIL2, REENTER, PORT_LEVER, JOIN_LEVER,
                  JOIN_RELEASE}
     before(async () => {
         [ali, bob, cat] = await ethers.getSigners();
@@ -38,28 +38,28 @@ describe('Port', () => {
             "function onFlashLoan(address initiator, address token, uint256 amount, uint256 fee, bytes calldata data) returns (bytes32)"
         ])
 
-        join = dapp.objects.join
+        plug = dapp.objects.plug
         port = dapp.objects.port
         vat = dapp.objects.vat
         RICO = dapp.objects.rico
         gemA = await gem_type.deploy('gemA', 'GEMA')
-        flash_strategist = await flash_strategist_type.deploy(join.address, port.address, vat.address, RICO.address, i0)
+        flash_strategist = await flash_strategist_type.deploy(plug.address, port.address, vat.address, RICO.address, i0)
 
-        await send(vat.ward, join.address, true)
+        await send(vat.ward, plug.address, true)
         await send(RICO.ward, port.address, true)
         await send(RICO.ward, flash_strategist.address, true)
         await send(gemA.ward, flash_strategist.address, true)
         await send(vat.trust, port.address, true)
-        await send(gemA.approve, join.address, U256_MAX)
+        await send(gemA.approve, plug.address, U256_MAX)
         await send(RICO.mint, ALI, wad(10))
         await send(gemA.mint, ALI, wad(1000))
         await send(vat.init, i0)
         await send(vat.file, b32("ceil"), rad(1000))
         await send(vat.filk, i0, b32("line"), rad(2000))
         await send(vat.plot, i0, ray(1).toString())
-        await send(join.bind, vat.address, i0, gemA.address)
+        await send(plug.bind, vat.address, i0, gemA.address)
         await send(port.bind, vat.address, RICO.address, true)
-        await send(join.join, vat.address, i0, ALI, wad(1000))
+        await send(plug.join, vat.address, i0, ALI, wad(1000))
 
         await snapshot(hh);
     })
@@ -142,7 +142,7 @@ describe('Port', () => {
 
             // on_flash_data is the data used inside the ERC3156 handler onFlashLoan
             let on_flash_data = ethers.utils.defaultAbiCoder.encode(
-                ["uint", "uint", "uint" ], [ Action.PLUG_LEVER, lock, draw]);
+                ["uint", "uint", "uint" ], [ Action.PORT_LEVER, lock, draw]);
 
             // flash_data is the encoded data sent to flash to call onFlashLoan with
             let flash_data = strategist_iface.encodeFunctionData("onFlashLoan",
@@ -166,7 +166,7 @@ describe('Port', () => {
             await send(gemA.mint, flash_strategist.address, wad(100))
 
             const borrowerPreABal = await gemA.balanceOf(flash_strategist.address)
-            const joinPreABal = await gemA.balanceOf(join.address)
+            const plugPreABal = await gemA.balanceOf(plug.address)
             const borrowerPreRicoBal = await RICO.balanceOf(flash_strategist.address)
             const portPreRicoBal = await RICO.balanceOf(port.address)
             const lock_amt = wad(300)
@@ -189,12 +189,12 @@ describe('Port', () => {
             want(art.toString()).equals(wad(0).toString())
 
             const borrowerPostABal = await gemA.balanceOf(flash_strategist.address)
-            const joinPostABal = await gemA.balanceOf(join.address)
+            const plugPostABal = await gemA.balanceOf(plug.address)
             const borrowerPostRicoBal = await RICO.balanceOf(flash_strategist.address)
             const portPostRicoBal = await RICO.balanceOf(port.address)
-            // Balances for both the borrower and the join should be unchanged after the loan is complete.
+            // Balances for both the borrower and the plug should be unchanged after the loan is complete.
             want(borrowerPreABal.toString()).equals(borrowerPostABal.toString())
-            want(joinPreABal.toString()).equals(joinPostABal.toString())
+            want(plugPreABal.toString()).equals(plugPostABal.toString())
             want(borrowerPreRicoBal.toString()).equals(borrowerPostRicoBal.toString())
             want(portPreRicoBal.toString()).equals(portPostRicoBal.toString())
         });

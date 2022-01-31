@@ -7,7 +7,7 @@ import './mixin/math.sol';
 
 import { VatLike, FeedbaseLike } from './abi.sol';
 
-contract Plotter is Ward, Math {
+contract Plot is Ward, Math {
     FeedbaseLike public fb;
     address      public tip;
     VatLike      public vat;

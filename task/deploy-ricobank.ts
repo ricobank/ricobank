@@ -26,8 +26,8 @@ task('deploy-ricobank', '')
     const pb = new dpack.PackBuilder(hre.network.name)
 
     const contracts = [['RicoFlowerV1', require('../artifacts/sol/flow.sol/RicoFlowerV1.json')],
-                       ['Join', require('../artifacts/sol/join.sol/Join.json')],
-                       ['Plotter', require('../artifacts/sol/plot.sol/Plotter.json')],
+                       ['Plug', require('../artifacts/sol/plug.sol/Plug.json')],
+                       ['Plot', require('../artifacts/sol/plot.sol/Plot.json')],
                        ['Port', require('../artifacts/sol/port.sol/Port.json')],
                        ['Vat', require('../artifacts/sol/vat.sol/Vat.json')],
                        ['Vow', require('../artifacts/sol/vow.sol/Vow.json')],

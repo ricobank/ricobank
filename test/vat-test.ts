@@ -34,7 +34,7 @@ describe('Vat', () => {
   let ALI, BOB, CAT, DAN
   let vat; let vat_type
   let gem_type
-  let join, port, flower, vow
+  let plug, port, flower, vow
   let RICO, RISK, WETH
   before(async () => {
     [ali, bob, cat, dan] = await ethers.getSigners();
@@ -47,17 +47,17 @@ describe('Vat', () => {
 
     vat = await vat_type.deploy()
     flower = dapp.objects.ricoflowerv1
-    join = dapp.objects.join
+    plug = dapp.objects.plug
     port = dapp.objects.port
     vow = dapp.objects.vow
     RICO = dapp.objects.rico
     RISK = dapp.objects.risk
     WETH = dapp.objects.weth9
 
-    await send(vat.ward, join.address, true)
-    await send(WETH.approve, join.address, U256_MAX)
+    await send(vat.ward, plug.address, true)
+    await send(WETH.approve, plug.address, U256_MAX)
 
-    await send(join.bind, vat.address, i0, WETH.address)
+    await send(plug.bind, vat.address, i0, WETH.address)
     await send(port.bind, vat.address, RICO.address, true)
 
     await send(vat.init, i0)
@@ -72,7 +72,7 @@ describe('Vat', () => {
   describe('non', () => {
     before(async () => {
       await send(WETH.deposit, { value: ethers.utils.parseEther('1000.0') })
-      await send(join.join, vat.address, i0, ALI, wad(1000))
+      await send(plug.join, vat.address, i0, ALI, wad(1000))
       await send(RICO.mint, ALI, wad(1000))
       await snapshot_name('non')
     })
@@ -206,7 +206,7 @@ describe('Vat', () => {
         want(await vat.gem(i0, ME)).to.eql(constants.Zero) // unjoined
         want(await WETH.balanceOf(ME)).to.eql(constants.Zero)
         await send(WETH.deposit, { value: ethers.utils.parseEther('1000.0') })
-        await send(join.join, vat.address, i0, ME, wad(1000))
+        await send(plug.join, vat.address, i0, ME, wad(1000))
         await send(vat.plot, i0, ray(1)) // dss file 'spot'
         await send(vat.filk, i0, b32('line'), rad(1000))
         await send(vat.file, b32('ceil'), rad(1000))
@@ -220,7 +220,7 @@ describe('Vat', () => {
       })
 
       it('test_setup', async () => {
-        want(await WETH.balanceOf(join.address)).to.eql(wad(1000))
+        want(await WETH.balanceOf(plug.address)).to.eql(wad(1000))
         want(await vat.gem(i0, ME)).to.eql(wad(1000))
       })
 
@@ -230,13 +230,13 @@ describe('Vat', () => {
         // i0 ~ 'gold'
         await send(WETH.deposit, { value: ethers.utils.parseEther('500.0') })
         want(await WETH.balanceOf(ME)).to.eql(wad(500))
-        want(await WETH.balanceOf(join.address)).to.eql(wad(1000))
-        await send(join.join, vat.address, i0, ME, wad(500))
+        want(await WETH.balanceOf(plug.address)).to.eql(wad(1000))
+        await send(plug.join, vat.address, i0, ME, wad(500))
         want(await WETH.balanceOf(ME)).to.eql(wad(0))
-        want(await WETH.balanceOf(join.address)).to.eql(wad(1500))
-        await send(join.exit, vat.address, i0, ME, wad(250))
+        want(await WETH.balanceOf(plug.address)).to.eql(wad(1500))
+        await send(plug.exit, vat.address, i0, ME, wad(250))
         want(await WETH.balanceOf(ME)).to.eql(wad(250))
-        want(await WETH.balanceOf(join.address)).to.eql(wad(1250))
+        want(await WETH.balanceOf(plug.address)).to.eql(wad(1250))
       })
 
       it('test_lock', async () => {
@@ -391,9 +391,9 @@ describe('Vat', () => {
 
       it('test_gem_join', async () => {
         await send(WETH.deposit, { value: ethers.utils.parseEther('20.0') })
-        await send(WETH.approve, join.address, wad(20))
+        await send(WETH.approve, plug.address, wad(20))
         debug('join 10')
-        await send(join.join, vat.address, i0, ME, wad(10))
+        await send(plug.join, vat.address, i0, ME, wad(10))
         want(await vat.gem(i0, ME)).to.eql(wad(10))
         // rico has no dss cage analogue
       })
@@ -445,11 +445,11 @@ describe('Vat', () => {
         debug('creating and joining gold')
         gold = await gem_type.deploy('gold', 'GOLD')
         await send(gold.mint, ME, wad(1000))
-        await send(vat.ward, join.address, true)
-        await send(gold.approve, join.address, constants.MaxUint256)
-        await send(join.bind, vat.address, i0, gold.address)
+        await send(vat.ward, plug.address, true)
+        await send(gold.approve, plug.address, constants.MaxUint256)
+        await send(plug.bind, vat.address, i0, gold.address)
         debug(`my balance = ${await gold.balanceOf(ME)}`)
-        await send(join.join, vat.address, i0, ME, wad(1000))
+        await send(plug.join, vat.address, i0, ME, wad(1000))
 
         debug('filing')
         await send(vat.plot, i0, ray(1)) // dss file 'spot'
