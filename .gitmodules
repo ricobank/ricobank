@@ -4,9 +4,9 @@
 [submodule "lib/gemfab"]
 	path = lib/gemfab
 	url = https://github.com/ricobank/gemfab
-[submodule "lib/weth-pack"]
-	path = lib/weth-pack
-	url = https://github.com/etherpacks/weth-pack.git
-[submodule "lib/balancer-pack"]
-	path = lib/balancer-pack
-	url = https://github.com/etherpacks/balancer-pack.git
+[submodule "lib/weth"]
+	path = lib/weth
+	url = https://github.com/etherpacks/weth
+[submodule "lib/balancer2"]
+	path = lib/balancer2
+	url = https://github.com/etherpacks/balancer2
