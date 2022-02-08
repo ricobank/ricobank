@@ -18,8 +18,7 @@ describe('Plug', () => {
     let gem_type
     let flash_strategist, flash_strategist_type
     let strategist_iface
-    enum Action {NOP, APPROVE, WELCH, FAIL, FAIL2, REENTER, PORT_LEVER, PLUG_LEVER,
-                 PLUG_RELEASE}
+
     before(async () => {
         [ali, bob, cat] = await ethers.getSigners();
         [ALI, BOB, CAT] = [ali, bob, cat].map(signer => signer.address)
@@ -35,7 +34,6 @@ describe('Plug', () => {
             "function reenter(address[] memory gems, uint256[] memory amts)",
             "function plug_lever(address gem, uint256 lock_amt, uint256 draw_amt)",
             "function plug_release(address gem, uint256 free_amt, uint256 wipe_amt)",
-            "function onFlashLoan(address initiator, address token, uint256 amount, uint256 fee, bytes calldata data) returns (bytes32)"
         ])
 
         plug = dapp.objects.plug
@@ -166,62 +164,6 @@ describe('Plug', () => {
             // Balances for both the borrower and the plug should be unchanged after the loan is complete.
             want(borrowerPreABal.toString()).equals(borrowerPostABal.toString())
             want(plugPreABal.toString()).equals(plugPostABal.toString())
-        });
-
-        it('succeed calling ERC3156 callback', async () => {
-            const borrowerPreABal = await gemA.balanceOf(flash_strategist.address)
-            const plugPreABal = await gemA.balanceOf(plug.address)
-            const amount = wad(100)
-            const fee = 0
-
-            let on_flash_data = ethers.utils.defaultAbiCoder.encode(
-                ["uint", "uint", "address" ], [ Action.APPROVE, amount, plug.address]);
-            let flash_data = strategist_iface.encodeFunctionData("onFlashLoan",
-                [ flash_strategist.address, gemA.address, amount, fee, on_flash_data ])
-            await send(plug.flash, [gemA.address, gemB.address], [amount, 0], flash_strategist.address,
-                flash_data)
-
-            const borrowerPostABal = await gemA.balanceOf(flash_strategist.address)
-            const plugPostABal = await gemA.balanceOf(plug.address)
-	    // Balances for both the borrower and the plug should be unchanged after the loan is complete.
-            want(borrowerPreABal.toString()).equals(borrowerPostABal.toString())
-            want(plugPreABal.toString()).equals(plugPostABal.toString())
-            });
-
-        it('fail calling ERC3156 callback which reverts', async () => {
-            const borrowerPreABal = await gemA.balanceOf(flash_strategist.address)
-            const plugPreABal = await gemA.balanceOf(plug.address)
-            const amount = wad(100)
-            const fee = 0
-
-            let on_flash_data = ethers.utils.defaultAbiCoder.encode(
-                ["uint", "uint", "address" ], [ Action.FAIL, 0, plug.address]);
-            let flash_data = strategist_iface.encodeFunctionData("onFlashLoan",
-                [ flash_strategist.address, gemA.address, amount, fee, on_flash_data ])
-            await fail('receiver-err', plug.flash, [gemA.address, gemB.address], [amount, 0], flash_strategist.address,
-                flash_data)
-
-            const borrowerPostABal = await gemA.balanceOf(flash_strategist.address)
-            const plugPostABal = await gemA.balanceOf(plug.address)
-            // Balances for both the borrower and the plug should be unchanged after the loan is complete.
-            want(borrowerPreABal.toString()).equals(borrowerPostABal.toString())
-            want(plugPreABal.toString()).equals(plugPostABal.toString())
-        });
-
-        it('succeed calling ERC3156 callback and drawing debt', async () => {
-            const amount = wad(100)
-            const fee = 0
-
-            let on_flash_data = ethers.utils.defaultAbiCoder.encode(
-                ["uint", "uint", "address" ], [ Action.PLUG_LEVER, amount, plug.address]);
-            let flash_data = strategist_iface.encodeFunctionData("onFlashLoan",
-                [ flash_strategist.address, gemA.address, amount, fee, on_flash_data ])
-            await send(plug.flash, [gemA.address], [amount], flash_strategist.address, flash_data)
-
-            const [levered_ink, levered_art] = await vat.urns(i0, flash_strategist.address)
-            // should haved locked amount and drawn amount / 2
-            want(levered_ink.toString()).equals(amount.toString())
-            want(levered_art.toString()).equals((amount.div(2)).toString())
         });
 
         it('jump wind up and jump release borrow', async () => {

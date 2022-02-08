@@ -5,11 +5,8 @@
 pragma solidity 0.8.9;
 
 import { GemLike, VatLike, PlugLike, PortLike } from '../abi.sol';
-import { IERC3156FlashBorrower, IERC3156FlashLender } from '../abi.sol';
 
-contract MockFlashStrategist is IERC3156FlashBorrower {
-    enum Action {NOP, APPROVE, WELCH, FAIL, FAIL2, REENTER, PORT_LEVER, PLUG_LEVER, PLUG_RELEASE}
-
+contract MockFlashStrategist {
     PlugLike public plug;
     PortLike public port;
     VatLike public vat;
@@ -22,52 +19,6 @@ contract MockFlashStrategist is IERC3156FlashBorrower {
         vat = VatLike(vat_);
         rico = GemLike(rico_);
         ilk0 = ilk0_;
-    }
-
-    function onFlashLoan(
-        address initiator,
-        address token,
-        uint256 amount,
-        uint256 fee,
-        bytes calldata data
-    ) external override returns (bytes32) {
-        require(
-            msg.sender == address(port) || msg.sender == address(plug),
-            "FlashBorrower: Untrusted lender"
-        );
-        require(
-            initiator == address(this),
-            "FlashBorrower: Untrusted loan initiator"
-        );
-        Action action;
-        uint256 uint_a;
-        uint256 uint_b;
-        address[] memory gems = new address[](1);
-        uint256[] memory amts = new uint256[](1);
-        (action, uint_a, uint_b) = abi.decode(data, (Action, uint, uint));
-        if (action == Action.NOP) {
-        } else if (action == Action.APPROVE) {
-            gems[0] = token;
-            amts[0] = uint_a;
-            approve_all(gems, amts);
-        } else if (action == Action.WELCH) {
-            GemLike(token).transfer(address(0), 1);
-        } else if (action == Action.FAIL) {
-            revert("failure");
-        } else if (action == Action.FAIL2) {
-            return 0;
-        } else if (action == Action.REENTER) {
-            reenter(gems, amts);
-        } else if (action == Action.PORT_LEVER) {
-            port_lever(token, uint_a, uint_b);
-        } else if (action == Action.PLUG_LEVER) {
-            plug_lever(token, uint_a, uint_a / 2);
-        } else if (action == Action.PLUG_RELEASE) {
-            plug_release(token, uint_a, uint_a / 2);
-        } else {
-            revert("unknown test action");
-        }
-        return keccak256("ERC3156FlashBorrower.onFlashLoan");
     }
 
     function nop() public {

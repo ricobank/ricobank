@@ -17,8 +17,7 @@ describe('Port', () => {
     let gem_type
     let flash_strategist, flash_strategist_type
     let strategist_iface
-    enum Action {NOP, APPROVE, WELCH, FAIL, FAIL2, REENTER, PORT_LEVER, JOIN_LEVER,
-                 JOIN_RELEASE}
+
     before(async () => {
         [ali, bob, cat] = await ethers.getSigners();
         [ALI, BOB, CAT] = [ali, bob, cat].map(signer => signer.address)
@@ -35,7 +34,6 @@ describe('Port', () => {
             "function reenter(address[] memory gems, uint256[] memory amts)",
             "function port_lever(address gem, uint256 lock_amt, uint256 draw_amt)",
             "function port_release(address gem, uint256 free_amt, uint256 wipe_amt)",
-            "function onFlashLoan(address initiator, address token, uint256 amount, uint256 fee, bytes calldata data) returns (bytes32)"
         ])
 
         plug = dapp.objects.plug
@@ -130,36 +128,6 @@ describe('Port', () => {
         it('revert on handler error', async () => {
             const failure_data = strategist_iface.encodeFunctionData("failure", [ [], [] ])
             await fail('Transaction reverted', port.flash, gemA.address, flash_strategist.address, failure_data)
-        });
-
-        it('succeed calling ERC3156 callback', async () => {
-            // Begin with 100 gemA, aim to triple leverage with 200 RICO debt where A-RICO is 1:1
-            await send(gemA.mint, flash_strategist.address, wad(100))
-
-            const lock = wad(300)
-            const draw = wad(200)
-            const fee = 0
-
-            // on_flash_data is the data used inside the ERC3156 handler onFlashLoan
-            let on_flash_data = ethers.utils.defaultAbiCoder.encode(
-                ["uint", "uint", "uint" ], [ Action.PORT_LEVER, lock, draw]);
-
-            // flash_data is the encoded data sent to flash to call onFlashLoan with
-            let flash_data = strategist_iface.encodeFunctionData("onFlashLoan",
-                [ flash_strategist.address, gemA.address, 0, fee, on_flash_data ])
-            await send(port.flash, RICO.address, flash_strategist.address, flash_data)
-
-            const borrowerPostRicoBal = await RICO.balanceOf(flash_strategist.address)
-            const borrowerPostABal = await gemA.balanceOf(flash_strategist.address)
-            const portPostRICOBal = await RICO.balanceOf(port.address)
-
-            want(borrowerPostRicoBal.eq(0)).true
-            want(borrowerPostABal.eq(0)).true
-            want(portPostRICOBal.eq(0)).true
-
-            const [levered_ink, levered_art] = await vat.urns(i0, flash_strategist.address)
-            want(levered_ink.toString()).equals(lock.toString())
-            want(levered_art.toString()).equals(draw.toString())
         });
 
         it('jump wind up and jump release borrow', async () => {
