@@ -15,6 +15,7 @@ contract Vow2 is Flowback, Math, Ward {
     struct Plop {
       address vat;
       bytes32 ilk;
+      address gem;
       address urn;
 
       uint256 bill;
@@ -32,13 +33,21 @@ contract Vow2 is Flowback, Math, Ward {
         }
     }
 
-    function bail(address vat, bytes32 ilk, address urn) external {
+    function bail(address vat, bytes32 ilk, address[] calldata gems, address urn) external {
         require(  ! VatLike(vat).safe(ilk, urn), 'ERR_SAFE' );
         (uint ink, uint art) = VatLike(vat).urns(ilk, urn);
         uint bill = VatLike(vat).grab(ilk, urn, self, self, -int(ink), -int(art));
-        address gem = plug.exit(address(vat), ilk, self, ink);
-        bytes32 aid = flow.flip(this, gem, RICO, ink, bill);
-        plops[aid] = Plop({ vat: vat, ilk: ilk, urn: urn, bill: bill, paid: 0 });
+        uint cap = ink;
+        for(uint i = 0; i < gems.length && ink > 0; i++) {
+            uint take = min(ink, GemLike(gems[i]).balanceOf(address(plug)));
+            uint split = bill * take / cap;
+            ink -= take;
+
+            plug.exit(address(vat), ilk, gems[i], self, take);
+            bytes32 aid = flow.flip(this, gems[i], RICO, take, split);
+            plops[aid] = Plop({ vat: vat, ilk: ilk, gem: gems[i], urn: urn, bill: split, paid: 0 });
+        }
+        require(ink == 0, 'MISSING_GEM');
     }
 
     function flipback(bytes32 aid, bool last, uint proceeds) external
@@ -51,10 +60,10 @@ contract Vow2 is Flowback, Math, Ward {
             uint extra = plop.paid - plop.bill;
             if ( extra < proceeds ) {
                 uint refund = max(proceeds, extra);
-                plug.join(plop.vat, plop.ilk, plop.urn, refund);
+                plug.join(plop.vat, plop.ilk, plop.gem, plop.urn, refund);
                 VatLike(plop.vat).heal(proceeds - refund);
             } else {
-                plug.join(plop.vat, plop.ilk, plop.urn, proceeds);
+                plug.join(plop.vat, plop.ilk, plop.gem, plop.urn, proceeds);
             }
         }
         if (last) {

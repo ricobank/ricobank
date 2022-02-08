@@ -57,7 +57,7 @@ describe('Vat', () => {
     await send(vat.ward, plug.address, true)
     await send(WETH.approve, plug.address, U256_MAX)
 
-    await send(plug.bind, vat.address, i0, WETH.address)
+    await send(plug.bind, vat.address, i0, WETH.address, true)
     await send(port.bind, vat.address, RICO.address, true)
 
     await send(vat.init, i0)
@@ -72,7 +72,7 @@ describe('Vat', () => {
   describe('non', () => {
     before(async () => {
       await send(WETH.deposit, { value: ethers.utils.parseEther('1000.0') })
-      await send(plug.join, vat.address, i0, ALI, wad(1000))
+      await send(plug.join, vat.address, i0, WETH.address, ALI, wad(1000))
       await send(RICO.mint, ALI, wad(1000))
       await snapshot_name('non')
     })
@@ -206,7 +206,7 @@ describe('Vat', () => {
         want(await vat.gem(i0, ME)).to.eql(constants.Zero) // unjoined
         want(await WETH.balanceOf(ME)).to.eql(constants.Zero)
         await send(WETH.deposit, { value: ethers.utils.parseEther('1000.0') })
-        await send(plug.join, vat.address, i0, ME, wad(1000))
+        await send(plug.join, vat.address, i0, WETH.address, ME, wad(1000))
         await send(vat.plot, i0, ray(1)) // dss file 'spot'
         await send(vat.filk, i0, b32('line'), rad(1000))
         await send(vat.file, b32('ceil'), rad(1000))
@@ -231,10 +231,10 @@ describe('Vat', () => {
         await send(WETH.deposit, { value: ethers.utils.parseEther('500.0') })
         want(await WETH.balanceOf(ME)).to.eql(wad(500))
         want(await WETH.balanceOf(plug.address)).to.eql(wad(1000))
-        await send(plug.join, vat.address, i0, ME, wad(500))
+        await send(plug.join, vat.address, i0, WETH.address, ME, wad(500))
         want(await WETH.balanceOf(ME)).to.eql(wad(0))
         want(await WETH.balanceOf(plug.address)).to.eql(wad(1500))
-        await send(plug.exit, vat.address, i0, ME, wad(250))
+        await send(plug.exit, vat.address, i0, WETH.address, ME, wad(250))
         want(await WETH.balanceOf(ME)).to.eql(wad(250))
         want(await WETH.balanceOf(plug.address)).to.eql(wad(1250))
       })
@@ -393,7 +393,7 @@ describe('Vat', () => {
         await send(WETH.deposit, { value: ethers.utils.parseEther('20.0') })
         await send(WETH.approve, plug.address, wad(20))
         debug('join 10')
-        await send(plug.join, vat.address, i0, ME, wad(10))
+        await send(plug.join, vat.address, i0, WETH.address, ME, wad(10))
         want(await vat.gem(i0, ME)).to.eql(wad(10))
         // rico has no dss cage analogue
       })
@@ -447,9 +447,9 @@ describe('Vat', () => {
         await send(gold.mint, ME, wad(1000))
         await send(vat.ward, plug.address, true)
         await send(gold.approve, plug.address, constants.MaxUint256)
-        await send(plug.bind, vat.address, i0, gold.address)
+        await send(plug.bind, vat.address, i0, gold.address, true)
         debug(`my balance = ${await gold.balanceOf(ME)}`)
-        await send(plug.join, vat.address, i0, ME, wad(1000))
+        await send(plug.join, vat.address, i0, gold.address, ME, wad(1000))
 
         debug('filing')
         await send(vat.plot, i0, ray(1)) // dss file 'spot'

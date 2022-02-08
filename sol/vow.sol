@@ -33,19 +33,24 @@ contract Vow is Math, Ward {
     Ramp    public drop; // Recharge flops.
     uint256 public bar;  // [rad] Surplus buffer
 
-    function bail(bytes32 ilk, address urn) external {
+    function bail(bytes32 ilk, address[] calldata gems, address urn) external {
         require( !vat.safe(ilk, urn), 'ERR_SAFE' );
         address flipper = flippers[ilk];
         (uint ink, uint art) = vat.urns(ilk, urn);
         uint bill = vat.grab(ilk, urn, address(this), address(this), -int(ink), -int(art));
-        address gem = plug.exit(address(vat), ilk, flipper, ink);
-        Flipper(flipper).flip(ilk, urn, gem, ink, bill);
+        for(uint i = 0; i < gems.length && ink > 0; i++) {
+            uint take = min(ink, GemLike(gems[i]).balanceOf(address(plug)));
+            ink -= take;
+            plug.exit(address(vat), ilk, gems[i], flipper, take);
+            Flipper(flipper).flip(ilk, urn, gems[i], take, bill);
+        }
+        require(ink == 0, 'MISSING_GEM');
     }
 
-    function plop(bytes32 ilk, address urn, uint amt)
+    function plop(bytes32 ilk, address gem, address urn, uint amt)
       _ward_ external
     {
-        plug.join(address(vat), ilk, urn, amt);
+        plug.join(address(vat), ilk, gem, urn, amt);
     }
 
     function keep() external {

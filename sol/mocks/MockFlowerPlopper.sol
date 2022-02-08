@@ -37,7 +37,7 @@ contract MockFlowerPlopper is Math, BalancerSwapper, Flipper
         uint spill = _trade(auctions[id].gem, RICO, SwapKind.GIVEN_OUT, auctions[id].bill);
         uint refund = auctions[id].ink - spill;
         GemLike(auctions[id].gem).transfer(vow, refund);
-        Plopper(vow).plop(auctions[id].ilk, auctions[id].urn, refund);
+        Plopper(vow).plop(auctions[id].ilk, auctions[id].gem, auctions[id].urn, refund);
         delete auctions[id];
     }
 

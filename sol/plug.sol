@@ -12,24 +12,21 @@ import './mixin/ward.sol';
 import { GemLike, VatLike } from './abi.sol';
 
 contract Plug is Lock, Math, Ward {
-    mapping(address=>mapping(bytes32=>address)) public repr;
+    mapping(address=>mapping(bytes32=>mapping(address=>bool))) public repr;
+    mapping(address => bool) public pass;
 
-    function join(address vat, bytes32 ilk, address usr, uint wad) external returns (address) {
+    function join(address vat, bytes32 ilk, address gem, address usr, uint wad) external {
         require(int(wad) >= 0, "Plug/overflow");
-        require(repr[vat][ilk] != address(0), "Plug/not-bound");
-        GemLike gem = GemLike(repr[vat][ilk]);
+        require(repr[vat][ilk][gem], "Plug/not-bound");
         VatLike(vat).slip(ilk, usr, int(wad));
-        require(gem.transferFrom(msg.sender, address(this), wad), "Plug/failed-transfer");
-        return address(gem);
+        require(GemLike(gem).transferFrom(msg.sender, address(this), wad), "Plug/failed-transfer");
     }
 
-    function exit(address vat, bytes32 ilk, address usr, uint wad) external returns (address) {
+    function exit(address vat, bytes32 ilk, address gem, address usr, uint wad) external {
         require(wad <= 2 ** 255, "Plug/overflow");
-        require(repr[vat][ilk] != address(0), "Plug/no-ilk-gem");
-        GemLike gem = GemLike(repr[vat][ilk]);
+        require(repr[vat][ilk][gem], "Plug/not-bound");
         VatLike(vat).slip(ilk, msg.sender, -int256(wad));
-        require(gem.transfer(usr, wad), "Plug/failed-transfer");
-        return address(gem);
+        require(GemLike(gem).transfer(usr, wad), "Plug/failed-transfer");
     }
 
     function flash(address[] calldata gems_, uint[] calldata amts, address code, bytes calldata data)
@@ -37,6 +34,7 @@ contract Plug is Lock, Math, Ward {
     {
         require(gems_.length == amts.length, 'ERR_INVALID_LENGTHS');
         for(uint i = 0; i < gems_.length; i++) {
+            require(pass[gems_[i]], "Plug/unsupported-token");
             require(GemLike(gems_[i]).transfer(code, amts[i]), "Plug/failed-transfer");
         }
         bool ok;
@@ -48,8 +46,13 @@ contract Plug is Lock, Math, Ward {
         return (result);
     }
 
-    function bind(address vat, bytes32 ilk, address gem)
+    function bind(address vat, bytes32 ilk, address gem, bool bound)
       _ward_ external {
-        repr[vat][ilk] = gem;
+        repr[vat][ilk][gem] = bound;
+    }
+
+    function list(address gem, bool bit)
+      _ward_ external {
+        pass[gem] = bit;
     }
 }

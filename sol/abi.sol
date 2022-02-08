@@ -45,9 +45,10 @@ interface VatLike {
 }
 
 interface PlugLike {
-    function join(address,bytes32,address,uint) external returns (address);
-    function exit(address,bytes32,address,uint) external returns (address);
-    function bind(address vat, bytes32 ilk, address gem) external;
+    function join(address,bytes32,address,address,uint) external;
+    function exit(address,bytes32,address,address,uint) external;
+    function bind(address vat, bytes32 ilk, address gem, bool bound) external;
+    function list(address gem, bool bit) external;
     function flash(
         address[] calldata gems_,
         uint[] calldata amts,
@@ -83,7 +84,7 @@ interface Flopper {
 }
 
 interface Plopper {
-    function plop(bytes32 ilk, address urn, uint amt) external;
+    function plop(bytes32 ilk, address gem, address urn, uint amt) external;
 }
 
 interface Yanker {

@@ -39,6 +39,6 @@ contract Port is Lock, Math, Ward {
 
     function bind(address vat, address joy, bool bound)
       _ward_ external {
-        ports[vat][joy] = bound;        
+        ports[vat][joy] = bound;
     }
 }

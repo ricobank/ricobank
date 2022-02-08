@@ -55,9 +55,9 @@ describe('Port', () => {
         await send(vat.file, b32("ceil"), rad(1000))
         await send(vat.filk, i0, b32("line"), rad(2000))
         await send(vat.plot, i0, ray(1).toString())
-        await send(plug.bind, vat.address, i0, gemA.address)
+        await send(plug.bind, vat.address, i0, gemA.address, true)
         await send(port.bind, vat.address, RICO.address, true)
-        await send(plug.join, vat.address, i0, ALI, wad(1000))
+        await send(plug.join, vat.address, i0, gemA.address, ALI, wad(1000))
 
         await snapshot(hh);
     })
