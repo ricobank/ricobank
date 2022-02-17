@@ -1,7 +1,7 @@
 const debug = require('debug')('ricobank:task')
 
 import { task } from 'hardhat/config'
-import { PackBuilder } from 'dpack'
+const dpack = require('@etherpacks/dpack')
 
 task('deploy-mock-dependencies', '')
 .setAction(async (args, hre) => {
@@ -10,7 +10,7 @@ task('deploy-mock-dependencies', '')
   const fb_pack = await hre.run('deploy-mock-feedbase')
   const gf_pack = await hre.run('deploy-mock-gemfab')
 
-  const pb = new PackBuilder(hre.network.name)
+  const pb = new dpack.PackBuilder(hre.network.name)
   await pb.merge(weth_pack, bal2_pack, fb_pack, gf_pack);
   const pack = await pb.build();
 

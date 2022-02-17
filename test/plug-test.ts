@@ -3,7 +3,7 @@ import { ethers } from 'hardhat'
 import { fail, rad, ray, revert, send, snapshot, U256_MAX, wad, want } from 'minihat'
 import { b32 } from './helpers'
 
-const dpack = require('dpack')
+const dpack = require('@etherpacks/dpack')
 
 let i0 = Buffer.alloc(32, 1)  // ilk 0 id
 let i1 = Buffer.alloc(32, 2)  // ilk 1 id
@@ -23,7 +23,7 @@ describe('Plug', () => {
         [ali, bob, cat] = await ethers.getSigners();
         [ALI, BOB, CAT] = [ali, bob, cat].map(signer => signer.address)
         const pack = await hh.run('deploy-ricobank', { mock: 'true' })
-        const dapp = await dpack.Dapp.loadFromPack(pack, ali, ethers)
+        const dapp = await dpack.load(pack, ethers)
         const gem_artifacts = require('../lib/gemfab/artifacts/sol/gem.sol/Gem.json')
         gem_type = ethers.ContractFactory.fromSolidity(gem_artifacts, ali)
         flash_strategist_type = await ethers.getContractFactory('MockFlashStrategist', ali)
@@ -36,10 +36,10 @@ describe('Plug', () => {
             "function plug_release(address gem, uint256 free_amt, uint256 wipe_amt)",
         ])
 
-        plug = dapp.objects.plug
-        port = dapp.objects.port
-        vat = dapp.objects.vat
-        RICO = dapp.objects.rico
+        plug = dapp.plug
+        port = dapp.port
+        vat = dapp.vat
+        RICO = dapp.rico
 
         gemA = await gem_type.deploy('gemA', 'GEMA')
         gemB = await gem_type.deploy('gemB', 'GEMB')

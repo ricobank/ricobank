@@ -8,7 +8,7 @@ import { constants } from 'ethers'
 
 import { b32 } from './helpers'
 
-const dpack = require('dpack')
+const dpack = require('@etherpacks/dpack')
 const debug = require('debug')('rico:test')
 
 const i0 = Buffer.alloc(32) // ilk 0 id
@@ -43,16 +43,16 @@ describe('Vat', () => {
     const gem_artifacts = require('../lib/gemfab/artifacts/sol/gem.sol/Gem.json')
     gem_type = ethers.ContractFactory.fromSolidity(gem_artifacts, ali)
     const pack = await hh.run('deploy-ricobank', { mock: 'true' })
-    const dapp = await dpack.Dapp.loadFromPack(pack, ali, ethers)
+    const dapp = await dpack.load(pack, ethers)
 
     vat = await vat_type.deploy()
-    flower = dapp.objects.ricoflowerv1
-    plug = dapp.objects.plug
-    port = dapp.objects.port
-    vow = dapp.objects.vow
-    RICO = dapp.objects.rico
-    RISK = dapp.objects.risk
-    WETH = dapp.objects.weth
+    flower = dapp.ricoflowerv1
+    plug = dapp.plug
+    port = dapp.port
+    vow = dapp.vow
+    RICO = dapp.rico
+    RISK = dapp.risk
+    WETH = dapp.weth
 
     await send(vat.ward, plug.address, true)
     await send(WETH.approve, plug.address, U256_MAX)

@@ -4,7 +4,7 @@ import { ethers } from 'hardhat'
 
 import { b32, wad, ray, send } from './helpers'
 import * as hh from "hardhat"
-const dpack = require('dpack')
+const dpack = require('@etherpacks/dpack')
 const debug = require('debug')('rico:test')
 
 const ZERO = Buffer.alloc(32)
@@ -23,12 +23,12 @@ describe('plot vat ilk mark via plot', () => {
     [ali, bob, cat] = await ethers.getSigners();
     [ALI, BOB, CAT] = [ali, bob, cat].map(signer => signer.address)
     const pack = await hh.run('deploy-ricobank', { mock: 'true' })
-    dapp = await dpack.Dapp.loadFromPack(pack, ali, ethers)
+    dapp = await dpack.load(pack, ethers)
   })
   beforeEach(async () => {
-    vat = dapp.objects.vat
-    plot = dapp.objects.plot
-    fb = dapp.objects.feedbase
+    vat = dapp.vat
+    plot = dapp.plot
+    fb = dapp.feedbase
 
     await send(vat.ward, plot.address, true)
 

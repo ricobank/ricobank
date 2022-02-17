@@ -2,7 +2,7 @@ import { task } from 'hardhat/config'
 import { send } from 'minihat'
 
 const debug = require('debug')('ricobank:task')
-const dpack = require('dpack')
+const dpack = require('@etherpacks/dpack')
 
 task('deploy-ricobank', '')
   .addOptionalParam('mock', 'Ignore dependency args and deploy new mock dependencies')
@@ -45,9 +45,9 @@ task('deploy-ricobank', '')
     }
 
     const gem_artifact = await dpack.getIpfsJson(deps.types.Gem.artifact['/'])
-    const deps_dapp = await dpack.Dapp.loadFromPack(deps, ali, hre.ethers)
+    const deps_dapp = await dpack.load(deps, hre.ethers)
     for (const [name, symbol] of [['Rico', 'RICO'], ['Rico Riskshare', 'RISK']]) {
-      const receipt = await send(deps_dapp.objects.gemfab.build, name, symbol)
+      const receipt = await send(deps_dapp.gemfab.build, name, symbol)
       const [, address] = receipt.events.find(event => event.event === 'Build').args
       await pb.packObject({
         objectname: symbol.toLowerCase(),

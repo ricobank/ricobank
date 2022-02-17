@@ -3,7 +3,7 @@ import { expect as want } from 'chai'
 import * as hh from 'hardhat'
 import { ethers } from 'hardhat'
 
-const dpack = require('dpack')
+const dpack = require('@etherpacks/dpack')
 
 import { b32, revert, snapshot, filem_ramp } from './helpers'
 import { mine, send, U256_MAX, wad } from 'minihat'
@@ -21,13 +21,13 @@ describe('RicoFlowerV1 balancer interaction', () => {
     [ALI, BOB, CAT] = [ali, bob, cat].map(signer => signer.address)
 
     const pack = await hh.run('deploy-ricobank', { mock: 'true' })
-    const dapp = await dpack.Dapp.loadFromPack(pack, ali, ethers)
+    const dapp = await dpack.load(pack, ethers)
 
-    flower = dapp.objects.ricoflowerv1
-    vault = dapp.objects.vault
-    RICO = dapp.objects.rico
-    RISK = dapp.objects.risk
-    WETH = dapp.objects.weth
+    flower = dapp.ricoflowerv1
+    vault = dapp.vault
+    RICO = dapp.rico
+    RISK = dapp.risk
+    WETH = dapp.weth
 
     await send(WETH.deposit, {value: ethers.utils.parseEther("2100.0")})
     await send(RICO.mint, ALI, wad(10000))

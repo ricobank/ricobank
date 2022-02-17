@@ -7,7 +7,7 @@ import { smock } from '@defi-wonderland/smock'
 import { b32, snapshot, revert, file_ramp, filem_ramp } from './helpers'
 import { fail, mine, wad, ray, rad, apy, send, BANKYEAR, U256_MAX } from 'minihat'
 
-const dpack = require('dpack')
+const dpack = require('@etherpacks/dpack')
 
 const chai = require('chai')
 chai.use(smock.matchers)
@@ -32,24 +32,24 @@ describe('vow / liq liquidation lifecycle', () => {
     [ALI, BOB, CAT] = [ali, bob, cat].map(signer => signer.address)
 
     const pack = await hh.run('deploy-ricobank', { mock: 'true' })
-    const dapp = await dpack.Dapp.loadFromPack(pack, ali, ethers)
+    const dapp = await dpack.load(pack, ethers)
 
     flower_type = await smock.mock('RicoFlowerV1', { signer: ali })
     mock_flower_plopper_type = await ethers.getContractFactory('MockFlowerPlopper', ali)
     vat_type = await smock.mock('Vat', { signer: ali })
 
     const gem_artifact = await dpack.getIpfsJson(pack.types.Gem.artifact['/'])
-    const receipt = await send(dapp.objects.gemfab.build, 'Weth Plus', 'XETH')
+    const receipt = await send(dapp.gemfab.build, 'Weth Plus', 'XETH')
     const [, gem_address] = receipt.events.find(event => event.event === 'Build').args
     XETH = new ethers.Contract(gem_address, gem_artifact.abi, ali)
 
-    plug = dapp.objects.plug
-    port = dapp.objects.port
-    vault = dapp.objects.vault
-    vow = dapp.objects.vow
-    RICO = dapp.objects.rico
-    RISK = dapp.objects.risk
-    WETH = dapp.objects.weth
+    plug = dapp.plug
+    port = dapp.port
+    vault = dapp.vault
+    vow = dapp.vow
+    RICO = dapp.rico
+    RISK = dapp.risk
+    WETH = dapp.weth
 
     vat = await vat_type.deploy()
     flower = await flower_type.deploy()

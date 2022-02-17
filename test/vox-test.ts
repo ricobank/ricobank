@@ -8,7 +8,7 @@ import { send, N, wad, ray, rad, BANKYEAR, wait, warp, mine } from 'minihat'
 const { hexZeroPad } = ethers.utils
 
 import { b32, snapshot, revert } from './helpers'
-const dpack = require('dpack')
+const dpack = require('@etherpacks/dpack')
 
 const bn2b32 = (bn) => hexZeroPad(bn.toHexString(), 32)
 const i0 = Buffer.alloc(32) // ilk 0 id
@@ -25,11 +25,11 @@ describe('Vox', () => {
     [ali, bob, cat] = await ethers.getSigners();
     [ALI, BOB, CAT] = [ali, bob, cat].map(signer => signer.address)
     const pack = await hh.run('deploy-ricobank', { mock: 'true' })
-    const dapp = await dpack.Dapp.loadFromPack(pack, ali, ethers)
+    const dapp = await dpack.load(pack, ethers)
 
-    vat = dapp.objects.vat
-    vox = dapp.objects.vox
-    fb = dapp.objects.feedbase
+    vat = dapp.vat
+    vox = dapp.vox
+    fb = dapp.feedbase
 
     await send(vat.ward, vox.address, true)
 
