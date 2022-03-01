@@ -1,4 +1,4 @@
-pragma solidity 0.8.9;
+pragma solidity 0.8.10;
 
 import { Flow, Flowback } from './flow2.sol';
 import { VatLike, GemLike, PlugLike } from './abi.sol';

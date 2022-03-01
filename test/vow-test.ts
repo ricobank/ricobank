@@ -55,12 +55,20 @@ describe('vow / liq liquidation lifecycle', () => {
     flower = await flower_type.deploy()
     mock_flower_plopper = await mock_flower_plopper_type.deploy()
 
-    await send(vat.trust, port.address, true)
-    await send(vat.trust, vow.address, true)
+    // reset initial settings to use mocks
     await send(vat.ward, plug.address, true)
     await send(vat.ward, vow.address, true)
-    await send(RICO.ward, port.address, true)
-    await send(RISK.ward, vow.address, true)
+    await send(vow.link, b32('flapper'), flower.address)
+    await send(vow.link, b32('flopper'), flower.address)
+    await send(vow.link, b32('vat'), vat.address)
+    await send(flower.link, b32('rico'), RICO.address)
+    await send(flower.link, b32('risk'), RISK.address)
+    await send(flower.link, b32('vow'), vow.address)
+    await send(mock_flower_plopper.link, b32('rico'), RICO.address)
+    await send(mock_flower_plopper.link, b32('vow'), vow.address)
+
+    await send(vat.trust, port.address, true)
+    await send(vat.trust, vow.address, true)
 
     await send(WETH.deposit, { value: ethers.utils.parseEther('6000.0') })
     await send(XETH.mint, ALI, wad(10000))
@@ -81,13 +89,6 @@ describe('vow / liq liquidation lifecycle', () => {
     await send(vat.filk, i0, b32('chop'), ray(1.1))
 
     await send(vow.file, b32('bar'), rad(1))
-    await send(vow.link, b32('flapper'), flower.address)
-    await send(vow.link, b32('flopper'), flower.address)
-    await send(vow.link, b32('plug'), plug.address)
-    await send(vow.link, b32('port'), port.address)
-    await send(vow.link, b32('rico'), RICO.address)
-    await send(vow.link, b32('risk'), RISK.address)
-    await send(vow.link, b32('vat'), vat.address)
     await send(vow.lilk, i0, b32('flipper'), flower.address)
     await file_ramp(vow, { vel: wad(1), rel: wad(0.001), bel: 0, cel: 60 })
 
@@ -145,9 +146,6 @@ describe('vow / liq liquidation lifecycle', () => {
     await filem_ramp(WETH, flower, { vel: wad(1), rel: wad(0.001), bel: 0, cel: 600 })
     await filem_ramp(XETH, flower, { vel: wad(1), rel: wad(0.001), bel: 0, cel: 600 })
     await filem_ramp(RICO, flower, { vel: wad(1), rel: wad(0.001), bel: 0, cel: 600 })
-    await send(flower.link, b32('rico'), RICO.address)
-    await send(flower.link, b32('risk'), RISK.address)
-    await send(flower.link, b32('vow'), vow.address)
     await send(flower.setVault, vault.address)
     await send(flower.setPool, WETH.address, RICO.address, poolId_weth_rico)
     await send(flower.setPool, XETH.address, RICO.address, poolId_xeth_rico)
@@ -244,14 +242,14 @@ describe('vow / liq liquidation lifecycle', () => {
     })
     it('vow 1yr drip with large surplus buffer', async () => {
       // Drew 99 for a year at 5% so surplus should be just under bar of 5
-      await vow['file(bytes32,uint256)'](b32('bar'), rad(5))
+      await send(vow.file, b32('bar'), rad(5))
       await mine(hh, BANKYEAR)
       await send(vat.drip, i0)
       await send(vow.keep)
       want(flower.flap).to.have.callCount(0)
       want(flower.flop).to.have.callCount(0)
       want(vat.heal).to.have.callCount(0)
-      await vow['file(bytes32,uint256)'](b32('bar'), rad(4.9))
+      await send(vow.file, b32('bar'), rad(4.9))
       await send(vow.keep)
       want(flower.flap).to.have.been.called
       want(flower.flop).to.have.callCount(0)
@@ -322,8 +320,6 @@ describe('vow / liq liquidation lifecycle', () => {
 
   describe('plop', () => {
     beforeEach(async () => {
-      await send(mock_flower_plopper.file, b32('rico'), RICO.address)
-      await send(mock_flower_plopper.file, b32('vow'), vow.address)
       await send(mock_flower_plopper.setVault, vault.address)
       await send(mock_flower_plopper.setPool, WETH.address, RICO.address, poolId_weth_rico)
       await send(mock_flower_plopper.setPool, RICO.address, WETH.address, poolId_weth_rico)

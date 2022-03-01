@@ -31,11 +31,6 @@ describe('Vox', () => {
     vox = dapp.vox
     fb = dapp.feedbase
 
-    await send(vat.ward, vox.address, true)
-
-    await send(vox.link, b32("fb"), fb.address)
-    await send(vox.link, b32("vat"),  vat.address)
-    await send(vox.link, b32("tip"), ALI)
     await send(vox.file, b32("tag"), TAG)
 
     await send(vox.file, b32("cap"), bn2b32(ray(3)))

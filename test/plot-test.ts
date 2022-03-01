@@ -2,7 +2,7 @@ import { expect as want } from 'chai'
 
 import { ethers } from 'hardhat'
 
-import { b32, wad, ray, send } from './helpers'
+import { wad, ray, send } from './helpers'
 import * as hh from "hardhat"
 const dpack = require('@etherpacks/dpack')
 const debug = require('debug')('rico:test')
@@ -29,12 +29,6 @@ describe('plot vat ilk mark via plot', () => {
     vat = dapp.vat
     plot = dapp.plot
     fb = dapp.feedbase
-
-    await send(vat.ward, plot.address, true)
-
-    await send(plot.link, b32("fb"), fb.address)
-    await send(plot.link, b32("vat"), vat.address)
-    await send(plot.link, b32("tip"), ALI)
 
     await send(plot.wire, i0, TAG)
   })

@@ -5,7 +5,7 @@ import { ethers } from 'hardhat'
 
 const dpack = require('@etherpacks/dpack')
 
-import { b32, revert, snapshot, filem_ramp } from './helpers'
+import { revert, snapshot, filem_ramp } from './helpers'
 import { mine, send, U256_MAX, wad } from 'minihat'
 
 describe('RicoFlowerV1 balancer interaction', () => {
@@ -16,6 +16,11 @@ describe('RicoFlowerV1 balancer interaction', () => {
   let vault
   let poolId_weth_rico
   let poolId_risk_rico
+
+  const address_index = 0
+  const balances_index = 1
+  let rico_index
+
   before(async () => {
     [ali, bob, cat] = await ethers.getSigners();
     [ALI, BOB, CAT] = [ali, bob, cat].map(signer => signer.address)
@@ -23,7 +28,7 @@ describe('RicoFlowerV1 balancer interaction', () => {
     const pack = await hh.run('deploy-ricobank', { mock: 'true' })
     const dapp = await dpack.load(pack, ethers)
 
-    flower = dapp.ricoflowerv1
+    flower = dapp.flow
     vault = dapp.vault
     RICO = dapp.rico
     RISK = dapp.risk
@@ -61,8 +66,6 @@ describe('RicoFlowerV1 balancer interaction', () => {
 
     await filem_ramp(WETH, flower, {'vel': wad(1), 'rel': wad(0.001), 'bel': 0, 'cel': 600})
     await filem_ramp(RICO, flower, {'vel': wad(1), 'rel': wad(0.001), 'bel': 0, 'cel': 600})
-    await send(flower.link, b32('rico'), RICO.address)
-    await send(flower.link, b32('risk'), RISK.address)
     await send(flower.setVault, vault.address)
     await send(flower.setPool, WETH.address, RICO.address, poolId_weth_rico)
     await send(flower.setPool, RICO.address, RISK.address, poolId_risk_rico)
@@ -77,6 +80,12 @@ describe('RicoFlowerV1 balancer interaction', () => {
   })
 
   describe('rate limiting', () => {
+
+    before(async () => {
+      const tokens = await vault.getPoolTokens(poolId_risk_rico)
+      rico_index = tokens[address_index][0] == RICO.address ? 0 : 1
+    })
+
     describe('flap', () => {
       it('absolute rate', async () => {
         await filem_ramp(RICO, flower, {'vel': wad(0.1), 'rel': wad(1000), 'bel': 0, 'cel': 1000})
@@ -91,8 +100,8 @@ describe('RicoFlowerV1 balancer interaction', () => {
         await send(flower.flap, 0)
         const rico_liq_2 = await vault.getPoolTokens(poolId_risk_rico)
 
-        const sale_0 = rico_liq_1[1][1] - rico_liq_0[1][1]
-        const sale_1 = rico_liq_2[1][1] - rico_liq_1[1][1]
+        const sale_0 = rico_liq_1[balances_index][rico_index] - rico_liq_0[balances_index][rico_index]
+        const sale_1 = rico_liq_2[balances_index][rico_index] - rico_liq_1[balances_index][rico_index]
         want(sale_0).closeTo(parseInt(wad(50).toString()), parseInt(wad(0.5).toString()))
         want(sale_1).closeTo(parseInt(wad(75).toString()), parseInt(wad(0.5).toString()))
       })
@@ -109,8 +118,8 @@ describe('RicoFlowerV1 balancer interaction', () => {
         await send(flower.flap, 0)
         const rico_liq_2 = await vault.getPoolTokens(poolId_risk_rico)
 
-        const sale_0 = rico_liq_1[1][1] - rico_liq_0[1][1]
-        const sale_1 = rico_liq_2[1][1] - rico_liq_1[1][1]
+        const sale_0 = rico_liq_1[balances_index][rico_index] - rico_liq_0[balances_index][rico_index]
+        const sale_1 = rico_liq_2[balances_index][rico_index] - rico_liq_1[balances_index][rico_index]
         want(sale_0).closeTo(parseInt(wad(50).toString()), parseInt(wad(0.5).toString()))
         want(sale_1).closeTo(parseInt(wad(75).toString()), parseInt(wad(0.5).toString()))
       })

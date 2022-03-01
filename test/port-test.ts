@@ -43,8 +43,6 @@ describe('Port', () => {
         gemA = await gem_type.deploy('gemA', 'GEMA')
         flash_strategist = await flash_strategist_type.deploy(plug.address, port.address, vat.address, RICO.address, i0)
 
-        await send(vat.ward, plug.address, true)
-        await send(RICO.ward, port.address, true)
         await send(RICO.ward, flash_strategist.address, true)
         await send(gemA.ward, flash_strategist.address, true)
         await send(vat.trust, port.address, true)
@@ -52,7 +50,6 @@ describe('Port', () => {
         await send(RICO.mint, ALI, wad(10))
         await send(gemA.mint, ALI, wad(1000))
         await send(vat.init, i0)
-        await send(vat.file, b32("ceil"), rad(1000))
         await send(vat.filk, i0, b32("line"), rad(2000))
         await send(vat.plot, i0, ray(1).toString())
         await send(plug.bind, vat.address, i0, gemA.address, true)

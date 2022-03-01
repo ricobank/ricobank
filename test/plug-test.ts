@@ -45,8 +45,6 @@ describe('Plug', () => {
         gemB = await gem_type.deploy('gemB', 'GEMB')
         flash_strategist = await flash_strategist_type.deploy(plug.address, port.address, vat.address, RICO.address, i0)
 
-        await send(vat.ward, plug.address, true)
-        await send(RICO.ward, port.address, true)
         await send(RICO.ward, flash_strategist.address, true)
         await send(gemA.ward, flash_strategist.address, true)
 
@@ -58,7 +56,6 @@ describe('Plug', () => {
 
         await send(vat.init, i0)
         await send(vat.init, i1)
-        await send(vat.file, b32("ceil"), rad(1000))
         await send(vat.filk, i0, b32("line"), rad(2000))
 
         await send(vat.plot, i0, ray(1).toString())

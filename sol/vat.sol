@@ -18,7 +18,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity 0.8.9;
+pragma solidity 0.8.10;
 
 import './mixin/math.sol';
 import './mixin/ward.sol';
@@ -92,7 +92,7 @@ contract Vat is Math, Ward, Flog {
     }
 
     function _safe(bytes32 i, address u)
-      internal returns (bool)
+      internal view returns (bool)
     {
         Urn storage urn = urns[i][u];
         Ilk storage ilk = ilks[i];

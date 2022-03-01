@@ -2,7 +2,7 @@
 
 // Copyright (C) 2021 the bank
 
-pragma solidity 0.8.9;
+pragma solidity 0.8.10;
 
 import 'hardhat/console.sol';
 
@@ -64,7 +64,7 @@ contract MockFlowerPlopper is Math, BalancerSwapper, Flipper
         GemLike(gem).approve(vow, type(uint256).max);
     }
 
-    function file(bytes32 key, address val)
+    function link(bytes32 key, address val)
       _ward_ external {
         if (key == "rico") {RICO = val;
         } else if (key == "vow") {vow = val;

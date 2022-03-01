@@ -1,5 +1,4 @@
 import { task } from 'hardhat/config'
-import { send } from 'minihat'
 
 const debug = require('debug')('ricobank:task')
 const dpack = require('@etherpacks/dpack')
@@ -25,36 +24,29 @@ task('deploy-ricobank', '')
 
     const pb = new dpack.PackBuilder(hre.network.name)
 
-    const contracts = [['RicoFlowerV1', require('../artifacts/sol/flow.sol/RicoFlowerV1.json')],
-                       ['Plug', require('../artifacts/sol/plug.sol/Plug.json')],
-                       ['Plot', require('../artifacts/sol/plot.sol/Plot.json')],
-                       ['Port', require('../artifacts/sol/port.sol/Port.json')],
-                       ['Vat', require('../artifacts/sol/vat.sol/Vat.json')],
-                       ['Vow', require('../artifacts/sol/vow.sol/Vow.json')],
-                       ['Vox', require('../artifacts/sol/vox.sol/Vox.json')]]
+    const ball_artifact = require('../artifacts/sol/ball.sol/Ball.json')
+    const ball_type = hre.ethers.ContractFactory.fromSolidity(ball_artifact, ali)
+    const ball = await ball_type.deploy(deps.objects.gemfab.address, deps.objects.feedbase.address)
+    const gem_artifact = await dpack.getIpfsJson(deps.types.Gem.artifact['/'])
 
-    for await (const [typename, artifact] of contracts) {
-      const deployer = hre.ethers.ContractFactory.fromSolidity(artifact, ali)
-      const contract = await deployer.deploy()
+    const contracts = [['flow', 'RicoFlowerV1', require('../artifacts/sol/flow.sol/RicoFlowerV1.json')],
+                       ['plot', 'Plot', require('../artifacts/sol/plot.sol/Plot.json')],
+                       ['plug', 'Plug', require('../artifacts/sol/plug.sol/Plug.json')],
+                       ['port', 'Port', require('../artifacts/sol/port.sol/Port.json')],
+                       ['vat', 'Vat', require('../artifacts/sol/vat.sol/Vat.json')],
+                       ['vow', 'Vow', require('../artifacts/sol/vow.sol/Vow.json')],
+                       ['vox', 'Vox', require('../artifacts/sol/vox.sol/Vox.json')],
+                       ['rico', 'Gem', gem_artifact],
+                       ['risk', 'Gem', gem_artifact]]
+
+    for await (const [state_var, typename, artifact] of contracts) {
+      const pack_type = typename != 'Gem'
       await pb.packObject({
-        objectname: typename.toLowerCase(),
-        address: contract.address,
+        objectname: state_var,
+        address: await ball[state_var](),
         typename: typename,
         artifact: artifact
-      })
-    }
-
-    const gem_artifact = await dpack.getIpfsJson(deps.types.Gem.artifact['/'])
-    const deps_dapp = await dpack.load(deps, hre.ethers)
-    for (const [name, symbol] of [['Rico', 'RICO'], ['Rico Riskshare', 'RISK']]) {
-      const receipt = await send(deps_dapp.gemfab.build, name, symbol)
-      const [, address] = receipt.events.find(event => event.event === 'Build').args
-      await pb.packObject({
-        objectname: symbol.toLowerCase(),
-        address: address,
-        typename: 'Gem',
-        artifact: gem_artifact
-      }, false)
+      }, pack_type)
     }
 
     await pb.merge(deps)

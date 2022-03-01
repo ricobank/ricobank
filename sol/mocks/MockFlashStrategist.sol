@@ -2,7 +2,7 @@
 
 // Copyright (C) 2021 the bank
 
-pragma solidity 0.8.9;
+pragma solidity 0.8.10;
 
 import { GemLike, VatLike, PlugLike, PortLike } from '../abi.sol';
 

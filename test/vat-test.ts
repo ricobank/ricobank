@@ -46,7 +46,7 @@ describe('Vat', () => {
     const dapp = await dpack.load(pack, ethers)
 
     vat = await vat_type.deploy()
-    flower = dapp.ricoflowerv1
+    flower = dapp.flow
     plug = dapp.plug
     port = dapp.port
     vow = dapp.vow
@@ -209,7 +209,6 @@ describe('Vat', () => {
         await send(plug.join, vat.address, i0, WETH.address, ME, wad(1000))
         await send(vat.plot, i0, ray(1)) // dss file 'spot'
         await send(vat.filk, i0, b32('line'), rad(1000))
-        await send(vat.file, b32('ceil'), rad(1000))
         await snapshot_name('dss/frob')
       })
       after(async () => {
@@ -378,8 +377,6 @@ describe('Vat', () => {
 
     describe('join', () => {
       before(async () => {
-        await send(vat.ward, port.address, true)
-        await send(RICO.ward, port.address, true)
         await snapshot_name('dss/join')
       })
       after(async () => {
@@ -433,10 +430,6 @@ describe('Vat', () => {
 
         debug('minting RISK tokens')
         await send(RISK.mint, ME, wad(100))
-
-        debug('linking flow to vow')
-        await send(vow.link, b32('flapper'), flower.address)
-        await send(vow.link, b32('flopper'), flower.address)
         await send(flower.ward, vow.address, true)
 
         // jug N/A
@@ -445,7 +438,6 @@ describe('Vat', () => {
         debug('creating and joining gold')
         gold = await gem_type.deploy('gold', 'GOLD')
         await send(gold.mint, ME, wad(1000))
-        await send(vat.ward, plug.address, true)
         await send(gold.approve, plug.address, constants.MaxUint256)
         await send(plug.bind, vat.address, i0, gold.address, true)
         debug(`my balance = ${await gold.balanceOf(ME)}`)
@@ -465,7 +457,6 @@ describe('Vat', () => {
         await send(vat.filk, i0, b32('chop'), ray(1)) // dss used wad, rico uses ray
 
         debug('vat ward/trust vow, approve RISK/gold')
-        await send(vat.ward, vow.address, true)
         await send(vat.trust, vow.address, true)
         await send(gold.approve, vat.address, constants.MaxUint256)
         // RISK approve flap N/A not sure what to do with RISK atm...
