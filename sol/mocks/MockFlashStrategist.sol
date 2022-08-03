@@ -2,7 +2,7 @@
 
 // Copyright (C) 2021 the bank
 
-pragma solidity 0.8.10;
+pragma solidity 0.8.15;
 
 import { GemLike, VatLike, PlugLike, PortLike } from '../abi.sol';
 
@@ -42,7 +42,7 @@ contract MockFlashStrategist {
     }
 
     function reenter(address[] memory gems, uint256[] memory amts) public {
-        bytes memory data = abi.encodeWithSelector(this.approve_all.selector, gems, amts);
+        bytes memory data = abi.encodeCall(this.approve_all, (gems, amts));
         plug.flash(gems, amts, address(this), data);
         approve_all(gems, amts);
     }

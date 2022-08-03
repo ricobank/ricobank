@@ -2,7 +2,7 @@
 
 // Copyright (C) 2021 the bank
 
-pragma solidity 0.8.10;
+pragma solidity 0.8.15;
 
 import 'hardhat/console.sol';
 

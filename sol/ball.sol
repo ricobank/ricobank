@@ -5,7 +5,7 @@
 // efficient deployment sequences against the result of
 // this one.
 
-pragma solidity 0.8.10;
+pragma solidity 0.8.15;
 
 import {Plot} from './plot.sol';
 import {Plug} from './plug.sol';

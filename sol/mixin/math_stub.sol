@@ -2,7 +2,7 @@
 // we are avoiding the use of 'libraries' and instead want to test those public
 // functions that are compiled into JUMP destinations instead of DELEGATECALLS.
 
-pragma solidity 0.8.10;
+pragma solidity 0.8.15;
 
 import './math.sol';
 

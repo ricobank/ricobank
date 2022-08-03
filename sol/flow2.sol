@@ -1,4 +1,4 @@
-pragma solidity 0.8.10;
+pragma solidity 0.8.15;
 
 interface Flow {
   function flip(Flowback back, address gin, address gout, uint ink, uint bill) external returns (bytes32);
