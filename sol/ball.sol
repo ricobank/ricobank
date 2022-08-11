@@ -18,8 +18,8 @@ import {RicoFlowerV1} from './flow.sol';
 
 interface GemFabLike {
     function build(
-        string memory name,
-        string memory symbol
+        bytes32 name,
+        bytes32 symbol
     ) payable external returns (GemLike);
 }
 
@@ -40,7 +40,7 @@ contract Ball {
     Vow public vow;
     Vox public vox;
 
-    bytes32 public immutable gemFabHash = 0xd844f9339c5080c2f8d253921e11abf9f8ee84906a7e9338ca98547778e2af66;
+    bytes32 public immutable gemFabHash = 0xc50480af81695123b87d00570a1f7efdef3241d74158683aa66fa13775b0fd61;
     bytes32 public immutable feedbaseHash = 0x7f077f77897df3acace06b253d14a11f9503318a47f731929c4972fabea5213c;
 
     constructor(GemFabLike gemfab, address feedbase) {
@@ -54,8 +54,8 @@ contract Ball {
 
         flow = new RicoFlowerV1();
 
-        rico = gemfab.build('Rico', 'RICO');
-        risk = gemfab.build('Rico Riskshare', 'RISK');
+        rico = gemfab.build(bytes32("Rico"), bytes32("RICO"));
+        risk = gemfab.build(bytes32("Rico Riskshare"), bytes32("RISK"));
 
         plot = new Plot();
         plug = new Plug();

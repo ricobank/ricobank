@@ -436,7 +436,7 @@ describe('Vat', () => {
         //   rico doesn't have stability fees, it just manipulates price
 
         debug('creating and joining gold')
-        gold = await gem_type.deploy('gold', 'GOLD')
+        gold = await gem_type.deploy(b32('gold'), b32('GOLD'))
         await send(gold.mint, ME, wad(1000))
         await send(gold.approve, plug.address, constants.MaxUint256)
         await send(plug.bind, vat.address, i0, gold.address, true)

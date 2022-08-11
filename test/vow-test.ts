@@ -39,7 +39,7 @@ describe('vow / liq liquidation lifecycle', () => {
     vat_type = await smock.mock('Vat', { signer: ali })
 
     const gem_artifact = await dpack.getIpfsJson(pack.types.Gem.artifact['/'])
-    const receipt = await send(dapp.gemfab.build, 'Weth Plus', 'XETH')
+    const receipt = await send(dapp.gemfab.build, b32('Weth Plus'), b32('XETH'))
     const [, gem_address] = receipt.events.find(event => event.event === 'Build').args
     XETH = new ethers.Contract(gem_address, gem_artifact.abi, ali)
 

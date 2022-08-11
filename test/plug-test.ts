@@ -41,8 +41,8 @@ describe('Plug', () => {
         vat = dapp.vat
         RICO = dapp.rico
 
-        gemA = await gem_type.deploy('gemA', 'GEMA')
-        gemB = await gem_type.deploy('gemB', 'GEMB')
+        gemA = await gem_type.deploy(b32('gemA'), b32('GEMA'))
+        gemB = await gem_type.deploy(b32('gemB'), b32('GEMB'))
         flash_strategist = await flash_strategist_type.deploy(plug.address, port.address, vat.address, RICO.address, i0)
 
         await send(RICO.ward, flash_strategist.address, true)

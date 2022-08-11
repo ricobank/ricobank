@@ -1,6 +1,6 @@
 // balancer mock setup test
 
-import { send, wad, U256_MAX } from './helpers'
+import { b32, send, wad, U256_MAX } from './helpers'
 
 import { ethers } from 'hardhat'
 
@@ -42,8 +42,8 @@ describe('bal balancer setup test', () => {
     pool_type = new ethers.ContractFactory(pool_abi, pool_code, ali)
   })
   beforeEach(async () => {
-    WETH = await gem_type.deploy('Wrapped Ether', 'WETH')
-    RICO = await gem_type.deploy('Rico', 'RICO')
+    WETH = await gem_type.deploy(b32('Wrapped Ether'), b32('WETH'))
+    RICO = await gem_type.deploy(b32('Rico'), b32('RICO'))
     vault = await vault_type.deploy(ALI, WETH.address, 1000, 1000)
     poolfab = await poolfab_type.deploy(vault.address)
 
