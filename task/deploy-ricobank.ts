@@ -24,18 +24,18 @@ task('deploy-ricobank', '')
 
     const pb = new dpack.PackBuilder(hre.network.name)
 
-    const ball_artifact = require('../artifacts/sol/ball.sol/Ball.json')
+    const ball_artifact = require('../artifacts/src/ball.sol/Ball.json')
     const ball_type = hre.ethers.ContractFactory.fromSolidity(ball_artifact, ali)
     const ball = await ball_type.deploy(deps.objects.gemfab.address, deps.objects.feedbase.address)
     const gem_artifact = await dpack.getIpfsJson(deps.types.Gem.artifact['/'])
 
-    const contracts = [['flow', 'RicoFlowerV1', require('../artifacts/sol/flow.sol/RicoFlowerV1.json')],
-                       ['plot', 'Plot', require('../artifacts/sol/plot.sol/Plot.json')],
-                       ['plug', 'Plug', require('../artifacts/sol/plug.sol/Plug.json')],
-                       ['port', 'Port', require('../artifacts/sol/port.sol/Port.json')],
-                       ['vat', 'Vat', require('../artifacts/sol/vat.sol/Vat.json')],
-                       ['vow', 'Vow', require('../artifacts/sol/vow.sol/Vow.json')],
-                       ['vox', 'Vox', require('../artifacts/sol/vox.sol/Vox.json')],
+    const contracts = [['flow', 'RicoFlowerV1', require('../artifacts/src/flow.sol/RicoFlowerV1.json')],
+                       ['plot', 'Plot', require('../artifacts/src/plot.sol/Plot.json')],
+                       ['plug', 'Plug', require('../artifacts/src/plug.sol/Plug.json')],
+                       ['port', 'Port', require('../artifacts/src/port.sol/Port.json')],
+                       ['vat', 'Vat', require('../artifacts/src/vat.sol/Vat.json')],
+                       ['vow', 'Vow', require('../artifacts/src/vow.sol/Vow.json')],
+                       ['vox', 'Vox', require('../artifacts/src/vox.sol/Vox.json')],
                        ['rico', 'Gem', gem_artifact],
                        ['risk', 'Gem', gem_artifact]]
 

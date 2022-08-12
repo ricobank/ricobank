@@ -16,7 +16,7 @@
     "build:feedbase": "cd lib/feedbase && npm run build",
     "build:gemfab": "cd lib/gemfab && npm run build",
     "pretest": "npm run build:sol",
-    "test": "ts-mocha --timeout 10000 test/*",
+    "test": "ts-mocha --timeout 10000 jstest/*",
     "fmt": "ts-standard --fix task test"
   },
   "devDependencies": {

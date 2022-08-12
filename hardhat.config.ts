@@ -27,7 +27,7 @@ export default {
     }
   },
   paths: {
-    sources: "./sol"
+    sources: "./src"
   },
   defaultNetwork: 'hardhat'
 };

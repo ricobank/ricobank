@@ -10,3 +10,6 @@
 [submodule "lib/balancer2"]
 	path = lib/balancer2
 	url = https://github.com/etherpacks/balancer2
+[submodule "lib/forge-std"]
+	path = lib/forge-std
+	url = https://github.com/foundry-rs/forge-std

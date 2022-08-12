@@ -1,0 +1,14 @@
+[profile.default]
+src = 'src'
+out = 'artifacts'
+libs = [
+    'lib',
+    'node_modules',
+]
+remappings = [
+    'feedbase/=lib/feedbase/src/',
+    'gemfab/=lib/gemfab/src',
+    'hardhat/=node_modules/hardhat/',
+]
+
+# See more config options https://github.com/foundry-rs/foundry/tree/master/config
