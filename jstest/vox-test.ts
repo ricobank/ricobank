@@ -25,7 +25,7 @@ describe('Vox', () => {
     [ali, bob, cat] = await ethers.getSigners();
     [ALI, BOB, CAT] = [ali, bob, cat].map(signer => signer.address)
     const pack = await hh.run('deploy-ricobank', { mock: 'true' })
-    const dapp = await dpack.load(pack, ethers)
+    const dapp = await dpack.load(pack, ethers, ali)
 
     vat = dapp.vat
     vox = dapp.vox

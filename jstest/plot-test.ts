@@ -23,7 +23,7 @@ describe('plot vat ilk mark via plot', () => {
     [ali, bob, cat] = await ethers.getSigners();
     [ALI, BOB, CAT] = [ali, bob, cat].map(signer => signer.address)
     const pack = await hh.run('deploy-ricobank', { mock: 'true' })
-    dapp = await dpack.load(pack, ethers)
+    dapp = await dpack.load(pack, ethers, ali)
   })
   beforeEach(async () => {
     vat = dapp.vat

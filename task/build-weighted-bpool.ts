@@ -9,7 +9,7 @@ task('build-weighted-bpool', 'create new balancer pool')
     const {ethers} = hre
     const [acct] = await hre.ethers.getSigners()
     const deployer = acct.address
-    const balancer_dapp = await dpack.load(args.balancer_pack, ethers)
+    const balancer_dapp = await dpack.load(args.balancer_pack, ethers, acct)
 
     args.token_settings.sort((a, b) =>
         (BigNumber.from(a.token.address).gt(BigNumber.from(b.token.address))) ? 1 : -1)

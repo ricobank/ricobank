@@ -43,7 +43,7 @@ describe('Vat', () => {
     const gem_artifacts = require('../lib/gemfab/artifacts/sol/gem.sol/Gem.json')
     gem_type = ethers.ContractFactory.fromSolidity(gem_artifacts, ali)
     const pack = await hh.run('deploy-ricobank', { mock: 'true' })
-    const dapp = await dpack.load(pack, ethers)
+    const dapp = await dpack.load(pack, ethers, ali)
 
     vat = await vat_type.deploy()
     flower = dapp.flow

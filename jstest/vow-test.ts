@@ -32,7 +32,7 @@ describe('vow / liq liquidation lifecycle', () => {
     [ALI, BOB, CAT] = [ali, bob, cat].map(signer => signer.address)
 
     const pack = await hh.run('deploy-ricobank', { mock: 'true' })
-    const dapp = await dpack.load(pack, ethers)
+    const dapp = await dpack.load(pack, ethers, ali)
 
     flower_type = await smock.mock('RicoFlowerV1', { signer: ali })
     mock_flower_plopper_type = await ethers.getContractFactory('MockFlowerPlopper', ali)

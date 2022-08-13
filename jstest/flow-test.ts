@@ -26,7 +26,7 @@ describe('RicoFlowerV1 balancer interaction', () => {
     [ALI, BOB, CAT] = [ali, bob, cat].map(signer => signer.address)
 
     const pack = await hh.run('deploy-ricobank', { mock: 'true' })
-    const dapp = await dpack.load(pack, ethers)
+    const dapp = await dpack.load(pack, ethers, ali)
 
     flower = dapp.flow
     vault = dapp.vault
