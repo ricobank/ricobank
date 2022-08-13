@@ -1,4 +1,21 @@
 
+## autobank
+
+`autobank` is a generic term for the synthetic asset system used in Dai, Rai, and Rico. The behavior of the synthetic depends on the type of controller used. See [bank.dev/vox](https://bank.dev/vox) for a description of how these controllers can be used to implement synthetics that behave like a variety of instruments, from "wrapped perps" to fiat-like synthetic assets.
+
+### overview
+
+- `abi.sol` -- interfaces used throughout the project
+- `ball.sol` -- a single contract that deploys and wires up all contracts in the system
+- `flow.sol` -- the abstract auction interfaces, and version 1 `flower` which uses Balancer pools for the 'auctions'
+- `plot.sol` -- associates feedbase `src,tag` and variables in `vat`/`vow`, pulls from feedbase / pushes to system
+- `plug.sol` -- join/exit/flash for gems
+- `port.sol` -- join/exit/flash for rico
+- `vat.sol` -- the core CDP engine
+- `vow.sol` -- triggers liquidations and processes debt/surplus auctions
+- `vox.sol` -- adjusts `par` and `way`
+
+
 ### developing
 
 You need `node`/`npm` and `ipfs`.
@@ -11,14 +28,4 @@ This repo uses submodules for managing some dependencies.
     - `npm run build:all`
 - `npm run test`
 
-Troubleshooting:
-
-* `npm run download-submodules` -> `fatal: Needed a single revision  \  Unable to find current origin/master revision in submodule path 'lib/balancer-pack'`
-    * This is a heisenbug possibly related to github moving default branches from `master` to `main`. In this state, you have all the repos and files,
-    but the HEAD is half way through a checkout. Fix each submodule by doing `cd lib/xxx && git restore --staged . && git checkout .` -- from
-    here you can proceed to `npm run install-submodules`.
-* `npm test` -> `Cannot find module '../lib/gemfab/artifacts/sol/gem.sol/Gem.json'`
-    * You need to run `npm run build:all`
-* `npm test` -> `FetchError: request to http://127.0.0.1:5001/api/v0/cat?arg=.... failed, reason: connect ECONNREFUSED 127.0.0.1:5001`
-    * You need to have `ipfs daemon` running.
 
