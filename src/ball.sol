@@ -40,8 +40,8 @@ contract Ball {
     Vow public vow;
     Vox public vox;
 
-    bytes32 public immutable gemFabHash = 0xc50480af81695123b87d00570a1f7efdef3241d74158683aa66fa13775b0fd61;
-    bytes32 public immutable feedbaseHash = 0x7f077f77897df3acace06b253d14a11f9503318a47f731929c4972fabea5213c;
+    bytes32 public immutable gemFabHash = 0xd740b24e331e7d5a8f233b7e11e8e0666aa9a891a4e12fa72f9f33c1d2d02983;
+    bytes32 public immutable feedbaseHash = 0x990c5f3561492a57555fba748dd0851489ae812ae6573b1cc371e69dadba1cdf;
 
     constructor(GemFabLike gemfab, address feedbase) {
         bytes32 codeHash;

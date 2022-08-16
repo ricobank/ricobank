@@ -40,7 +40,7 @@ describe('Vat', () => {
     [ali, bob, cat, dan] = await ethers.getSigners();
     [ALI, BOB, CAT, DAN] = [ali, bob, cat, dan].map(signer => signer.address)
     vat_type = await ethers.getContractFactory('MockVat', ali)
-    const gem_artifacts = require('../lib/gemfab/artifacts/sol/gem.sol/Gem.json')
+    const gem_artifacts = require('../lib/gemfab/artifacts/src/gem.sol/Gem.json')
     gem_type = ethers.ContractFactory.fromSolidity(gem_artifacts, ali)
     const pack = await hh.run('deploy-ricobank', { mock: 'true' })
     const dapp = await dpack.load(pack, ethers, ali)

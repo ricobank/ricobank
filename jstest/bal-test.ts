@@ -25,7 +25,7 @@ describe('bal balancer setup test', () => {
     [ali, bob, cat] = await ethers.getSigners();
     [ALI, BOB, CAT] = [ali, bob, cat].map(signer => signer.address)
 
-    const gem_artifacts = require('../lib/gemfab/artifacts/sol/gem.sol/Gem.json')
+    const gem_artifacts = require('../lib/gemfab/artifacts/src/gem.sol/Gem.json')
     gem_type = ethers.ContractFactory.fromSolidity(gem_artifacts, ali)
 
     const vault_abi = await balancer.getBalancerContractAbi('20210418-vault', 'Vault')
