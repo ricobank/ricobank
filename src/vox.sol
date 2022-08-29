@@ -18,7 +18,7 @@ pragma solidity 0.8.15;
 import './mixin/math.sol';
 import './mixin/ward.sol';
 
-import { VatLike, FeedbaseLike } from './abi.sol'; 
+import { VatLike, FeedbaseLike } from './abi.sol';
 
 // RicoLikeVox
 contract Vox is Math, Ward {
@@ -28,34 +28,35 @@ contract Vox is Math, Ward {
     address public tip; // feedbase `src` address
     bytes32 public tag; // feedbase `tag` bytes32
 
+    uint256 public par;  // [wad] System Price
+    uint256 public way;  // [ray] System Rate (SP growth rate)
     uint256 public how;  // [ray] sensitivity paramater
-    uint256 public tau;  // [sec] last tick
-
+    uint256 public tau;  // [sec] last poke
     uint256 public cap;  // [ray] `way` bound
 
     constructor() {
-        how = RAY;
+        how = 1000000115170000000000000000;
+        cap = 1000000022000000000000000000;
         tau = block.timestamp;
     }
 
     function poke() external {
-        (bytes32 _mar,) = fb.read(tip, tag);
-        uint256 mar = uint256(_mar);
-        uint256 par = vat.prod();
-
-        uint256 err = rdiv(mar, par);
+        if (tau == block.timestamp) { return; }
         uint256 dt = block.timestamp - tau;
-
-        uint256 way = vat.way();
-
-        if (err < RAY) {
-            way = min(cap, grow(way, how, dt));
-        } else if (err > RAY) {
-            way = max(rinv(cap), grow(way, rinv(how), dt));
-        } else {}
-
-        vat.sway(way);
         tau = block.timestamp;
+
+        par = grow(par, way, dt);
+        vat.prod(par);
+
+        (bytes32 mar_, uint256 ttl) = fb.pull(tip, tag);
+        uint256 mar = uint256(mar_);
+        if (block.timestamp > ttl) { return; }
+
+        if (mar < par) {
+            way = min(cap, grow(way, how, dt));
+        } else if (mar > par) {
+            way = max(rinv(cap), grow(way, rinv(how), dt));
+        }
     }
 
     function link(bytes32 key, address val) external

@@ -11,14 +11,14 @@ contract Plot is Ward, Math {
     FeedbaseLike public fb;
     address      public tip;
     VatLike      public vat;
-    
+
     // ilk -> tag
     mapping( bytes32 => bytes32 ) public tags;
 
     function poke(bytes32 ilk) external {
         bytes32 tag = tags[ilk];
         require(tag != 0x0, 'ERR_TAG');
-        (bytes32 val, uint256 ttl) = fb.read(tip, tag);
+        (bytes32 val, uint256 ttl) = fb.pull(tip, tag);
         require(block.timestamp < ttl, 'ERR_TTL');
         uint wad = uint256(val);
         vat.plot(ilk, wad * BLN);

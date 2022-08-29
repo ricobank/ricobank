@@ -33,10 +33,7 @@ interface VatLike {
     function grab(bytes32,address,address,address,int,int) external returns (uint);
 
     // from Vox
-    function par() external returns (uint256);
-    function way() external returns (uint256);
-    function prod() external returns (uint256);
-    function sway(uint256 r) external;
+    function prod(uint256 par) external;
 
     // from User
     function lock(bytes32 i, uint amt) external;
@@ -67,7 +64,7 @@ interface PortLike {
 }
 
 interface FeedbaseLike {
-    function read(address src, bytes32 tag) external returns (bytes32 val, uint ttl);
+    function pull(address src, bytes32 tag) external returns (bytes32 val, uint ttl);
 }
 
 
