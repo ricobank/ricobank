@@ -14,7 +14,7 @@ import {Vat} from './vat.sol';
 import {Vow} from './vow.sol';
 import {Vox} from './vox.sol';
 
-import {RicoFlowerV1} from './flow.sol';
+import {BalancerFlower} from './flow.sol';
 
 interface GemFabLike {
     function build(
@@ -32,7 +32,7 @@ interface GemLike {
 contract Ball {
     GemLike public rico;
     GemLike public risk;
-    RicoFlowerV1 public flow;
+    BalancerFlower public flow;
     Plot public plot;
     Plug public plug;
     Port public port;
@@ -52,7 +52,7 @@ contract Ball {
 
         address roll = msg.sender;
 
-        flow = new RicoFlowerV1();
+        flow = new BalancerFlower();
 
         rico = gemfab.build(bytes32("Rico"), bytes32("RICO"));
         risk = gemfab.build(bytes32("Rico Riskshare"), bytes32("RISK"));
@@ -64,21 +64,15 @@ contract Ball {
         vox = new Vox();
         vat = new Vat();
 
-        flow.link('rico', address(rico));
-        flow.link('risk', address(risk));
-        flow.link('vow', address(vow));
-
         plot.link('fb', feedbase);
         plot.link('tip', roll);
         plot.link('vat', address(vat));
 
-        vow.link('flapper', address(flow));
-        vow.link('flopper', address(flow));
+        vow.link('flow', address(flow));
         vow.link('plug', address(plug));
         vow.link('port', address(port));
-        vow.link('rico', address(rico));
-        vow.link('risk', address(risk));
-        vow.link('vat', address(vat));
+        vow.link('RICO', address(rico));
+        vow.link('RISK', address(risk));
 
         vox.link('fb', feedbase);
         vox.link('tip', roll);
@@ -87,9 +81,9 @@ contract Ball {
         vat.file('ceil', 1000e45);
 
         vow.file('bar', 100_000e45);
-        vow.file('vel', 1e18);
-        vow.file('rel', 1e12);
-        vow.file('cel', 600);
+        vow.pair(address(risk), 'vel', 1e18);
+        vow.pair(address(risk), 'rel', 1e12);
+        vow.pair(address(risk), 'cel', 600);
 
         vat.ward(address(plot), true);
         vat.ward(address(plug), true);

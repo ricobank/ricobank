@@ -29,7 +29,7 @@ task('deploy-ricobank', '')
     const ball = await ball_type.deploy(deps.objects.gemfab.address, deps.objects.feedbase.address)
     const gem_artifact = await dpack.getIpfsJson(deps.types.Gem.artifact['/'])
 
-    const contracts = [['flow', 'RicoFlowerV1', require('../artifacts/src/flow.sol/RicoFlowerV1.json')],
+    const contracts = [['flow', 'BalancerFlower', require('../artifacts/src/flow.sol/BalancerFlower.json')],
                        ['plot', 'Plot', require('../artifacts/src/plot.sol/Plot.json')],
                        ['plug', 'Plug', require('../artifacts/src/plug.sol/Plug.json')],
                        ['port', 'Port', require('../artifacts/src/port.sol/Port.json')],

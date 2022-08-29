@@ -22,15 +22,9 @@ export function b32 (arg: any): Uint8Array {
   }
 }
 
-export async function file_ramp(contract, vals) {
+export async function curb_ramp(contract, gem, vals) {
   for (let ramp_member of ramp_members) {
-    await send(contract.file, b32(ramp_member), vals[ramp_member]);
-  }
-}
-
-export async function filem_ramp(gem, contract, vals) {
-  for (let ramp_member of ramp_members) {
-    await send(contract.filem, gem.address, b32(ramp_member), vals[ramp_member]);
+    await send(contract.pair, gem.address, b32(ramp_member), vals[ramp_member]);
   }
 }
 

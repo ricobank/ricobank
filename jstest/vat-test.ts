@@ -450,10 +450,10 @@ describe('Vat', () => {
         // max rico up for auction -> max joy being traded
         // rico has no cat, so box stuff is moved to flow (aka flip/flap/flop)
         debug('setting vel (FKA box)')
-        await send(flower.filem, RICO.address, b32('vel'), wad(10000000))
+        await send(vow.pair, RICO.address, b32('vel'), wad(10000000))
         await send(flower.ward, vow.address, true)
         await send(vow.ward, flower.address, true)
-        await send(vow.lilk, i0, b32('flipper'), flower.address)
+        await send(vow.link, b32('flow'), flower.address)
         await send(vat.filk, i0, b32('chop'), ray(1)) // dss used wad, rico uses ray
 
         debug('vat ward/trust vow, approve RISK/gold')
@@ -472,25 +472,21 @@ describe('Vat', () => {
 
       it('test_set_dunk_multiple_ilks', async () => {
         // rel and vel are *sort of* like dunk and bite
-        want((await flower.ramps(gold.address)).rel).to.eql(wad(0))
-        want((await flower.ramps(gold.address)).vel).to.eql(wad(0))
-        want((await flower.ramps(RISK.address)).rel).to.eql(wad(0))
-        want((await flower.ramps(RISK.address)).vel).to.eql(wad(0))
-        await send(flower.filem, gold.address, b32('rel'), wad(0.01))
-        await send(flower.filem, gold.address, b32('vel'), wad(0.02))
-        want((await flower.ramps(gold.address)).rel).to.eql(wad(0.01))
-        want((await flower.ramps(gold.address)).vel).to.eql(wad(0.02))
-        await send(flower.filem, RISK.address, b32('rel'), wad(0.01))
-        await send(flower.filem, RISK.address, b32('vel'), wad(0.02))
-        want((await flower.ramps(RISK.address)).rel).to.eql(wad(0.01))
-        want((await flower.ramps(RISK.address)).vel).to.eql(wad(0.02))
+        await send(vow.pair, gold.address, b32('rel'), wad(0.01))
+        await send(vow.pair, gold.address, b32('vel'), wad(0.02))
+        want((await flower.ramps(vow.address, gold.address)).rel).to.eql(wad(0.01))
+        want((await flower.ramps(vow.address, gold.address)).vel).to.eql(wad(0.02))
+        await send(vow.pair, RISK.address, b32('rel'), wad(0.01))
+        await send(vow.pair, RISK.address, b32('vel'), wad(0.02))
+        want((await flower.ramps(vow.address, RISK.address)).rel).to.eql(wad(0.01))
+        want((await flower.ramps(vow.address, RISK.address)).vel).to.eql(wad(0.02))
       })
 
       it('test_cat_set_box', async () => {
         // rico analogue of box is flower.ramps[RICO].vel
-        want((await flower.ramps(RICO.address)).vel).to.eql(wad(10000000))
-        await send(flower.filem, RICO.address, b32('vel'), wad(20000000))
-        want((await flower.ramps(RICO.address)).vel).to.eql(wad(20000000))
+        want((await flower.ramps(vow.address, RICO.address)).vel).to.eql(wad(10000000))
+        await send(vow.pair, RICO.address, b32('vel'), wad(20000000))
+        want((await flower.ramps(vow.address, RICO.address)).vel).to.eql(wad(20000000))
       })
 
       // test_bite_under_dunk
