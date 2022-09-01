@@ -43,9 +43,9 @@ interface VatLike {
 }
 
 interface PlugLike {
-    function join(address,bytes32,address,address,uint) external;
-    function exit(address,bytes32,address,address,uint) external;
-    function bind(address vat, bytes32 ilk, address gem, bool bound) external;
+    function join(address,bytes32,address,uint) external returns (address);
+    function exit(address,bytes32,address,uint) external returns (address);
+    function bind(address vat, bytes32 ilk, address gem) external;
     function list(address gem, bool bit) external;
     function flash(
         address[] calldata gems_,

@@ -50,7 +50,7 @@ contract MockFlashStrategist {
     function port_lever(address gem, uint256 lock_amt, uint256 draw_amt) public {
         _buy_gem(gem, draw_amt);
         GemLike(gem).approve(address(plug), lock_amt);
-        plug.join(address(vat), ilk0, gem, address(this), lock_amt);
+        plug.join(address(vat), ilk0, address(this), lock_amt);
         vat.lock(ilk0, lock_amt);
         vat.draw(ilk0, draw_amt);
         vat.trust(address(port), true);
@@ -61,13 +61,13 @@ contract MockFlashStrategist {
         port.join(address(vat), address(rico), address(this), wipe_amt);
         vat.wipe(ilk0, wipe_amt);
         vat.free(ilk0, free_amt);
-        plug.exit(address(vat), ilk0, gem, address(this), free_amt);
+        plug.exit(address(vat), ilk0, address(this), free_amt);
         _sell_gem(gem, wipe_amt);
     }
 
     function plug_lever(address gem, uint256 lock_amt, uint256 draw_amt) public {
         GemLike(gem).approve(address(plug), lock_amt);
-        plug.join(address(vat), ilk0, gem, address(this), lock_amt);
+        plug.join(address(vat), ilk0, address(this), lock_amt);
         vat.lock(ilk0, lock_amt);
         vat.draw(ilk0, draw_amt);
         vat.trust(address(port), true);
@@ -81,7 +81,7 @@ contract MockFlashStrategist {
         port.join(address(vat), address(rico), address(this), wipe_amt);
         vat.wipe(ilk0, wipe_amt);
         vat.free(ilk0, free_amt);
-        plug.exit(address(vat), ilk0, gem, address(this), free_amt);
+        plug.exit(address(vat), ilk0, address(this), free_amt);
         GemLike(gem).approve(address(plug), wipe_amt);
     }
 

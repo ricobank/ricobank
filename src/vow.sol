@@ -55,20 +55,13 @@ contract Vow is Flowback, Math, Ward {
         }
     }
 
-    function bail(bytes32 ilk, address[] calldata gems, address urn) external {
+    function bail(bytes32 ilk, address urn) external {
         require( !vat.safe(ilk, urn), 'ERR_SAFE' );
         (uint ink, uint art) = vat.urns(ilk, urn);
         uint bill = vat.grab(ilk, urn, self, self, -int(ink), -int(art));
-        uint cap = ink;
-        for(uint i = 0; i < gems.length && ink > 0; i++) {
-            uint take = min(ink, GemLike(gems[i]).balanceOf(address(plug)));
-            uint split = bill * take / cap;
-            ink -= take;
-            plug.exit(address(vat), ilk, gems[i], self, take);
-            bytes32 aid = flow.flow(gems[i], take, address(RICO), split);
-            sales[aid] = Sale({ ilk: ilk, urn: urn });
-        }
-        require(ink == 0, 'MISSING_GEM');
+        address gem = plug.exit(address(vat), ilk, self, ink);
+        bytes32 aid = flow.flow(gem, ink, address(RICO), bill);
+        sales[aid] = Sale({ ilk: ilk, urn: urn });
     }
 
     // todo missing proceeds param
@@ -76,7 +69,7 @@ contract Vow is Flowback, Math, Ward {
       _ward_ {
         if (refund > 0) {
             Sale storage sale = sales[aid];
-            plug.join(address(vat), sale.ilk, gem, sale.urn, refund);
+            plug.join(address(vat), sale.ilk, sale.urn, refund);
         }
         // todo is it worth 'delete sales[aid];' after EIP-3529?
         // assume 'delete auctions[aid];' in flow uses up max refund

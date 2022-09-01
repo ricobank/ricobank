@@ -61,13 +61,13 @@ describe('Plug', () => {
         await send(vat.plot, i0, ray(1).toString())
         await send(vat.plot, i1, ray(1).toString())
 
-        await send(plug.bind, vat.address, i0, gemA.address, true)
-        await send(plug.bind, vat.address, i1, gemB.address, true)
+        await send(plug.bind, vat.address, i0, gemA.address)
+        await send(plug.bind, vat.address, i1, gemB.address)
         await send(plug.list, gemA.address, true)
         await send(plug.list, gemB.address, true)
         await send(port.bind, vat.address, RICO.address, true)
-        await send(plug.join, vat.address, i0, gemA.address, ALI, wad(1000))
-        await send(plug.join, vat.address, i1, gemB.address, ALI, wad(500))
+        await send(plug.join, vat.address, i0, ALI, wad(1000))
+        await send(plug.join, vat.address, i1, ALI, wad(500))
 
         await snapshot(hh);
     })
@@ -86,8 +86,8 @@ describe('Plug', () => {
             let bal = await gemB.balanceOf(ALI)
             want(bal.eq(wad(1500))).true
 
-            await send(plug.exit, vat.address, i0, gemA.address, ALI, wad(100))
-            await send(plug.exit, vat.address, i1, gemB.address, ALI, wad(100))
+            await send(plug.exit, vat.address, i0, ALI, wad(100))
+            await send(plug.exit, vat.address, i1, ALI, wad(100))
 
             gemABal = await vat.gem(i0, ALI)
             want(gemABal.eq(wad(900))).true
@@ -98,8 +98,8 @@ describe('Plug', () => {
             bal = await gemB.balanceOf(ALI)
             want(bal.eq(wad(1600))).true
 
-            await fail('ERR_MATH_UIADD_NEG', plug.exit, vat.address, i0, gemA.address, ALI, wad(901))
-            await fail('ERR_MATH_UIADD_NEG', plug.exit, vat.address, i1, gemB.address, ALI, wad(401))
+            await fail('ERR_MATH_UIADD_NEG', plug.exit, vat.address, i0, ALI, wad(901))
+            await fail('ERR_MATH_UIADD_NEG', plug.exit, vat.address, i1, ALI, wad(401))
         });
     })
 

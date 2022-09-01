@@ -12,21 +12,25 @@ import './mixin/ward.sol';
 import { GemLike, VatLike } from './abi.sol';
 
 contract Plug is Lock, Math, Ward {
-    mapping(address=>mapping(bytes32=>mapping(address=>bool))) public repr;
+    mapping(address=>mapping(bytes32=>address)) public repr;
     mapping(address => bool) public pass;
 
-    function join(address vat, bytes32 ilk, address gem, address usr, uint wad) external {
+    function join(address vat, bytes32 ilk, address usr, uint wad) external returns (address) {
         require(int(wad) >= 0, "Plug/overflow");
-        require(repr[vat][ilk][gem], "Plug/not-bound");
+        require(repr[vat][ilk] != address(0), "Plug/not-bound");
+        GemLike gem = GemLike(repr[vat][ilk]);
         VatLike(vat).slip(ilk, usr, int(wad));
-        require(GemLike(gem).transferFrom(msg.sender, address(this), wad), "Plug/failed-transfer");
+        require(gem.transferFrom(msg.sender, address(this), wad), "Plug/failed-transfer");
+        return address(gem);
     }
 
-    function exit(address vat, bytes32 ilk, address gem, address usr, uint wad) external {
+    function exit(address vat, bytes32 ilk, address usr, uint wad) external returns (address) {
         require(wad <= 2 ** 255, "Plug/overflow");
-        require(repr[vat][ilk][gem], "Plug/not-bound");
+        require(repr[vat][ilk] != address(0), "Plug/no-ilk-gem");
+        GemLike gem = GemLike(repr[vat][ilk]);
         VatLike(vat).slip(ilk, msg.sender, -int256(wad));
-        require(GemLike(gem).transfer(usr, wad), "Plug/failed-transfer");
+        require(gem.transfer(usr, wad), "Plug/failed-transfer");
+        return address(gem);
     }
 
     function flash(address[] calldata gems_, uint[] calldata amts, address code, bytes calldata data)
@@ -46,9 +50,9 @@ contract Plug is Lock, Math, Ward {
         return (result);
     }
 
-    function bind(address vat, bytes32 ilk, address gem, bool bound)
+    function bind(address vat, bytes32 ilk, address gem)
       _ward_ external {
-        repr[vat][ilk][gem] = bound;
+        repr[vat][ilk] = gem;
     }
 
     function list(address gem, bool bit)
