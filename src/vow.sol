@@ -106,4 +106,6 @@ contract Vow is Flowback, Math, Ward {
         else if (key == "vat")  { vat  = VatLike(val); }
         else revert("ERR_LINK_KEY");
     }
+
+    fallback () external payable {}
 }

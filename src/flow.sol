@@ -2,21 +2,10 @@
 
 pragma solidity 0.8.15;
 
-import 'hardhat/console.sol';
-
 import './mixin/math.sol';
 import "./swap.sol";
-import { GemLike } from './abi.sol';
-
-interface Flow {
-    function clip(address gem, uint max) external returns (uint, uint);
-    function curb(address gem, bytes32 key, uint val) external;
-    function flow(address hag, uint ham, address wag, uint wam) external returns (bytes32);
-}
-
-interface Flowback {
-    function flowback(bytes32 aid, address gem, uint refund) external;
-}
+import { Flow, Flowback, GemLike } from './abi.sol';
+import 'hardhat/console.sol';
 
 contract BalancerFlower is Math, BalancerSwapper, Flow
 {
@@ -53,17 +42,18 @@ contract BalancerFlower is Math, BalancerSwapper, Flow
     function glug(bytes32 aid) external {
         Auction storage auction = auctions[aid];
         (bool last, uint hunk) = _clip(auction.vow, auction.hag, auction.ham);
-        uint cost = fail;
+        uint cost = swap_err;
         uint gain;
 
         if (auction.wam != type(uint256).max) {
             cost = _swap(auction.hag, auction.wag, auction.vow, SwapKind.GIVEN_OUT, auction.wam, hunk);
         }
-        if (cost != fail) {
+        if (cost != swap_err) {
             gain = auction.wam;
             last = true;
         } else {
             gain = _swap(auction.hag, auction.wag, auction.vow, SwapKind.GIVEN_IN, hunk, 0);
+            require(gain != swap_err, 'Flow/swap');
             cost = hunk;
         }
         uint rest = auction.ham - cost;
@@ -95,6 +85,7 @@ contract BalancerFlower is Math, BalancerSwapper, Flow
         if (0 < remainder && remainder < ramp.del) {
             ramp.bel = block.timestamp + remainder / slope;
             lot += remainder;
+            remainder = 0;
         } else {
             ramp.bel = block.timestamp - (charge - lot) / slope;
         }

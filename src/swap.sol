@@ -33,7 +33,7 @@ interface BalancerV2VaultLike is BalancerV2Types {
 }
 
 abstract contract BalancerSwapper is BalancerV2Types, Ward {
-    uint256 public constant fail = type(uint256).max;
+    uint256 public constant swap_err = type(uint256).max;
     BalancerV2VaultLike public bvault;
     // tokIn -> tokOut -> poolID
     mapping(address=>mapping(address=>bytes32)) public pools;
@@ -49,7 +49,7 @@ abstract contract BalancerSwapper is BalancerV2Types, Ward {
     }
 
     function _swap(address tokIn, address tokOut, address receiver, SwapKind kind, uint amt, uint limit)
-            internal returns (uint256) {
+            internal returns (uint256 result) {
         SingleSwap memory ss = SingleSwap({
             poolId: pools[tokIn][tokOut],
             kind: kind,
@@ -59,15 +59,15 @@ abstract contract BalancerSwapper is BalancerV2Types, Ward {
             userData: ""
         });
         FundManagement memory fm = FundManagement({
-            sender: msg.sender,
+            sender: address(this),
             fromInternalBalance: false,
             recipient: payable(receiver),
             toInternalBalance: false
         });
         try bvault.swap(ss, fm, limit, block.timestamp) returns (uint res) {
-            return res;
+            result = res;
         } catch {
-            return fail;
+            result = swap_err;
         }
     }
 }

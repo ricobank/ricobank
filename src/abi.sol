@@ -69,22 +69,12 @@ interface FeedbaseLike {
 
 
 // Abstract liquidations
-interface Flipper {
-    function flip(bytes32 ilk, address urn, address gem, uint ink, uint bill) external;
+interface Flow {
+    function flow(address hag, uint ham, address wag, uint wam) external returns (bytes32);
+    function clip(address gem, uint max) external returns (uint, uint);
+    function curb(address gem, bytes32 key, uint val) external;
 }
 
-interface Flapper {
-    function flap(uint surplus) external;
-}
-
-interface Flopper {
-    function flop(uint debt) external;
-}
-
-interface Plopper {
-    function plop(bytes32 ilk, address gem, address urn, uint amt) external;
-}
-
-interface Yanker {
-    function yank() external returns (uint256);
+interface Flowback {
+    function flowback(bytes32 aid, address gem, uint refund) external;
 }
