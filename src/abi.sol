@@ -16,7 +16,7 @@ interface GemLike is ERC20 {
 interface VatLike {
     // from Plug/Port
     function slip(bytes32,address,int) external;
-    function move(address,address,uint) external;
+    function move(address,uint) external;
 
     // from Plot
     function plot(bytes32 ilk, uint256 ray) external;
@@ -30,7 +30,7 @@ interface VatLike {
     function rake() external returns (uint);
     function safe(bytes32,address) external returns (bool);
     function urns(bytes32,address) external returns (uint,uint);
-    function grab(bytes32,address,address,address,int,int) external returns (uint);
+    function grab(bytes32,address,int,int) external returns (uint);
 
     // from Vox
     function prod(uint256 par) external;
@@ -39,7 +39,9 @@ interface VatLike {
     function lock(bytes32 i, uint amt) external;
     function free(bytes32 i, uint amt) external;
     function draw(bytes32 i, uint amt) external;
-    function wipe(bytes32 i, uint amt) external;    
+    function wipe(bytes32 i, uint amt) external;
+
+    function lob(address src, address dst, uint amt) external;
 }
 
 interface PlugLike {
@@ -71,6 +73,7 @@ interface FeedbaseLike {
 // Abstract liquidations
 interface Flow {
     function flow(address hag, uint ham, address wag, uint wam) external returns (bytes32);
+    function glug(bytes32 aid) external;
     function clip(address gem, uint max) external returns (uint, uint);
     function curb(address gem, bytes32 key, uint val) external;
 }

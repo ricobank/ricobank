@@ -77,7 +77,7 @@ contract BalancerFlower is Math, BalancerSwapper, Flow
 
     function _clip(address back, address gem, uint top) internal returns (bool, uint) {
         Ramp storage ramp = ramps[back][gem];
-        uint supply = GemLike(gem).totalSupply();
+        uint supply = address(0) == gem ? ramp.vel : GemLike(gem).totalSupply();
         uint slope = min(ramp.vel, wmul(ramp.rel, supply));
         uint charge = slope * min(ramp.cel, block.timestamp - ramp.bel);
         uint lot = min(charge, top);

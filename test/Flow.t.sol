@@ -168,7 +168,7 @@ contract FlowTest is Test, RicoSetUp, BalSetUp, Math, Flowback {
 
         // further glug attempts with same aid should fail
         skip(100);
-        vm.expectRevert();
+        vm.expectRevert(stdError.divisionError);
         flow.glug(aid);
     }
 

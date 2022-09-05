@@ -9,7 +9,7 @@ import './mixin/lock.sol';
 import './mixin/math.sol';
 import './mixin/ward.sol';
 
-import { VatLike, GemLike } from './abi.sol';
+import { VatLike, GemLike, Flowback } from './abi.sol';
 
 contract Port is Lock, Math, Ward {
     uint public constant FLASH = 2**140;
@@ -17,13 +17,13 @@ contract Port is Lock, Math, Ward {
 
     function join(address vat, address joy, address usr, uint wad) external {
         require(ports[vat][joy], "Port/not-bound");
-        VatLike(vat).move(address(this), usr, mul(RAY, wad));
+        VatLike(vat).move(usr, mul(RAY, wad));
         GemLike(joy).burn(msg.sender, wad);
     }
 
     function exit(address vat, address joy, address usr, uint wad) external {
         require(ports[vat][joy], "Port/not-bound");
-        VatLike(vat).move(msg.sender, address(this), mul(RAY, wad));
+        VatLike(vat).lob(msg.sender, address(this), mul(RAY, wad));
         GemLike(joy).mint(usr, wad);
     }
 

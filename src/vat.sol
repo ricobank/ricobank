@@ -60,6 +60,8 @@ contract Vat is Math, Ward, Flog {
     mapping (address => uint256)                   public joy;  // [rad]
     mapping (address => uint256)                   public sin;  // [rad]
 
+    mapping (address => mapping (address => bool)) public can;  // urn approval
+
     uint256 public debt;  // [rad] Total Dai Issued
     uint256 public vice;  // [rad] Total Unbacked Dai
     uint256 public ceil;  // [rad] Total Debt Ceiling
@@ -69,6 +71,7 @@ contract Vat is Math, Ward, Flog {
 
     constructor() {
         tau = block.timestamp;
+        par = RAY;
     }
 
     function init(bytes32 ilk, address gem) external
@@ -204,6 +207,11 @@ contract Vat is Math, Ward, Flog {
     }
     function move(address dst, uint256 rad) _flog_ external {
         address src = msg.sender;
+        joy[src] = sub(joy[src], rad);
+        joy[dst] = add(joy[dst], rad);
+    }
+
+    function lob(address src, address dst, uint256 rad) _ward_ _flog_ external {
         joy[src] = sub(joy[src], rad);
         joy[dst] = add(joy[dst], rad);
     }

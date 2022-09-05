@@ -28,13 +28,19 @@ contract Vow is Flowback, Math, Ward {
     GemLike  public RICO;
     GemLike  public RISK;
 
-    function keep() external {
+    function drip(bytes32 ilk) external {
+        vat.drip(ilk);
+    }
+
+    function keep(bytes32[] calldata ilks) external {
+        for (uint256 i = 0; i < ilks.length; i++) {
+            vat.drip(ilks[i]);
+        }
         uint rico = RICO.balanceOf(address(this));
         uint risk = RISK.balanceOf(address(this));
         RISK.burn(address(this), risk);
         port.join(address(vat), address(RICO), address(this), rico);
 
-        vat.rake();
         uint sin = vat.sin(address(this));
         uint joy = vat.joy(address(this));
         uint surplus = joy > sin + bar ? (joy - sin - bar) / RAY : 0;
@@ -43,25 +49,29 @@ contract Vow is Flowback, Math, Ward {
         if (surplus > 0) {
             vat.heal(sin);
             port.exit(address(vat), address(RICO), self, surplus);
-            flow.flow(address(RICO), surplus, address(RISK), type(uint256).max);
+            bytes32 aid = flow.flow(address(RICO), surplus, address(RISK), type(uint256).max);
+            flow.glug(aid);
         } else if (deficit > 0) {
             vat.heal(joy);
             (uint flop, uint dust) = flow.clip(FLOP, type(uint256).max);
             require(flop > dust, 'Vow/risk-dust');
             RISK.mint(self, flop);
             flow.flow(address(RISK), flop, address(RICO), type(uint256).max);
+            // TODO glug and test for glug
         } else if (sin != 0) {
             vat.heal(min(joy, sin));
         }
     }
 
     function bail(bytes32 ilk, address urn) external {
+        vat.drip(ilk);
         require( !vat.safe(ilk, urn), 'ERR_SAFE' );
         (uint ink, uint art) = vat.urns(ilk, urn);
-        uint bill = vat.grab(ilk, urn, self, self, -int(ink), -int(art));
+        uint bill = vat.grab(ilk, urn, -int(ink), -int(art));
         address gem = plug.exit(address(vat), ilk, self, ink);
         bytes32 aid = flow.flow(gem, ink, address(RICO), bill);
         sales[aid] = Sale({ ilk: ilk, urn: urn });
+        flow.glug(aid);
     }
 
     // todo missing proceeds param
@@ -76,9 +86,11 @@ contract Vow is Flowback, Math, Ward {
         // reusing slots later instead is real saving, two changes better than one zero to something
     }
 
+    /*
     function reapprove() external {
         vat.trust(address(port), true);
     }
+    */
 
     function reapprove_gem(address gem) external {
         GemLike(gem).approve(address(plug), type(uint256).max);
