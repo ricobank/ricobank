@@ -1,6 +1,7 @@
 import { expect as want } from 'chai'
 
 import * as hh from 'hardhat'
+// @ts-ignore
 import { ethers } from 'hardhat'
 
 import { fail, send, wad, ray, rad, N, U256_MAX, warp } from 'minihat'
@@ -60,7 +61,7 @@ describe('Vat', () => {
     await send(plug.bind, vat.address, i0, WETH.address)
     await send(port.bind, vat.address, RICO.address, true)
 
-    await send(vat.init, i0)
+    await send(vat.init, i0, WETH.address)
     await send(vat.file, b32('ceil'), rad(1000))
     await send(vat.filk, i0, b32('line'), rad(1000))
 
@@ -97,7 +98,7 @@ describe('Vat', () => {
 
     it('frob', async () => {
       // lock 6 wads
-      await send(vat.frob, i0, ALI, ALI, ALI, wad(6), 0)
+      await send(vat.frob, i0, ALI, wad(6), 0)
 
       const [ink, art] = await vat.urns(i0, ALI)
       want(ink.eq(wad(6))).true
@@ -105,7 +106,7 @@ describe('Vat', () => {
       want(gembal.eq(wad(994))).true
 
       const _6 = N(0).sub(wad(6))
-      await send(vat.frob, i0, ALI, ALI, ALI, _6, 0)
+      await send(vat.frob, i0, ALI, _6, 0)
 
       const [ink2, art2] = await vat.urns(i0, ALI)
       want((await vat.gem(i0, ALI)).eq(wad(1000))).true
@@ -115,7 +116,7 @@ describe('Vat', () => {
       const [ink, art] = await vat.urns(i0, ALI)
       want(ink.toNumber()).to.eql(0)
       want(art.toNumber()).to.eql(0)
-      await fail('Vat/not-safe', vat.frob, i0, ALI, ALI, ALI, 0, wad(1))
+      await fail('Vat/not-safe', vat.frob, i0, ALI, 0, wad(1))
     })
 
     it('drip', async () => {
@@ -123,32 +124,45 @@ describe('Vat', () => {
 
       const [, rateparam] = await vat.ilks(i0)
 
-      const t0 = (await vat.time()).toNumber()
+      const gettime = async () => {
+        const blocknum = await ethers.provider.getBlockNumber()
+        return (await ethers.provider.getBlock(blocknum)).timestamp
+      }
+
+      const t0 = await gettime()
 
       await warp(hh, t0 + 1);
 
       await send(vat.filk, i0, b32('duty'), _2pc)
 
-      const t1 = (await vat.time()).toNumber()
+      const t1 = await gettime()
 
       const [, rateparam2] = await vat.ilks(i0)
 
       await warp(hh, t0 + 2);
 
-      await send(vat.frob, i0, ALI, ALI, ALI, wad(100), wad(50))
+      await send(vat.frob, i0, ALI, wad(100), wad(50))
 
-      const debt1 = await vat.callStatic.owed(i0, ALI)
+      const owed = async () => {
+        await send(vat.drip, i0)
+        let ilk = await vat.ilks(i0)
+        let urn = await vat.urns(i0, ALI)
+        return ilk.rack.mul(urn.art)
+      }
 
-      await warp(hh, t0 + 3);
+      const debt1 = await owed()
 
-      const debt2 = await vat.callStatic.owed(i0, ALI)
+      await warp(hh, t0 + 4);
+
+      const debt2 = await owed()
+      debug(`debt1=${debt1} debt2=${debt2}`)
     })
 
     it('feed plot safe', async () => {
       const safe0 = await vat.callStatic.safe(i0, ALI)
       want(safe0).true
 
-      await send(vat.frob, i0, ALI, ALI, ALI, wad(100), wad(50))
+      await send(vat.frob, i0, ALI, wad(100), wad(50))
 
       const safe1 = await vat.callStatic.safe(i0, ALI)
       want(safe1).true
