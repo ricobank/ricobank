@@ -10,21 +10,17 @@ import { Flow, Flowback, GemLike } from '../src/abi.sol';
 import { RicoSetUp } from "./RicoHelper.sol";
 import { Asset, BalSetUp, PoolArgs } from "./BalHelper.sol";
 
-contract FlowTest is Test, RicoSetUp, BalSetUp, Math, Flowback {
-    Ball ball;
+contract FlowTest is Test, RicoSetUp, BalSetUp, Flowback {
     BalancerFlower flow;
-    GemLike rico;
-    GemLike risk;
     uint rico_index = 0;
     uint risk_index = 1;
     uint back_count = 0;
     bytes32 pool_id_rico_risk;
 
     function setUp() public {
-        ball = make_bank();
+        make_bank();
         flow = ball.flow();
         rico = GemLike(address(ball.rico()));
-        risk = GemLike(address(ball.risk()));
         rico.mint(address(this), 10000 * WAD);
         risk.mint(address(this), 10000 * WAD);
         rico.approve(BAL_VAULT, type(uint256).max);

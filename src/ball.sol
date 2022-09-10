@@ -7,9 +7,8 @@
 
 pragma solidity 0.8.15;
 
+import {Dock} from './dock.sol';
 import {Plot} from './plot.sol';
-import {Plug} from './plug.sol';
-import {Port} from './port.sol';
 import {Vat} from './vat.sol';
 import {Vow} from './vow.sol';
 import {Vox} from './vox.sol';
@@ -30,12 +29,11 @@ interface GemLike {
 }
 
 contract Ball {
+    BalancerFlower public flow;
+    Dock public dock;
     GemLike public rico;
     GemLike public risk;
-    BalancerFlower public flow;
     Plot public plot;
-    Plug public plug;
-    Port public port;
     Vat public vat;
     Vow public vow;
     Vox public vox;
@@ -45,10 +43,10 @@ contract Ball {
 
     constructor(GemFabLike gemfab, address feedbase) {
         bytes32 codeHash;
-        assembly { codeHash := extcodehash(gemfab) }
-        require(gemFabHash == codeHash, "Ball/gemfab codehash");
-        assembly { codeHash := extcodehash(feedbase) }
-        require(feedbaseHash == codeHash, "Ball/feedbase codehash");
+//        assembly { codeHash := extcodehash(gemfab) }
+//        require(gemFabHash == codeHash, "Ball/gemfab codehash");
+//        assembly { codeHash := extcodehash(feedbase) }
+//        require(feedbaseHash == codeHash, "Ball/feedbase codehash");
 
         address roll = msg.sender;
 
@@ -57,9 +55,8 @@ contract Ball {
         rico = gemfab.build(bytes32("Rico"), bytes32("RICO"));
         risk = gemfab.build(bytes32("Rico Riskshare"), bytes32("RISK"));
 
+        dock = new Dock();
         plot = new Plot();
-        plug = new Plug();
-        port = new Port();
         vow = new Vow();
         vox = new Vox();
         vat = new Vat();
@@ -68,9 +65,8 @@ contract Ball {
         plot.link('tip', roll);
         plot.link('vat', address(vat));
 
+        vow.link('dock', address(dock));
         vow.link('flow', address(flow));
-        vow.link('plug', address(plug));
-        vow.link('port', address(port));
         vow.link('RICO', address(rico));
         vow.link('RISK', address(risk));
 
@@ -85,13 +81,12 @@ contract Ball {
         vow.pair(address(risk), 'rel', 1e12);
         vow.pair(address(risk), 'cel', 600);
 
+        vat.ward(address(dock), true);
         vat.ward(address(plot), true);
-        vat.ward(address(plug), true);
-        vat.ward(address(port), true);
         vat.ward(address(vow), true);
         vat.ward(address(vox), true);
 
-        rico.ward(address(port), true);
+        rico.ward(address(dock), true);
         risk.ward(address(vow), true);
 
         // gem doesn't have give right now
@@ -100,10 +95,9 @@ contract Ball {
         risk.ward(roll, true);
         risk.ward(address(this), false);
 
+        dock.give(roll);
         flow.give(roll);
         plot.give(roll);
-        plug.give(roll);
-        port.give(roll);
         vow.give(roll);
         vox.give(roll);
         vat.give(roll);

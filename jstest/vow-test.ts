@@ -21,8 +21,7 @@ describe('vow / liq liquidation lifecycle', () => {
   let RICO, RISK, WETH
   let FLOP
   let vat; let vat_type
-  let plug
-  let port
+  let dock
   let vow
   let flower; let flower_type
   //let mock_flower_plopper; let mock_flower_plopper_type
@@ -42,8 +41,7 @@ describe('vow / liq liquidation lifecycle', () => {
     //mock_flower_plopper_type = await ethers.getContractFactory('MockFlowerPlopper', ali)
     vat_type = await smock.mock('Vat', { signer: ali })
 
-    plug = dapp.plug
-    port = dapp.port
+    dock = dapp.dock
     vault = dapp.vault
     vow = dapp.vow
     RICO = dapp.rico
@@ -56,30 +54,25 @@ describe('vow / liq liquidation lifecycle', () => {
 
     // reset initial settings to use mocks
     debug('vat link ward')
-    await send(vat.ward, port.address, true)
-    await send(vat.ward, plug.address, true)
+    await send(vat.ward, dock.address, true)
     await send(vat.ward, vow.address, true)
+    await send(vow.link, b32('dock'), dock.address)
     await send(vow.link, b32('flow'), flower.address)
-    await send(vow.link, b32('port'), port.address)
-    await send(vow.link, b32('plug'), plug.address)
     await send(vow.link, b32('RISK'), RISK.address)
     await send(vow.link, b32('RICO'), RICO.address)
     await send(vow.link, b32('vat'), vat.address)
     await send(vow.ward, flower.address, true)
-    //await send(mock_flower_plopper.link, b32('rico'), RICO.address)
-    //await send(mock_flower_plopper.link, b32('vow'), vow.address)
-    //await send(vat.trust, port.address, true)
 
     debug('deposit/mint')
     await send(WETH.deposit, { value: ethers.utils.parseEther('6000.0') })
     await send(RICO.mint, ALI, wad(10000))
     await send(RISK.mint, ALI, wad(10000))
-    await send(WETH.approve, plug.address, U256_MAX)
+    await send(WETH.approve, dock.address, U256_MAX)
 
     debug('bind/join')
-    await send(plug.bind, vat.address, i0, WETH.address)
-    await send(port.bind, vat.address, RICO.address, true)
-    await send(plug.join, vat.address, i0, ALI, wad(1000))
+    await send(dock.bind_gem, vat.address, i0, WETH.address)
+    await send(dock.bind_joy, vat.address, RICO.address, true)
+    await send(dock.join_gem, vat.address, i0, ALI, wad(1000))
 
     debug('vat init')
     await send(vat.init, i0, WETH.address)
@@ -106,8 +99,8 @@ describe('vow / liq liquidation lifecycle', () => {
     await send(vat.frob, i0, ALI, wad(100), wad(0)) //await send(vat.lock, i0, wad(100))
     await send(vat.frob, i0, ALI, wad(0), wad(99))// await send(vat.draw, i0, wad(99))
 
-    debug('port exit')
-    await send(port.exit, vat.address, RICO.address, ALI, wad(99))
+    debug('rico exit')
+    await send(dock.exit_rico, vat.address, RICO.address, ALI, wad(99))
     const bal = await RICO.balanceOf(ALI)
     want(bal.toString()).equals(wad(10099).toString())
     const safe1 = await vat.callStatic.safe(i0, ALI)
@@ -248,7 +241,7 @@ describe('vow / liq liquidation lifecycle', () => {
       // The setup force minted RICO, it should not have. Add some room to move. Fix if keeping
       await send(vat.frob, i0, ALI, wad(800), wad(0)) //await send(vat.lock, i0, wad(800))
       await send(vat.frob, i0, ALI, wad(0), wad(700))// await send(vat.draw, i0, wad(700))
-      await send(port.exit, vat.address, RICO.address, ALI, wad(700))
+      await send(dock.exit_rico, vat.address, RICO.address, ALI, wad(700))
 
       await send(vow.keep, [i0])
       want(flower.flow).to.have.been.called
@@ -349,21 +342,20 @@ describe('vow / liq liquidation lifecycle', () => {
       flower.flow.reset()
       vat.heal.reset()
 
-      // Setup directly minted RICO, it should not have. Add some room to move in port
+      // Setup directly minted RICO, it should not have. Add some room to move in dock
       // todo fix rico mint if keeping these tests
       await send(WETH.connect(cat).deposit, { value: ethers.utils.parseEther('1000.0') })
-      await send(WETH.connect(cat).approve, plug.address, U256_MAX)
-      await send(plug.connect(cat).join, vat.address, i0, CAT, wad(1000))
+      await send(WETH.connect(cat).approve, dock.address, U256_MAX)
+      await send(dock.connect(cat).join_gem, vat.address, i0, CAT, wad(1000))
       debug('frob')
       // await send(vat.connect(cat).lock, i0, wad(1000))
       // await send(vat.connect(cat).draw, i0, wad(900))
       await send(vat.connect(cat).frob, i0, CAT, wad(1000), wad(900))
 
       debug('exit')
-      await send(port.connect(cat).exit, vat.address, RICO.address, CAT, wad(900))
+      await send(dock.connect(cat).exit_rico, vat.address, RICO.address, CAT, wad(900))
       WETH.connect(ali)
-      plug.connect(ali)
-      port.connect(ali)
+      dock.connect(ali)
       vat.connect(ali)
       flower.flow.reset()
     })
@@ -382,12 +374,12 @@ describe('vow / liq liquidation lifecycle', () => {
 
       // confirm bail trades the weth for rico
       const vow_rico_0 = await RICO.balanceOf(vow.address)
-      const plug_weth_0 = await WETH.balanceOf(plug.address)
+      const dock_weth_0 = await WETH.balanceOf(dock.address)
       await send(vow.bail, i0, ALI)
       const vow_rico_1 = await RICO.balanceOf(vow.address)
-      const plug_weth_1 = await WETH.balanceOf(plug.address)
+      const dock_weth_1 = await WETH.balanceOf(dock.address)
       want(vow_rico_1.gt(vow_rico_0)).true
-      want(plug_weth_0.gt(plug_weth_1)).true
+      want(dock_weth_0.gt(dock_weth_1)).true
       want(flower.flow).to.have.been.called
 
       // although the keep joins the rico sin is still greater due to fees so we flop

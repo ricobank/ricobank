@@ -26,6 +26,7 @@ contract Math {
     uint256 internal constant BLN = 10 **  9;
     uint256 internal constant WAD = 10 ** 18;
     uint256 internal constant RAY = 10 ** 27;
+    uint256 internal constant RAD = 10 ** 45;
 
     function either(bool x, bool y) internal pure returns (bool z) {
         assembly{ z := or(x, y)}

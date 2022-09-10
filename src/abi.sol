@@ -11,12 +11,17 @@ interface ERC20 {
 interface GemLike is ERC20 {
     function mint(address usr, uint amt) external;
     function burn(address usr, uint amt) external;
+    function ward(address usr, bool authed) external;
+    function ErrOverflow()external;
+    function ErrUnderflow()external;
+    function ErrWard()external;
 }
 
 interface VatLike {
-    // from Plug/Port
-    function slip(bytes32,address,int) external;
+    // from Dock
+    function lob(address src, address dst, uint amt) external;
     function move(address,uint) external;
+    function slip(bytes32,address,int) external;
 
     // from Plot
     function plot(bytes32 ilk, uint256 ray) external;
@@ -36,33 +41,27 @@ interface VatLike {
     function prod(uint256 par) external;
 
     // from User
-    function lock(bytes32 i, uint amt) external;
-    function free(bytes32 i, uint amt) external;
-    function draw(bytes32 i, uint amt) external;
-    function wipe(bytes32 i, uint amt) external;
-
-    function lob(address src, address dst, uint amt) external;
+    function filk(bytes32 ilk, bytes32 key, uint val) external;
+    function frob(bytes32 i, address u, int dink, int dart) external;
+    function init(bytes32 ilk, address gem) external;
+    function gem(bytes32 ilk, address usr) external returns (uint);
 }
 
-interface PlugLike {
-    function join(address,bytes32,address,uint) external returns (address);
-    function exit(address,bytes32,address,uint) external returns (address);
-    function bind(address vat, bytes32 ilk, address gem) external;
+interface DockLike {
+    function join_gem(address vat, bytes32 ilk, address usr, uint wad) external returns (address);
+    function exit_gem(address vat, bytes32 ilk, address usr, uint wad) external returns (address);
+    function join_rico(address vat, address joy, address usr, uint wad) external;
+    function exit_rico(address vat, address joy, address usr, uint wad) external;
+    function flash(address gem, uint wad, address code, bytes calldata data) external;
+    function bind_joy(address vat, address joy, bool bound) external;
+    function bind_gem(address vat, bytes32 ilk, address gem) external;
     function list(address gem, bool bit) external;
-    function flash(
-        address[] calldata gems_,
-        uint[] calldata amts,
-        address code,
-        bytes calldata data
-        ) external returns (bytes memory);
-}
-
-interface PortLike {
-    function join(address vat, address joy, address usr, uint amt) external;
-    function exit(address vat, address joy, address usr, uint amt) external;
-    function bind(address vat, address joy, bool bound) external;
-    function flash(address joy, address code, bytes calldata data)
-      external returns (bytes memory);
+    function ErrOverflow() external;
+    function ErrNotBound() external;
+    function ErrTransfer() external;
+    function ErrNoIlkGem() external;
+    function ErrMintCeil() external;
+    function ErrLock() external;
 }
 
 interface FeedbaseLike {
