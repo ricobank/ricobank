@@ -74,8 +74,8 @@ contract Vat is Math, Ward, Flog {
         par = RAY;
     }
 
-    function init(bytes32 ilk, address gem) external
-      _ward_ _flog_
+    function init(bytes32 ilk, address gem)
+      _ward_ _flog_ external
     {
         require(ilks[ilk].rack == 0, "Vat/ilk-already-init");
         ilks[ilk] = Ilk({
@@ -139,7 +139,6 @@ contract Vat is Math, Ward, Flog {
         joy[v]    = add(joy[v],    dtab);
     }
 
-
     function grab(bytes32 i, address u, int dink, int dart)
         _ward_ _flog_ external returns (uint256)
     {
@@ -176,23 +175,18 @@ contract Vat is Math, Ward, Flog {
     }
 
     function drip(bytes32 i)
-      _ward_ _flog_ external returns (int rad)
+      _ward_ _flog_ external
     {
-        // Ilk storage ilk = ilks[i];
-        if (block.timestamp == ilks[i].rho) {
-            return 0;
-        } else {
-            address vow = msg.sender;
-            uint256 prev = ilks[i].rack;
-            uint256 rack = grow(prev, ilks[i].duty, block.timestamp - ilks[i].rho);
-            int256  delt = diff(rack, prev);
-            int256  rad  = mul(ilks[i].tart, delt);
-            ilks[i].rho  = block.timestamp;
-            ilks[i].rack = add(ilks[i].rack, delt);
-            joy[vow]     = add(joy[vow], rad);
-            debt         = add(debt, rad);
-            return rad;
-        }
+        if (block.timestamp == ilks[i].rho) return;
+        address vow  = msg.sender;
+        uint256 prev = ilks[i].rack;
+        uint256 rack = grow(prev, ilks[i].duty, block.timestamp - ilks[i].rho);
+        int256  delt = diff(rack, prev);
+        int256  rad  = mul(ilks[i].tart, delt);
+        ilks[i].rho  = block.timestamp;
+        ilks[i].rack = add(ilks[i].rack, delt);
+        joy[vow]     = add(joy[vow], rad);
+        debt         = add(debt, rad);
     }
 
     function slip(bytes32 ilk, address usr, int256 wad)
@@ -250,5 +244,4 @@ contract Vat is Math, Ward, Flog {
         } else if (key == "chop") { i.chop = val;
         } else { revert("ERR_FILK_KEY"); }
     }
-
 }

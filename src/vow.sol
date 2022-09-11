@@ -27,10 +27,6 @@ contract Vow is Flowback, Math, Ward {
     GemLike  public RICO;
     GemLike  public RISK;
 
-    function drip(bytes32 ilk) external {
-        vat.drip(ilk);
-    }
-
     function keep(bytes32[] calldata ilks) external {
         for (uint256 i = 0; i < ilks.length; i++) {
             vat.drip(ilks[i]);

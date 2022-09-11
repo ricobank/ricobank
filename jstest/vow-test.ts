@@ -24,7 +24,6 @@ describe('vow / liq liquidation lifecycle', () => {
   let dock
   let vow
   let flower; let flower_type
-  //let mock_flower_plopper; let mock_flower_plopper_type
   let vault
   let poolId_weth_rico
   let poolId_risk_rico
@@ -38,7 +37,6 @@ describe('vow / liq liquidation lifecycle', () => {
     const dapp = await dpack.load(pack, ethers, ali)
 
     flower_type = await smock.mock('BalancerFlower', { signer: ali })
-    //mock_flower_plopper_type = await ethers.getContractFactory('MockFlowerPlopper', ali)
     vat_type = await smock.mock('Vat', { signer: ali })
 
     dock = dapp.dock
@@ -50,16 +48,12 @@ describe('vow / liq liquidation lifecycle', () => {
 
     vat = await vat_type.deploy()
     flower = await flower_type.deploy()
-    //mock_flower_plopper = await mock_flower_plopper_type.deploy()
 
     // reset initial settings to use mocks
     debug('vat link ward')
     await send(vat.ward, dock.address, true)
     await send(vat.ward, vow.address, true)
-    await send(vow.link, b32('dock'), dock.address)
     await send(vow.link, b32('flow'), flower.address)
-    await send(vow.link, b32('RISK'), RISK.address)
-    await send(vow.link, b32('RICO'), RICO.address)
     await send(vow.link, b32('vat'), vat.address)
     await send(vow.ward, flower.address, true)
 
@@ -154,7 +148,7 @@ describe('vow / liq liquidation lifecycle', () => {
     })
     it('vow 1yr not safe bail', async () => {
       await mine(hh, BANKYEAR)
-      await send(vow.drip, i0)
+      await send(vow.keep, [i0])
 
       const safe2 = await vat.callStatic.safe(i0, ALI)
       want(safe2).false
@@ -308,34 +302,6 @@ describe('vow / liq liquidation lifecycle', () => {
       })
     })
   })
-
-  // describe('plop', () => {
-  //   beforeEach(async () => {
-  //     await send(mock_flower_plopper.setVault, vault.address)
-  //     await send(mock_flower_plopper.setPool, WETH.address, RICO.address, poolId_weth_rico)
-  //     await send(mock_flower_plopper.setPool, RICO.address, WETH.address, poolId_weth_rico)
-  //     await send(mock_flower_plopper.approve_gem, WETH.address)
-  //     await send(vow.ward, mock_flower_plopper.address, true)
-  //     await send(vow.lilk, i0, b32('flipper'), mock_flower_plopper.address)
-  //     await send(vat.filk, i0, b32('liqr'), ray(0.8))
-  //     await send(vat.lock, i0, wad(25))
-  //   })
-  //   it('gems are given back to liquidated user', async () => {
-  //     const usr_gems_0 = await vat.gem(i0, ALI)
-  //     await mine(hh, BANKYEAR)
-  //     await send(vow.bail, vat.address, i0, ALI)
-  //     await fail('ERR_SAFE', vow.bail, vat.address, i0, ALI)
-  //     const usr_gems_1 = await vat.gem(i0, ALI)
-  //     want(usr_gems_0.eq(usr_gems_1)).true
-  //     await send(mock_flower_plopper.complete_auction, 1)
-  //     const usr_gems_2 = await vat.gem(i0, ALI)
-  //     const sin1 = await vat.sin(vow.address)
-  //     const vow_rico1 = await RICO.balanceOf(vow.address)
-  //     const sin_wad = sin1 / 10**27
-  //     want(sin_wad < vow_rico1).true
-  //     want(usr_gems_0.lt(usr_gems_2)).true
-  //   })
-  // })
 
   describe('end to end', () => {
     beforeEach(async () => {
