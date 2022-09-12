@@ -20,7 +20,6 @@ contract Vow is Flowback, Math, Ward {
     address  public immutable FLOP = address(0);
     address  public immutable self = address(this);
 
-    uint256  public bar;  // [rad] Surplus buffer
     Flow     public flow;
     DockLike public dock;
     VatLike  public vat;
@@ -38,15 +37,13 @@ contract Vow is Flowback, Math, Ward {
 
         uint sin = vat.sin(address(this));
         uint joy = vat.joy(address(this));
-        uint surplus = joy > sin + bar ? (joy - sin - bar) / RAY : 0;
-        uint deficit = sin > joy ? sin - joy : 0;
-
-        if (surplus > 0) {
+        if (joy > sin) {
             vat.heal(sin);
-            dock.exit_rico(address(vat), address(RICO), self, surplus);
-            bytes32 aid = flow.flow(address(RICO), surplus, address(RISK), type(uint256).max);
+            uint over = (joy - sin) / RAY;
+            dock.exit_rico(address(vat), address(RICO), self, over);
+            bytes32 aid = flow.flow(address(RICO), over, address(RISK), type(uint256).max);
             flow.glug(aid);
-        } else if (deficit > 0) {
+        } else if (sin > joy) {
             vat.heal(joy);
             (uint flop, uint dust) = flow.clip(FLOP, type(uint256).max);
             require(flop > dust, 'Vow/risk-dust');
@@ -54,7 +51,7 @@ contract Vow is Flowback, Math, Ward {
             flow.flow(address(RISK), flop, address(RICO), type(uint256).max);
             // TODO glug and test for glug
         } else if (sin != 0) {
-            vat.heal(min(joy, sin));
+            vat.heal(sin);
         }
     }
 
@@ -84,12 +81,6 @@ contract Vow is Flowback, Math, Ward {
     function reapprove_gem(address gem) external {
         GemLike(gem).approve(address(dock), type(uint256).max);
         GemLike(gem).approve(address(flow), type(uint256).max);
-    }
-
-    function file(bytes32 key, uint val)
-      _ward_ external {
-        if (key == "bar") { bar = val;
-        } else { revert("ERR_FILE_KEY"); }
     }
 
     function pair(address gem, bytes32 key, uint val)

@@ -76,7 +76,6 @@ contract Ball {
 
         vat.file('ceil', 1000e45);
 
-        vow.file('bar', 100_000e45);
         vow.pair(address(risk), 'vel', 1e18);
         vow.pair(address(risk), 'rel', 1e12);
         vow.pair(address(risk), 'cel', 600);

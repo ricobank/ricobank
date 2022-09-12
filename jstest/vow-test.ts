@@ -57,9 +57,8 @@ describe('vow / liq liquidation lifecycle', () => {
     await send(vow.link, b32('vat'), vat.address)
     await send(vow.ward, flower.address, true)
 
-    debug('deposit/mint')
+    debug('deposit')
     await send(WETH.deposit, { value: ethers.utils.parseEther('6000.0') })
-    await send(RICO.mint, ALI, wad(10000))
     await send(RISK.mint, ALI, wad(10000))
     await send(WETH.approve, dock.address, U256_MAX)
 
@@ -71,17 +70,15 @@ describe('vow / liq liquidation lifecycle', () => {
     debug('vat init')
     await send(vat.init, i0, WETH.address)
 
-    await send(vat.file, b32('ceil'), rad(2000))
-    await send(vat.filk, i0, b32('line'), rad(2000))
+    await send(vat.file, b32('ceil'), rad(10000))
+    await send(vat.filk, i0, b32('line'), rad(10000))
     await send(vat.filk, i0, b32('liqr'), ray(1))
     await send(vat.filk, i0, b32('chop'), ray(1.1))
 
     debug('vow file, ramp, approve')
-    await send(vow.file, b32('bar'), rad(1))
     await curb_ramp(vow, RISK, { vel: wad(1), rel: wad(0.001), bel: 0, cel: 60, del: 0})
     await curb_ramp(vow, FLOP, { vel: wad(1), rel: wad(0.001), bel: 0, cel: 60, del: 0})
 
-    //await send(vow.reapprove)
     await send(vow.reapprove_gem, WETH.address)
 
     await send(vow.reapprove_gem, RICO.address)
@@ -96,9 +93,16 @@ describe('vow / liq liquidation lifecycle', () => {
     debug('rico exit')
     await send(dock.exit_rico, vat.address, RICO.address, ALI, wad(99))
     const bal = await RICO.balanceOf(ALI)
-    want(bal.toString()).equals(wad(10099).toString())
+    want(bal.toString()).equals(wad(99).toString())
     const safe1 = await vat.callStatic.safe(i0, ALI)
     want(safe1).true
+
+    await send(WETH.connect(cat).deposit, { value: ethers.utils.parseEther('7000.0') })
+    await send(WETH.connect(cat).approve, dock.address, U256_MAX)
+    await send(dock.connect(cat).join_gem, vat.address, i0, CAT, wad(4001))
+    await send(vat.connect(cat).frob, i0, CAT, wad(4001), wad(4000))
+    await send(dock.connect(cat).exit_rico, vat.address, RICO.address, CAT, wad(4000))
+    await send(RICO.connect(cat).transfer, ALI, wad(4000))
 
     debug('token approves')
     await send(WETH.approve, vault.address, U256_MAX)
@@ -211,31 +215,12 @@ describe('vow / liq liquidation lifecycle', () => {
       want(flower.flow).to.have.been.called
       want(vat.heal).to.have.been.called
       want(final_total.gt(initial_total)).true
-      // should be interest - 1 for buffer
-      want(final_total - initial_total).within(parseInt(wad(3.94).toString()), parseInt(wad(3.96).toString()))
-    })
-    it('vow 1yr drip with large surplus buffer', async () => {
-      // Drew 99 for a year at 5% so surplus should be just under bar of 5
-      await send(vow.file, b32('bar'), rad(5))
-      await mine(hh, BANKYEAR);
-      debug('keep 0')
-      await send(vow.keep, [i0])
-      want(flower.flow).to.have.callCount(0)
-      want(vat.heal).to.have.callCount(0)
-      await send(vow.file, b32('bar'), rad(4.9))
-      debug('keep 1')
-      await send(vow.keep, [i0])
-      want(flower.flow).to.have.been.called
-      want(vat.heal).to.have.been.called
+      // minted 4099, duty is 1.05. 0.05*4099 as no surplus buffer
+      want(final_total - initial_total).within(parseInt(wad(204.94).toString()), parseInt(wad(204.96).toString()))
     })
     it('vow 1yr drip flop', async () => {
-      await mine(hh, BANKYEAR);
+      await mine(hh, BANKYEAR)
       await send(vow.bail, i0, ALI)
-
-      // The setup force minted RICO, it should not have. Add some room to move. Fix if keeping
-      await send(vat.frob, i0, ALI, wad(800), wad(0)) //await send(vat.lock, i0, wad(800))
-      await send(vat.frob, i0, ALI, wad(0), wad(700))// await send(vat.draw, i0, wad(700))
-      await send(dock.exit_rico, vat.address, RICO.address, ALI, wad(700))
 
       await send(vow.keep, [i0])
       want(flower.flow).to.have.been.called
@@ -266,7 +251,7 @@ describe('vow / liq liquidation lifecycle', () => {
         await curb_ramp(vow, RISK, { vel: wad(0.001), rel: wad(1000000), bel: 0, cel: 1000, del: 0})
         await curb_ramp(vow, FLOP, { vel: wad(0.001), rel: wad(1000000), bel: 0, cel: 1000 })
         await mine(hh, BANKYEAR);
-        await send(vow.bail, i0, ALI)
+        await send(vow.bail, i0, CAT)
         await send(vow.keep, [i0])
         const risk_supply_1 = await RISK.totalSupply()
         await mine(hh, 500)
@@ -287,7 +272,7 @@ describe('vow / liq liquidation lifecycle', () => {
         await curb_ramp(vow, RISK, { vel: wad(1000000), rel: wad(0.0000001), bel: 0, cel: 1000 })
         await curb_ramp(vow, FLOP, { vel: wad(10000), rel: wad(0.0000001), bel: 0, cel: 1000 })
         await mine(hh, BANKYEAR);
-        await send(vow.bail, i0, ALI)
+        await send(vow.bail, i0, CAT)
         await send(vow.keep, [i0])
         const risk_supply_1 = await RISK.totalSupply()
         await mine(hh, 500)
@@ -307,22 +292,6 @@ describe('vow / liq liquidation lifecycle', () => {
     beforeEach(async () => {
       flower.flow.reset()
       vat.heal.reset()
-
-      // Setup directly minted RICO, it should not have. Add some room to move in dock
-      // todo fix rico mint if keeping these tests
-      await send(WETH.connect(cat).deposit, { value: ethers.utils.parseEther('1000.0') })
-      await send(WETH.connect(cat).approve, dock.address, U256_MAX)
-      await send(dock.connect(cat).join_gem, vat.address, i0, CAT, wad(1000))
-      debug('frob')
-      // await send(vat.connect(cat).lock, i0, wad(1000))
-      // await send(vat.connect(cat).draw, i0, wad(900))
-      await send(vat.connect(cat).frob, i0, CAT, wad(1000), wad(900))
-
-      debug('exit')
-      await send(dock.connect(cat).exit_rico, vat.address, RICO.address, CAT, wad(900))
-      WETH.connect(ali)
-      dock.connect(ali)
-      vat.connect(ali)
       flower.flow.reset()
     })
 
