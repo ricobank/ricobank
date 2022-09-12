@@ -1,5 +1,6 @@
 import { expect as want } from 'chai'
 
+// @ts-ignore
 import { ethers } from 'hardhat'
 
 import { wad, ray, send } from './helpers'

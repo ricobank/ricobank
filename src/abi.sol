@@ -17,7 +17,11 @@ interface GemLike is ERC20 {
     function ErrWard()external;
 }
 
-interface VatLike {
+interface WardLike {
+    function ward(address, bool) external;
+}
+
+interface VatLike is WardLike {
     // from Dock
     function lob(address src, address dst, uint amt) external;
     function move(address,uint) external;
@@ -31,7 +35,6 @@ interface VatLike {
     function sin(address) external returns (uint);
     function heal(uint amt) external;
     function drip(bytes32 ilk) external;
-    function trust(address, bool) external;
     function rake() external returns (uint);
     function safe(bytes32,address) external returns (bool);
     function urns(bytes32,address) external returns (uint,uint);

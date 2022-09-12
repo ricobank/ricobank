@@ -1,9 +1,11 @@
 import * as hh from 'hardhat'
+// @ts-ignore
 import { ethers } from 'hardhat'
 import { fail, rad, ray, revert, send, snapshot, U256_MAX, wad, want } from 'minihat'
 import { b32 } from './helpers'
 
 const dpack = require('@etherpacks/dpack')
+const debug = require('debug')('rico:test')
 
 let i0 = Buffer.alloc(32, 1)  // ilk 0 id
 
@@ -11,12 +13,12 @@ describe('Port', () => {
     let ali, bob, cat
     let ALI, BOB, CAT
     let vat
-    let plug
-    let port
+    let dock
     let RICO, gemA
     let gem_type
     let flash_strategist, flash_strategist_type
     let strategist_iface
+    let FLASH
 
     before(async () => {
         [ali, bob, cat] = await ethers.getSigners();
@@ -36,25 +38,26 @@ describe('Port', () => {
             "function port_release(address gem, uint256 free_amt, uint256 wipe_amt)",
         ])
 
-        plug = dapp.plug
-        port = dapp.port
+        dock = dapp.dock
         vat = dapp.vat
         RICO = dapp.rico
         gemA = await gem_type.deploy(b32('gemA'), b32('GEMA'))
-        flash_strategist = await flash_strategist_type.deploy(plug.address, port.address, vat.address, RICO.address, i0)
+        flash_strategist = await flash_strategist_type.deploy(dock.address, vat.address, RICO.address, i0)
 
         await send(RICO.ward, flash_strategist.address, true)
         await send(gemA.ward, flash_strategist.address, true)
-        await send(vat.trust, port.address, true)
-        await send(gemA.approve, plug.address, U256_MAX)
+        await send(vat.ward, dock.address, true)
+        await send(gemA.approve, dock.address, U256_MAX)
         await send(RICO.mint, ALI, wad(10))
         await send(gemA.mint, ALI, wad(1000))
-        await send(vat.init, i0)
+        await send(vat.init, i0, gemA.address)
         await send(vat.filk, i0, b32("line"), rad(2000))
         await send(vat.plot, i0, ray(1).toString())
-        await send(plug.bind, vat.address, i0, gemA.address)
-        await send(port.bind, vat.address, RICO.address, true)
-        await send(plug.join, vat.address, i0, ALI, wad(1000))
+        await send(dock.bind_gem, vat.address, i0, gemA.address)
+        await send(dock.bind_joy, vat.address, RICO.address, true)
+        await send(dock.join_gem, vat.address, i0, ALI, wad(1000))
+        await send(dock.list, gemA.address, true)
+        FLASH = await dock.MINT()
 
         await snapshot(hh);
     })
@@ -67,19 +70,19 @@ describe('Port', () => {
             const ricoWad = wad(10)
             const initialRico = await RICO.balanceOf(ALI)
 
-            await send(vat.lock, i0, wad(500))
-            await send(vat.draw, i0, ricoWad)
+            await send(vat.frob, i0, ALI, wad(500), wad(0)) // await send(vat.lock, i0, wad(500))
+            await send(vat.frob, i0, ALI, wad(0), ricoWad)// await send(vat.draw, i0, ricoWad)
 
-            await fail('operation underflowed', port.exit, vat.address, RICO.address, ALI, wad(11))
-            await send(port.exit, vat.address, RICO.address, ALI, ricoWad)
-            await fail('operation underflowed', port.exit, vat.address, RICO.address, ALI, wad(1))
+            await fail('operation underflowed', dock.exit_rico, vat.address, RICO.address, ALI, wad(11))
+            await send(dock.exit_rico, vat.address, RICO.address, ALI, ricoWad)
+            await fail('operation underflowed', dock.exit_rico, vat.address, RICO.address, ALI, wad(1))
             const postExitRico = await RICO.balanceOf(ALI)
 
             want(postExitRico.sub(initialRico).toString()).equals(ricoWad.toString())
 
-            await fail('operation underflowed', port.join, vat.address, RICO.address, ALI, wad(11))
-            await send(port.join, vat.address, RICO.address, ALI, ricoWad)
-            await fail('operation underflowed', port.join, vat.address, RICO.address, ALI, wad(1))
+            await fail('operation underflowed', dock.join_rico, vat.address, RICO.address, ALI, wad(11))
+            await send(dock.join_rico, vat.address, RICO.address, ALI, ricoWad)
+            await fail('operation underflowed', dock.join_rico, vat.address, RICO.address, ALI, wad(1))
             const postJoinRico = await RICO.balanceOf(ALI)
 
             want(postJoinRico.toString()).equals(initialRico.toString())
@@ -89,14 +92,14 @@ describe('Port', () => {
     describe('flash mint', () => {
         it('succeed simple flash mint', async () => {
             const borrowerPreBal = await RICO.balanceOf(flash_strategist.address)
-            const portPreBal = await RICO.balanceOf(port.address)
+            const portPreBal = await RICO.balanceOf(dock.address)
             const preTotalSupply = await RICO.totalSupply()
 
             const nop_data = strategist_iface.encodeFunctionData("nop", [])
-            await send(port.flash, RICO.address, flash_strategist.address, nop_data)
+            await send(dock.flash, RICO.address, FLASH, flash_strategist.address, nop_data)
 
             const borrowerPostBal = await RICO.balanceOf(flash_strategist.address)
-            const portPostBal = await RICO.balanceOf(port.address)
+            const portPostBal = await RICO.balanceOf(dock.address)
             const postTotalSupply = await RICO.totalSupply()
 
             want(borrowerPreBal.toString()).equals(borrowerPostBal.toString())
@@ -105,41 +108,42 @@ describe('Port', () => {
         });
 
         it('revert when exceeding max supply', async () => {
-            const FLASH = await port.FLASH()
             await send(RICO.mint, ALI, U256_MAX.sub(FLASH))
             const nop_data = strategist_iface.encodeFunctionData("nop", [])
-            await fail('Transaction reverted', port.flash, RICO.address, flash_strategist.address, nop_data)
+            await fail('Transaction reverted', dock.flash, RICO.address, FLASH, flash_strategist.address, nop_data)
         });
 
         it('revert on repayment failure', async () => {
             const welch_data = strategist_iface.encodeFunctionData("welch",
                 [ [RICO.address], [0] ])
-            await fail('Transaction reverted', port.flash, RICO.address, flash_strategist.address, welch_data)
+            await fail('Transaction reverted', dock.flash, RICO.address, FLASH, flash_strategist.address, welch_data)
         });
 
         it('revert on wrong joy', async () => {
             const nop_data = strategist_iface.encodeFunctionData("nop", [])
-            await fail('Transaction reverted', port.flash, gemA.address, flash_strategist.address, nop_data)
+            await fail('Transaction reverted', dock.flash, gemA.address, FLASH, flash_strategist.address, nop_data)
         });
 
         it('revert on handler error', async () => {
             const failure_data = strategist_iface.encodeFunctionData("failure", [ [], [] ])
-            await fail('Transaction reverted', port.flash, gemA.address, flash_strategist.address, failure_data)
+            await fail('Transaction reverted', dock.flash, gemA.address, FLASH, flash_strategist.address, failure_data)
         });
 
         it('jump wind up and jump release borrow', async () => {
+            await send(vat.ward, dock.address, true)
+            await send(vat.ward, dock.address, true)
             await send(gemA.mint, flash_strategist.address, wad(100))
 
             const borrowerPreABal = await gemA.balanceOf(flash_strategist.address)
-            const plugPreABal = await gemA.balanceOf(plug.address)
+            const plugPreABal = await gemA.balanceOf(dock.address)
             const borrowerPreRicoBal = await RICO.balanceOf(flash_strategist.address)
-            const portPreRicoBal = await RICO.balanceOf(port.address)
+            const portPreRicoBal = await RICO.balanceOf(dock.address)
             const lock_amt = wad(300)
             const draw_amt = wad(200)
 
             const lever_data = strategist_iface.encodeFunctionData("port_lever",
                 [ gemA.address, lock_amt, draw_amt])
-            await send(port.flash, RICO.address, flash_strategist.address, lever_data)
+            await send(dock.flash, RICO.address, FLASH, flash_strategist.address, lever_data)
 
             const [levered_ink, levered_art] = await vat.urns(i0, flash_strategist.address)
             want(levered_ink.toString()).equals(lock_amt.toString())
@@ -147,16 +151,16 @@ describe('Port', () => {
 
             let release_data = strategist_iface.encodeFunctionData("port_release",
                 [ gemA.address, lock_amt, draw_amt])
-            await send(port.flash, RICO.address, flash_strategist.address, release_data)
+            await send(dock.flash, RICO.address, FLASH, flash_strategist.address, release_data)
 
             const [ink, art] = await vat.urns(i0, flash_strategist.address)
             want(ink.toString()).equals(wad(0).toString())
             want(art.toString()).equals(wad(0).toString())
 
             const borrowerPostABal = await gemA.balanceOf(flash_strategist.address)
-            const plugPostABal = await gemA.balanceOf(plug.address)
+            const plugPostABal = await gemA.balanceOf(dock.address)
             const borrowerPostRicoBal = await RICO.balanceOf(flash_strategist.address)
-            const portPostRicoBal = await RICO.balanceOf(port.address)
+            const portPostRicoBal = await RICO.balanceOf(dock.address)
             // Balances for both the borrower and the plug should be unchanged after the loan is complete.
             want(borrowerPreABal.toString()).equals(borrowerPostABal.toString())
             want(plugPreABal.toString()).equals(plugPostABal.toString())

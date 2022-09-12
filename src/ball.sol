@@ -39,7 +39,7 @@ contract Ball {
     Vox public vox;
 
     bytes32 public immutable gemFabHash = 0xd740b24e331e7d5a8f233b7e11e8e0666aa9a891a4e12fa72f9f33c1d2d02983;
-    bytes32 public immutable feedbaseHash = 0x990c5f3561492a57555fba748dd0851489ae812ae6573b1cc371e69dadba1cdf;
+    bytes32 public immutable feedbaseHash = 0x680c60b0111a870d898ae17605a6509635a3491595c5b78b28f82066adfea7f3;
 
     constructor(GemFabLike gemfab, address feedbase) {
         bytes32 codeHash;
