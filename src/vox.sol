@@ -38,6 +38,7 @@ contract Vox is Math, Ward {
         how = 1000000115170000000000000000;
         cap = 1000000022000000000000000000;
         tau = block.timestamp;
+        way = RAY;
     }
 
     function poke() external {
@@ -45,7 +46,7 @@ contract Vox is Math, Ward {
         uint256 dt = block.timestamp - tau;
         tau = block.timestamp;
 
-        par = grow(par, way, dt);
+        par = grow(vat.par(), way, dt);
         vat.prod(par);
 
         (bytes32 mar_, uint256 ttl) = fb.pull(tip, tag);
@@ -74,6 +75,7 @@ contract Vox is Math, Ward {
              if (key == "tag") { tag = val; }
         else if (key == "how") { how = uint256(val); }
         else if (key == "cap") { cap = uint256(val); }
+        else if (key == "way") { way = uint256(val); }
         else revert("ERR_FILE_KEY");
     }
 

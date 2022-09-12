@@ -48,6 +48,7 @@ interface VatLike is WardLike {
     function frob(bytes32 i, address u, int dink, int dart) external;
     function init(bytes32 ilk, address gem) external;
     function gem(bytes32 ilk, address usr) external returns (uint);
+    function par() external returns (uint);
 }
 
 interface DockLike {
