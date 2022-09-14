@@ -1,14 +1,23 @@
 import * as hh from 'hardhat'
 // @ts-ignore
 import { ethers } from 'hardhat'
+const { hexZeroPad } = ethers.utils
 import { fail, rad, ray, revert, send, snapshot, U256_MAX, wad, want } from 'minihat'
 import { b32 } from './helpers'
 
 const dpack = require('@etherpacks/dpack')
 const debug = require('debug')('rico:test')
 
-let i0 = Buffer.alloc(32, 1)  // ilk 0 id
-let i1 = Buffer.alloc(32, 2)  // ilk 1 id
+const i0 = Buffer.alloc(32, 1)  // ilk 0 id
+const i1 = Buffer.alloc(32, 2)  // ilk 1 id
+const atag = b32('GEMAUSD')
+const btag = b32('GEMBUSD')
+
+const bn2b32 = (bn) => hexZeroPad(bn.toHexString(), 32)
+const gettime = async () => {
+    const blocknum = await ethers.provider.getBlockNumber()
+    return (await ethers.provider.getBlock(blocknum)).timestamp
+}
 
 describe('Plug', () => {
     let ali, bob, cat
@@ -17,6 +26,7 @@ describe('Plug', () => {
     let dock
     let RICO, gemA, gemB
     let gem_type
+    let fb
     let flash_strategist, flash_strategist_type
     let strategist_iface
 
@@ -40,6 +50,7 @@ describe('Plug', () => {
         dock = dapp.dock
         vat = dapp.vat
         RICO = dapp.rico
+        fb = dapp.feedbase
 
         gemA = await gem_type.deploy(b32('gemA'), b32('GEMA'))
         gemB = await gem_type.deploy(b32('gemB'), b32('GEMB'))
@@ -54,12 +65,13 @@ describe('Plug', () => {
         await send(gemA.mint, ALI, wad(1000))
         await send(gemB.mint, ALI, wad(2000))
 
-        await send(vat.init, i0, gemA.address)
-        await send(vat.init, i1, gemB.address)
+        await send(vat.init, i0, gemA.address, ALI, atag)
+        await send(vat.init, i1, gemB.address, ALI, btag)
         await send(vat.filk, i0, b32("line"), rad(2000))
 
-        await send(vat.plot, i0, ray(1).toString())
-        await send(vat.plot, i1, ray(1).toString())
+        const t1 = await gettime()
+        await send(fb.push, atag, bn2b32(ray(1)), t1 + 1000)
+        await send(fb.push, btag, bn2b32(ray(1)), t1 + 1000)
 
         await send(dock.bind_gem, vat.address, i0, gemA.address)
         await send(dock.bind_gem, vat.address, i1, gemB.address)

@@ -3,6 +3,7 @@ import { expect as want } from 'chai'
 import * as hh from 'hardhat'
 // @ts-ignore
 import { ethers } from 'hardhat'
+const { hexZeroPad } = ethers.utils
 
 import { fail, send, wad, ray, rad, N, U256_MAX, warp } from 'minihat'
 import { constants } from 'ethers'
@@ -13,6 +14,12 @@ const dpack = require('@etherpacks/dpack')
 const debug = require('debug')('rico:test')
 
 const i0 = Buffer.alloc(32) // ilk 0 id
+const wtag = b32('WETHUSD')
+const bn2b32 = (bn) => hexZeroPad(bn.toHexString(), 32)
+const gettime = async () => {
+    const blocknum = await ethers.provider.getBlockNumber()
+    return (await ethers.provider.getBlock(blocknum)).timestamp
+}
 
 let snaps = {}
 const snapshot_name = async (name) => {
@@ -36,6 +43,7 @@ describe('Vat', () => {
   let vat; let vat_type
   let gem_type
   let dock, flower, vow
+  let fb, t1
   let RICO, RISK, WETH
   before(async () => {
     [ali, bob, cat, dan] = await ethers.getSigners();
@@ -45,6 +53,7 @@ describe('Vat', () => {
     gem_type = ethers.ContractFactory.fromSolidity(gem_artifacts, ali)
     const pack = await hh.run('deploy-ricobank', { mock: 'true' })
     const dapp = await dpack.load(pack, ethers, ali)
+    t1 = await gettime()
 
     vat = await vat_type.deploy()
     flower = dapp.flow
@@ -53,6 +62,7 @@ describe('Vat', () => {
     RICO = dapp.rico
     RISK = dapp.risk
     WETH = dapp.weth
+    fb = dapp.feedbase
 
     await send(vat.ward, dock.address, true)
     await send(WETH.approve, dock.address, U256_MAX)
@@ -60,11 +70,12 @@ describe('Vat', () => {
     await send(dock.bind_gem, vat.address, i0, WETH.address)
     await send(dock.bind_joy, vat.address, RICO.address, true)
 
-    await send(vat.init, i0, WETH.address)
+    await send(vat.init, i0, WETH.address, ALI, wtag)
     await send(vat.file, b32('ceil'), rad(1000))
     await send(vat.filk, i0, b32('line'), rad(1000))
+    await send(vat.link, b32('feeds'), fb.address);
 
-    await send(vat.plot, i0, ray(1).toString())
+    await send(fb.push, wtag, bn2b32(ray(1)), t1 + 1000)
 
     await snapshot_name('setup')
   })
@@ -107,7 +118,6 @@ describe('Vat', () => {
       const _6 = N(0).sub(wad(6))
       await send(vat.frob, i0, ALI, _6, 0)
 
-      const [ink2, art2] = await vat.urns(i0, ALI)
       want((await vat.gem(i0, ALI)).eq(wad(1000))).true
     })
 
@@ -159,32 +169,26 @@ describe('Vat', () => {
 
     it('feed plot safe', async () => {
       const safe0 = await vat.callStatic.safe(i0, ALI)
-      want(safe0).true
+      want(safe0).eq(2)
 
       await send(vat.frob, i0, ALI, wad(100), wad(50))
 
       const safe1 = await vat.callStatic.safe(i0, ALI)
-      want(safe1).true
+      want(safe1).eq(2)
 
       const [ink, art] = await vat.urns(i0, ALI)
       want(ink.eq(wad(100))).true
       want(art.eq(wad(50))).true
 
-      const [, , mark0] = await vat.ilks(i0)
-      want(mark0.eq(ray(1))).true
-
-      await send(vat.plot, i0, ray(1))
-
-      const [, , mark1] = await vat.ilks(i0)
-      want(mark1.eq(ray(1))).true
+      await send(fb.push, wtag, bn2b32(ray(1)), t1 + 1000)
 
       const safe2 = await vat.callStatic.safe(i0, ALI)
-      want(safe2).true
+      want(safe2).eq(2)
 
-      await send(vat.plot, i0, ray(1).div(5))
+      await send(fb.push, wtag, bn2b32(ray(0.2)), t1 + 1000)
 
       const safe3 = await vat.callStatic.safe(i0, ALI)
-      want(safe3).false
+      want(safe3).eq(0)
     })
   })
 
@@ -220,7 +224,7 @@ describe('Vat', () => {
         want(await WETH.balanceOf(ME)).to.eql(constants.Zero)
         await send(WETH.deposit, { value: ethers.utils.parseEther('1000.0') })
         await send(dock.join_gem, vat.address, i0, ME, wad(1000))
-        await send(vat.plot, i0, ray(1)) // dss file 'spot'
+        await send(fb.push, wtag, bn2b32(ray(1)), t1 + 1000)
         await send(vat.filk, i0, b32('line'), rad(1000))
         await snapshot_name('dss/frob')
       })
@@ -293,7 +297,7 @@ describe('Vat', () => {
         // decreased. remaining unsafe is ok as long as you're nice
 
         await send(vat.frob, i0, ME, ME, ME, wad(10), wad(10))
-        await send(vat.plot, i0, ray(0.5))
+        await send(fb.push, wtag, bn2b32(ray(0.5)), t1 + 1000)
         debug('debt can\'t increase if unsafe')
         await fail('Vat/not-safe', vat.frob, i0, ME, ME, ME, wad(0), wad(1))
         debug('debt can decrease')
@@ -311,7 +315,7 @@ describe('Vat', () => {
 
         debug('ink can decrease if end state is safe')
         await send(vat.frob, i0, ME, ME, ME, wad(-1), wad(-4))
-        await send(vat.plot, i0, ray(0.4))
+        await send(fb.push, wtag, bn2b32(ray(0.4)), t1 + 1000)
         debug('debt can increase if end state is safe')
         await send(vat.frob, i0, ME, ME, ME, wad(5), wad(1))
       })
@@ -457,7 +461,7 @@ describe('Vat', () => {
         await send(dock.join_gem, vat.address, i0, ME, wad(1000))
 
         debug('filing')
-        await send(vat.plot, i0, ray(1)) // dss file 'spot'
+        await send(fb.push, wtag, bn2b32(ray(1)), t1 + 1000)
         await send(vat.filk, i0, b32('line'), rad(1000))
         // box [rad] -> flower.ramps[joy].vel [wad]
         // max rico up for auction -> max joy being traded

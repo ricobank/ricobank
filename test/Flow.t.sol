@@ -11,7 +11,6 @@ import { RicoSetUp } from "./RicoHelper.sol";
 import { Asset, BalSetUp, PoolArgs } from "./BalHelper.sol";
 
 contract FlowTest is Test, RicoSetUp, BalSetUp, Flowback {
-    BalancerFlower flow;
     uint rico_index = 0;
     uint risk_index = 1;
     uint back_count = 0;
@@ -19,7 +18,6 @@ contract FlowTest is Test, RicoSetUp, BalSetUp, Flowback {
 
     function setUp() public {
         make_bank();
-        flow = ball.flow();
         rico = GemLike(address(ball.rico()));
         rico.mint(address(this), 10000 * WAD);
         risk.mint(address(this), 10000 * WAD);

@@ -5,8 +5,9 @@
 pragma solidity 0.8.15;
 
 import { Flow, Flowback } from './flow.sol';
-import { VatLike, GemLike, DockLike } from './abi.sol';
+import { GemLike, DockLike } from './abi.sol';
 import { Math } from './mixin/math.sol';
+import { Vat } from './vat.sol';
 import { Ward } from './mixin/ward.sol';
 
 contract Vow is Flowback, Math, Ward {
@@ -22,7 +23,7 @@ contract Vow is Flowback, Math, Ward {
 
     Flow     public flow;
     DockLike public dock;
-    VatLike  public vat;
+    Vat      public vat;
     GemLike  public RICO;
     GemLike  public RISK;
 
@@ -57,7 +58,7 @@ contract Vow is Flowback, Math, Ward {
 
     function bail(bytes32 ilk, address urn) external {
         vat.drip(ilk);
-        require( !vat.safe(ilk, urn), 'ERR_SAFE' );
+        require(vat.safe(ilk, urn) == Vat.Spot.Sunk, 'ERR_SAFE');
         (uint ink, uint art) = vat.urns(ilk, urn);
         uint bill = vat.grab(ilk, urn, -int(ink), -int(art));
         address gem = dock.exit_gem(address(vat), ilk, self, ink);
@@ -94,9 +95,7 @@ contract Vow is Flowback, Math, Ward {
         else if (key == "dock") { dock = DockLike(val); }
         else if (key == "RISK") { RISK = GemLike(val); }
         else if (key == "RICO") { RICO = GemLike(val); }
-        else if (key == "vat")  { vat  = VatLike(val); }
+        else if (key == "vat")  { vat  = Vat(val); }
         else revert("ERR_LINK_KEY");
     }
-
-    fallback () external payable {}
 }

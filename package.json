@@ -15,9 +15,9 @@
     "build:ts": "npx tsc -b",
     "build:feedbase": "cd lib/feedbase && npm run build",
     "build:gemfab": "cd lib/gemfab && npm run build",
-    "pretest": "npm run build:sol",
-    "test": "ts-mocha --timeout 10000 jstest/*",
-    "forge-test": "forge test -f <your_rpc_url> --fork-block-number 15440000 --optimize --optimizer-runs 10000 -vv",
+    "prejs-test": "npm run build:sol",
+    "js-test": "ts-mocha --timeout 100000 jstest/*",
+    "test": "forge test -f <your_rpc_url> --fork-block-number 15440000 --optimize --optimizer-runs 10000 -vv",
     "fmt": "ts-standard --fix task test"
   },
   "devDependencies": {

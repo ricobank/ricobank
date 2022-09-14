@@ -27,16 +27,14 @@ interface VatLike is WardLike {
     function move(address,uint) external;
     function slip(bytes32,address,int) external;
 
-    // from Plot
-    function plot(bytes32 ilk, uint256 ray) external;
-
     // from Vow
+    enum Spot {Sunk, Iffy, Safe}
     function joy(address) external returns (uint);
     function sin(address) external returns (uint);
     function heal(uint amt) external;
     function drip(bytes32 ilk) external;
     function rake() external returns (uint);
-    function safe(bytes32,address) external returns (bool);
+    function safe(bytes32,address) external returns (Spot);
     function urns(bytes32,address) external returns (uint,uint);
     function grab(bytes32,address,int,int) external returns (uint);
 
@@ -46,7 +44,7 @@ interface VatLike is WardLike {
     // from User
     function filk(bytes32 ilk, bytes32 key, uint val) external;
     function frob(bytes32 i, address u, int dink, int dart) external;
-    function init(bytes32 ilk, address gem) external;
+    function init(bytes32 ilk, address gem, address fsrc, bytes32 ftag) external;
     function gem(bytes32 ilk, address usr) external returns (uint);
     function par() external returns (uint);
 }

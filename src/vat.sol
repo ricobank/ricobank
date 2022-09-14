@@ -24,6 +24,8 @@ import './mixin/math.sol';
 import './mixin/ward.sol';
 import './mixin/flog.sol';
 
+import { Feedbase } from '../lib/feedbase/src/Feedbase.sol';
+
 interface Hook {
     function hook(address urn, bytes calldata data) external;
 }
@@ -33,7 +35,8 @@ contract Vat is Math, Ward, Flog {
         uint256 tart;  // [wad] Total Normalised Debt
         uint256 rack;  // [ray] Accumulated Rate
 
-        uint256 mark;  // [ray] Last poked price
+        address fsrc;  // [obj] feedbase `src` address
+        bytes32 ftag;  // [tag] feedbase `tag` bytes32
 
         uint256 line;  // [rad] Debt Ceiling
         uint256 dust;  // [rad] Urn Debt Floor
@@ -60,21 +63,21 @@ contract Vat is Math, Ward, Flog {
     mapping (address => uint256)                   public joy;  // [rad]
     mapping (address => uint256)                   public sin;  // [rad]
 
-    mapping (address => mapping (address => bool)) public can;  // urn approval
+    enum Spot {Sunk, Iffy, Safe}
 
     uint256 public debt;  // [rad] Total Dai Issued
     uint256 public vice;  // [rad] Total Unbacked Dai
     uint256 public ceil;  // [rad] Total Debt Ceiling
 
     uint256 public par;   // [wad] System Price (joy/ref)
-    uint256 public tau;   // [sec] Last poke time
+
+    Feedbase public feeds;
 
     constructor() {
-        tau = block.timestamp;
         par = RAY;
     }
 
-    function init(bytes32 ilk, address gem)
+    function init(bytes32 ilk, address gem, address fsrc, bytes32 ftag)
       _ward_ _flog_ external
     {
         require(ilks[ilk].rack == 0, "Vat/ilk-already-init");
@@ -85,20 +88,32 @@ contract Vat is Math, Ward, Flog {
             hook: address(0),
             gem : gem,
             rho : block.timestamp,
-            tart: 0, mark: 0, chop: 0, line: 0, dust: 0
+            tart: 0,
+            fsrc: fsrc,
+            ftag: ftag,
+            chop: 0, line: 0, dust: 0
         });
     }
 
     function safe(bytes32 i, address u)
-      public view returns (bool)
+      public view returns (Spot)
     {
         Urn storage urn = urns[i][u];
         Ilk storage ilk = ilks[i];
-        uint256    ref = rmul(par, ilk.mark);
+        (bytes32 mark_, uint ttl) = feeds.pull(ilk.fsrc, ilk.ftag);
+        uint mark = uint(mark_);
+        if (block.timestamp > ttl) {
+            return Spot.Iffy;
+        }
+        uint256    ref = rmul(par, mark);
         uint256    liq = rmul(ref, ilk.liqr);
         uint256    tab = mul(urn.art, ilk.rack);
         uint256    cut = mul(urn.ink, liq);
-        return (tab <= cut);
+        if (tab <= cut) {
+            return Spot.Safe;
+        } else {
+            return Spot.Sunk;
+        }
     }
 
     function frob(bytes32 i, address u, int dink, int dart)
@@ -126,11 +141,9 @@ contract Vat is Math, Ward, Flog {
         // either debt has decreased, or debt ceilings are not exceeded
         require(either(dart <= 0, both(mul(ilk.tart, ilk.rack) <= ilk.line, debt <= ceil)), "Vat/ceiling-exceeded");
         // urn is either less risky than before, or it is safe
-        require(either(both(dart <= 0, dink >= 0), safe(i, u)), "Vat/not-safe");
-
+        require(either(both(dart <= 0, dink >= 0), safe(i, u) == Spot.Safe), "Vat/not-safe");
         // either urn is more safe, or urn is caller
         require(either(both(dart <= 0, dink >= 0), u == v), "Vat/frob/not-allowed-u");
-
         // urn has no debt, or a non-dusty amount
         require(either(urn.art == 0, tab >= ilk.dust), "Vat/dust");
 
@@ -160,12 +173,6 @@ contract Vat is Math, Ward, Flog {
         vice        = sub(vice,        dtab);
 
         return bill;
-    }
-
-    function plot(bytes32 ilk, uint mark)
-      _ward_ _flog_ external
-    {
-        ilks[ilk].mark = mark;
     }
 
     function prod(uint256 jam)
@@ -231,6 +238,11 @@ contract Vat is Math, Ward, Flog {
     {
         if (key == "ceil") { ceil = val;
         } else { revert("ERR_FILE_KEY"); }
+    }
+    function link(bytes32 key, address val) external
+      _ward_ {
+        if (key == "feeds") { feeds = Feedbase(val); }
+        else revert("ERR_LINK_KEY");
     }
     function filk(bytes32 ilk, bytes32 key, uint val)
       _ward_ _flog_ external

@@ -8,7 +8,6 @@
 pragma solidity 0.8.15;
 
 import {Dock} from './dock.sol';
-import {Plot} from './plot.sol';
 import {Vat} from './vat.sol';
 import {Vow} from './vow.sol';
 import {Vox} from './vox.sol';
@@ -33,7 +32,6 @@ contract Ball {
     Dock public dock;
     GemLike public rico;
     GemLike public risk;
-    Plot public plot;
     Vat public vat;
     Vow public vow;
     Vox public vox;
@@ -56,17 +54,13 @@ contract Ball {
         risk = gemfab.build(bytes32("Rico Riskshare"), bytes32("RISK"));
 
         dock = new Dock();
-        plot = new Plot();
         vow = new Vow();
         vox = new Vox();
         vat = new Vat();
 
-        plot.link('fb', feedbase);
-        plot.link('tip', roll);
-        plot.link('vat', address(vat));
-
         vow.link('dock', address(dock));
         vow.link('flow', address(flow));
+        vow.link('vat',  address(vat));
         vow.link('RICO', address(rico));
         vow.link('RISK', address(risk));
 
@@ -75,13 +69,13 @@ contract Ball {
         vox.link('vat', address(vat));
 
         vat.file('ceil', 1000e45);
+        vat.link('feeds', feedbase);
 
         vow.pair(address(risk), 'vel', 1e18);
         vow.pair(address(risk), 'rel', 1e12);
         vow.pair(address(risk), 'cel', 600);
 
         vat.ward(address(dock), true);
-        vat.ward(address(plot), true);
         vat.ward(address(vow), true);
         vat.ward(address(vox), true);
 
@@ -96,10 +90,8 @@ contract Ball {
 
         dock.give(roll);
         flow.give(roll);
-        plot.give(roll);
         vow.give(roll);
         vox.give(roll);
         vat.give(roll);
-
     }
 }

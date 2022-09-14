@@ -3,6 +3,7 @@ import { expect as want } from 'chai'
 import * as hh from 'hardhat'
 // @ts-ignore
 import { ethers } from 'hardhat'
+const { hexZeroPad } = ethers.utils
 import { smock } from '@defi-wonderland/smock'
 
 import { b32, snapshot, revert, curb_ramp } from './helpers'
@@ -14,6 +15,12 @@ const dpack = require('@etherpacks/dpack')
 const chai = require('chai')
 chai.use(smock.matchers)
 const i0 = Buffer.alloc(32) // ilk 0 id
+const wtag = b32('WETHUSD')
+const bn2b32 = (bn) => hexZeroPad(bn.toHexString(), 32)
+const gettime = async () => {
+    const blocknum = await ethers.provider.getBlockNumber()
+    return (await ethers.provider.getBlock(blocknum)).timestamp
+}
 
 describe('vow / liq liquidation lifecycle', () => {
   let ali, bob, cat
@@ -25,6 +32,7 @@ describe('vow / liq liquidation lifecycle', () => {
   let vow
   let flower; let flower_type
   let vault
+  let fb
   let poolId_weth_rico
   let poolId_risk_rico
   before(async () => {
@@ -45,6 +53,7 @@ describe('vow / liq liquidation lifecycle', () => {
     RICO = dapp.rico
     RISK = dapp.risk
     WETH = dapp.weth
+    fb = dapp.feedbase
 
     vat = await vat_type.deploy()
     flower = await flower_type.deploy()
@@ -53,6 +62,7 @@ describe('vow / liq liquidation lifecycle', () => {
     debug('vat link ward')
     await send(vat.ward, dock.address, true)
     await send(vat.ward, vow.address, true)
+    await send(vat.link, b32('feeds'), fb.address);
     await send(vow.link, b32('flow'), flower.address)
     await send(vow.link, b32('vat'), vat.address)
     await send(vow.ward, flower.address, true)
@@ -68,7 +78,7 @@ describe('vow / liq liquidation lifecycle', () => {
     await send(dock.join_gem, vat.address, i0, ALI, wad(1000))
 
     debug('vat init')
-    await send(vat.init, i0, WETH.address)
+    await send(vat.init, i0, WETH.address, ALI, wtag)
 
     await send(vat.file, b32('ceil'), rad(10000))
     await send(vat.filk, i0, b32('line'), rad(10000))
@@ -84,8 +94,8 @@ describe('vow / liq liquidation lifecycle', () => {
     await send(vow.reapprove_gem, RICO.address)
     await send(vow.reapprove_gem, RISK.address)
 
-    debug('vat plot')
-    await send(vat.plot, i0, ray(1))
+    const t1 = await gettime()
+    await send(fb.push, wtag, bn2b32(ray(1)), t1 + 2 * BANKYEAR)
     await send(vat.filk, i0, b32('duty'), apy(1.05))
     await send(vat.frob, i0, ALI, wad(100), wad(0)) //await send(vat.lock, i0, wad(100))
     await send(vat.frob, i0, ALI, wad(0), wad(99))// await send(vat.draw, i0, wad(99))
@@ -95,7 +105,7 @@ describe('vow / liq liquidation lifecycle', () => {
     const bal = await RICO.balanceOf(ALI)
     want(bal.toString()).equals(wad(99).toString())
     const safe1 = await vat.callStatic.safe(i0, ALI)
-    want(safe1).true
+    want(safe1).eq(2)
 
     await send(WETH.connect(cat).deposit, { value: ethers.utils.parseEther('7000.0') })
     await send(WETH.connect(cat).approve, dock.address, U256_MAX)
@@ -155,7 +165,7 @@ describe('vow / liq liquidation lifecycle', () => {
       await send(vow.keep, [i0])
 
       const safe2 = await vat.callStatic.safe(i0, ALI)
-      want(safe2).false
+      want(safe2).eq(0)
 
       const sin0 = await vat.sin(vow.address)
       const joy0 = await vat.joy(vow.address)

@@ -31,7 +31,6 @@ task('deploy-ricobank', '')
 
     const contracts = [['dock', 'Dock', require('../artifacts/src/dock.sol/Dock.json')],
                        ['flow', 'BalancerFlower', require('../artifacts/src/flow.sol/BalancerFlower.json')],
-                       ['plot', 'Plot', require('../artifacts/src/plot.sol/Plot.json')],
                        ['vat', 'Vat', require('../artifacts/src/vat.sol/Vat.json')],
                        ['vow', 'Vow', require('../artifacts/src/vow.sol/Vow.json')],
                        ['vox', 'Vox', require('../artifacts/src/vox.sol/Vox.json')],
