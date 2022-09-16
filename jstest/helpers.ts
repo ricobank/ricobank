@@ -1,5 +1,6 @@
 import { BigNumber, utils } from 'ethers'
-import { send } from 'minihat'
+import { send, wad, ray, rad } from 'minihat'
+// @ts-ignore
 import { ethers } from "hardhat"
 
 export { snapshot, revert, send, wad, ray, rad, apy, N, BANKYEAR, WAD, RAY, RAD, U256_MAX } from 'minihat'
@@ -44,4 +45,58 @@ export async function task_total_gas(hh, task, params) {
   const gas1 = await all_gas_used()
   return [gas1 - gas0, result]
 }
+
+let snaps  = []
+let levels = {}
+let level  = 0
+const debug_snap = require('debug')('rico:test_snap')
+export async function snapshot_name (hre) {
+  const _snap = await hre.network.provider.request({
+    method: 'evm_snapshot'
+  })
+  snaps.push(_snap)
+
+  levels[_snap] = level++
+  debug_snap(`snapshotting ${_snap} (level ${levels[_snap]})`)
+}
+
+export async function revert_name (hre) {
+  const _snap = snaps.pop()
+  await hre.network.provider.request({
+    method: 'evm_revert',
+    params: [_snap]
+  })
+
+  level--
+  debug_snap(`reverting to ${_snap} (level ${levels[_snap]})`)
+  await snapshot_name(hre)
+}
+
+export async function revert_clear(hre) {
+  const _snap = snaps.pop()
+  await hre.network.provider.request({
+    method: 'evm_revert',
+    params: [_snap]
+  })
+  debug_snap(`reverting to ${_snap} (level ${levels[_snap]}) (no re-snapshot)`)
+  level--
+  if( level == 0 ) {
+    snaps  = []
+    levels = {}
+  }
+}
+
+export async function revert_pop (hre) {
+  debug_snap('popping')
+  snaps.pop()
+  level--
+  await revert_name(hre)
+}
+
+export async function RICO_mint(vat, dock, RICO, usr, amt : number) {
+  await send(vat.suck, usr.address, usr.address, rad(amt))
+  await send(dock.connect(usr).exit_rico, vat.address, RICO.address, usr.address, wad(amt))
+}
+
+
 

@@ -49,8 +49,8 @@ contract Vow is Flowback, Math, Ward {
             (uint flop, uint dust) = flow.clip(FLOP, type(uint256).max);
             require(flop > dust, 'Vow/risk-dust');
             RISK.mint(self, flop);
-            flow.flow(address(RISK), flop, address(RICO), type(uint256).max);
-            // TODO glug and test for glug
+            bytes32 aid = flow.flow(FLOP, flop, address(RICO), type(uint256).max);
+            flow.glug(aid);
         } else if (sin != 0) {
             vat.heal(sin);
         }
@@ -82,6 +82,7 @@ contract Vow is Flowback, Math, Ward {
     function reapprove_gem(address gem) external {
         GemLike(gem).approve(address(dock), type(uint256).max);
         GemLike(gem).approve(address(flow), type(uint256).max);
+        flow.approve_gem(gem);
     }
 
     function pair(address gem, bytes32 key, uint val)
@@ -98,4 +99,6 @@ contract Vow is Flowback, Math, Ward {
         else if (key == "vat")  { vat  = Vat(val); }
         else revert("ERR_LINK_KEY");
     }
+
+    fallback () external payable {}
 }

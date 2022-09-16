@@ -52,7 +52,7 @@ abstract contract RicoSetUp is Math {
         rico = GemLike(address(ball.rico()));
         risk = GemLike(address(ball.risk()));
         vat  = VatLike(address(ball.vat()));
-        vow  = Vow(address(ball.vow()));
+        vow  = Vow(payable(address(ball.vow())));
         flow = ball.flow();
 
         avat  = address(vat);

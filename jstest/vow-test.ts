@@ -280,7 +280,7 @@ describe('vow / liq liquidation lifecycle', () => {
         await send(vat.filk, i0, b32('duty'), apy(2))
         // for same results as above the rel rate is set to 1 / risk supply * vel used above
         await curb_ramp(vow, RISK, { vel: wad(1000000), rel: wad(0.0000001), bel: 0, cel: 1000 })
-        await curb_ramp(vow, FLOP, { vel: wad(10000), rel: wad(0.0000001), bel: 0, cel: 1000 })
+        await curb_ramp(vow, FLOP, { vel: wad(1000000), rel: wad(0.0000001), bel: 0, cel: 1000 })
         await mine(hh, BANKYEAR);
         await send(vow.bail, i0, CAT)
         await send(vow.keep, [i0])
@@ -293,7 +293,7 @@ describe('vow / liq liquidation lifecycle', () => {
         const mint1 = risk_supply_1 - risk_supply_0
         const mint2 = risk_supply_2 - risk_supply_1
         want(mint1).within(parseInt(wad(0.999).toString()), parseInt(wad(1.000).toString()))
-        want(mint2).within(parseInt(wad(0.497).toString()), parseInt(wad(0.503).toString()))
+        want(mint2).within(parseInt(wad(0.497).toString()), parseInt(wad(0.510).toString()))
       })
     })
   })

@@ -11,7 +11,6 @@ import {Dock} from './dock.sol';
 import {Vat} from './vat.sol';
 import {Vow} from './vow.sol';
 import {Vox} from './vox.sol';
-
 import {BalancerFlower} from './flow.sol';
 
 interface GemFabLike {

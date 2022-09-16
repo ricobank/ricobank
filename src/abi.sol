@@ -6,6 +6,7 @@ interface ERC20 {
     function approve(address usr, uint amt) external;
     function transfer(address,uint) external returns (bool);
     function transferFrom(address,address,uint) external returns (bool);
+    function allowance(address, address) external returns (uint);
 }
 
 interface GemLike is ERC20 {
@@ -77,8 +78,13 @@ interface Flow {
     function glug(bytes32 aid) external;
     function clip(address gem, uint max) external returns (uint, uint);
     function curb(address gem, bytes32 key, uint val) external;
+    function approve_gem(address gem) external;
 }
 
 interface Flowback {
     function flowback(bytes32 aid, address gem, uint refund) external;
+}
+
+interface VowLike {
+    function RISK() external view returns (address);
 }

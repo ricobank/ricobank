@@ -30,6 +30,7 @@
     "@types/node": "^18.7.2",
     "chai": "^4.3.6",
     "hardhat": "^2.10.1",
+    "hardhat-ethers": "^1.0.1",
     "minihat": "^0.0.6",
     "ts-mocha": "^10.0.0",
     "ts-node": "^10.9.1",
