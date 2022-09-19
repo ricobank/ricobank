@@ -1005,8 +1005,8 @@ describe('dss', () => {
 
       debug('initializing joy bals')
       await send(vat.suck, vow.address, vow.address,  rad(initial_joy_bal.vow))
-      await send(vat.connect(vow.wallet).move, ALI,  rad(initial_joy_bal.ali))
-      await send(vat.connect(vow.wallet).move, BOB,  rad(initial_joy_bal.bob))
+      await send(vat.connect(vow.wallet).gift, ALI,  rad(initial_joy_bal.ali))
+      await send(vat.connect(vow.wallet).gift, BOB,  rad(initial_joy_bal.bob))
 
       await snapshot_name(hh)
     })

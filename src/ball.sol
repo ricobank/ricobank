@@ -57,6 +57,8 @@ contract Ball {
         vox = new Vox();
         vat = new Vat();
 
+        dock.bind_joy(address(vat), address(rico), true);
+
         vow.link('dock', address(dock));
         vow.link('flow', address(flow));
         vow.link('vat',  address(vat));

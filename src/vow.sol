@@ -67,7 +67,8 @@ contract Vow is Flowback, Math, Ward {
         flow.glug(aid);
     }
 
-    // todo missing proceeds param
+    // todo missing proceeds param, is it needed?
+    // todo gem is unused, remove from interface?
     function flowback(bytes32 aid, address gem, uint refund) external
       _ward_ {
         if (refund > 0) {

@@ -77,7 +77,6 @@ describe('Plug', () => {
         await send(dock.bind_gem, vat.address, i1, gemB.address)
         await send(dock.list, gemA.address, true)
         await send(dock.list, gemB.address, true)
-        await send(dock.bind_joy, vat.address, RICO.address, true)
         await send(dock.join_gem, vat.address, i0, ALI, wad(1000))
         await send(dock.join_gem, vat.address, i1, ALI, wad(500))
 

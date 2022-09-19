@@ -64,7 +64,6 @@ describe('Port', () => {
         const t1 = await gettime()
         await send(fb.push, atag, bn2b32(ray(1)), t1 + 1000)
         await send(dock.bind_gem, vat.address, i0, gemA.address)
-        await send(dock.bind_joy, vat.address, RICO.address, true)
         await send(dock.join_gem, vat.address, i0, ALI, wad(1000))
         await send(dock.list, gemA.address, true)
         FLASH = await dock.MINT()

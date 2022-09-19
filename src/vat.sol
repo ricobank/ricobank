@@ -201,18 +201,18 @@ contract Vat is Math, Ward, Flog {
     {
         gem[ilk][usr] = add(gem[ilk][usr], wad);
     }
+
     function flux(bytes32 ilk, address dst, uint256 wad) _flog_ external {
         address src = msg.sender;
         gem[ilk][src] = sub(gem[ilk][src], wad);
         gem[ilk][dst] = add(gem[ilk][dst], wad);
     }
-    function move(address dst, uint256 rad) _flog_ external {
-        address src = msg.sender;
-        joy[src] = sub(joy[src], rad);
-        joy[dst] = add(joy[dst], rad);
+
+    function gift(address dst, uint256 rad) _flog_ external {
+        move(msg.sender, dst, rad);
     }
 
-    function lob(address src, address dst, uint256 rad) _ward_ _flog_ external {
+    function move(address src, address dst, uint256 rad) _ward_ _flog_ public {
         joy[src] = sub(joy[src], rad);
         joy[dst] = add(joy[dst], rad);
     }
@@ -224,6 +224,7 @@ contract Vat is Math, Ward, Flog {
         vice   = sub(vice,   rad);
         debt   = sub(debt,   rad);
     }
+
     function suck(address u, address v, uint rad)
       _ward_ _flog_ external
     {

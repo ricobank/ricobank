@@ -44,13 +44,13 @@ contract Dock is Lock, Math, Ward {
 
     function join_rico(address vat, address joy, address usr, uint wad) external {
         if (!port[vat][joy]) revert ErrNotBound();
-        VatLike(vat).move(usr, RAY * wad);
+        VatLike(vat).gift(usr, RAY * wad);
         GemLike(joy).burn(msg.sender, wad);
     }
 
     function exit_rico(address vat, address joy, address usr, uint wad) external {
         if (!port[vat][joy]) revert ErrNotBound();
-        VatLike(vat).lob(msg.sender, address(this), RAY * wad);
+        VatLike(vat).move(msg.sender, address(this), RAY * wad);
         GemLike(joy).mint(usr, wad);
     }
 

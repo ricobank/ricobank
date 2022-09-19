@@ -58,8 +58,6 @@ abstract contract RicoSetUp is Math {
         avat  = address(vat);
         adock = address(dock);
         arico = address(rico);
-
-        dock.bind_joy(address(vat), address(rico), true);
     }
 
     function init_gold() public {

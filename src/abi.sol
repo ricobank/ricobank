@@ -24,8 +24,8 @@ interface WardLike {
 
 interface VatLike is WardLike {
     // from Dock
-    function lob(address src, address dst, uint amt) external;
-    function move(address,uint) external;
+    function gift(address,uint) external;
+    function move(address src, address dst, uint amt) external;
     function slip(bytes32,address,int) external;
 
     // from Vow

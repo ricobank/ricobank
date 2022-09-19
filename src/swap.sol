@@ -33,7 +33,7 @@ interface BalancerV2VaultLike is BalancerV2Types {
 }
 
 abstract contract BalancerSwapper is BalancerV2Types, Ward {
-    uint256 public constant swap_err = type(uint256).max;
+    uint256 public constant SWAP_ERR = type(uint256).max;
     BalancerV2VaultLike public bvault;
     // tokIn -> tokOut -> poolID
     mapping(address=>mapping(address=>bytes32)) public pools;
@@ -67,7 +67,7 @@ abstract contract BalancerSwapper is BalancerV2Types, Ward {
         try bvault.swap(ss, fm, limit, block.timestamp) returns (uint res) {
             result = res;
         } catch {
-            result = swap_err;
+            result = SWAP_ERR;
         }
     }
 }

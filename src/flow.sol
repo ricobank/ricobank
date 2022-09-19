@@ -47,7 +47,7 @@ contract BalancerFlower is Math, BalancerSwapper, Flow
         Auction storage auction = auctions[aid];
         (bool last, uint hunk, uint bel) = _clip(auction.vow, auction.hag, auction.ham);
         ramps[auction.vow][auction.hag].bel = bel;
-        uint cost = swap_err;
+        uint cost = SWAP_ERR;
         uint gain;
 
         address hag = address(0) == auction.hag ? VowLike(auction.vow).RISK() : auction.hag;
@@ -55,12 +55,12 @@ contract BalancerFlower is Math, BalancerSwapper, Flow
             cost = _swap(hag, auction.wag, auction.vow, SwapKind.GIVEN_OUT, auction.wam, hunk);
         }
 
-        if (cost != swap_err) {
+        if (cost != SWAP_ERR) {
             gain = auction.wam;
             last = true;
         } else {
             gain = _swap(hag, auction.wag, auction.vow, SwapKind.GIVEN_IN, hunk, 0);
-            require(gain != swap_err, 'Flow/swap');
+            require(gain != SWAP_ERR, 'Flow/swap');
             cost = hunk;
         }
         uint rest = auction.ham - cost;
