@@ -15,17 +15,12 @@ contract MathStub is Math {
         return min(x, y);
     }
 
-    function _add(uint256 x, uint256 y) public pure returns (uint256 z) {
+    function _add(uint256 x, int256 y) public pure returns (uint256 z) {
         return add(x, y);
     }
-    function _sub(uint256 x, uint256 y) public pure returns (uint256 z) {
-        return sub(x, y);
-    }
+
     function _diff(uint x, uint y) public pure returns (int z) {
       return diff(x, y);
-    }
-    function _mul(uint256 x, uint256 y) public pure returns (uint256 z) {
-        return mul(x, y);
     }
 
     function _wmul(uint256 x, uint256 y) public pure returns (uint256 z) {

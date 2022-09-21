@@ -28,7 +28,7 @@ describe('math.sol', () => {
   })
 
   it('add', async () => {
-    const z = await stub._add(1, 2)
+    const z = await stub._add(5, -2)
     want(z.eq(3)).true
   })
 

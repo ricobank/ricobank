@@ -42,27 +42,15 @@ contract Math {
         z = x >= y ? x : y;
     }
 
-    function add(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        require((z = x + y) >= x, 'ERR_MATH_UUADD');
-    }
     function add(uint x, int y) internal pure returns (uint z) {
-        require(x < uint(type(int256).max), 'ERR_MATH_UIADD');
-        int sz = int(x) + y;
-        require(sz >= 0, 'ERR_MATH_UIADD_NEG');
-        return uint(sz);
-//        return uint(int(x) + y);
-/*
-        unchecked { // TODO explain
-          z = x + uint(y);
+        unchecked {
+            require(x < uint(type(int256).max), 'ERR_MATH_UIADD');
+            int sz = int(x) + y;
+            require(sz >= 0, 'ERR_MATH_UIADD_NEG');
+            return uint(sz);
         }
-        require(y >= 0 || z <= x, 'ERR_MATH_UIADD');
-        require(y <= 0 || z >= x, 'ERR_MATH_UIADD');
-*/
     }
 
-    function sub(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        require((z = x - y) <= x);
-    }
     function sub(uint x, int y) internal pure returns (uint z) {
         unchecked { // TODO explain
           z = x - uint(y);
@@ -72,96 +60,65 @@ contract Math {
     }
 
     function diff(uint x, uint y) internal pure returns (int z) {
-        // TODO figure out intent of this old type cast
-        z = int(x) - int(y);
+        unchecked {
+            z = int(x) - int(y);
+        }
         require(int(x) >= 0 && int(y) >= 0);
     }
 
     function mul(uint x, int y) internal pure returns (int z) {
-        z = int(x) * y;
-        require(int(x) >= 0);
-        require(y == 0 || z / y == int(x));
-    }
-    function mul(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        require(y == 0 || (z = x * y) / y == x);
+        unchecked {
+            z = int(x) * y;
+            require(int(x) >= 0);
+            require(y == 0 || z / y == int(x));
+        }
     }
 
     function wmul(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        z = mul(x, y) / WAD;
+        z = x * y / WAD;
     }
     function wdiv(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        z = mul(x, WAD) / y;
+        z = x * WAD / y;
     }
 
     function rmul(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        z = mul(x, y) / RAY;
+        z = x * y / RAY;
     }
     function rdiv(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        z = mul(x, RAY) / y;
+        z = x * RAY / y;
     }
     function rinv(uint256 x) internal pure returns (uint256) {
         return rdiv(RAY, x);
     }
 
     function grow(uint256 amt, uint256 ray, uint256 dt) internal pure returns (uint256 z) {
-        z = mul(amt, rpow(ray, dt)) / RAY;
+        z = amt * rpow(ray, dt) / RAY;
     }
 
     function rpow(uint256 x, uint256 n) public pure returns (uint256 z) {
-      return rpow1(x, n, RAY);
-      //return rpow2(x, n, RAY);
-    }
-
-    function rpow1(uint256 x, uint256 n, uint256 b) internal pure returns (uint256 z) {
         assembly {
-            switch n case 0 { z := b }
+            switch n case 0 { z := RAY }
             default {
                 switch x case 0 { z := 0 }
                 default {
-                    switch mod(n, 2) case 0 { z := b } default { z := x }
-                    let half := div(b, 2)  // for rounding.
+                    switch mod(n, 2) case 0 { z := RAY } default { z := x }
+                    let half := div(RAY, 2)  // for rounding.
                     for { n := div(n, 2) } n { n := div(n,2) } {
                         let xx := mul(x, x)
                         if shr(128, x) { revert(0,0) }
                         let xxRound := add(xx, half)
                         if lt(xxRound, xx) { revert(0,0) }
-                        x := div(xxRound, b)
+                        x := div(xxRound, RAY)
                         if mod(n,2) {
                             let zx := mul(z, x)
                             if and(iszero(iszero(x)), iszero(eq(div(zx, x), z))) { revert(0,0) }
                             let zxRound := add(zx, half)
                             if lt(zxRound, zx) { revert(0,0) }
-                            z := div(zxRound, b)
+                            z := div(zxRound, RAY)
                         }
                     }
                 }
             }
         }
     }
-
-    function rpow2(uint x, uint n, uint b) internal pure returns (uint z) {
-      assembly {
-        switch x case 0 {switch n case 0 {z := b} default {z := 0}}
-        default {
-          switch mod(n, 2) case 0 { z := b } default { z := x }
-          let half := div(b, 2)  // for rounding.
-          for { n := div(n, 2) } n { n := div(n,2) } {
-            let xx := mul(x, x)
-            if iszero(eq(div(xx, x), x)) { revert(0,0) }
-            let xxRound := add(xx, half)
-            if lt(xxRound, xx) { revert(0,0) }
-            x := div(xxRound, b)
-            if mod(n,2) {
-              let zx := mul(z, x)
-              if and(iszero(iszero(x)), iszero(eq(div(zx, x), z))) { revert(0,0) }
-              let zxRound := add(zx, half)
-              if lt(zxRound, zx) { revert(0,0) }
-              z := div(zxRound, b)
-            }
-          }
-        }
-      }
-    }
-
-
 }

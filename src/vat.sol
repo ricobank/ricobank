@@ -107,8 +107,8 @@ contract Vat is Math, Ward, Flog {
         }
         uint256    ref = rmul(par, mark);
         uint256    liq = rmul(ref, ilk.liqr);
-        uint256    tab = mul(urn.art, ilk.rack);
-        uint256    cut = mul(urn.ink, liq);
+        uint256    tab = urn.art * ilk.rack;
+        uint256    cut = urn.ink * liq;
         if (tab <= cut) {
             return Spot.Safe;
         } else {
@@ -135,11 +135,11 @@ contract Vat is Math, Ward, Flog {
         ilk.tart = add(ilk.tart, dart);
 
         int dtab = mul(ilk.rack, dart);
-        uint tab = mul(ilk.rack, urn.art);
+        uint tab = ilk.rack * urn.art;
         debt     = add(debt, dtab);
 
         // either debt has decreased, or debt ceilings are not exceeded
-        require(either(dart <= 0, both(mul(ilk.tart, ilk.rack) <= ilk.line, debt <= ceil)), "Vat/ceiling-exceeded");
+        require(either(dart <= 0, both(ilk.tart * ilk.rack <= ilk.line, debt <= ceil)), "Vat/ceiling-exceeded");
         // urn is either less risky than before, or it is safe
         require(either(both(dart <= 0, dink >= 0), safe(i, u) == Spot.Safe), "Vat/not-safe");
         // either urn is more safe, or urn is caller
@@ -204,8 +204,8 @@ contract Vat is Math, Ward, Flog {
 
     function flux(bytes32 ilk, address dst, uint256 wad) _flog_ external {
         address src = msg.sender;
-        gem[ilk][src] = sub(gem[ilk][src], wad);
-        gem[ilk][dst] = add(gem[ilk][dst], wad);
+        gem[ilk][src] = gem[ilk][src] - wad;
+        gem[ilk][dst] = gem[ilk][dst] + wad;
     }
 
     function gift(address dst, uint256 rad) _flog_ external {
@@ -213,25 +213,25 @@ contract Vat is Math, Ward, Flog {
     }
 
     function move(address src, address dst, uint256 rad) _ward_ _flog_ public {
-        joy[src] = sub(joy[src], rad);
-        joy[dst] = add(joy[dst], rad);
+        joy[src] = joy[src] - rad;
+        joy[dst] = joy[dst] + rad;
     }
 
     function heal(uint rad) _flog_ external {
         address u = msg.sender;
-        sin[u] = sub(sin[u], rad);
-        joy[u] = sub(joy[u], rad);
-        vice   = sub(vice,   rad);
-        debt   = sub(debt,   rad);
+        sin[u] = sin[u] - rad;
+        joy[u] = joy[u] - rad;
+        vice   = vice   - rad;
+        debt   = debt   - rad;
     }
 
     function suck(address u, address v, uint rad)
       _ward_ _flog_ external
     {
-        sin[u] = add(sin[u], rad);
-        joy[v] = add(joy[v], rad);
-        vice   = add(vice,   rad);
-        debt   = add(debt,   rad);
+        sin[u] = sin[u] + rad;
+        joy[v] = joy[v] + rad;
+        vice   = vice   + rad;
+        debt   = debt   + rad;
     }
 
     function file(bytes32 key, uint256 val)
