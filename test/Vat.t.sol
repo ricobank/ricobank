@@ -156,3 +156,92 @@ contract VatTest is Test, RicoSetUp {
         vat.frob(gilk, address(this), int(-1), int(0));
     }
 }
+
+
+contract VatJsTest is VatTest {
+    address me;
+    address ali;
+    bytes32 i0;
+
+    modifier _js_ {
+        me = address(this);
+        ali = me;
+        i0 = ilks[0];
+        _;
+    }
+
+    function test_init_conditions() public _js_ {
+        assertEq(vat.wards(ali), true);
+    }
+
+    function test_gem_join() public _js_ {
+        assertEq(vat.gem(i0, ali), 1000 * WAD);
+        assertEq(GemLike(WETH).balanceOf(ali), 0);
+    }
+
+    function test_frob() public _js_ {
+        vat.frob(i0, ali, int(6 * WAD), 0);
+
+        (uint ink, uint art) = vat.urns(i0, ali);
+        assertEq(ink, 6 * WAD);
+        assertEq(vat.gem(i0, ali), 994 * WAD);
+
+        vat.frob(i0, ali, -int(6 * WAD), 0);
+        assertEq(vat.gem(i0, ali), 1000 * WAD);
+    }
+
+    function test_rejects_unsafe_frob() public _js_ {
+        (uint ink, uint art) = vat.urns(i0, ali);
+        assertEq(ink, 0);
+        assertEq(art, 0);
+        vm.expectRevert("Vat/not-safe");
+        vat.frob(i0, ali, 0, int(WAD));
+    }
+
+    function owed() internal returns (uint) {
+        vat.drip(i0);
+        VatLike.Ilk memory ilk = vat.ilks(i0);
+        (uint ink, uint art) = vat.urns(i0, ali);
+        return ilk.rack * art;
+    }
+
+    function test_drip() public _js_ {
+        vat.filk(i0, 'duty', RAY + RAY / 50);
+
+        skip(1);
+        vat.drip(i0);
+        vat.frob(i0, ali, int(100 * WAD), int(50 * WAD));
+
+        skip(1);
+        uint debt0 = owed();
+
+        skip(1);
+        uint debt1 = owed();
+        assertEq(debt1, debt0 + debt0 / 50);
+    }
+
+    function test_feed_plot_safe() public _js_ {
+        VatLike.Spot safe0 = vat.safe(i0, ali);
+        assertEq(uint(safe0), uint(VatLike.Spot.Safe));
+
+        vat.frob(i0, ali, int(100 * WAD), int(50 * WAD));
+
+        VatLike.Spot safe1 = vat.safe(i0, ali);
+        assertEq(uint(safe1), uint(VatLike.Spot.Safe));
+
+
+        (uint ink, uint art) = vat.urns(i0, ali);
+        assertEq(ink, 100 * WAD);
+        assertEq(art, 50 * WAD);
+
+        feed.push(gtag, bytes32(RAY), block.timestamp + 1000);
+
+        VatLike.Spot safe2 = vat.safe(i0, ali);
+        assertEq(uint(safe2), uint(VatLike.Spot.Safe));
+
+        feed.push(gtag, bytes32(RAY / 50), block.timestamp + 1000);
+
+        VatLike.Spot safe3 = vat.safe(i0, ali);
+        assertEq(uint(safe3), uint(VatLike.Spot.Sunk));
+    }
+}

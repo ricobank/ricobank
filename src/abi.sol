@@ -20,9 +20,31 @@ interface GemLike is ERC20 {
 
 interface WardLike {
     function ward(address, bool) external;
+    function wards(address) external returns (bool);
 }
 
 interface VatLike is WardLike {
+    struct Ilk {
+        uint256 tart;  // [wad] Total Normalised Debt
+        uint256 rack;  // [ray] Accumulated Rate
+
+        address fsrc;  // [obj] feedbase `src` address
+        bytes32 ftag;  // [tag] feedbase `tag` bytes32
+
+        uint256 line;  // [rad] Debt Ceiling
+        uint256 dust;  // [rad] Urn Debt Floor
+
+        uint256 duty;  // [ray] Collateral-specific, per-second compounding rate
+        uint256  rho;  // [sec] Time of last drip
+
+        uint256 chop;  // [ray] Liquidation Penalty
+        uint256 liqr;  // [ray] Liquidation Ratio
+
+        address hook;  // [obj] Frob hook
+
+        address gem;   // [gem] Collateral token
+    }
+
     // from Dock
     function gift(address,uint) external;
     function move(address src, address dst, uint amt) external;
@@ -37,6 +59,7 @@ interface VatLike is WardLike {
     function rake() external returns (uint);
     function safe(bytes32,address) external returns (Spot);
     function urns(bytes32,address) external returns (uint,uint);
+    function ilks(bytes32) external returns (Ilk memory);
     function grab(bytes32,address,int,int) external returns (uint);
 
     // from Vox
