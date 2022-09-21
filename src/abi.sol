@@ -107,7 +107,3 @@ interface Flow {
 interface Flowback {
     function flowback(bytes32 aid, address gem, uint refund) external;
 }
-
-interface VowLike {
-    function RISK() external view returns (address);
-}

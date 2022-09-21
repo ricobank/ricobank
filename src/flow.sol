@@ -4,7 +4,7 @@ pragma solidity 0.8.15;
 
 import './mixin/math.sol';
 import "./swap.sol";
-import { Flow, Flowback, GemLike, VowLike } from './abi.sol';
+import { Flow, Flowback, GemLike } from './abi.sol';
 
 contract BalancerFlower is Math, BalancerSwapper, Flow
 {
@@ -17,24 +17,19 @@ contract BalancerFlower is Math, BalancerSwapper, Flow
     }
 
     struct Auction {
-        address vow;
-        address hag; // token in (or 0 if deficit auction)
-        uint256 ham; // [wad] amount in
-        address wag; // token out
-        uint256 wam; // amount out needed to finish the auction early
+        address vow;  // client
+        address hag;  // have gem
+        uint256 ham;  // have amount
+        address wag;  // want gem
+        uint256 wam;  // want amount
     }
 
     mapping (address => mapping (address => Ramp)) public ramps;  // client -> gem -> ramp
     mapping (bytes32 => Auction) public auctions;
     uint256 public count;
-    address public RISK;
 
     function flow(address hag, uint ham, address wag, uint wam) external returns (bytes32 aid) {
-        address realhag = hag;
-        if (address(0) == hag) {
-            realhag = VowLike(msg.sender).RISK();
-        }
-        GemLike(realhag).transferFrom(msg.sender, address(this), ham);
+        GemLike(hag).transferFrom(msg.sender, address(this), ham);
         aid = _next();
         auctions[aid].vow = msg.sender;
         auctions[aid].hag = hag;
@@ -45,29 +40,30 @@ contract BalancerFlower is Math, BalancerSwapper, Flow
 
     function glug(bytes32 aid) external {
         Auction storage auction = auctions[aid];
-        (bool last, uint hunk, uint bel) = _clip(auction.vow, auction.hag, auction.ham);
-        ramps[auction.vow][auction.hag].bel = bel;
+        address hag = auction.hag;
+        address vow = auction.vow;
+        (bool last, uint hunk, uint bel) = _clip(vow, hag, auction.ham);
+        ramps[vow][hag].bel = bel;
         uint cost = SWAP_ERR;
         uint gain;
 
-        address hag = address(0) == auction.hag ? VowLike(auction.vow).RISK() : auction.hag;
         if (auction.wam != type(uint256).max) {
-            cost = _swap(hag, auction.wag, auction.vow, SwapKind.GIVEN_OUT, auction.wam, hunk);
+            cost = _swap(hag, auction.wag, vow, SwapKind.GIVEN_OUT, auction.wam, hunk);
         }
 
         if (cost != SWAP_ERR) {
             gain = auction.wam;
             last = true;
         } else {
-            gain = _swap(hag, auction.wag, auction.vow, SwapKind.GIVEN_IN, hunk, 0);
+            gain = _swap(hag, auction.wag, vow, SwapKind.GIVEN_IN, hunk, 0);
             require(gain != SWAP_ERR, 'Flow/swap');
             cost = hunk;
         }
         uint rest = auction.ham - cost;
 
         if (last) {
-            GemLike(hag).transfer(auction.vow, rest);
-            Flowback(auction.vow).flowback(aid, hag, rest);
+            GemLike(hag).transfer(vow, rest);
+            Flowback(vow).flowback(aid, hag, rest);
             delete auctions[aid];
         } else {
             auction.ham = rest;
@@ -82,10 +78,9 @@ contract BalancerFlower is Math, BalancerSwapper, Flow
         return (res, ramps[msg.sender][gem].del);
     }
 
-    function _clip(address back, address _gem, uint top) internal view returns (bool, uint, uint) {
-        Ramp storage ramp = ramps[back][_gem];
+    function _clip(address back, address gem, uint top) internal view returns (bool, uint, uint) {
+        Ramp storage ramp = ramps[back][gem];
         require(address(0) != back, 'Flow/vow');
-        address gem = address(0) == _gem ? VowLike(back).RISK() : _gem;
         uint supply = GemLike(gem).totalSupply();
         uint slope = min(ramp.vel, wmul(ramp.rel, supply));
         uint charge = slope * min(ramp.cel, block.timestamp - ramp.bel);
@@ -106,13 +101,10 @@ contract BalancerFlower is Math, BalancerSwapper, Flow
         return bytes32(++count);
     }
 
-    // TODO ward
     function approve_gem(address gem) external {
         GemLike(gem).approve(address(bvault), type(uint256).max);
     }
 
-    // Flow handles all flow rate limits for vow or other clients, based on flopback requesting amount
-    // TODO ward
     function curb(address gem, bytes32 key, uint val) external {
                if (key == "vel") { ramps[msg.sender][gem].vel = val;
         } else if (key == "rel") { ramps[msg.sender][gem].rel = val;

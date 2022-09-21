@@ -40,7 +40,9 @@ abstract contract RicoSetUp is Math {
     Vow      public vow;
     address  public adock;
     address  public arico;
+    address  public arisk;
     address  public agold;
+    address  public aruby;
     address  public avat;
 
     function make_bank() public {
@@ -58,6 +60,7 @@ abstract contract RicoSetUp is Math {
         avat  = address(vat);
         adock = address(dock);
         arico = address(rico);
+        arisk = address(risk);
     }
 
     function init_gold() public {
@@ -65,11 +68,14 @@ abstract contract RicoSetUp is Math {
         gold.mint(self, init_mint * WAD);
         gold.approve(address(dock), type(uint256).max);
         vat.init(gilk, address(gold), self, gtag);
+        vat.filk(gilk, bytes32('chop'), RAD);
         vat.filk(gilk, bytes32("line"), init_mint * 10 * RAD);
+        vat.filk(gilk, bytes32('duty'), 1000000001546067052200000000);  // 5%
         feed.push(gtag, bytes32(RAY), block.timestamp + 1000);
         dock.bind_gem(avat, gilk, address(gold));
         dock.list(address(gold), true);
         agold = address(gold);
+        vow.grant(agold);
     }
 
     function init_ruby() public {
@@ -77,9 +83,13 @@ abstract contract RicoSetUp is Math {
         ruby.mint(self, init_mint * WAD);
         ruby.approve(address(dock), type(uint256).max);
         vat.init(rilk, address(ruby), self, rtag);
+        vat.filk(rilk, bytes32('chop'), RAD);
         vat.filk(rilk, bytes32("line"), init_mint * 10 * RAD);
+        vat.filk(rilk, bytes32('duty'), 1000000001546067052200000000);  // 5%
         feed.push(rtag, bytes32(RAY), block.timestamp + 1000);
         dock.bind_gem(avat, rilk, address(ruby));
         dock.list(address(ruby), true);
+        aruby = address(ruby);
+        vow.grant(aruby);
     }
 }

@@ -87,12 +87,11 @@ describe('vow / liq liquidation lifecycle', () => {
 
     debug('vow file, ramp, approve')
     await curb_ramp(vow, RISK, { vel: wad(1), rel: wad(0.001), bel: 0, cel: 60, del: 0})
-    await curb_ramp(vow, FLOP, { vel: wad(1), rel: wad(0.001), bel: 0, cel: 60, del: 0})
 
-    await send(vow.reapprove_gem, WETH.address)
+    await send(vow.grant, WETH.address)
 
-    await send(vow.reapprove_gem, RICO.address)
-    await send(vow.reapprove_gem, RISK.address)
+    await send(vow.grant, RICO.address)
+    await send(vow.grant, RISK.address)
 
     const t1 = await gettime()
     await send(fb.push, wtag, bn2b32(ray(1)), t1 + 2 * BANKYEAR)
@@ -259,7 +258,6 @@ describe('vow / liq liquidation lifecycle', () => {
         const risk_supply_0 = await RISK.totalSupply()
         await send(vat.filk, i0, b32('duty'), apy(2))
         await curb_ramp(vow, RISK, { vel: wad(0.001), rel: wad(1000000), bel: 0, cel: 1000, del: 0})
-        await curb_ramp(vow, FLOP, { vel: wad(0.001), rel: wad(1000000), bel: 0, cel: 1000 })
         await mine(hh, BANKYEAR);
         await send(vow.bail, i0, CAT)
         await send(vow.keep, [i0])
@@ -280,7 +278,6 @@ describe('vow / liq liquidation lifecycle', () => {
         await send(vat.filk, i0, b32('duty'), apy(2))
         // for same results as above the rel rate is set to 1 / risk supply * vel used above
         await curb_ramp(vow, RISK, { vel: wad(1000000), rel: wad(0.0000001), bel: 0, cel: 1000 })
-        await curb_ramp(vow, FLOP, { vel: wad(1000000), rel: wad(0.0000001), bel: 0, cel: 1000 })
         await mine(hh, BANKYEAR);
         await send(vow.bail, i0, CAT)
         await send(vow.keep, [i0])

@@ -39,7 +39,6 @@ describe('dss', () => {
   let t1
 
   let RICO, RISK
-  let FLOP = { address: constants.AddressZero }
   //let poolId_weth_rico
   let poolId_gem_rico
   let poolId_risk_rico
@@ -141,7 +140,7 @@ describe('dss', () => {
 
     debug('link flow to vow')
     await send(vow.link, b32('flow'), flower.address)
-    await send(vow.reapprove_gem, gem.address)
+    await send(vow.grant, gem.address)
 
     debug('link vat to vow')
     await send(vow.link, b32('vat'), vat.address)
@@ -154,8 +153,8 @@ describe('dss', () => {
     debug('link rico, risk to vow')
     await send(vow.link, b32('RICO'), RICO.address)
     await send(vow.link, b32('RISK'), RISK.address)
-    await send(vow.reapprove_gem, RICO.address)
-    await send(vow.reapprove_gem, RISK.address)
+    await send(vow.grant, RICO.address)
+    await send(vow.grant, RISK.address)
 
     debug('risk ward vow')
     await send(RISK.ward, vow.address, true)
@@ -448,7 +447,7 @@ describe('dss', () => {
         await curb_ramp(vow, gold, {'vel': constants.MaxUint256, 'rel': wad(1), 'bel': await gettime(), 'cel': 1})
         await curb_ramp(vow, RICO, {'vel': constants.MaxUint256, 'rel': wad(1), 'bel': await gettime(), 'cel': 1})
         debug(`vow ramp`)
-        await curb_ramp(vow, FLOP, {'vel': constants.MaxUint256, 'rel': wad(1), 'bel': await gettime(), 'cel': 1})
+        await curb_ramp(vow, RISK, {'vel': constants.MaxUint256, 'rel': wad(1), 'bel': await gettime(), 'cel': 1})
 
         await snapshot_name(hh)
       })
@@ -617,7 +616,7 @@ describe('dss', () => {
         const riskAmt = 1000
         await curb_ramp(vow, gold, {'vel': wad(1), 'rel': wad(1), 'bel': await gettime(), 'cel': 1})
         debug('FLOP CURB')
-        await curb_ramp(vow, FLOP, {'vel': wad(riskAmt), 'rel': wad(1), 'bel': await gettime(), 'cel': 1})
+        await curb_ramp(vow, RISK, {'vel': wad(riskAmt), 'rel': wad(1), 'bel': await gettime(), 'cel': 1})
         debug('FLOP CURB DONE')
 
         // dunk N/A bail always liquidates whole urn
@@ -1032,12 +1031,12 @@ describe('dss', () => {
       await send(RISK.mint, vow.address, wad(lot))
 
       // flow is similar to kick
-      await curb_ramp(vow, FLOP, {'vel': constants.MaxUint256, 'rel': wad(1), 'bel': await gettime(), 'cel': 1})
+      await curb_ramp(vow, RISK, {'vel': constants.MaxUint256, 'rel': wad(1), 'bel': await gettime(), 'cel': 1})
       let vowjoy0 = await RICO.balanceOf(vow.address)
       debug('flop')
-      let aid = await flower.connect(vow.wallet).callStatic.flow(FLOP.address, wad(lot), RICO.address, constants.MaxUint256)
+      let aid = await flower.connect(vow.wallet).callStatic.flow(RISK.address, wad(lot), RICO.address, constants.MaxUint256)
       debug('flop static')
-      await send(flower.connect(vow.wallet).flow, FLOP.address, wad(lot), RICO.address, constants.MaxUint256)
+      await send(flower.connect(vow.wallet).flow, RISK.address, wad(lot), RICO.address, constants.MaxUint256)
       let vowjoy1 = await RICO.balanceOf(vow.address)
 
       // check risk moved to flow, but no further

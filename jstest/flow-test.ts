@@ -45,8 +45,8 @@ describe('flow balancer interaction', () => {
     debug('vow link ward approve gems')
     await send(vow.link, b32('flow'), flower.address)
     await send(vow.ward, flower.address, true)
-    await send(vow.reapprove_gem, RICO.address)
-    await send(vow.reapprove_gem, RISK.address)
+    await send(vow.grant, RICO.address)
+    await send(vow.grant, RISK.address)
 
     debug('vow link ward deposit/mint coins')
     await send(RICO.mint, ALI, wad(10000))

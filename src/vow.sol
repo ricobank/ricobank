@@ -18,7 +18,6 @@ contract Vow is Flowback, Math, Ward {
 
     mapping(bytes32 => Sale) public sales;
 
-    address  public immutable FLOP = address(0);
     address  public immutable self = address(this);
 
     Flow     public flow;
@@ -46,10 +45,10 @@ contract Vow is Flowback, Math, Ward {
             flow.glug(aid);
         } else if (sin > joy) {
             vat.heal(joy);
-            (uint flop, uint dust) = flow.clip(FLOP, type(uint256).max);
+            (uint flop, uint dust) = flow.clip(address(RISK), type(uint256).max);
             require(flop > dust, 'Vow/risk-dust');
             RISK.mint(self, flop);
-            bytes32 aid = flow.flow(FLOP, flop, address(RICO), type(uint256).max);
+            bytes32 aid = flow.flow(address(RISK), flop, address(RICO), type(uint256).max);
             flow.glug(aid);
         } else if (sin != 0) {
             vat.heal(sin);
@@ -80,7 +79,7 @@ contract Vow is Flowback, Math, Ward {
         // reusing slots later instead is real saving, two changes better than one zero to something
     }
 
-    function reapprove_gem(address gem) external {
+    function grant(address gem) external {
         GemLike(gem).approve(address(dock), type(uint256).max);
         GemLike(gem).approve(address(flow), type(uint256).max);
         flow.approve_gem(gem);

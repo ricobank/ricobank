@@ -18,23 +18,22 @@ contract FlowTest is Test, RicoSetUp, BalSetUp, Flowback {
 
     function setUp() public {
         make_bank();
-        rico = GemLike(address(ball.rico()));
         rico.mint(address(this), 10000 * WAD);
         risk.mint(address(this), 10000 * WAD);
         rico.approve(BAL_VAULT, type(uint256).max);
         risk.approve(BAL_VAULT, type(uint256).max);
         rico.approve(address(flow), type(uint256).max);
         risk.approve(address(flow), type(uint256).max);
-        Asset memory rico_asset = Asset(address(ball.rico()), 5 * WAD / 10, 1000 * WAD);
-        Asset memory risk_asset = Asset(address(ball.risk()), 5 * WAD / 10, 1000 * WAD);
+        Asset memory rico_asset = Asset(arico, 5 * WAD / 10, 1000 * WAD);
+        Asset memory risk_asset = Asset(arisk, 5 * WAD / 10, 1000 * WAD);
         PoolArgs memory rico_risk_args = PoolArgs(rico_asset, risk_asset, "mock", "MOCK", WAD / 100);
         pool_id_rico_risk = create_pool(rico_risk_args);
-        flow.setPool(address(rico), address(risk), pool_id_rico_risk);
-        flow.setPool(address(risk), address(rico), pool_id_rico_risk);
+        flow.setPool(arico, arisk, pool_id_rico_risk);
+        flow.setPool(arisk, arico, pool_id_rico_risk);
         flow.setVault(BAL_VAULT);
-        flow.approve_gem(address(rico));
-        flow.approve_gem(address(risk));
-        if (address(rico) > address(risk)) {
+        flow.approve_gem(arico);
+        flow.approve_gem(arisk);
+        if (arico > arisk) {
             risk_index = 0;
             rico_index = 1;
         }

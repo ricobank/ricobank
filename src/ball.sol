@@ -69,12 +69,13 @@ contract Ball {
         vox.link('tip', roll);
         vox.link('vat', address(vat));
 
-        vat.file('ceil', 1000e45);
+        vat.file('ceil', 100000e45);
         vat.link('feeds', feedbase);
 
         vow.pair(address(risk), 'vel', 1e18);
         vow.pair(address(risk), 'rel', 1e12);
         vow.pair(address(risk), 'cel', 600);
+        vow.ward(address(flow), true);
 
         vat.ward(address(dock), true);
         vat.ward(address(vow), true);

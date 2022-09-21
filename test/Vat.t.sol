@@ -19,7 +19,6 @@ contract VatTest is Test, RicoSetUp {
         ilks.push(gilk);
         rico.approve(address(flow), type(uint256).max);
         dock.join_gem(avat, gilk, self, init_join * WAD);
-        vat.filk(gilk, 'duty', 1000000001546067052200000000);  // 5%
     }
 
     /* urn safety tests */
