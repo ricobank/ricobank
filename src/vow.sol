@@ -45,8 +45,7 @@ contract Vow is Flowback, Math, Ward {
             flow.glug(aid);
         } else if (sin > joy) {
             vat.heal(joy);
-            (uint flop, uint dust) = flow.clip(address(RISK), type(uint256).max);
-            require(flop > dust, 'Vow/risk-dust');
+            (, uint flop,) = flow.clip(self, address(RISK), type(uint256).max);
             RISK.mint(self, flop);
             bytes32 aid = flow.flow(address(RISK), flop, address(RICO), type(uint256).max);
             flow.glug(aid);

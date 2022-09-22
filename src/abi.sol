@@ -94,12 +94,11 @@ interface FeedbaseLike {
     function pull(address src, bytes32 tag) external returns (bytes32 val, uint ttl);
 }
 
-
 // Abstract liquidations
 interface Flow {
     function flow(address hag, uint ham, address wag, uint wam) external returns (bytes32);
     function glug(bytes32 aid) external;
-    function clip(address gem, uint max) external returns (uint, uint);
+    function clip(address back, address gem, uint top) external view returns (bool, uint, uint);
     function curb(address gem, bytes32 key, uint val) external;
     function approve_gem(address gem) external;
 }

@@ -30,7 +30,7 @@ contract BalancerFlower is Math, BalancerSwapper, Flow
 
     function flow(address hag, uint ham, address wag, uint wam) external returns (bytes32 aid) {
         GemLike(hag).transferFrom(msg.sender, address(this), ham);
-        aid = _next();
+        aid = bytes32(++count);
         auctions[aid].vow = msg.sender;
         auctions[aid].hag = hag;
         auctions[aid].ham = ham;
@@ -42,7 +42,7 @@ contract BalancerFlower is Math, BalancerSwapper, Flow
         Auction storage auction = auctions[aid];
         address hag = auction.hag;
         address vow = auction.vow;
-        (bool last, uint hunk, uint bel) = _clip(vow, hag, auction.ham);
+        (bool last, uint hunk, uint bel) = clip(vow, hag, auction.ham);
         ramps[vow][hag].bel = bel;
         uint cost = SWAP_ERR;
         uint gain;
@@ -73,12 +73,7 @@ contract BalancerFlower is Math, BalancerSwapper, Flow
         }
     }
 
-    function clip(address gem, uint max) external view returns (uint, uint) {
-        (, uint res,) = _clip(msg.sender, gem, max);
-        return (res, ramps[msg.sender][gem].del);
-    }
-
-    function _clip(address back, address gem, uint top) internal view returns (bool, uint, uint) {
+    function clip(address back, address gem, uint top) public view returns (bool, uint, uint) {
         Ramp storage ramp = ramps[back][gem];
         require(address(0) != back, 'Flow/vow');
         uint supply = GemLike(gem).totalSupply();
@@ -95,10 +90,6 @@ contract BalancerFlower is Math, BalancerSwapper, Flow
             bel = block.timestamp - (charge - lot) / slope;
         }
         return (remainder == 0, lot, bel);
-    }
-
-    function _next() internal returns (bytes32) {
-        return bytes32(++count);
     }
 
     function approve_gem(address gem) external {
