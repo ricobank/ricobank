@@ -6,7 +6,7 @@ import '../vat.sol';
 
 contract MockVat is Vat {
     function mint(address usr, uint wad) public {
-        joy[usr] += wad;
+//        joy[usr] += wad;
         debt += wad;
     }
 }

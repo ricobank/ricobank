@@ -28,9 +28,9 @@ describe('vow / liq liquidation lifecycle', () => {
   let RICO, RISK, WETH
   let FLOP
   let vat; let vat_type
-  let dock
   let vow
   let flower; let flower_type
+  let setter; let setter_type
   let vault
   let fb
   let poolId_weth_rico
@@ -47,7 +47,6 @@ describe('vow / liq liquidation lifecycle', () => {
     flower_type = await smock.mock('BalancerFlower', { signer: ali })
     vat_type = await smock.mock('Vat', { signer: ali })
 
-    dock = dapp.dock
     vault = dapp.vault
     vow = dapp.vow
     RICO = dapp.rico
@@ -57,25 +56,23 @@ describe('vow / liq liquidation lifecycle', () => {
 
     vat = await vat_type.deploy()
     flower = await flower_type.deploy()
+    setter_type = await ethers.getContractFactory('DutySetter')
+    setter = await setter_type.deploy()
 
     // reset initial settings to use mocks
     debug('vat link ward')
-    await send(vat.ward, dock.address, true)
     await send(vat.ward, vow.address, true)
     await send(vat.link, b32('feeds'), fb.address);
+    await send(vat.link, b32('rico'), RICO.address);
     await send(vow.link, b32('flow'), flower.address)
     await send(vow.link, b32('vat'), vat.address)
     await send(vow.ward, flower.address, true)
+    await send(RICO.ward, vat.address, true)
 
     debug('deposit')
     await send(WETH.deposit, { value: ethers.utils.parseEther('6000.0') })
     await send(RISK.mint, ALI, wad(10000))
-    await send(WETH.approve, dock.address, U256_MAX)
-
-    debug('bind/join')
-    await send(dock.bind_gem, vat.address, i0, WETH.address)
-    await send(dock.bind_joy, vat.address, RICO.address, true)
-    await send(dock.join_gem, vat.address, i0, ALI, wad(1000))
+    await send(WETH.approve, vat.address, U256_MAX)
 
     debug('vat init')
     await send(vat.init, i0, WETH.address, ALI, wtag)
@@ -95,22 +92,20 @@ describe('vow / liq liquidation lifecycle', () => {
 
     const t1 = await gettime()
     await send(fb.push, wtag, bn2b32(ray(1)), t1 + 2 * BANKYEAR)
-    await send(vat.filk, i0, b32('duty'), apy(1.05))
-    await send(vat.frob, i0, ALI, wad(100), wad(0)) //await send(vat.lock, i0, wad(100))
-    await send(vat.frob, i0, ALI, wad(0), wad(99))// await send(vat.draw, i0, wad(99))
+    await send(vat.ward, setter.address, true)
+    await send(setter.set_duty, vat.address, vow.address, i0, b32('duty'), apy(1.05))
+    await send(vat.frob, i0, ALI, wad(100), wad(0))
+    await send(vat.frob, i0, ALI, wad(0), wad(99))
 
     debug('rico exit')
-    await send(dock.exit_rico, vat.address, RICO.address, ALI, wad(99))
     const bal = await RICO.balanceOf(ALI)
     want(bal.toString()).equals(wad(99).toString())
     const safe1 = await vat.callStatic.safe(i0, ALI)
     want(safe1).eq(2)
 
     await send(WETH.connect(cat).deposit, { value: ethers.utils.parseEther('7000.0') })
-    await send(WETH.connect(cat).approve, dock.address, U256_MAX)
-    await send(dock.connect(cat).join_gem, vat.address, i0, CAT, wad(4001))
+    await send(WETH.connect(cat).approve, vat.address, U256_MAX)
     await send(vat.connect(cat).frob, i0, CAT, wad(4001), wad(4000))
-    await send(dock.connect(cat).exit_rico, vat.address, RICO.address, CAT, wad(4000))
     await send(RICO.connect(cat).transfer, ALI, wad(4000))
 
     debug('token approves')
@@ -167,11 +162,9 @@ describe('vow / liq liquidation lifecycle', () => {
       want(safe2).eq(0)
 
       const sin0 = await vat.sin(vow.address)
-      const joy0 = await vat.joy(vow.address)
       const gembal0 = await WETH.balanceOf(flower.address)
       const vow_rico0 = await RICO.balanceOf(vow.address)
       want(sin0.eq(0)).true
-      want(joy0.eq(0)).false // drip sends joy to vow now, so no vow joy != 0
       want(gembal0.eq(0)).true
       want(vow_rico0.eq(0)).true
 
@@ -181,13 +174,11 @@ describe('vow / liq liquidation lifecycle', () => {
       debug('end vals')
       const [ink, art] = await vat.urns(i0, ALI)
       const sin1 = await vat.sin(vow.address)
-      const joy1 = await vat.joy(vow.address)
       const gembal1 = await WETH.balanceOf(flower.address)
       const vow_rico1 = await RICO.balanceOf(vow.address)
       want(ink.eq(0)).true
       want(art.eq(0)).true
       want(sin1.gt(0)).true
-      want(joy1.eq(0)).false
       want(vow_rico1.gt(0)).true
       want(gembal1.eq(0)).true
       want(flower.flow).to.have.been.called
@@ -222,7 +213,6 @@ describe('vow / liq liquidation lifecycle', () => {
       await send(vow.keep, [i0]);
       const final_total = await RICO.totalSupply()
       want(flower.flow).to.have.been.called
-      want(vat.heal).to.have.been.called
       want(final_total.gt(initial_total)).true
       // minted 4099, duty is 1.05. 0.05*4099 as no surplus buffer
       want(final_total - initial_total).within(parseInt(wad(204.94).toString()), parseInt(wad(204.96).toString()))
@@ -235,28 +225,11 @@ describe('vow / liq liquidation lifecycle', () => {
       want(flower.flow).to.have.been.called
       want(vat.heal).to.have.been.called
     })
-    it('only heal when joy == sin', async () => {
-      want(flower.flow).to.have.callCount(0)
-      await mine(hh, BANKYEAR);
-      debug('bail')
-      await send(vow.bail, i0, ALI)
-      want(flower.flow).to.have.been.called
-      flower.flow.reset()
-      vat.sin.returns(rad(1))
-      vat.joy.returns(rad(1))
-
-      debug('keep')
-      await send(vow.keep, [i0])
-      want(flower.flow).to.have.callCount(0)
-      want(vat.heal).to.have.been.called
-      vat.sin.reset()
-      vat.joy.reset()
-    })
 
     describe('rate limiting', () => {
       it('flop absolute rate', async () => {
         const risk_supply_0 = await RISK.totalSupply()
-        await send(vat.filk, i0, b32('duty'), apy(2))
+        await send(setter.set_duty, vat.address, vow.address, i0, b32('duty'), apy(2))
         await curb_ramp(vow, RISK, { vel: wad(0.001), rel: wad(1000000), bel: 0, cel: 1000, del: 0})
         await mine(hh, BANKYEAR);
         await send(vow.bail, i0, CAT)
@@ -275,7 +248,7 @@ describe('vow / liq liquidation lifecycle', () => {
 
       it('flop relative rate', async () => {
         const risk_supply_0 = await RISK.totalSupply()
-        await send(vat.filk, i0, b32('duty'), apy(2))
+        await send(setter.set_duty, vat.address, vow.address, i0, b32('duty'), apy(2))
         // for same results as above the rel rate is set to 1 / risk supply * vel used above
         await curb_ramp(vow, RISK, { vel: wad(1000000), rel: wad(0.0000001), bel: 0, cel: 1000 })
         await mine(hh, BANKYEAR);
@@ -316,12 +289,12 @@ describe('vow / liq liquidation lifecycle', () => {
 
       // confirm bail trades the weth for rico
       const vow_rico_0 = await RICO.balanceOf(vow.address)
-      const dock_weth_0 = await WETH.balanceOf(dock.address)
+      const vat_weth_0 = await WETH.balanceOf(vat.address)
       await send(vow.bail, i0, ALI)
       const vow_rico_1 = await RICO.balanceOf(vow.address)
-      const dock_weth_1 = await WETH.balanceOf(dock.address)
+      const vat_weth_1 = await WETH.balanceOf(vat.address)
       want(vow_rico_1.gt(vow_rico_0)).true
-      want(dock_weth_0.gt(dock_weth_1)).true
+      want(vat_weth_0.gt(vat_weth_1)).true
       want(flower.flow).to.have.been.called
 
       // although the keep joins the rico sin is still greater due to fees so we flop

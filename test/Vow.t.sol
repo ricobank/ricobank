@@ -21,7 +21,6 @@ contract VowTest is Test, RicoSetUp, BalSetUp {
         init_gold();
         ilks.push(gilk);
         rico.approve(address(flow), type(uint256).max);
-        dock.join_gem(avat, gilk, self, init_join * WAD);
 
         flow.setVault(BAL_VAULT);
         vow.grant(address(gold));
@@ -30,7 +29,6 @@ contract VowTest is Test, RicoSetUp, BalSetUp {
 
         feed.push(gtag, bytes32(RAY * 1000), block.timestamp + 1000);
         vat.frob(gilk, address(this), int(init_join * WAD), int(stack) * 1000);
-        dock.exit_rico(avat, arico, self, 10000 * WAD);
         risk.mint(address(this), 10000 * WAD);
 
         vow.pair(agold, 'vel', 1e18);

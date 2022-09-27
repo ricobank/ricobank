@@ -7,7 +7,6 @@
 
 pragma solidity 0.8.15;
 
-import {Dock} from './dock.sol';
 import {Vat} from './vat.sol';
 import {Vow} from './vow.sol';
 import {Vox} from './vox.sol';
@@ -28,7 +27,6 @@ interface GemLike {
 
 contract Ball {
     BalancerFlower public flow;
-    Dock public dock;
     GemLike public rico;
     GemLike public risk;
     Vat public vat;
@@ -52,36 +50,32 @@ contract Ball {
         rico = gemfab.build(bytes32("Rico"), bytes32("RICO"));
         risk = gemfab.build(bytes32("Rico Riskshare"), bytes32("RISK"));
 
-        dock = new Dock();
         vow = new Vow();
         vox = new Vox();
         vat = new Vat();
 
-        dock.bind_joy(address(vat), address(rico), true);
-
-        vow.link('dock', address(dock));
         vow.link('flow', address(flow));
         vow.link('vat',  address(vat));
         vow.link('RICO', address(rico));
         vow.link('RISK', address(risk));
 
-        vox.link('fb', feedbase);
+        vox.link('fb',  feedbase);
         vox.link('tip', roll);
         vox.link('vat', address(vat));
 
-        vat.file('ceil', 100000e45);
+        vat.file('ceil',  100000e45);
         vat.link('feeds', feedbase);
+        vat.link('rico',  address(rico));
 
         vow.pair(address(risk), 'vel', 1e18);
         vow.pair(address(risk), 'rel', 1e12);
         vow.pair(address(risk), 'cel', 600);
         vow.ward(address(flow), true);
 
-        vat.ward(address(dock), true);
-        vat.ward(address(vow), true);
-        vat.ward(address(vox), true);
+        vat.ward(address(vow),  true);
+        vat.ward(address(vox),  true);
 
-        rico.ward(address(dock), true);
+        rico.ward(address(vat), true);
         risk.ward(address(vow), true);
 
         // gem doesn't have give right now
@@ -90,7 +84,6 @@ contract Ball {
         risk.ward(roll, true);
         risk.ward(address(this), false);
 
-        dock.give(roll);
         flow.give(roll);
         vow.give(roll);
         vox.give(roll);

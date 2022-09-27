@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-/// vat.sol -- Dai CDP database
+/// vat.sol -- Rico CDP database
 
 // Copyright (C) 2021 monospace
 // Copyright (C) 2018 Rain <rainbreak@riseup.net>
@@ -20,17 +20,19 @@
 
 pragma solidity 0.8.15;
 
+import './mixin/lock.sol';
 import './mixin/math.sol';
 import './mixin/ward.sol';
 import './mixin/flog.sol';
 
 import { Feedbase } from '../lib/feedbase/src/Feedbase.sol';
+import { Gem }      from '../lib/gemfab/src/gem.sol';
 
 interface Hook {
     function hook(address urn, bytes calldata data) external;
 }
 
-contract Vat is Math, Ward, Flog {
+contract Vat is Lock, Math, Ward, Flog {
     struct Ilk {
         uint256 tart;  // [wad] Total Normalised Debt
         uint256 rack;  // [ray] Accumulated Rate
@@ -59,19 +61,25 @@ contract Vat is Math, Ward, Flog {
 
     mapping (bytes32 => Ilk)                       public ilks;
     mapping (bytes32 => mapping (address => Urn )) public urns;
-    mapping (bytes32 => mapping (address => uint)) public gem;  // [wad]
-    mapping (address => uint256)                   public joy;  // [rad]
+    mapping (address => bool)                      public pass;
     mapping (address => uint256)                   public sin;  // [rad]
 
     enum Spot {Sunk, Iffy, Safe}
 
-    uint256 public debt;  // [rad] Total Dai Issued
-    uint256 public vice;  // [rad] Total Unbacked Dai
-    uint256 public ceil;  // [rad] Total Debt Ceiling
+    error ErrDutyMin();
+    error ErrDutyRho();
+    error ErrMintCeil();
+    error ErrTransfer();
 
-    uint256 public par;   // [wad] System Price (joy/ref)
+    uint256 public constant MINT = 2**140;
+    uint256 public rest;  // [rad] Remainder from
+    uint256 public debt;  // [rad] Total Rico Issued
+    uint256 public vice;  // [rad] Total Unbacked Rico
+    uint256 public ceil;  // [rad] Total Debt Ceiling
+    uint256 public par;   // [wad] System Price (rico/ref)
 
     Feedbase public feeds;
+    Gem     public rico;
 
     constructor() {
         par = RAY;
@@ -147,13 +155,24 @@ contract Vat is Math, Ward, Flog {
         // urn has no debt, or a non-dusty amount
         require(either(urn.art == 0, tab >= ilk.dust), "Vat/dust");
 
+        if (dink > 0) {
+            if (!Gem(ilk.gem).transferFrom(msg.sender, address(this), uint(dink))) revert ErrTransfer();
+        } else if (dink < 0) {
+            if (!Gem(ilk.gem).transfer(msg.sender, uint(-dink))) revert ErrTransfer();
+        }
 
-        gem[i][v] = sub(gem[i][v], dink);
-        joy[v]    = add(joy[v],    dtab);
+        if (dtab > 0) {
+            rico.mint(msg.sender, uint(dtab) / RAY);
+            rest += uint(dtab) % RAY;
+        } else if (dtab < 0) {
+            uint wad = uint(-dtab) / RAY + 1;
+            rest += add(wad * RAY, dtab);
+            rico.burn(msg.sender, wad);
+        }
     }
 
     function grab(bytes32 i, address u, int dink, int dart)
-        _ward_ _flog_ external returns (uint256)
+        _ward_ _flog_ external returns (uint256, address)
     {
         Urn storage urn = urns[i][u];
         Ilk storage ilk = ilks[i];
@@ -168,11 +187,12 @@ contract Vat is Math, Ward, Flog {
         int dtab = mul(ilk.rack, dart);
 
         address vow = msg.sender;
-        gem[i][vow] = sub(gem[i][vow], dink);
+        address gem = ilks[i].gem;
+        if (!Gem(gem).transfer(vow, uint(-dink))) revert ErrTransfer();
         sin[vow]    = sub(sin[vow],    dtab);
         vice        = sub(vice,        dtab);
 
-        return bill;
+        return (bill, gem);
     }
 
     function prod(uint256 jam)
@@ -188,50 +208,45 @@ contract Vat is Math, Ward, Flog {
         address vow  = msg.sender;
         uint256 prev = ilks[i].rack;
         uint256 rack = grow(prev, ilks[i].duty, block.timestamp - ilks[i].rho);
-        int256  delt = diff(rack, prev);
-        int256  rad  = mul(ilks[i].tart, delt);
+        uint256 delt = rack - prev;
+        uint256 rad  = ilks[i].tart * delt;
+        uint256 all  = rest + rad;
+        rest         = all % RAY;
         ilks[i].rho  = block.timestamp;
-        ilks[i].rack = add(ilks[i].rack, delt);
-        joy[vow]     = add(joy[vow], rad);
-        debt         = add(debt, rad);
+        ilks[i].rack = rack;
+        debt         = debt + rad;
+        rico.mint(vow, all / RAY);
     }
 
-    function slip(bytes32 ilk, address usr, int256 wad)
-      _ward_ _flog_ external
-    {
-        gem[ilk][usr] = add(gem[ilk][usr], wad);
-    }
-
-    function flux(bytes32 ilk, address dst, uint256 wad) _flog_ external {
-        address src = msg.sender;
-        gem[ilk][src] = gem[ilk][src] - wad;
-        gem[ilk][dst] = gem[ilk][dst] + wad;
-    }
-
-    function gift(address dst, uint256 rad) _flog_ external {
-        move(msg.sender, dst, rad);
-    }
-
-    function move(address src, address dst, uint256 rad) _ward_ _flog_ public {
-        joy[src] = joy[src] - rad;
-        joy[dst] = joy[dst] + rad;
-    }
-
-    function heal(uint rad) _flog_ external {
+    function heal(uint wad) _flog_ external {
+        uint256 rad = wad * RAY;
         address u = msg.sender;
         sin[u] = sin[u] - rad;
-        joy[u] = joy[u] - rad;
         vice   = vice   - rad;
         debt   = debt   - rad;
+        rico.burn(u, wad);
     }
 
-    function suck(address u, address v, uint rad)
-      _ward_ _flog_ external
-    {
-        sin[u] = sin[u] + rad;
-        joy[v] = joy[v] + rad;
-        vice   = vice   + rad;
-        debt   = debt   + rad;
+    function flash(address gem, uint wad, address code, bytes calldata data)
+      _lock_ external returns (bytes memory result) {
+        bool ok;
+        if (pass[gem]) {
+            if (!Gem(gem).transfer(code, wad)) revert ErrTransfer();
+            (ok, result) = code.call(data);
+            require(ok, string(result));
+            if (!Gem(gem).transferFrom(code, address(this), wad)) revert ErrTransfer();
+        } else {
+            if (wad > MINT) revert ErrMintCeil();
+            Gem(gem).mint(code, wad);
+            (ok, result) = code.call(data);
+            require(ok, string(result));
+            Gem(gem).burn(code, wad);
+        }
+    }
+
+    function list(address gem, bool bit)
+      _ward_ external {
+        pass[gem] = bit;
     }
 
     function file(bytes32 key, uint256 val)
@@ -242,8 +257,9 @@ contract Vat is Math, Ward, Flog {
     }
     function link(bytes32 key, address val) external
       _ward_ {
-        if (key == "feeds") { feeds = Feedbase(val); }
-        else revert("ERR_LINK_KEY");
+               if (key == "feeds") { feeds = Feedbase(val);
+        } else if (key == "rico" ) { rico  = Gem(val);
+        } else revert("ERR_LINK_KEY");
     }
     function filk(bytes32 ilk, bytes32 key, uint val)
       _ward_ _flog_ external
@@ -251,10 +267,13 @@ contract Vat is Math, Ward, Flog {
         Ilk storage i = ilks[ilk];
                if (key == "line") { i.line = val;
         } else if (key == "dust") { i.dust = val;
-        } else if (key == "duty") { i.duty = val; // WARN must drip first
         } else if (key == "hook") { i.hook = address(bytes20(bytes32(val)));
         } else if (key == "liqr") { i.liqr = val;
         } else if (key == "chop") { i.chop = val;
+        } else if (key == "duty") {
+            if (val < RAY)                revert ErrDutyMin();
+            if (block.timestamp != i.rho) revert ErrDutyRho();
+            i.duty = val;
         } else { revert("ERR_FILK_KEY"); }
     }
 }
