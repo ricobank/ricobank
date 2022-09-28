@@ -9,6 +9,7 @@ import { RicoSetUp } from "./RicoHelper.sol";
 import { Gem } from '../lib/gemfab/src/gem.sol';
 import { Vat } from '../src/vat.sol';
 import '../src/mixin/lock.sol';
+import '../src/mixin/math.sol';
 
 contract VatTest is Test, RicoSetUp {
     uint256 public init_join = 1000;
@@ -35,17 +36,22 @@ contract VatTest is Test, RicoSetUp {
         rico.mint(achap, 1);  // needs an extra for rounding
     }
 
+    function test_ilk_reset() public {
+        vm.expectRevert(Vat.ErrMultiIlk.selector);
+        vat.init(gilk, address(gold), self, gtag);
+    }
+
     /* urn safety tests */
 
     // goldusd, par, and liqr all = 1 after set up
     function test_create_unsafe() public {
         // art should not exceed ink
-        vm.expectRevert("Vat/not-safe");
+        vm.expectRevert(Vat.ErrNotSafe.selector);
         vat.frob(gilk, address(this), int(stack), int(stack) + 1);
 
         // art should not increase if iffy
         skip(1100);
-        vm.expectRevert("Vat/not-safe");
+        vm.expectRevert(Vat.ErrNotSafe.selector);
         vat.frob(gilk, address(this), int(stack), int(1));
     }
 
@@ -122,11 +128,11 @@ contract VatTest is Test, RicoSetUp {
         vat.frob(gilk, address(this), int(1), int(0));
 
         // should not be able to increase art of sunk urn
-        vm.expectRevert("Vat/not-safe");
+        vm.expectRevert(Vat.ErrNotSafe.selector);
         vat.frob(gilk, address(this), int(10), int(1));
 
         // should not be able to decrease ink of sunk urn
-        vm.expectRevert("Vat/not-safe");
+        vm.expectRevert(Vat.ErrNotSafe.selector);
         vat.frob(gilk, address(this), int(-1), int(1));
     }
 
@@ -143,11 +149,11 @@ contract VatTest is Test, RicoSetUp {
         vat.frob(gilk, address(this), int(1), int(0));
 
         // should not be able to increase art of iffy urn
-        vm.expectRevert("Vat/not-safe");
+        vm.expectRevert(Vat.ErrNotSafe.selector);
         vat.frob(gilk, address(this), int(10), int(1));
 
         // should not be able to decrease ink of iffy urn
-        vm.expectRevert("Vat/not-safe");
+        vm.expectRevert(Vat.ErrNotSafe.selector);
         vat.frob(gilk, address(this), int(-1), int(1));
     }
 
@@ -182,11 +188,11 @@ contract VatTest is Test, RicoSetUp {
         vat.frob(gilk, self, int(init_mint * WAD + 1), 0);
 
         // revert for trying to exit too much rico
-        vm.expectRevert('Vat/not-safe');
+        vm.expectRevert(Vat.ErrNotSafe.selector);
         vat.frob(gilk, self, int(10), int(11));
 
         // revert for trying to exit gems from other users
-        vm.expectRevert('ERR_MATH_UIADD_NEG');
+        vm.expectRevert(Math.ErrUIAddNeg.selector);
         vat.frob(gilk, self, int(-1), 0);
 
         // gems are taken from user when joining, and rico given to user
@@ -373,7 +379,7 @@ contract VatJsTest is VatTest {
         (uint ink, uint art) = vat.urns(i0, ali);
         assertEq(ink, 0);
         assertEq(art, 0);
-        vm.expectRevert("Vat/not-safe");
+        vm.expectRevert(Vat.ErrNotSafe.selector);
         vat.frob(i0, ali, 0, int(WAD));
     }
 

@@ -185,7 +185,7 @@ describe('vow / liq liquidation lifecycle', () => {
     })
 
     it('when safe', async () => {
-      await fail('ERR_SAFE', vow.bail, i0, ALI)
+      await fail('ErrSafeBail', vow.bail, i0, ALI)
       want(flower.flow).to.have.callCount(0)
 
       const sin0 = await vat.sin(vow.address)
@@ -197,7 +197,7 @@ describe('vow / liq liquidation lifecycle', () => {
       debug('bail success')
       await send(vow.bail, i0, ALI)
       debug('bail fail')
-      await fail('ERR_SAFE', vow.bail, i0, ALI)
+      await fail('ErrSafeBail', vow.bail, i0, ALI)
       want(flower.flow).to.have.been.called
     })
   })

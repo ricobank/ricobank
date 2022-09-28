@@ -240,7 +240,7 @@ describe('dss', () => {
         await send(vat.filk, i0, b32('line'), rad(10)) // filk ~ dss file
         await send(vat.frob, i0, ME, wad(10), wad(9))
         debug('only if under debt ceiling')
-        await fail('Vat/ceiling-exceeded', vat.frob, i0, ME, wad(0), wad(2))
+        await fail('ErrDebtCeil', vat.frob, i0, ME, wad(0), wad(2))
       })
 
       it('test_cool', async () => {
@@ -257,7 +257,7 @@ describe('dss', () => {
         // safe means that the cdp is not risky
         // you can't frob a cdp into unsafe
         await send(vat.frob, i0, ME, wad(10), wad(5))
-        await fail('Vat/not-safe', vat.frob, i0, ME, wad(0), wad(6))
+        await fail('ErrNotSafe', vat.frob, i0, ME, wad(0), wad(6))
       })
 
       it('test_nice', async () => {
@@ -267,19 +267,19 @@ describe('dss', () => {
         await send(vat.frob, i0, ME, wad(10), wad(10))
         await send(fb.push, tag, bn2b32(ray(0.5)), t1 + 1000)
         debug('debt can\'t increase if unsafe')
-        await fail('Vat/not-safe', vat.frob, i0, ME, wad(0), wad(1))
+        await fail('ErrNotSafe', vat.frob, i0, ME, wad(0), wad(1))
         debug('debt can decrease')
         await send(vat.frob, i0, ME, wad(0), wad(-1))
         debug('ink can\'t decrease')
-        await fail('Vat/not-safe', vat.frob, i0, ME, wad(-1), wad(0))
+        await fail('ErrNotSafe', vat.frob, i0, ME, wad(-1), wad(0))
         debug('ink can increase')
         await send(vat.frob, i0, ME, wad(1), wad(0))
 
         debug('cdp is still unsafe')
         debug('ink can\'t decrease, even if debt decreases more')
-        await fail('Vat/not-safe', vat.frob, i0, ME, wad(-2), wad(-4))
+        await fail('ErrNotSafe', vat.frob, i0, ME, wad(-2), wad(-4))
         debug('debt can\'t increase, even if ink increases more')
-        await fail('Vat/not-safe', vat.frob, i0, ME, wad(5), wad(1))
+        await fail('ErrNotSafe', vat.frob, i0, ME, wad(5), wad(1))
 
         debug('ink can decrease if end state is safe')
         await send(vat.frob, i0, ME, wad(-1), wad(-4))
@@ -346,9 +346,9 @@ describe('dss', () => {
       it('test_dust', async () => {
         await send(vat.frob, i0, ME, wad(9), wad(1))
         await send(vat.filk, i0, b32('dust'), rad(5))
-        await fail('Vat/dust', vat.frob, i0, ME, wad(5), wad(2))
+        await fail('ErrUrnDust', vat.frob, i0, ME, wad(5), wad(2))
         await send(vat.frob, i0, ME, wad(0), wad(5))
-        await fail('Vat/dust', vat.frob, i0, ME, wad(0), wad(-5))
+        await fail('ErrUrnDust', vat.frob, i0, ME, wad(0), wad(-5))
         await send(vat.frob, i0, ME, wad(0), wad(-6))
       })
     })

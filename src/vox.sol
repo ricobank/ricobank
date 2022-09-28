@@ -22,6 +22,8 @@ import { VatLike, FeedbaseLike } from './abi.sol';
 
 // RicoLikeVox
 contract Vox is Math, Ward {
+    error ErrWrongKey();
+
     VatLike      public vat;
     FeedbaseLike public fb;
 
@@ -66,7 +68,7 @@ contract Vox is Math, Ward {
              if (key == "vat") { vat = VatLike(val); }
         else if (key == "fb") { fb = FeedbaseLike(val); }
         else if (key == "tip") { tip = val; } // TODO consider putting in `file`
-        else revert("ERR_LINK_KEY");
+        else revert ErrWrongKey();
     }
 
     function file(bytes32 key, bytes32 val) external
@@ -76,7 +78,7 @@ contract Vox is Math, Ward {
         else if (key == "how") { how = uint256(val); }
         else if (key == "cap") { cap = uint256(val); }
         else if (key == "way") { way = uint256(val); }
-        else revert("ERR_FILE_KEY");
+        else revert ErrWrongKey();
     }
 
 }

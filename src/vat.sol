@@ -68,8 +68,15 @@ contract Vat is Lock, Math, Ward, Flog {
 
     error ErrDutyMin();
     error ErrDutyRho();
+    error ErrIlkInit();
+    error ErrNotSafe();
+    error ErrUrnDust();
+    error ErrDebtCeil();
+    error ErrMultiIlk();
     error ErrMintCeil();
     error ErrTransfer();
+    error ErrWrongKey();
+    error ErrWrongUrn();
 
     uint256 public constant MINT = 2**140;
     uint256 public rest;  // [rad] Remainder from
@@ -88,7 +95,7 @@ contract Vat is Lock, Math, Ward, Flog {
     function init(bytes32 ilk, address gem, address fsrc, bytes32 ftag)
       _ward_ _flog_ external
     {
-        require(ilks[ilk].rack == 0, "Vat/ilk-already-init");
+        if (ilks[ilk].rack != 0) revert ErrMultiIlk();
         ilks[ilk] = Ilk({
             rack: RAY,
             duty: RAY,
@@ -132,7 +139,7 @@ contract Vat is Lock, Math, Ward, Flog {
         Ilk storage ilk = ilks[i];
 
         // ilk has been initialised
-        require(ilk.rack != 0, "Vat/ilk-not-init");
+        if (ilk.rack == 0) revert ErrIlkInit();
 
         if (ilk.hook != address(0)) {
             Hook(ilk.hook).hook(msg.sender, msg.data);
@@ -147,13 +154,13 @@ contract Vat is Lock, Math, Ward, Flog {
         debt     = add(debt, dtab);
 
         // either debt has decreased, or debt ceilings are not exceeded
-        require(either(dart <= 0, both(ilk.tart * ilk.rack <= ilk.line, debt <= ceil)), "Vat/ceiling-exceeded");
+        if (both(dart > 0, either(ilk.tart * ilk.rack > ilk.line, debt > ceil))) revert ErrDebtCeil();
         // urn is either less risky than before, or it is safe
-        require(either(both(dart <= 0, dink >= 0), safe(i, u) == Spot.Safe), "Vat/not-safe");
+        if (both(either(dart > 0, dink < 0), safe(i, u) != Spot.Safe)) revert ErrNotSafe();
         // either urn is more safe, or urn is caller
-        require(either(both(dart <= 0, dink >= 0), u == v), "Vat/frob/not-allowed-u");
+        if (both(either(dart > 0, dink < 0), u != v)) revert ErrWrongUrn();
         // urn has no debt, or a non-dusty amount
-        require(either(urn.art == 0, tab >= ilk.dust), "Vat/dust");
+        if (both(urn.art != 0, tab < ilk.dust)) revert ErrUrnDust();
 
         if (dink > 0) {
             if (!Gem(ilk.gem).transferFrom(msg.sender, address(this), uint(dink))) revert ErrTransfer();
@@ -253,13 +260,13 @@ contract Vat is Lock, Math, Ward, Flog {
       _ward_ _flog_ external
     {
         if (key == "ceil") { ceil = val;
-        } else { revert("ERR_FILE_KEY"); }
+        } else { revert ErrWrongKey(); }
     }
     function link(bytes32 key, address val) external
       _ward_ {
                if (key == "feeds") { feeds = Feedbase(val);
         } else if (key == "rico" ) { rico  = Gem(val);
-        } else revert("ERR_LINK_KEY");
+        } else { revert ErrWrongKey(); }
     }
     function filk(bytes32 ilk, bytes32 key, uint val)
       _ward_ _flog_ external
@@ -274,6 +281,6 @@ contract Vat is Lock, Math, Ward, Flog {
             if (val < RAY)                revert ErrDutyMin();
             if (block.timestamp != i.rho) revert ErrDutyRho();
             i.duty = val;
-        } else { revert("ERR_FILK_KEY"); }
+        } else { revert ErrWrongKey(); }
     }
 }

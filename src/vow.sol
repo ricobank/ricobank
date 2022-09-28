@@ -19,6 +19,8 @@ contract Vow is Flowback, Math, Ward {
     mapping(bytes32 => Sale) public sales;
 
     error ErrOverflow();
+    error ErrSafeBail();
+    error ErrWrongKey();
 
     address  public immutable self = address(this);
 
@@ -52,7 +54,7 @@ contract Vow is Flowback, Math, Ward {
 
     function bail(bytes32 ilk, address urn) external {
         vat.drip(ilk);
-        require(vat.safe(ilk, urn) == Vat.Spot.Sunk, 'ERR_SAFE');
+        if (vat.safe(ilk, urn) != Vat.Spot.Sunk) revert ErrSafeBail();
         (uint ink, uint art) = vat.urns(ilk, urn);
         (uint bill, address gem) = vat.grab(ilk, urn, -int(ink), -int(art));
         bytes32 aid = flow.flow(gem, ink, address(RICO), bill);
@@ -91,7 +93,7 @@ contract Vow is Flowback, Math, Ward {
         else if (key == "RISK") { RISK = GemLike(val); }
         else if (key == "RICO") { RICO = GemLike(val); }
         else if (key == "vat")  { vat  = Vat(val); }
-        else revert("ERR_LINK_KEY");
+        else revert ErrWrongKey();
     }
 
     fallback () external payable {}

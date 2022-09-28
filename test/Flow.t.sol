@@ -72,7 +72,7 @@ contract FlowTest is Test, RicoSetUp, BalSetUp, Flowback {
         assertGt(back_risk_2, back_risk_1 + 80*WAD);  // 80 is some significant portion of 100 but less due to slippage
 
         // instant repeat should revert (BAL#510, zero amount in)
-        vm.expectRevert('Flow/swap');
+        vm.expectRevert(BalancerFlower.ErrSwapFail.selector);
         flow.glug(aid);
         (tokens, balances2, lastChangeBlock) = vault.getPoolTokens(pool_id_rico_risk);
         assertEq(balances1[rico_index], balances2[rico_index]);
@@ -116,7 +116,7 @@ contract FlowTest is Test, RicoSetUp, BalSetUp, Flowback {
         assertGt(back_risk_2, back_risk_1 + 80*WAD);  // 80 is some significant portion of 100 but less due to slippage
 
         // instant repeat should revert (BAL#510, zero amount in)
-        vm.expectRevert('Flow/swap');
+        vm.expectRevert(BalancerFlower.ErrSwapFail.selector);
         flow.glug(aid);
         (tokens, balances2, lastChangeBlock) = vault.getPoolTokens(pool_id_rico_risk);
         assertEq(balances1[rico_index], balances2[rico_index]);

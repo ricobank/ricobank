@@ -26,6 +26,10 @@ contract BalancerFlower is Math, BalancerSwapper, Flow
 
     mapping (address => mapping (address => Ramp)) public ramps;  // client -> gem -> ramp
     mapping (bytes32 => Auction) public auctions;
+
+    error ErrCurbKey();
+    error ErrSwapFail();
+
     uint256 public count;
 
     function flow(address hag, uint ham, address wag, uint wam) external returns (bytes32 aid) {
@@ -56,7 +60,7 @@ contract BalancerFlower is Math, BalancerSwapper, Flow
             last = true;
         } else {
             gain = _swap(hag, auction.wag, vow, SwapKind.GIVEN_IN, hunk, 0);
-            require(gain != SWAP_ERR, 'Flow/swap');
+            if (gain == SWAP_ERR) revert ErrSwapFail();
             cost = hunk;
         }
         uint rest = auction.ham - cost;
@@ -102,6 +106,6 @@ contract BalancerFlower is Math, BalancerSwapper, Flow
         } else if (key == "bel") { ramps[msg.sender][gem].bel = val;
         } else if (key == "cel") { ramps[msg.sender][gem].cel = val;
         } else if (key == "del") { ramps[msg.sender][gem].del = val;
-        } else { revert("ERR_CURB_KEY"); }
+        } else { revert ErrCurbKey(); }
     }
 }
