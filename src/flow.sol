@@ -28,6 +28,7 @@ contract BalancerFlower is Math, BalancerSwapper, Flow
     mapping (bytes32 => Auction) public auctions;
 
     error ErrCurbKey();
+    error ErrEmptyAid();
     error ErrSwapFail();
 
     uint256 public count;
@@ -46,6 +47,7 @@ contract BalancerFlower is Math, BalancerSwapper, Flow
         Auction storage auction = auctions[aid];
         address hag = auction.hag;
         address vow = auction.vow;
+        if (hag == address(0)) revert ErrEmptyAid();
         (bool last, uint hunk, uint bel) = clip(vow, hag, auction.ham);
         ramps[vow][hag].bel = bel;
         uint cost = SWAP_ERR;
@@ -67,7 +69,7 @@ contract BalancerFlower is Math, BalancerSwapper, Flow
 
         if (last) {
             GemLike(hag).transfer(vow, rest);
-            Flowback(vow).flowback(aid, hag, rest);
+            Flowback(vow).flowback(aid, rest);
             delete auctions[aid];
         } else {
             auction.ham = rest;
@@ -79,7 +81,6 @@ contract BalancerFlower is Math, BalancerSwapper, Flow
 
     function clip(address back, address gem, uint top) public view returns (bool, uint, uint) {
         Ramp storage ramp = ramps[back][gem];
-        require(address(0) != back, 'Flow/vow');
         uint supply = GemLike(gem).totalSupply();
         uint slope = min(ramp.vel, wmul(ramp.rel, supply));
         uint charge = slope * min(ramp.cel, block.timestamp - ramp.bel);

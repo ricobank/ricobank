@@ -30,7 +30,7 @@ contract Flasher {
         GemLike(gem).transfer(address(0), 3);
     }
 
-    function failure(address gem, uint256 wad) public pure {
+    function failure() public pure {
         revert ErrBroken();
     }
 

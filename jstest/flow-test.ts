@@ -36,7 +36,7 @@ describe('flow balancer interaction', () => {
     vault = dapp.vault
     //vow = dapp.vow
     debug('smock')
-    vow = await (await smock.mock('Vow')).deploy()
+    vow = await (await smock.mock('MockVow')).deploy()
     await ali.sendTransaction({to: vow.address, value: ethers.utils.parseEther('1.0')})
     debug(`vow at ${vow.address}`)
     RICO = dapp.rico

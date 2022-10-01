@@ -252,18 +252,19 @@ contract Vat is Lock, Math, Ward, Flog {
     }
 
     function list(address gem, bool bit)
-      _ward_ external {
+      _ward_ _flog_ external
+    {
         pass[gem] = bit;
     }
-
     function file(bytes32 key, uint256 val)
       _ward_ _flog_ external
     {
         if (key == "ceil") { ceil = val;
         } else { revert ErrWrongKey(); }
     }
-    function link(bytes32 key, address val) external
-      _ward_ {
+    function link(bytes32 key, address val)
+      _ward_ _flog_ external
+    {
                if (key == "feeds") { feeds = Feedbase(val);
         } else if (key == "rico" ) { rico  = Gem(val);
         } else { revert ErrWrongKey(); }

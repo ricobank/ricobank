@@ -26,6 +26,9 @@ interface GemLike {
 }
 
 contract Ball {
+    error ErrGFHash();
+    error ErrFBHash();
+
     BalancerFlower public flow;
     GemLike public rico;
     GemLike public risk;
@@ -33,15 +36,15 @@ contract Ball {
     Vow public vow;
     Vox public vox;
 
-    bytes32 public immutable gemFabHash = 0xd740b24e331e7d5a8f233b7e11e8e0666aa9a891a4e12fa72f9f33c1d2d02983;
-    bytes32 public immutable feedbaseHash = 0x680c60b0111a870d898ae17605a6509635a3491595c5b78b28f82066adfea7f3;
+    bytes32 public immutable gemFabHash = 0x3d4566ab42065aeb1aa89c121b828f7cce52f908859617efe6f5c85247df2b3b;
+    bytes32 public immutable feedbaseHash = 0x444a69f35a859778fe48a0d50c8c24a3d891d8e7287c6db0df0d17f9fcb9c71b;
 
     constructor(GemFabLike gemfab, address feedbase) {
-        bytes32 codeHash;
+//        bytes32 codeHash;
 //        assembly { codeHash := extcodehash(gemfab) }
-//        require(gemFabHash == codeHash, "Ball/gemfab codehash");
+//        if (gemFabHash != codeHash) revert ErrGFHash();
 //        assembly { codeHash := extcodehash(feedbase) }
-//        require(feedbaseHash == codeHash, "Ball/feedbase codehash");
+//        if (feedbaseHash != codeHash) revert ErrFBHash();
 
         address roll = msg.sender;
 

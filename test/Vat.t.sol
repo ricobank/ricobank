@@ -192,7 +192,7 @@ contract VatTest is Test, RicoSetUp {
         vat.frob(gilk, self, int(10), int(11));
 
         // revert for trying to exit gems from other users
-        vm.expectRevert(Math.ErrUIAddNeg.selector);
+        vm.expectRevert(Math.ErrIntUnder.selector);
         vat.frob(gilk, self, int(-1), 0);
 
         // gems are taken from user when joining, and rico given to user
@@ -254,7 +254,7 @@ contract VatTest is Test, RicoSetUp {
     }
 
     function test_handler_error() public {
-        bytes memory data = abi.encodeWithSelector(chap.failure.selector, arico, stack);
+        bytes memory data = abi.encodeWithSelector(chap.failure.selector);
         vm.expectRevert(bytes4(keccak256(bytes('ErrBroken()'))));
         vat.flash(arico, stack, achap, data);
     }
@@ -323,7 +323,7 @@ contract VatTest is Test, RicoSetUp {
     }
 
     function test_gem_flasher_failure() public {
-        bytes memory data = abi.encodeWithSelector(chap.failure.selector, agold, flash_size * WAD);
+        bytes memory data = abi.encodeWithSelector(chap.failure.selector);
         vm.expectRevert(bytes4(keccak256(bytes('ErrBroken()'))));
         vat.flash(agold, init_join * WAD, achap, data);
     }
@@ -386,7 +386,7 @@ contract VatJsTest is VatTest {
     function owed() internal returns (uint) {
         vat.drip(i0);
         (,uint rack,,,,,,,,,,) = vat.ilks(i0);
-        (uint ink, uint art) = vat.urns(i0, ali);
+        (,uint art) = vat.urns(i0, ali);
         return rack * art;
     }
 

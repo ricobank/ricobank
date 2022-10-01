@@ -39,7 +39,7 @@ contract FlowTest is Test, RicoSetUp, BalSetUp, Flowback {
         }
     }
 
-    function flowback(bytes32 aid, address gem, uint refund) external {
+    function flowback(bytes32, uint) external {
         back_count += 1;
     }
 
@@ -161,7 +161,7 @@ contract FlowTest is Test, RicoSetUp, BalSetUp, Flowback {
 
         // further glug attempts with same aid should fail
         skip(100);
-        vm.expectRevert("Flow/vow");
+        vm.expectRevert(BalancerFlower.ErrEmptyAid.selector);
         flow.glug(aid);
     }
 
@@ -181,8 +181,6 @@ contract FlowTest is Test, RicoSetUp, BalSetUp, Flowback {
         address[] memory tokens;
         uint256[] memory balances0;
         uint256[] memory balances1;
-        uint256[] memory balances2;
-        uint256[] memory balances3;
         uint256 lastChangeBlock;
 
         // create sale of 110 rico for as much risk as it can get

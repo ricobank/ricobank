@@ -5,7 +5,7 @@ pragma solidity 0.8.15;
 import '../vat.sol';
 
 contract MockVat is Vat {
-    function mint(address usr, uint wad) public {
+    function mint(address, uint wad) public {
 //        joy[usr] += wad;
         debt += wad;
     }

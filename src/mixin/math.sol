@@ -22,8 +22,8 @@
 pragma solidity 0.8.15;
 
 contract Math {
-    error ErrUIAdd();
-    error ErrUIAddNeg();
+    error ErrUintOver();
+    error ErrIntUnder();
 
     uint256 internal constant BLN = 10 **  9;
     uint256 internal constant WAD = 10 ** 18;
@@ -46,9 +46,9 @@ contract Math {
 
     function add(uint x, int y) internal pure returns (uint z) {
         unchecked {
-            if (x >= uint(type(int256).max)) revert ErrUIAdd();
+            if (x >= uint(type(int256).max)) revert ErrUintOver();
             int sz = int(x) + y;
-            if (sz < 0) revert ErrUIAddNeg();
+            if (sz < 0) revert ErrIntUnder();
             return uint(sz);
         }
     }

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 // Stub contract for testing public `Math` functions. This is necessary because
 // we are avoiding the use of 'libraries' and instead want to test those public
 // functions that are compiled into JUMP destinations instead of DELEGATECALLS.

@@ -63,8 +63,7 @@ contract Vow is Flowback, Math, Ward {
     }
 
     // todo missing proceeds param, is it needed?
-    // todo gem is unused, remove from interface?
-    function flowback(bytes32 aid, address gem, uint refund) external
+    function flowback(bytes32 aid, uint refund) external
       _ward_ {
         if (refund == 0)  return;
         if (refund > 2 ** 255) revert ErrOverflow();
@@ -95,6 +94,4 @@ contract Vow is Flowback, Math, Ward {
         else if (key == "vat")  { vat  = Vat(val); }
         else revert ErrWrongKey();
     }
-
-    fallback () external payable {}
 }

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 pragma solidity 0.8.15;
 
 interface ERC20 {
@@ -83,5 +85,5 @@ interface Flow {
 }
 
 interface Flowback {
-    function flowback(bytes32 aid, address gem, uint refund) external;
+    function flowback(bytes32 aid, uint refund) external;
 }

@@ -93,7 +93,7 @@ describe('vow / liq liquidation lifecycle', () => {
     const t1 = await gettime()
     await send(fb.push, wtag, bn2b32(ray(1)), t1 + 2 * BANKYEAR)
     await send(vat.ward, setter.address, true)
-    await send(setter.set_duty, vat.address, vow.address, i0, b32('duty'), apy(1.05))
+    await send(setter.set_duty, vat.address, i0, b32('duty'), apy(1.05))
     await send(vat.frob, i0, ALI, wad(100), wad(0))
     await send(vat.frob, i0, ALI, wad(0), wad(99))
 
@@ -229,7 +229,7 @@ describe('vow / liq liquidation lifecycle', () => {
     describe('rate limiting', () => {
       it('flop absolute rate', async () => {
         const risk_supply_0 = await RISK.totalSupply()
-        await send(setter.set_duty, vat.address, vow.address, i0, b32('duty'), apy(2))
+        await send(setter.set_duty, vat.address, i0, b32('duty'), apy(2))
         await curb_ramp(vow, RISK, { vel: wad(0.001), rel: wad(1000000), bel: 0, cel: 1000, del: 0})
         await mine(hh, BANKYEAR);
         await send(vow.bail, i0, CAT)
@@ -248,7 +248,7 @@ describe('vow / liq liquidation lifecycle', () => {
 
       it('flop relative rate', async () => {
         const risk_supply_0 = await RISK.totalSupply()
-        await send(setter.set_duty, vat.address, vow.address, i0, b32('duty'), apy(2))
+        await send(setter.set_duty, vat.address, i0, b32('duty'), apy(2))
         // for same results as above the rel rate is set to 1 / risk supply * vel used above
         await curb_ramp(vow, RISK, { vel: wad(1000000), rel: wad(0.0000001), bel: 0, cel: 1000 })
         await mine(hh, BANKYEAR);

@@ -52,8 +52,6 @@ contract MockBalancerV2Vault is Ward, Math, BalancerV2Types {
 
         address addrIn  = address(singleSwap.assetIn);
         address addrOut = address(singleSwap.assetOut);
-        uint256 balIn   = IERC20(addrIn).balanceOf(address(this));
-        uint256 balOut  = IERC20(addrOut).balanceOf(address(this));
         uint256 price   = prices[addrIn][addrOut];
         require( price != 0, '8' );
 

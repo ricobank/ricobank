@@ -3,20 +3,20 @@
 pragma solidity 0.8.15;
 
 contract Ward {
-    event Ward(address indexed caller, address indexed trusts, bool bit);
+    event SetWard(address indexed caller, address indexed trusts, bool bit);
     error ErrWard(address caller, address object, bytes4 sig);
 
     mapping (address => bool) public wards;
 
     constructor() {
         wards[msg.sender] = true;
-        emit Ward(address(this), msg.sender, true);
+        emit SetWard(address(this), msg.sender, true);
     }
 
     function ward(address usr, bool bit)
       _ward_ external
     {
-        emit Ward(msg.sender, usr, bit);
+        emit SetWard(msg.sender, usr, bit);
         wards[usr] = bit;
     }
 
@@ -24,9 +24,9 @@ contract Ward {
       _ward_ external
     {
         wards[usr] = true;
-        emit Ward(msg.sender, usr, true);
+        emit SetWard(msg.sender, usr, true);
         wards[msg.sender] = false;
-        emit Ward(msg.sender, msg.sender, false);
+        emit SetWard(msg.sender, msg.sender, false);
     }
 
     modifier _ward_ {
