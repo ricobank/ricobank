@@ -134,7 +134,6 @@ contract Vat is Lock, Math, Ward, Flog {
     function frob(bytes32 i, address u, int dink, int dart)
       _flog_ public
     {
-        address v = msg.sender;
         Urn storage urn = urns[i][u];
         Ilk storage ilk = ilks[i];
 
@@ -158,7 +157,7 @@ contract Vat is Lock, Math, Ward, Flog {
         // urn is either less risky than before, or it is safe
         if (both(either(dart > 0, dink < 0), safe(i, u) != Spot.Safe)) revert ErrNotSafe();
         // either urn is more safe, or urn is caller
-        if (both(either(dart > 0, dink < 0), u != v)) revert ErrWrongUrn();
+        if (both(either(dart > 0, dink < 0), u != msg.sender)) revert ErrWrongUrn();
         // urn has no debt, or a non-dusty amount
         if (both(urn.art != 0, tab < ilk.dust)) revert ErrUrnDust();
 

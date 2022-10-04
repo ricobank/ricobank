@@ -30,7 +30,6 @@ contract Vox is Math, Ward {
     address public tip; // feedbase `src` address
     bytes32 public tag; // feedbase `tag` bytes32
 
-    uint256 public par;  // [wad] System Price
     uint256 public way;  // [ray] System Rate (SP growth rate)
     uint256 public how;  // [ray] sensitivity paramater
     uint256 public tau;  // [sec] last poke
@@ -48,7 +47,7 @@ contract Vox is Math, Ward {
         uint256 dt = block.timestamp - tau;
         tau = block.timestamp;
 
-        par = grow(vat.par(), way, dt);
+        uint256 par = grow(vat.par(), way, dt);
         vat.prod(par);
 
         (bytes32 mar_, uint256 ttl) = fb.pull(tip, tag);

@@ -62,17 +62,13 @@ contract Vow is Flowback, Math, Ward {
         flow.glug(aid);
     }
 
-    // todo missing proceeds param, is it needed?
     function flowback(bytes32 aid, uint refund) external
       _ward_ {
         if (refund == 0)  return;
         if (refund > 2 ** 255) revert ErrOverflow();
         Sale storage sale = sales[aid];
         vat.frob(sale.ilk, sale.urn, int(refund), 0);
-
-        // todo is it worth 'delete sales[aid];' after EIP-3529?
-        // assume 'delete auctions[aid];' in flow uses up max refund
-        // reusing slots later instead is real saving, two changes better than one zero to something
+        delete sales[aid];
     }
 
     function grant(address gem) external {
