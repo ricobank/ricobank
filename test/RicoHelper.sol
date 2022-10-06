@@ -66,8 +66,8 @@ abstract contract RicoSetUp is Math {
         gold.approve(avat, type(uint256).max);
         vat.init(gilk, address(gold), self, gtag);
         vat.filk(gilk, bytes32('chop'), RAD);
-        vat.filk(gilk, bytes32("line"), init_mint * 10 * RAD);
-        vat.filk(gilk, bytes32('duty'), 1000000001546067052200000000);  // 5%
+        vat.filk(gilk, bytes32('line'), init_mint * 10 * RAD);
+        vat.filk(gilk, bytes32('fee'),  1000000001546067052200000000);  // 5%
         feed.push(gtag, bytes32(RAY), block.timestamp + 1000);
         vat.list(address(gold), true);
         agold = address(gold);
@@ -80,8 +80,8 @@ abstract contract RicoSetUp is Math {
         ruby.approve(avat, type(uint256).max);
         vat.init(rilk, address(ruby), self, rtag);
         vat.filk(rilk, bytes32('chop'), RAD);
-        vat.filk(rilk, bytes32("line"), init_mint * 10 * RAD);
-        vat.filk(rilk, bytes32('duty'), 1000000001546067052200000000);  // 5%
+        vat.filk(rilk, bytes32('line'), init_mint * 10 * RAD);
+        vat.filk(rilk, bytes32('fee'),  1000000001546067052200000000);  // 5%
         feed.push(rtag, bytes32(RAY), block.timestamp + 1000);
         vat.list(address(ruby), true);
         aruby = address(ruby);

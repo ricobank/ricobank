@@ -4,10 +4,10 @@ pragma solidity 0.8.15;
 
 import '../vat.sol';
 
-// Setting duty requires a drip in same block, hh tests use auto mine
-contract DutySetter {
-    function set_duty(Vat vat, bytes32 ilk, bytes32 key, uint val) external {
+// Setting fee requires a drip in same block, hh tests use auto mine
+contract FeeSetter {
+    function set_fee(Vat vat, bytes32 ilk, uint val) external {
         vat.drip(ilk);
-        vat.filk(ilk, key, val);
+        vat.filk(ilk, "fee", val);
     }
 }

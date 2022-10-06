@@ -66,8 +66,8 @@ contract VatTest is Test, RicoSetUp {
         assertTrue(vat.safe(gilk, self) == Vat.Spot.Sunk);
 
         // can't refloat with neg quantity rate
-        vm.expectRevert(Vat.ErrDutyMin.selector);
-        vat.filk(gilk, 'duty', RAY - 1);
+        vm.expectRevert(Vat.ErrFeeMin.selector);
+        vat.filk(gilk, 'fee', RAY - 1);
     }
 
     function test_liqr_puts_urn_underwater() public {
@@ -391,7 +391,7 @@ contract VatJsTest is VatTest {
     }
 
     function test_drip() public _js_ {
-        vat.filk(i0, 'duty', RAY + RAY / 50);
+        vat.filk(i0, 'fee', RAY + RAY / 50);
 
         skip(1);
         vat.drip(i0);

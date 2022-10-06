@@ -421,7 +421,7 @@ describe('dss', () => {
 
 
         // jug N/A
-        //   rico has duty, no jug
+        //   rico has fee, no jug
         //   dss setup doesn't actually set the fee, just creates the jug
 
         debug('joining gold')
@@ -564,9 +564,9 @@ describe('dss', () => {
         let ilk = await vat.ilks(i0)
         const t0 = await gettime()
         await warp(hh, t0 + 1)
-        // set duty, similar to rate in dss fold
+        // set fee, similar to rate in dss fold
         // use sqrt because next drip will be called two seconds after prev, so rack will be 0.25
-        await send(vat.filk, i0, b32('duty'), ray(Math.sqrt(0.25)))
+        await send(vat.filk, i0, b32('fee'), ray(Math.sqrt(0.25)))
         await warp(hh, t0 + 2)
         debug(`tart=${ilk.tart} rack=${ilk.rack} line=${ilk.line} debt=${await vat.debt()}`)
         await send(vat.frob, i0, ME, wad(800), wad(2000))
@@ -700,10 +700,10 @@ describe('dss', () => {
       }
 
       it('test_fold', async () => {
-        want((await vat.ilks(i0)).duty).to.eql(ray(1))
+        want((await vat.ilks(i0)).fee).to.eql(ray(1))
         debug('draw')
         await draw(i0, 1)
-        await send(vat.filk, i0, b32('duty'), ray(Math.cbrt(1.05))) // cbrt bc next drip is three seconds later
+        await send(vat.filk, i0, b32('fee'), ray(Math.cbrt(1.05))) // cbrt bc next drip is three seconds later
         want(await tab(i0, ME)).to.eql(rad(1))
 
         const t0 = await gettime()

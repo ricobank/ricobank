@@ -43,7 +43,7 @@ contract Vat is Lock, Math, Ward, Flog {
         uint256 line;  // [rad] Debt Ceiling
         uint256 dust;  // [rad] Urn Debt Floor
 
-        uint256 duty;  // [ray] Collateral-specific, per-second compounding rate
+        uint256  fee;  // [ray] Collateral-specific, per-second compounding rate
         uint256  rho;  // [sec] Time of last drip
 
         uint256 chop;  // [ray] Liquidation Penalty
@@ -66,8 +66,8 @@ contract Vat is Lock, Math, Ward, Flog {
 
     enum Spot {Sunk, Iffy, Safe}
 
-    error ErrDutyMin();
-    error ErrDutyRho();
+    error ErrFeeMin();
+    error ErrFeeRho();
     error ErrIlkInit();
     error ErrNotSafe();
     error ErrUrnDust();
@@ -98,7 +98,7 @@ contract Vat is Lock, Math, Ward, Flog {
         if (ilks[ilk].rack != 0) revert ErrMultiIlk();
         ilks[ilk] = Ilk({
             rack: RAY,
-            duty: RAY,
+            fee : RAY,
             liqr: RAY,
             hook: address(0),
             gem : gem,
@@ -213,7 +213,7 @@ contract Vat is Lock, Math, Ward, Flog {
         if (block.timestamp == ilks[i].rho) return;
         address vow  = msg.sender;
         uint256 prev = ilks[i].rack;
-        uint256 rack = grow(prev, ilks[i].duty, block.timestamp - ilks[i].rho);
+        uint256 rack = grow(prev, ilks[i].fee, block.timestamp - ilks[i].rho);
         uint256 delt = rack - prev;
         uint256 rad  = ilks[i].tart * delt;
         uint256 all  = rest + rad;
@@ -277,10 +277,10 @@ contract Vat is Lock, Math, Ward, Flog {
         } else if (key == "hook") { i.hook = address(bytes20(bytes32(val)));
         } else if (key == "liqr") { i.liqr = val;
         } else if (key == "chop") { i.chop = val;
-        } else if (key == "duty") {
-            if (val < RAY)                revert ErrDutyMin();
-            if (block.timestamp != i.rho) revert ErrDutyRho();
-            i.duty = val;
+        } else if (key == "fee") {
+            if (val < RAY)                revert ErrFeeMin();
+            if (block.timestamp != i.rho) revert ErrFeeRho();
+            i.fee = val;
         } else { revert ErrWrongKey(); }
     }
 }

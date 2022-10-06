@@ -36,7 +36,7 @@ interface VatLike is WardLike {
         uint256 line;  // [rad] Debt Ceiling
         uint256 dust;  // [rad] Urn Debt Floor
 
-        uint256 duty;  // [ray] Collateral-specific, per-second compounding rate
+        uint256  fee;  // [ray] Collateral-specific, per-second compounding rate
         uint256  rho;  // [sec] Time of last drip
 
         uint256 chop;  // [ray] Liquidation Penalty
