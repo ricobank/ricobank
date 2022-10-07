@@ -8,18 +8,18 @@ import { Ball } from '../src/ball.sol';
 import { BalancerFlower } from '../src/flow.sol';
 import { Flow, Flowback, GemLike } from '../src/abi.sol';
 import { RicoSetUp } from "./RicoHelper.sol";
-import { Asset, BalSetUp, PoolArgs } from "./BalHelper.sol";
+import { Asset, PoolArgs } from "./BalHelper.sol";
 
-contract FlowTest is Test, RicoSetUp, BalSetUp, Flowback {
-    uint rico_index = 0;
-    uint risk_index = 1;
-    uint back_count = 0;
+contract FlowTest is Test, RicoSetUp, Flowback {
+    uint256 rico_index = 0;
+    uint256 risk_index = 1;
+    uint256 back_count = 0;
     bytes32 pool_id_rico_risk;
 
     function setUp() public {
         make_bank();
-        rico.mint(address(this), 10000 * WAD);
-        risk.mint(address(this), 10000 * WAD);
+        rico.mint(self, 10000 * WAD);
+        risk.mint(self, 10000 * WAD);
         rico.approve(BAL_VAULT, type(uint256).max);
         risk.approve(BAL_VAULT, type(uint256).max);
         rico.approve(address(flow), type(uint256).max);
@@ -27,12 +27,8 @@ contract FlowTest is Test, RicoSetUp, BalSetUp, Flowback {
         Asset memory rico_asset = Asset(arico, 5 * WAD / 10, 1000 * WAD);
         Asset memory risk_asset = Asset(arisk, 5 * WAD / 10, 1000 * WAD);
         PoolArgs memory rico_risk_args = PoolArgs(rico_asset, risk_asset, "mock", "MOCK", WAD / 100);
-        pool_id_rico_risk = create_pool(rico_risk_args);
-        flow.setPool(arico, arisk, pool_id_rico_risk);
-        flow.setPool(arisk, arico, pool_id_rico_risk);
-        flow.setVault(BAL_VAULT);
-        flow.approve_gem(arico);
-        flow.approve_gem(arisk);
+        pool_id_rico_risk = flow.pools(arico, arisk);
+        join_pool(rico_risk_args, pool_id_rico_risk);
         if (arico > arisk) {
             risk_index = 0;
             rico_index = 1;
@@ -57,18 +53,18 @@ contract FlowTest is Test, RicoSetUp, BalSetUp, Flowback {
         uint256 lastChangeBlock;
 
         // create sale of 1k rico for as much risk as it can get
-        uint256 back_pre_flow_rico = rico.balanceOf(address(this));
+        uint256 back_pre_flow_rico = rico.balanceOf(self);
         bytes32 aid = flow.flow(address(rico), WAD * 1000, address(risk), type(uint256).max);
-        uint256 back_post_flow_rico = rico.balanceOf(address(this));
+        uint256 back_post_flow_rico = rico.balanceOf(self);
         assertEq(back_pre_flow_rico, back_post_flow_rico + 1000*WAD);
         (tokens, balances0, lastChangeBlock) = vault.getPoolTokens(pool_id_rico_risk);
-        uint256 back_risk_1 = risk.balanceOf(address(this));
+        uint256 back_risk_1 = risk.balanceOf(self);
 
         // flow glugs once to empty ramps charge
         flow.glug(aid);
         (tokens, balances1, lastChangeBlock) = vault.getPoolTokens(pool_id_rico_risk);
         assertEq(balances0[rico_index], balances1[rico_index] - 100*WAD);
-        uint256 back_risk_2 = risk.balanceOf(address(this));
+        uint256 back_risk_2 = risk.balanceOf(self);
         assertGt(back_risk_2, back_risk_1 + 80*WAD);  // 80 is some significant portion of 100 but less due to slippage
 
         // instant repeat should revert (BAL#510, zero amount in)
@@ -101,18 +97,18 @@ contract FlowTest is Test, RicoSetUp, BalSetUp, Flowback {
         uint256 lastChangeBlock;
 
         // create sale of 1k rico for as much risk as it can get
-        uint256 back_pre_flow_rico = rico.balanceOf(address(this));
+        uint256 back_pre_flow_rico = rico.balanceOf(self);
         bytes32 aid = flow.flow(address(rico), WAD * 1000, address(risk), type(uint256).max);
-        uint256 back_post_flow_rico = rico.balanceOf(address(this));
+        uint256 back_post_flow_rico = rico.balanceOf(self);
         assertEq(back_pre_flow_rico, back_post_flow_rico + 1000*WAD);
         (tokens, balances0, lastChangeBlock) = vault.getPoolTokens(pool_id_rico_risk);
-        uint256 back_risk_1 = risk.balanceOf(address(this));
+        uint256 back_risk_1 = risk.balanceOf(self);
 
         // flow glugs once to empty ramps charge
         flow.glug(aid);
         (tokens, balances1, lastChangeBlock) = vault.getPoolTokens(pool_id_rico_risk);
         assertEq(balances0[rico_index], balances1[rico_index] - 100*WAD);
-        uint256 back_risk_2 = risk.balanceOf(address(this));
+        uint256 back_risk_2 = risk.balanceOf(self);
         assertGt(back_risk_2, back_risk_1 + 80*WAD);  // 80 is some significant portion of 100 but less due to slippage
 
         // instant repeat should revert (BAL#510, zero amount in)
@@ -136,11 +132,11 @@ contract FlowTest is Test, RicoSetUp, BalSetUp, Flowback {
         flow.curb(address(rico), 'cel', 100);
 
         // create sale of 1k rico for 200 risk, three glugs should reach want amount
-        uint256 back_pre_flow_rico = rico.balanceOf(address(this));
+        uint256 back_pre_flow_rico = rico.balanceOf(self);
         bytes32 aid = flow.flow(address(rico), WAD * 1000, address(risk), WAD * 200);
-        uint256 back_post_flow_rico = rico.balanceOf(address(this));
+        uint256 back_post_flow_rico = rico.balanceOf(self);
         assertEq(back_pre_flow_rico, back_post_flow_rico + 1000*WAD);
-        uint256 back_risk_1 = risk.balanceOf(address(this));
+        uint256 back_risk_1 = risk.balanceOf(self);
 
         // complete sale and test flowback gets called exactly once
         flow.glug(aid);
@@ -151,8 +147,8 @@ contract FlowTest is Test, RicoSetUp, BalSetUp, Flowback {
         flow.glug(aid);
         assertEq(back_count, 1);
 
-        uint256 back_risk_2 = risk.balanceOf(address(this));
-        uint256 back_final_rico = rico.balanceOf(address(this));
+        uint256 back_risk_2 = risk.balanceOf(self);
+        uint256 back_final_rico = rico.balanceOf(self);
 
         // assert sensible refund quantity
         assertGt(back_final_rico, back_post_flow_rico + 700*WAD);
@@ -184,19 +180,19 @@ contract FlowTest is Test, RicoSetUp, BalSetUp, Flowback {
         uint256 lastChangeBlock;
 
         // create sale of 110 rico for as much risk as it can get
-        uint256 back_pre_flow_rico = rico.balanceOf(address(this));
+        uint256 back_pre_flow_rico = rico.balanceOf(self);
         bytes32 aid = flow.flow(address(rico), WAD * 110, address(risk), type(uint256).max);
-        uint256 back_post_flow_rico = rico.balanceOf(address(this));
+        uint256 back_post_flow_rico = rico.balanceOf(self);
         assertEq(back_pre_flow_rico, back_post_flow_rico + 110*WAD);
         (tokens, balances0, lastChangeBlock) = vault.getPoolTokens(pool_id_rico_risk);
-        uint256 back_risk_1 = risk.balanceOf(address(this));
+        uint256 back_risk_1 = risk.balanceOf(self);
 
         // the sale would leave 10 behind, < del of 20
         // so the entire quantity should get delivered
         flow.glug(aid);
         (tokens, balances1, lastChangeBlock) = vault.getPoolTokens(pool_id_rico_risk);
         assertEq(balances0[rico_index], balances1[rico_index] - 110*WAD);
-        uint256 back_risk_2 = risk.balanceOf(address(this));
+        uint256 back_risk_2 = risk.balanceOf(self);
         assertGt(back_risk_2, back_risk_1 + 80*WAD);
 
         // the sale should be complete

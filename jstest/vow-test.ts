@@ -26,7 +26,6 @@ describe('vow / liq liquidation lifecycle', () => {
   let ali, bob, cat
   let ALI, BOB, CAT
   let RICO, RISK, WETH
-  let FLOP
   let vat; let vat_type
   let vow
   let flower; let flower_type
@@ -39,7 +38,6 @@ describe('vow / liq liquidation lifecycle', () => {
     [ali, bob, cat] = await ethers.getSigners();
     [ALI, BOB, CAT] = [ali, bob, cat].map(signer => signer.address)
 
-    FLOP = {address: ethers.constants.AddressZero}
     debug('packs')
     const pack = await hh.run('deploy-ricobank', { mock: 'true' })
     const dapp = await dpack.load(pack, ethers, ali)

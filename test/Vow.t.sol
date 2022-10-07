@@ -7,9 +7,9 @@ import { Ball } from '../src/ball.sol';
 import { GemLike } from '../src/abi.sol';
 import { VatLike } from '../src/abi.sol';
 import { RicoSetUp } from "./RicoHelper.sol";
-import { Asset, BalSetUp, PoolArgs } from "./BalHelper.sol";
+import { Asset, PoolArgs } from "./BalHelper.sol";
 
-contract VowTest is Test, RicoSetUp, BalSetUp {
+contract VowTest is Test, RicoSetUp {
     uint256 public init_join = 1000;
     uint stack = WAD * 10;
     bytes32[] ilks;
@@ -22,10 +22,7 @@ contract VowTest is Test, RicoSetUp, BalSetUp {
         ilks.push(gilk);
         rico.approve(address(flow), type(uint256).max);
 
-        flow.setVault(BAL_VAULT);
         vow.grant(address(gold));
-        vow.grant(address(rico));
-        vow.grant(address(risk));
 
         feed.push(gtag, bytes32(RAY * 1000), block.timestamp + 1000);
         vat.frob(gilk, address(this), int(init_join * WAD), int(stack) * 1000);
@@ -59,12 +56,10 @@ contract VowTest is Test, RicoSetUp, BalSetUp {
         PoolArgs memory rico_risk_args = PoolArgs(rico_asset, risk_asset, "mock", "MOCK", WAD / 100);
         PoolArgs memory gold_rico_args = PoolArgs(gold_asset, rico_asset, "mock", "MOCK", WAD / 100);
 
-        pool_id_rico_risk = create_pool(rico_risk_args);
-        pool_id_gold_rico = create_pool(gold_rico_args);
+        pool_id_rico_risk = flow.pools(arico, arisk);
+        join_pool(rico_risk_args, pool_id_rico_risk);
+        pool_id_gold_rico = create_and_join_pool(gold_rico_args);
 
-        flow.setPool(arico, arisk, pool_id_rico_risk);
-        flow.setPool(arisk, arico, pool_id_rico_risk);
-        flow.setPool(arico, agold, pool_id_gold_rico);
         flow.setPool(agold, arico, pool_id_gold_rico);
     }
 

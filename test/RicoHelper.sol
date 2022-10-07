@@ -12,12 +12,14 @@ import { GemLike } from '../src/abi.sol';
 import { Vat } from '../src/vat.sol';
 import { Vow } from '../src/vow.sol';
 
+import { BalSetUp } from "./BalHelper.sol";
+
 interface WethLike is GemLike {
     function deposit() external payable;
     function withdraw(uint256 amount) external;
 }
 
-abstract contract RicoSetUp is Math {
+abstract contract RicoSetUp is BalSetUp, Math {
     address constant public WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
     bytes32 constant public gilk = "gold";
     bytes32 constant public rilk = "ruby";
@@ -45,10 +47,10 @@ abstract contract RicoSetUp is Math {
     function make_bank() public {
         feed = new Feedbase();
         gemfab = GemFabLike(address(new GemFab()));
-        ball = new Ball(gemfab, address(feed));
+        ball = new Ball(gemfab, address(feed), WETH, BAL_W_P_F, BAL_VAULT);
 
-        rico = GemLike(address(ball.rico()));
-        risk = GemLike(address(ball.risk()));
+        rico = GemLike(ball.rico());
+        risk = GemLike(ball.risk());
         vat  = Vat(address(ball.vat()));
         vow  = Vow(address(ball.vow()));
         flow = ball.flow();
