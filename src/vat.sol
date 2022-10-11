@@ -81,7 +81,6 @@ contract Vat is Lock, Math, Ward, Flog {
     uint256 public constant MINT = 2**140;
     uint256 public rest;  // [rad] Remainder from
     uint256 public debt;  // [rad] Total Rico Issued
-    uint256 public vice;  // [rad] Total Unbacked Rico
     uint256 public ceil;  // [rad] Total Debt Ceiling
     uint256 public par;   // [wad] System Price (rico/ref)
 
@@ -196,7 +195,6 @@ contract Vat is Lock, Math, Ward, Flog {
         address gem = ilks[i].gem;
         if (!Gem(gem).transfer(vow, uint(-dink))) revert ErrTransfer();
         sin[vow]    = sub(sin[vow],    dtab);
-        vice        = sub(vice,        dtab);
 
         return (bill, gem);
     }
@@ -228,7 +226,6 @@ contract Vat is Lock, Math, Ward, Flog {
         uint256 rad = wad * RAY;
         address u = msg.sender;
         sin[u] = sin[u] - rad;
-        vice   = vice   - rad;
         debt   = debt   - rad;
         rico.burn(u, wad);
     }
