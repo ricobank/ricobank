@@ -55,27 +55,20 @@ describe('flow balancer interaction', () => {
     await send(RICO.approve, vault.address, U256_MAX)
     await send(RISK.approve, vault.address, U256_MAX)
 
-    const risk_rico_tokens = [{token: RISK, weight: wad(0.5), amountIn: wad(2000)},
-                              {token: RICO, weight: wad(0.5), amountIn: wad(2000)}]
+    poolId_risk_rico = await flower.pools(RISK.address, RICO.address)
+    const risk_rico_tokens = [{token: RISK, amountIn: wad(2000)},
+                              {token: RICO, amountIn: wad(2000)}]
 
-    debug('build bpool')
+    debug('join bpool')
     const risk_rico_args = {
       balancer_pack: pack,
       token_settings: risk_rico_tokens,
-      name: 'mock',
-      symbol: 'MOCK',
-      swapFeePercentage: wad(0.01)
+      pool_id: poolId_risk_rico
     }
-    poolId_risk_rico = (await hh.run('build-weighted-bpool', risk_rico_args)).pool_id
+    await hh.run('join-weighted-bpool', risk_rico_args)
 
     debug('ramps')
     await curb_ramp(vow, RICO, {'vel': wad(1), 'rel': wad(0.001), 'bel': 0, 'cel': 600, del: 0})
-    debug('set flower vaults and pools', vault.address)
-    await send(flower.setVault, vault.address)
-    await send(flower.setPool, RICO.address, RISK.address, poolId_risk_rico)
-    await send(flower.setPool, RISK.address, RICO.address, poolId_risk_rico)
-    await send(flower.approve_gem, RICO.address)
-    await send(flower.approve_gem, RISK.address)
     debug('init done')
 
     await snapshot(hh)

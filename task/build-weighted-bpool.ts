@@ -44,3 +44,29 @@ task('build-weighted-bpool', 'create new balancer pool')
 
     return {pool_id: pool_id}
 })
+
+task('join-weighted-bpool', 'create new balancer pool')
+.setAction(async (args: TaskArguments, hre: HardhatRuntimeEnvironment) => {
+    const {ethers} = hre
+    const [acct] = await hre.ethers.getSigners()
+    const deployer = acct.address
+    const balancer_dapp = await dpack.load(args.balancer_pack, ethers, acct)
+
+    args.token_settings.sort((a, b) =>
+        (BigNumber.from(a.token.address).gt(BigNumber.from(b.token.address))) ? 1 : -1)
+    const tokens = args.token_settings.map(x => x.token.address)
+    const amountsIn = args.token_settings.map(x => x.amountIn);
+
+    const JOIN_KIND_INIT = 0
+    const initUserData = ethers.utils.defaultAbiCoder.encode(
+        ['uint256', 'uint256[]'], [JOIN_KIND_INIT, amountsIn]
+    )
+    const joinPoolRequest = {
+        assets: tokens,
+        maxAmountsIn: amountsIn,
+        userData: initUserData,
+        fromInternalBalance: false
+    }
+    const tx = await balancer_dapp.vault.joinPool(args.pool_id, deployer, deployer, joinPoolRequest)
+    await tx.wait()
+})

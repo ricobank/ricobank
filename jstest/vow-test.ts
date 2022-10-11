@@ -111,29 +111,31 @@ describe('vow / liq liquidation lifecycle', () => {
     await send(RICO.approve, vault.address, U256_MAX)
     await send(RISK.approve, vault.address, U256_MAX)
 
-    const weth_rico_tokens = [{token: WETH, weight: wad(0.5), amountIn: wad(2000)},
-                              {token: RICO, weight: wad(0.5), amountIn: wad(2000)}]
-    const risk_rico_tokens = [{token: RISK, weight: wad(0.5), amountIn: wad(2000)},
-                              {token: RICO, weight: wad(0.5), amountIn: wad(2000)}]
+    // read pool ids from original flow rather than mock
+    poolId_weth_rico = await dapp.flow.pools(WETH.address, RICO.address)
+    poolId_risk_rico = await dapp.flow.pools(RISK.address, RICO.address)
+
+    const weth_rico_tokens = [{token: WETH, amountIn: wad(2000)},
+                              {token: RICO, amountIn: wad(2000)}]
+    const risk_rico_tokens = [{token: RISK, amountIn: wad(2000)},
+                              {token: RICO, amountIn: wad(2000)}]
     const weth_rico_args = {
       balancer_pack: pack,
       token_settings: weth_rico_tokens,
-      name: 'mock',
-      symbol: 'MOCK',
-      swapFeePercentage: wad(0.01)
+      pool_id: poolId_weth_rico
     }
     const risk_rico_args = {
       balancer_pack: pack,
       token_settings: risk_rico_tokens,
-      name: 'mock',
-      symbol: 'MOCK',
-      swapFeePercentage: wad(0.01)
+      pool_id: poolId_risk_rico
     }
-    poolId_weth_rico = (await hh.run('build-weighted-bpool', weth_rico_args)).pool_id
-    poolId_risk_rico = (await hh.run('build-weighted-bpool', risk_rico_args)).pool_id
+    await hh.run('join-weighted-bpool', weth_rico_args)
+    await hh.run('join-weighted-bpool', risk_rico_args)
 
     await curb_ramp(vow, WETH, { vel: wad(1), rel: wad(0.001), bel: 0, cel: 600, del: 0 })
     await curb_ramp(vow, RICO, { vel: wad(1), rel: wad(0.001), bel: 0, cel: 600, del: 0 })
+
+    // repeat set up for mocks
     await send(flower.setVault, vault.address)
     await send(flower.setPool, WETH.address, RICO.address, poolId_weth_rico)
     await send(flower.setPool, RICO.address, RISK.address, poolId_risk_rico)
