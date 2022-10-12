@@ -6,16 +6,22 @@ import "forge-std/Test.sol";
 import { Ball } from '../src/ball.sol';
 import { VatLike, GemLike, Flow } from '../src/abi.sol';
 import { Vat } from '../src/vat.sol';
+import { Vow } from '../src/vow.sol';
 import { RicoSetUp } from "./RicoHelper.sol";
 import { Asset, BalSetUp, PoolArgs } from "./BalHelper.sol";
 
 contract Usr {
     Vat public vat;
-    constructor(Vat vat_) {
+    Vow public vow;
+    constructor(Vat vat_, Vow vow_) {
         vat = vat_;
+        vow = vow_;
     }
     function frob(bytes32 ilk, address u, int dink, int dart) public {
         vat.frob(ilk, u, dink, dart);
+    }
+    function bail(bytes32 ilk, address usr) public {
+        vow.bail(ilk, usr);
     }
     function try_call(address addr, bytes calldata data) external returns (bool) {
         bytes memory _data = data;
@@ -61,21 +67,21 @@ contract DssJsTest is Test, RicoSetUp {
     bytes32 i0;
     GemLike gem;
     GemLike joy;
-    uint constant rico_gemrico = 10000;
-    uint goldprice = 40 * WAD / 110;
-    uint gembal = rico_gemrico * goldprice / WAD;
-    uint constant rico_riskrico = 10000;
-    uint constant total_pool_rico = rico_gemrico + rico_riskrico;
-    uint constant total_pool_risk = 10000;
-    uint constant ceil = total_pool_rico + 300;
+    uint rico_gemrico = 10000 * WAD;
+    uint goldprice = 40 * RAY / 110;
+    uint gembal = rico_gemrico * goldprice / RAY;
+    uint constant rico_riskrico = 10000 * WAD;
+    uint total_pool_rico = rico_gemrico + rico_riskrico;
+    uint constant total_pool_risk = 10000 * WAD;
+    uint ceil = total_pool_rico + 300 * WAD;
 
     function init_gem(uint init_mint) public {
         gold = GemLike(address(gemfab.build(bytes32("Gold"), bytes32("GOLD"))));
-        gold.mint(self, init_mint * WAD);
+        gold.mint(self, init_mint);
         gold.approve(address(vat), type(uint256).max);
         vat.init(gilk, address(gold), self, gtag);
         vat.filk(gilk, bytes32('chop'), RAD);
-        vat.filk(gilk, bytes32("line"), init_mint * 10 * RAD);
+        vat.filk(gilk, bytes32("line"), init_mint * 10 * RAY);
         //vat.filk(gilk, bytes32('fee'), 1000000001546067052200000000);  // 5%
         feed.push(gtag, bytes32(RAY), block.timestamp + 1000);
         agold = address(gold);
@@ -119,18 +125,18 @@ contract DssJsTest is Test, RicoSetUp {
         risk.approve(address(flow), UINT256_MAX);
 
         // RICO_mint
-        rico.mint(me, total_pool_rico * WAD);
-        risk.mint(me, total_pool_risk * WAD);
+        rico.mint(me, total_pool_rico);
+        risk.mint(me, total_pool_risk);
 
         // connecting flower
         flow.setVault(BAL_VAULT);
         flow.approve_gem(address(gem));
 
         // create pool
-        Asset memory gold_rico_asset = Asset(address(gold), 5 * WAD / 10, gembal * WAD);
-        Asset memory rico_gold_asset = Asset(address(rico), 5 * WAD / 10, rico_gemrico * WAD);
-        Asset memory rico_risk_asset = Asset(address(rico), 5 * WAD / 10, rico_riskrico * WAD);
-        Asset memory risk_rico_asset = Asset(address(risk), 5 * WAD / 10, total_pool_risk * WAD);
+        Asset memory gold_rico_asset = Asset(address(gold), 5 * WAD / 10, gembal);
+        Asset memory rico_gold_asset = Asset(address(rico), 5 * WAD / 10, rico_gemrico);
+        Asset memory rico_risk_asset = Asset(address(rico), 5 * WAD / 10, rico_riskrico);
+        Asset memory risk_rico_asset = Asset(address(risk), 5 * WAD / 10, total_pool_risk);
 
         PoolArgs memory rico_risk_args = PoolArgs(risk_rico_asset, rico_risk_asset, "mock", "MOCK", WAD / 100);
         PoolArgs memory gold_rico_args = PoolArgs(gold_rico_asset, rico_gold_asset, "mock", "MOCK", WAD / 100);
@@ -167,9 +173,9 @@ contract DssJsTest is Test, RicoSetUp {
         // vat ward, hope vow
         vat.ward(address(vow), true);
 
-        ali = new Usr(vat);
-        bob = new Usr(vat);
-        cat = new Usr(vat);
+        ali = new Usr(vat, vow);
+        bob = new Usr(vat, vow);
+        cat = new Usr(vat, vow);
         ali.approve(address(gem));
         bob.approve(address(gem));
         cat.approve(address(gem));
@@ -539,7 +545,7 @@ contract DssBiteTest is DssVatTest {
 
         assertEq(vat.sin(address(vow)), 100 * RAD);
         uint ricobought = rico.balanceOf(address(vow));
-        assertRange(ricobought, bailamt * WAD / goldprice, WAD / 50);
+        assertRange(ricobought, bailamt * RAY / goldprice, WAD / 50);
 
         vow.keep(ilks);
         assertEq(vat.sin(address(vow)), 100 * RAD - (ricobought - 1) * RAY); // leaves 1 rico to save gas
@@ -588,7 +594,7 @@ contract DssFoldTest is DssVatTest {
     modifier _fold_ { _fold_setup(); _; }
 
     function draw(bytes32 ilk, uint joy) internal {
-        vat.file('ceil', (joy + total_pool_rico) * RAD);
+        vat.file('ceil', joy * RAD + total_pool_rico * RAY);
         vat.filk(ilk, 'line', joy * RAD);
         feed.push(gtag, bytes32(RAY), block.timestamp + 1000);
 
@@ -756,15 +762,148 @@ contract DssClipTest is DssJsTest {
     Usr gal;
 
     function _clip_setup() internal {
+        goldprice = 5 * RAY;
+        rico_gemrico = gembal * (goldprice * 11 / 10) / RAY;
+        total_pool_rico = rico_gemrico + rico_riskrico;
+
+        gold.mint(me, gembal);
+        rico.mint(me, rico_gemrico);
+        Asset memory gold_rico_asset = Asset(address(gold), 5 * WAD / 10, gembal);
+        Asset memory rico_gold_asset = Asset(address(rico), 5 * WAD / 10, rico_gemrico);
+        PoolArgs memory gold_rico_args = PoolArgs(gold_rico_asset, rico_gold_asset, "mock", "MOCK", WAD / 100);
+
+        pool_id_gold_rico = create_and_join_pool(gold_rico_args);
+        flow.setPool(address(gem), address(rico), pool_id_gold_rico);
+
+
+        // vault already has a bunch of rico (dai) and gem (gold)...skip transfers
+        // rico (dai) already wards port (DaiJoin)
+        // rico has no dog, accounts interact with vow directly
+        // already have i0, no need to init ilk
+
+        _slip(gold, me, 1000 * WAD);
+        // no need to join
+
+        vat.filk(i0, 'liqr', RAY / 2); // dss mat (rico uses inverse)
+
+        feed.push(gtag, bytes32(goldprice), block.timestamp + 1000);
+
+        vat.filk(i0, 'dust', 20 * RAD);
+        vat.filk(i0, 'line', 10000 * RAD);
+        vat.file('ceil', (10000 + total_pool_rico) * RAD); // rico has balancer pools, dss doesn't
+
+        vat.filk(i0, 'chop', 11 * RAY / 10); // dss uses wad, rico uses ray
+        // hole, Hole N/A (similar to cat.box), no rico equivalent, rico bails entire urn
+        // dss clipper <-> rico flower (flip)
+
+        assertEq(gold.balanceOf(me), 1000 * WAD);
+        assertEq(rico.balanceOf(me), 0);
+        vat.frob(i0, me, int(40 * WAD), int(100 * WAD));
+        assertEq(gold.balanceOf(me), (1000 - 40) * WAD);
+        assertEq(rico.balanceOf(me), 100 * WAD);
+
+        feed.push(gtag, bytes32(4 * RAY), block.timestamp + 1000); // now unsafe
+
+        // dss me/ali/bob hope clip N/A, rico vat wards vow
+
         rico.mint(me, 1000 * WAD);
-        goldprice = goldprice * 10 / 11; // hack to mimic dss clip.t.sol goldprice
+        rico.mint(a, 1000 * WAD);
+        rico.mint(b, 1000 * WAD);
 
-        _slip(gem, me, 1000 * WAD);
-
-        feed.push(gtag, bytes32(RAY * 2 / 5), block.timestamp + 1000);
+        curb(address(gold), UINT256_MAX, WAD, block.timestamp, 1);
     }
 
     modifier _clip_ { _clip_setup(); _; }
 
-}
+    // test_change_dog
+    //   N/A rico flow has per-auction vow (dss dog)
 
+    // test_get_chop
+    //   N/A rico has no dss chop function equivalent, just uses vat.ilks
+
+    function test_kick() public _clip_ {
+        // tip, chip N/A, rico currently has no keeper reward
+
+        // clip.kicks() N/A rico flow doesn't count flips
+        // clip.sales() N/A rico flow doesn't store sale information
+
+        assertEq(gold.balanceOf(me), (1000 - 40) * WAD);
+        assertEq(rico.balanceOf(a), 1000 * WAD);
+        (uint ink, uint art) = vat.urns(i0, me);
+        assertEq(ink, 40 * WAD);
+        assertEq(art, 100 * WAD);
+
+        ali.bail(i0, me); // no keeper arg
+
+        // clip.kicks() N/A rico flow doesn't count flips
+        // clip.sales() N/A rico flow doesn't store sale information
+
+        (ink, art) = vat.urns(i0, me);
+        assertEq(ink, 0);
+        assertEq(art, 0);
+
+
+        // Spot = $2.5
+        feed.push(gtag, bytes32(goldprice), block.timestamp + 1000); // dss pip.poke
+
+        skip(100);
+        vat.frob(i0, me, int(40 * WAD), int(100 * WAD)); // dss pip.poke
+
+        // Spot = $2
+        feed.push(gtag, bytes32(4 * RAY), block.timestamp + 1000); /// dss spot.poke, now unsafe
+
+        // clip.sales N/A
+
+        assertEq(gold.balanceOf(me), (1000 - 80) * WAD);
+        // buf N/A rico has no standing auction
+        // tip, chip N/A
+
+        assertEq(rico.balanceOf(b), 1000 * WAD);
+
+        (ink, art) = vat.urns(i0, me);
+        bob.bail(i0, me);
+        // clip.kicks() N/A rico flow doesn't count flips
+        // clip.sales() N/A rico flow doesn't store sale information
+
+        assertEq(gold.balanceOf(me), (1000 - 80) * WAD);
+        (ink, art) = vat.urns(i0, me);
+        // dss ink was 0, but rico auctions have flowback
+        assertRange(ink, 110 * WAD * RAY / (goldprice * 11 / 10), WAD / 50);
+        assertEq(art, 0);
+
+        assertEq(rico.balanceOf(b), 1000 * WAD); // dss has bailer rewards, rico bark doesn't
+    }
+
+    function testFail_kick_zero_price() public _clip_ {
+        feed.push(gtag, bytes32(0), UINT256_MAX);
+        vm.expectRevert(); // todo need error types for zero cases
+        vow.bail(i0, me);
+    }
+
+    // testFail_redo_zero_price
+    //   N/A rico has no auction (todo now it does...)
+
+    function test_kick_basic() public _clip_ {
+        vow.bail(i0, me);
+    }
+
+    function test_kick_zero_tab() public _clip_ {
+        (,uint art) = vat.urns(i0, me);
+        // rico doesn't have kick() or a way to specify tab in bail
+        // but tab == 0 if art == 0
+        vat.frob(i0, me, 0, -int(art));
+        (,art) = vat.urns(i0, me);
+        assertEq(art, 0);
+        vm.expectRevert(Vow.ErrSafeBail.selector);
+        vow.bail(i0, me);
+    }
+
+    function test_kick_zero_lot() public _clip_ {
+        // but cut == 0 if ink == 0
+        // TODO curb_ramp handle undefined?
+        // vel/rel similar to dss lot
+        curb(address(gem), 0, WAD, block.timestamp, 1);
+        vm.expectRevert(); // todo need error types for zero cases
+        vow.bail(i0, me);
+    }
+}
