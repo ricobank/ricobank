@@ -214,3 +214,88 @@ contract FlowTest is Test, RicoSetUp, Flowback {
     function test_other() public {
     }
 }
+
+contract FlowJsTest is Test, RicoSetUp, Flowback {
+    uint256 rico_index = 0;
+    uint256 risk_index = 1;
+    uint256 back_count = 0;
+    bytes32 pool_id_rico_risk;
+
+    function assertRangeAbs(uint actual, uint expected, uint tolerance) internal {
+        assertGe(actual, expected - tolerance);
+        assertLe(actual, expected + tolerance);
+    }
+
+    function flowback(bytes32, uint) external {
+        back_count += 1;
+    }
+
+    function setUp() public {
+        make_bank();
+        rico.mint(self, 10000 * WAD);
+        risk.mint(self, 10000 * WAD);
+        rico.approve(BAL_VAULT, type(uint256).max);
+        risk.approve(BAL_VAULT, type(uint256).max);
+        rico.approve(address(flow), type(uint256).max);
+        risk.approve(address(flow), type(uint256).max);
+        Asset memory rico_asset = Asset(arico, 5 * WAD / 10, 2000 * WAD);
+        Asset memory risk_asset = Asset(arisk, 5 * WAD / 10, 2000 * WAD);
+        PoolArgs memory rico_risk_args = PoolArgs(rico_asset, risk_asset, "mock", "MOCK", WAD / 100);
+        pool_id_rico_risk = flow.pools(arico, arisk);
+        join_pool(rico_risk_args, pool_id_rico_risk);
+        if (arico > arisk) {
+            risk_index = 0;
+            rico_index = 1;
+        }
+    }
+
+    function test_rate_limiting_flap_absolute_rate() public {
+        flow.curb(arico, 'vel', WAD / 10);
+        flow.curb(arico, 'rel', 1000 * WAD);
+        flow.curb(arico, 'bel', 0);
+        flow.curb(arico, 'cel', 1000);
+        (,uint[] memory rico_liq_bals0,) = vault.getPoolTokens(pool_id_rico_risk);
+        // consume half the allowance
+        bytes32 aid = flow.flow(arico, 50 * WAD, arisk, UINT256_MAX);
+        flow.glug(aid);
+
+        (,uint[] memory rico_liq_bals1,) = vault.getPoolTokens(pool_id_rico_risk);
+        // recharge by a quarter of capacity so should sell 75%
+        skip(250);
+
+        aid = flow.flow(arico, 100 * WAD, arisk, UINT256_MAX);
+        flow.glug(aid);
+
+        (,uint[] memory rico_liq_bals2,) = vault.getPoolTokens(pool_id_rico_risk);
+
+        uint sale0 = rico_liq_bals1[rico_index] - rico_liq_bals0[rico_index];
+        uint sale1 = rico_liq_bals2[rico_index] - rico_liq_bals1[rico_index];
+        assertRangeAbs(sale0, 50 * WAD, WAD / 2);
+        assertRangeAbs(sale1, 75* WAD, WAD * 3 / 5);
+    }
+
+    function test_rate_limiting_flap_relative_rate() public {
+        flow.curb(arico, 'vel', 10000 * WAD);
+        flow.curb(arico, 'rel', WAD / 100000);
+        flow.curb(arico, 'bel', 0);
+        flow.curb(arico, 'cel', 1000);
+
+        (,uint[] memory rico_liq_bals0,) = vault.getPoolTokens(pool_id_rico_risk);
+        // consume half the allowance
+        bytes32 aid = flow.flow(arico, 50 * WAD, arisk, UINT256_MAX);
+        flow.glug(aid);
+
+        (,uint[] memory rico_liq_bals1,) = vault.getPoolTokens(pool_id_rico_risk);
+        skip(250);
+
+        aid = flow.flow(arico, 100 * WAD, arisk, UINT256_MAX);
+        flow.glug(aid);
+
+        (,uint[] memory rico_liq_bals2,) = vault.getPoolTokens(pool_id_rico_risk);
+
+        uint sale0 = rico_liq_bals1[rico_index] - rico_liq_bals0[rico_index];
+        uint sale1 = rico_liq_bals2[rico_index] - rico_liq_bals1[rico_index];
+        assertRangeAbs(sale0, 50 * WAD, WAD / 2);
+        assertRangeAbs(sale1, 75 * WAD, WAD * 3 / 5);
+    }
+}
