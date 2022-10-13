@@ -88,13 +88,6 @@ contract DssJsTest is Test, RicoSetUp {
         vow.grant(agold);
     }
 
-    function curb(address g, uint vel, uint rel, uint bel, uint cel) internal {
-        vow.pair(g, 'vel', vel);
-        vow.pair(g, 'rel', rel);
-        vow.pair(g, 'bel', bel);
-        vow.pair(g, 'cel', cel);
-    }
-
     // todo frob rico.mint
     function _gift(address usr, uint amt) internal {
         rico.transfer(usr, amt);

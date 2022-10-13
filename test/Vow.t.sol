@@ -4,10 +4,12 @@ pragma solidity 0.8.15;
 import "forge-std/Test.sol";
 
 import { Ball } from '../src/ball.sol';
-import { GemLike } from '../src/abi.sol';
-import { VatLike } from '../src/abi.sol';
+import { GemLike, ERC20 } from '../src/abi.sol';
+import { Vat } from '../src/vat.sol';
+import { Vow } from '../src/vow.sol';
 import { RicoSetUp } from "./RicoHelper.sol";
 import { Asset, PoolArgs } from "./BalHelper.sol";
+import { FeeSetter } from "../src/mocks/DutySetter.sol";
 
 contract VowTest is Test, RicoSetUp {
     uint256 public init_join = 1000;
@@ -92,5 +94,257 @@ contract VowTest is Test, RicoSetUp {
         // correct risk ramp usage should limit sale to one
         uint risk_sold = balances1[risk_index] - balances0[risk_index];
         assertTrue(risk_sold == 1);
+    }
+}
+
+contract Usr {
+    WethLike weth;
+    Vat vat;
+    constructor(Vat _vat, WethLike _weth) {
+        weth = _weth;
+        vat  = _vat;
+    }
+    function deposit() public payable {
+        weth.deposit{value: msg.value}();
+    }
+    function approve(address usr, uint amt) public {
+        weth.approve(usr, amt);
+    }
+    function frob(bytes32 ilk, address usr, int dink, int dart) public {
+        vat.frob(ilk, usr, dink, dart);
+    }
+    function transfer(address gem, address dst, uint amt) public {
+        GemLike(gem).transfer(dst, amt);
+    }
+}
+
+interface WethLike is ERC20 {
+    function deposit() external payable;
+    function approve(address, uint) external;
+    function allowance(address, address) external returns (uint);
+}
+
+contract VowJsTest is Test, RicoSetUp {
+    // me == js ALI
+    address me;
+    Usr bob;
+    Usr cat;
+    address b;
+    address c;
+    WethLike weth;
+    FeeSetter setter;
+    address asetter;
+    bytes32 poolid_weth_rico;
+    bytes32 poolid_risk_rico;
+    bytes32 i0;
+    bytes32[] ilks;
+    uint prevcount;
+
+    function setUp() public {
+        make_bank();
+        weth = WethLike(WETH);
+        me = address(this);
+        bob = new Usr(vat, weth);
+        cat = new Usr(vat, weth);
+        b = address(bob);
+        c = address(cat);
+        me = address(this);
+        i0 = wilk;
+        ilks.push(i0);
+
+        weth.deposit{value: 6000 * WAD}();
+        risk.mint(me, 10000 * WAD);
+        weth.approve(avat, UINT256_MAX);
+
+        vat.init(i0, WETH, me, wtag);
+
+        vat.file('ceil', 10000 * RAD);
+        vat.filk(i0, 'line', 10000 * RAD);
+        vat.filk(i0, 'liqr', RAY);
+        vat.filk(i0, 'chop', RAY * 11 / 10);
+
+        curb(arisk, WAD, WAD / 10000, 0, 60);
+
+        setter = new FeeSetter();
+        asetter = address(setter);
+        feed.push(wtag, bytes32(RAY), block.timestamp + 2 * BANKYEAR);
+        vat.ward(asetter, true);
+        uint fee = 1000000001546067052200000000; // == ray(1.05 ** (1/BANKYEAR))
+        setter.set_fee(vat, i0, fee);
+        vat.frob(i0, me, int(100 * WAD), 0);
+        vat.frob(i0, me, 0, int(99 * WAD));
+
+        uint bal = rico.balanceOf(me);
+        assertEq(bal, 99 * WAD);
+        Vat.Spot safe1 = vat.safe(i0, me);
+        assertEq(uint(safe1), uint(Vat.Spot.Safe));
+
+        cat.deposit{value: 7000 * WAD}();
+        cat.approve(avat, UINT256_MAX);
+        cat.frob(i0, c, int(4001 * WAD), int(4000 * WAD));
+        cat.transfer(arico, me, 4000 * WAD);
+
+        weth.approve(address(vault), UINT256_MAX);
+        rico.approve(address(vault), UINT256_MAX);
+        risk.approve(address(vault), UINT256_MAX);
+
+        poolid_weth_rico = flow.pools(WETH, arico);
+        Asset memory weth_asset = Asset(WETH, 5 * WAD / 10, 2000 * WAD);
+        Asset memory rico_asset = Asset(arico, 5 * WAD / 10, 2000 * WAD);
+        PoolArgs memory weth_rico_args = PoolArgs(weth_asset, rico_asset, "mock", "MOCK", WAD / 100);
+        join_pool(weth_rico_args, poolid_weth_rico);
+
+        Asset memory risk_asset = Asset(arisk, 5 * WAD / 10, 2000 * WAD);
+        poolid_risk_rico = flow.pools(arisk, arico);
+        PoolArgs memory risk_rico_args = PoolArgs(risk_asset, rico_asset, "mock", "MOCK", WAD / 100);
+        join_pool(risk_rico_args, poolid_risk_rico);
+
+        curb(WETH, WAD, WAD / 10000, 0, 600);
+        curb(arico, WAD, WAD / 10000, 0, 600);
+
+        flow.approve_gem(arico);
+        flow.approve_gem(arisk);
+        flow.approve_gem(WETH);
+        prevcount = flow.count();
+    }
+
+    function test_bail_urns_1yr_unsafe() public {
+        skip(BANKYEAR);
+        vow.keep(ilks);
+
+        assertEq(uint(vat.safe(i0, me)), uint(Vat.Spot.Sunk));
+
+        uint sin0 = vat.sin(avow);
+        uint gembal0 = weth.balanceOf(address(flow));
+        uint vow_rico0 = rico.balanceOf(avow);
+        assertEq(sin0, 0);
+        assertEq(gembal0, 0);
+        assertEq(vow_rico0, 0);
+
+        vm.expectCall(address(flow), abi.encodePacked(flow.flow.selector));
+        vow.bail(i0, me);
+
+        (uint ink, uint art) = vat.urns(i0, me);
+        uint sin1 = vat.sin(avow);
+        uint gembal1 = weth.balanceOf(address(flow));
+        uint vow_rico1 = rico.balanceOf(avow);
+        assertEq(ink, 0);
+        assertEq(art, 0);
+        assertGt(sin1, 0);
+        assertGt(vow_rico1, 0);
+        assertEq(gembal1, 0);
+    }
+
+
+    function test_bail_urns_when_safe() public {
+        vm.expectRevert(Vow.ErrSafeBail.selector);
+        vow.bail(i0, me);
+        assertEq(flow.count(), prevcount); // flow hasn't been called
+
+        uint sin0 = vat.sin(avow);
+        uint gembal0 = weth.balanceOf(address(flow));
+        assertEq(sin0, 0);
+        assertEq(gembal0, 0);
+
+        skip(BANKYEAR);
+        vm.expectCall(address(flow), abi.encodePacked(flow.flow.selector));
+        vow.bail(i0, me);
+        vm.expectRevert(Vow.ErrSafeBail.selector);
+        vow.bail(i0, me);
+    }
+
+    function test_keep_vow_1yr_drip_flap() public {
+        uint initial_total = rico.totalSupply();
+        skip(BANKYEAR);
+        vm.expectCall(address(flow), abi.encodePacked(flow.flow.selector));
+        vow.keep(ilks);
+        uint final_total = rico.totalSupply();
+        assertGt(final_total, initial_total);
+        // minted 4099, fee is 1.05. 0.05*4099 as no surplus buffer
+        assertGe(final_total - initial_total, 204.94e18);
+        assertLe(final_total - initial_total, 204.96e18);
+    }
+
+    function test_keep_vow_1yr_drip_flop() public {
+        skip(BANKYEAR);
+        vm.expectCall(address(flow), abi.encodePacked(flow.flow.selector));
+        vow.bail(i0, me);
+
+        vm.expectCall(avat, abi.encodePacked(Vat.heal.selector));
+        vm.expectCall(address(flow), abi.encodePacked(flow.flow.selector));
+        vow.keep(ilks);
+    }
+
+    function test_keep_rate_limiting_flop_absolute_rate() public {
+        uint risksupply0 = risk.totalSupply();
+        setter.set_fee(vat, i0, 1000000021964508878400000000); // ray(2 ** (1/BANKYEAR)
+        curb(arisk, WAD / 1000, 1000000 * WAD, 0, 1000);
+        skip(BANKYEAR);
+        vow.bail(i0, c);
+        vow.keep(ilks);
+        uint risksupply1 = risk.totalSupply();
+        skip(500);
+        vow.keep(ilks);
+        uint risksupply2 = risk.totalSupply();
+
+        // should have had a mint of the full vel*cel and then half vel*cel
+        uint mint1 = risksupply1 - risksupply0;
+        uint mint2 = risksupply2 - risksupply1;
+        assertGe(mint1, WAD * 99 / 100);
+        assertLe(mint1, WAD * 101 / 100);
+        assertGe(mint2, WAD * 49 / 100);
+        assertLe(mint2, WAD * 51 / 100);
+    }
+
+    function test_keep_rate_limiting_flop_relative_rate() public {
+        uint risksupply0 = risk.totalSupply();
+        setter.set_fee(vat, i0, 1000000021964508878400000000); // ray(2 ** (1/BANKYEAR)
+        // for same results as above the rel rate is set to 1 / risk supply * vel used above
+        curb(arisk, 1000000 * WAD, WAD / 10000000, 0, 1000);
+        skip(BANKYEAR);
+        vow.bail(i0, c);
+        vow.keep(ilks);
+        uint risksupply1 = risk.totalSupply();
+        skip(500);
+        vow.keep(ilks);
+        uint risksupply2 = risk.totalSupply();
+
+        // should have had a mint of the full vel*cel and then half vel*cel
+        uint mint1 = risksupply1 - risksupply0;
+        uint mint2 = risksupply2 - risksupply1;
+        assertGe(mint1, WAD * 999 / 1000);
+        assertLe(mint1, WAD);
+        assertGe(mint2, WAD * 497 / 1000);
+        assertLe(mint2, WAD * 510 / 1000);
+    }
+
+    function test_e2e_all_actions() public {
+        // run a flap and ensure risk is burnt
+        uint risk_initial_supply = risk.totalSupply();
+        skip(BANKYEAR);
+        vow.keep(ilks);
+        skip(60);
+        vm.expectCall(address(flow), abi.encodePacked(flow.flow.selector));
+        vow.keep(ilks); // call again to burn risk given to vow the first time
+        uint risk_post_flap_supply = risk.totalSupply();
+        assertLt(risk_post_flap_supply, risk_initial_supply);
+
+        // confirm bail trades the weth for rico
+        uint vow_rico_0 = rico.balanceOf(avow);
+        uint vat_weth_0 = weth.balanceOf(avat);
+        vm.expectCall(address(flow), abi.encodePacked(flow.flow.selector));
+        vow.bail(i0, me);
+        uint vow_rico_1 = rico.balanceOf(avow);
+        uint vat_weth_1 = weth.balanceOf(avat);
+        assertGt(vow_rico_1, vow_rico_0);
+        assertLt(vat_weth_1, vat_weth_0);
+
+        // although the keep joins the rico sin is still greater due to fees so we flop
+        vm.expectCall(address(flow), abi.encodePacked(flow.flow.selector));
+        vow.keep(ilks);
+        // now vow should hold more rico than anti tokens
+        uint sin = vat.sin(avow);
+        uint vow_rico = rico.balanceOf(avow);
+        assertGt(vow_rico * RAY, sin);
     }
 }

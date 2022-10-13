@@ -22,10 +22,13 @@ interface WethLike is GemLike {
 abstract contract RicoSetUp is BalSetUp, Math {
     address constant public WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
     bytes32 constant public gilk = "gold";
+    bytes32 constant public wilk = "weth";
     bytes32 constant public rilk = "ruby";
     bytes32 constant public gtag = "goldusd";
+    bytes32 constant public wtag = "wethusd";
     bytes32 constant public rtag = "rubyusd";
     uint256 constant public init_mint = 10000;
+    uint256 constant public BANKYEAR = (365 * 24 + 6) * 3600;
     address public immutable self = address(this);
 
     BalancerFlower public flow;
@@ -43,6 +46,7 @@ abstract contract RicoSetUp is BalSetUp, Math {
     address  public agold;
     address  public aruby;
     address  public avat;
+    address  public avow;
 
     function make_bank() public {
         feed = new Feedbase();
@@ -56,6 +60,7 @@ abstract contract RicoSetUp is BalSetUp, Math {
         flow = ball.flow();
 
         avat  = address(vat);
+        avow  = address(vow);
         arico = address(rico);
         arisk = address(risk);
 
@@ -88,5 +93,12 @@ abstract contract RicoSetUp is BalSetUp, Math {
         vat.list(address(ruby), true);
         aruby = address(ruby);
         vow.grant(aruby);
+    }
+
+    function curb(address g, uint vel, uint rel, uint bel, uint cel) internal {
+        vow.pair(g, 'vel', vel);
+        vow.pair(g, 'rel', rel);
+        vow.pair(g, 'bel', bel);
+        vow.pair(g, 'cel', cel);
     }
 }
