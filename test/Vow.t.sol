@@ -9,7 +9,6 @@ import { Vat } from '../src/vat.sol';
 import { Vow } from '../src/vow.sol';
 import { RicoSetUp } from "./RicoHelper.sol";
 import { Asset, PoolArgs } from "./BalHelper.sol";
-import { FeeSetter } from "../src/mocks/DutySetter.sol";
 
 contract VowTest is Test, RicoSetUp {
     uint256 public init_join = 1000;
@@ -132,8 +131,6 @@ contract VowJsTest is Test, RicoSetUp {
     address b;
     address c;
     WethLike weth;
-    FeeSetter setter;
-    address asetter;
     bytes32 poolid_weth_rico;
     bytes32 poolid_risk_rico;
     bytes32 i0;
@@ -165,12 +162,9 @@ contract VowJsTest is Test, RicoSetUp {
 
         curb(arisk, WAD, WAD / 10000, 0, 60);
 
-        setter = new FeeSetter();
-        asetter = address(setter);
         feed.push(wtag, bytes32(RAY), block.timestamp + 2 * BANKYEAR);
-        vat.ward(asetter, true);
         uint fee = 1000000001546067052200000000; // == ray(1.05 ** (1/BANKYEAR))
-        setter.set_fee(vat, i0, fee);
+        vat.filk(i0, 'fee', fee);
         vat.frob(i0, me, int(100 * WAD), 0);
         vat.frob(i0, me, 0, int(99 * WAD));
 
@@ -277,7 +271,7 @@ contract VowJsTest is Test, RicoSetUp {
 
     function test_keep_rate_limiting_flop_absolute_rate() public {
         uint risksupply0 = risk.totalSupply();
-        setter.set_fee(vat, i0, 1000000021964508878400000000); // ray(2 ** (1/BANKYEAR)
+        vat.filk(i0, 'fee', 1000000021964508878400000000);  // ray(2 ** (1/BANKYEAR)
         curb(arisk, WAD / 1000, 1000000 * WAD, 0, 1000);
         skip(BANKYEAR);
         vow.bail(i0, c);
@@ -298,7 +292,7 @@ contract VowJsTest is Test, RicoSetUp {
 
     function test_keep_rate_limiting_flop_relative_rate() public {
         uint risksupply0 = risk.totalSupply();
-        setter.set_fee(vat, i0, 1000000021964508878400000000); // ray(2 ** (1/BANKYEAR)
+        vat.filk(i0, 'fee', 1000000021964508878400000000);
         // for same results as above the rel rate is set to 1 / risk supply * vel used above
         curb(arisk, 1000000 * WAD, WAD / 10000000, 0, 1000);
         skip(BANKYEAR);
