@@ -72,6 +72,7 @@ contract Vat is Lock, Math, Ward, Flog {
     error ErrNotSafe();
     error ErrUrnDust();
     error ErrDebtCeil();
+    error ErrLoanArgs();
     error ErrMultiIlk();
     error ErrMintCeil();
     error ErrTransfer();
@@ -230,20 +231,33 @@ contract Vat is Lock, Math, Ward, Flog {
         rico.burn(u, wad);
     }
 
-    function flash(address gem, uint wad, address code, bytes calldata data)
+    function flash(address[] calldata gems, uint[] calldata wads, address code, bytes calldata data)
       _lock_ external returns (bytes memory result) {
+        if (gems.length != wads.length) revert ErrLoanArgs();
+        bool[] memory tags = new bool[](gems.length);
+        bool lent;
         bool ok;
-        if (pass[gem]) {
-            if (!Gem(gem).transfer(code, wad)) revert ErrTransfer();
-            (ok, result) = code.call(data);
-            require(ok, string(result));
-            if (!Gem(gem).transferFrom(code, address(this), wad)) revert ErrTransfer();
-        } else {
-            if (wad > MINT) revert ErrMintCeil();
-            Gem(gem).mint(code, wad);
-            (ok, result) = code.call(data);
-            require(ok, string(result));
-            Gem(gem).burn(code, wad);
+
+        for(uint i = 0; i < gems.length; i++) {
+            if (pass[gems[i]]) {
+                tags[i] = true;
+                if (!Gem(gems[i]).transfer(code, wads[i])) revert ErrTransfer();
+            } else {
+                if (wads[i] > MINT || lent) revert ErrMintCeil();
+                lent = true;
+                Gem(gems[i]).mint(code, wads[i]);
+            }
+        }
+
+        (ok, result) = code.call(data);
+        require(ok, string(result));
+
+        for(uint i = 0; i < gems.length; i++) {
+            if (tags[i]) {
+                if (!Gem(gems[i]).transferFrom(code, address(this), wads[i])) revert ErrTransfer();
+            } else {
+                Gem(gems[i]).burn(code, wads[i]);
+            }
         }
     }
 

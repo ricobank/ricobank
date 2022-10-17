@@ -64,7 +64,7 @@ interface VatLike is WardLike {
 
     // from User
     function filk(bytes32 ilk, bytes32 key, uint val) external;
-    function flash(address gem, uint wad, address code, bytes calldata data) external returns (bytes memory result);
+    function flash(address[] calldata gems, uint[] calldata wads, address code, bytes calldata data) external returns (bytes memory result);
     function frob(bytes32 i, address u, int dink, int dart) external;
     function file(bytes32 key, uint256 val) external;
     function init(bytes32 ilk, address gem, address fsrc, bytes32 ftag) external;

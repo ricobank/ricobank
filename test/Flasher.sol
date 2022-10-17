@@ -25,9 +25,17 @@ contract Flasher {
         GemLike(gem).approve(address(vat), wad);
     }
 
-    function welch(address gem, uint256 wad) public {
-        approve_vat(gem, wad);
-        GemLike(gem).transfer(address(0), 3);
+    function approve_sender(address gem, uint256 wad) public {
+        GemLike(gem).approve(msg.sender, wad);
+    }
+
+    function welch(address[] memory gems, uint256[] memory wads, uint256 welch_index) public {
+        for (uint256 i = 0; i < gems.length; i++) {
+            approve_vat(gems[i], wads[i]);
+            if (i == welch_index) {
+                GemLike(gems[i]).transfer(address(0), 1);
+            }
+        }
     }
 
     function failure() public pure {
@@ -36,8 +44,19 @@ contract Flasher {
 
     function reenter(address gem, uint256 wad) public {
         bytes memory data = abi.encodeCall(this.approve_vat, (gem, wad));
-        vat.flash(gem, wad, address(this), data);
+        address[] memory gems = new address[](1);
+        uint256[] memory wads = new uint256[](1);
+        gems[0] = gem;
+        wads[0] = wad;
+        vat.flash(gems, wads, address(this), data);
         approve_vat(gem, wad);
+    }
+
+    function multi_borrow(address gem1, uint256 bal1, address gem2, uint256 bal2) public {
+        require(GemLike(gem1).balanceOf(address(this)) >= bal1, 'missing borrowed tokens 1');
+        require(GemLike(gem2).balanceOf(address(this)) >= bal2, 'missing borrowed tokens 2');
+        approve_vat(gem1, bal1);
+        approve_vat(gem2, bal2);
     }
 
     function rico_lever(address gem, uint256 lock_amt, uint256 draw_amt) public {

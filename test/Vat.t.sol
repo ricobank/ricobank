@@ -15,6 +15,8 @@ contract VatTest is Test, RicoSetUp {
     uint256 public init_join = 1000;
     uint stack = WAD * 10;
     bytes32[] ilks;
+    address[] gems;
+    uint256[] wads;
     Flasher public chap;
     address public achap;
     uint public constant flash_size = 100;
@@ -210,12 +212,14 @@ contract VatTest is Test, RicoSetUp {
         assertEq(self_gold_bal0, self_gold_bal2);
         assertEq(self_rico_bal0, self_rico_bal2);
     }
-    
+
     function test_simple_rico_flash_mint() public {
         uint initial_rico_supply = rico.totalSupply();
 
         bytes memory data = abi.encodeWithSelector(chap.nop.selector);
-        vat.flash(arico, stack, achap, data);
+        gems.push(arico);
+        wads.push(stack);
+        vat.flash(gems, wads, achap, data);
 
         assertEq(rico.totalSupply(), initial_rico_supply);
         assertEq(rico.balanceOf(self), 0);
@@ -224,39 +228,116 @@ contract VatTest is Test, RicoSetUp {
 
     function test_rico_reentry() public {
         bytes memory data = abi.encodeWithSelector(chap.reenter.selector, arico, flash_size * WAD);
+        gems.push(arico);
+        wads.push(stack);
         vm.expectRevert(Lock.ErrLock.selector);
-        vat.flash(arico, stack, achap, data);
+        vat.flash(gems, wads, achap, data);
     }
 
     function test_revert_rico_exceed_max() public {
         bytes memory data = abi.encodeWithSelector(chap.nop.selector);
+        gems.push(arico);
+        wads.push(2 ** 200);
         vm.expectRevert(Vat.ErrMintCeil.selector);
-        vat.flash(arico, 2**200, achap, data);
+        vat.flash(gems, wads, achap, data);
+    }
+
+    function test_repeat_rico_ceil() public {
+        bytes memory data = abi.encodeWithSelector(chap.nop.selector);
+        // borrowing max amount of rico should succeed
+        gems.push(arico);
+        wads.push(vat.MINT());
+        vat.flash(gems, wads, achap, data);
+
+        // borrow max amount of rico, and then repeating rico in gems should fail
+        gems.push(arico);
+        wads.push(1);
+        vm.expectRevert(Vat.ErrMintCeil.selector);
+        vat.flash(gems, wads, achap, data);
+    }
+
+    function test_multi_borrow() public {
+        vat.frob(gilk, address(this), int(stack), 0);
+
+        uint flash_gold1 = gold.balanceOf(achap);
+        uint flash_rico1 = rico.balanceOf(achap);
+        uint vat_gold1  = gold.balanceOf(avat);
+        uint vat_rico1  = rico.balanceOf(avat);
+
+        bytes memory data = abi.encodeWithSelector(chap.multi_borrow.selector, arico, 2 ** 100, agold, stack);
+        gems.push(arico);
+        wads.push(2 ** 100);
+        gems.push(agold);
+        wads.push(stack);
+        vat.flash(gems, wads, achap, data);
+
+        assertEq(flash_gold1, gold.balanceOf(achap));
+        assertEq(flash_rico1, rico.balanceOf(achap));
+        assertEq(vat_gold1,  gold.balanceOf(avat));
+        assertEq(vat_rico1,  rico.balanceOf(avat));
     }
 
     function test_rico_flash_over_max_supply_reverts() public {
         rico.mint(self, type(uint256).max - stack);
         bytes memory data = abi.encodeWithSelector(chap.nop.selector);
+        gems.push(arico);
+        wads.push(2 * stack);
         vm.expectRevert(rico.ErrOverflow.selector);
-        vat.flash(arico, 2 * stack, achap, data);
+        vat.flash(gems, wads, achap, data);
     }
 
-    function test_revert_on_rico_repayment_failure() public {
-        bytes memory data = abi.encodeWithSelector(chap.welch.selector, arico, stack);
+    function test_repayment_failure() public {
+        // remove any initial balance from chap
+        uint chap_gold = gold.balanceOf(achap);
+        uint chap_rico = rico.balanceOf(achap);
+        chap.approve_sender(agold, chap_gold);
+        chap.approve_sender(arico, chap_rico);
+        gold.transferFrom(achap, self, chap_gold);
+        rico.transferFrom(achap, self, chap_rico);
+
+        // add rico then gold and ensure they both fail if welching
+        gems.push(arico);
+        wads.push(stack);
+        gems.push(agold);
+        wads.push(init_join * WAD);
+        bytes memory data0 = abi.encodeWithSelector(chap.welch.selector, gems, wads, 0);
+        bytes memory data1 = abi.encodeWithSelector(chap.welch.selector, gems, wads, 1);
+        bytes memory data2 = abi.encodeWithSelector(chap.welch.selector, gems, wads, 2);
         vm.expectRevert(Gem.ErrUnderflow.selector);
-        vat.flash(arico, stack, achap, data);
+        vat.flash(gems, wads, achap, data0);
+        vm.expectRevert(Gem.ErrUnderflow.selector);
+        vat.flash(gems, wads, achap, data1);
+        // neither welching should pass
+        vat.flash(gems, wads, achap, data2);
+
+        // and in reverse gem order
+        gems.pop(); gems.pop(); wads.pop(); wads.pop();
+        gems.push(agold);
+        wads.push(init_join * WAD);
+        gems.push(arico);
+        wads.push(stack);
+        data0 = abi.encodeWithSelector(chap.welch.selector, gems, wads, 0);
+        data1 = abi.encodeWithSelector(chap.welch.selector, gems, wads, 1);
+        vm.expectRevert(Gem.ErrUnderflow.selector);
+        vat.flash(gems, wads, achap, data0);
+        vm.expectRevert(Gem.ErrUnderflow.selector);
+        vat.flash(gems, wads, achap, data1);
     }
 
     function test_revert_wrong_joy() public {
         bytes memory data = abi.encodeWithSelector(chap.nop.selector);
+        gems.push(arisk);
+        wads.push(stack);
         vm.expectRevert(risk.ErrWard.selector);
-        vat.flash(address(risk), stack, achap, data);
+        vat.flash(gems, wads, achap, data);
     }
 
     function test_handler_error() public {
         bytes memory data = abi.encodeWithSelector(chap.failure.selector);
+        gems.push(arico);
+        wads.push(stack);
         vm.expectRevert(bytes4(keccak256(bytes('ErrBroken()'))));
-        vat.flash(arico, stack, achap, data);
+        vat.flash(gems, wads, achap, data);
     }
 
     function test_rico_wind_up_and_release() public {
@@ -269,14 +350,16 @@ contract VatTest is Test, RicoSetUp {
         uint vat_rico1  = rico.balanceOf(avat);
 
         bytes memory data = abi.encodeWithSelector(chap.rico_lever.selector, agold, lock, draw);
-        vat.flash(arico, 2**100, achap, data);
+        gems.push(arico);
+        wads.push(2 ** 100);
+        vat.flash(gems, wads, achap, data);
 
         (uint ink, uint art) = vat.urns(gilk, achap);
         assertEq(ink, lock);
         assertEq(art, draw);
 
         data = abi.encodeWithSelector(chap.rico_release.selector, agold, lock, draw);
-        vat.flash(arico, 2**100, achap, data);
+        vat.flash(gems, wads, achap, data);
 
         assertEq(flash_gold1, gold.balanceOf(achap));
         assertEq(flash_rico1, rico.balanceOf(achap) + 1);
@@ -289,7 +372,9 @@ contract VatTest is Test, RicoSetUp {
         uint vat_gold1 = gold.balanceOf(avat);
 
         bytes memory data = abi.encodeWithSelector(chap.approve_vat.selector, agold, flash_size * WAD);
-        vat.flash(agold, flash_size * WAD, achap, data);
+        gems.push(agold);
+        wads.push(flash_size * WAD);
+        vat.flash(gems, wads, achap, data);
 
         assertEq(gold.balanceOf(achap), chap_gold1);
         assertEq(gold.balanceOf(avat), vat_gold1);
@@ -297,41 +382,47 @@ contract VatTest is Test, RicoSetUp {
 
     function test_gem_flash_insufficient_approval() public {
         bytes memory data = abi.encodeWithSelector(chap.approve_vat.selector, agold, flash_size * WAD - 1);
+        gems.push(agold);
+        wads.push(flash_size * WAD);
         vm.expectRevert(Gem.ErrUnderflow.selector);
-        vat.flash(agold, flash_size * WAD, achap, data);
+        vat.flash(gems, wads, achap, data);
     }
 
     function test_gem_flash_insufficient_assets() public {
         bytes memory data = abi.encodeWithSelector(chap.approve_vat.selector, agold, type(uint256).max);
-        vat.flash(agold, init_join * WAD, achap, data);
+        gems.push(agold);
+        wads.push(init_join * WAD);
+        vat.flash(gems, wads, achap, data);
+        wads.pop();
+        wads.push(init_join * WAD + 1);
         vm.expectRevert(Gem.ErrUnderflow.selector);
-        vat.flash(agold, init_join * WAD + 1, achap, data);
+        vat.flash(gems, wads, achap, data);
     }
 
     function test_gem_flash_unsupported_gem() public {
         bytes memory data = abi.encodeWithSelector(chap.approve_vat.selector, agold, type(uint256).max);
-        vat.flash(agold, init_join * WAD, achap, data);
+        gems.push(agold);
+        wads.push(init_join * WAD);
+        vat.flash(gems, wads, achap, data);
         vat.list(agold, false);
         vm.expectRevert(gold.ErrWard.selector);
-        vat.flash(agold, init_join * WAD, achap, data);
-    }
-
-    function test_gem_flash_repayment_failure() public {
-        bytes memory data = abi.encodeWithSelector(chap.welch.selector, agold, flash_size * WAD);
-        vm.expectRevert(Gem.ErrUnderflow.selector);
-        vat.flash(agold, init_join * WAD, achap, data);
+        vat.flash(gems, wads, achap, data);
     }
 
     function test_gem_flasher_failure() public {
         bytes memory data = abi.encodeWithSelector(chap.failure.selector);
+        gems.push(agold);
+        wads.push(init_join * WAD);
         vm.expectRevert(bytes4(keccak256(bytes('ErrBroken()'))));
-        vat.flash(agold, init_join * WAD, achap, data);
+        vat.flash(gems, wads, achap, data);
     }
 
     function test_gem_flash_reentry() public {
         bytes memory data = abi.encodeWithSelector(chap.reenter.selector, agold, flash_size * WAD);
+        gems.push(agold);
+        wads.push(init_join * WAD);
         vm.expectRevert(Lock.ErrLock.selector);
-        vat.flash(agold, init_join * WAD, achap, data);
+        vat.flash(gems, wads, achap, data);
     }
 
     function test_gem_jump_wind_up_and_release() public {
@@ -344,13 +435,15 @@ contract VatTest is Test, RicoSetUp {
 
         // chap had 500 gold, double it with 500 loan repaid by buying with borrowed rico
         bytes memory data = abi.encodeWithSelector(chap.gem_lever.selector, agold, lock, draw);
-        vat.flash(agold, draw, achap, data);
+        gems.push(agold);
+        wads.push(draw);
+        vat.flash(gems, wads, achap, data);
         (uint ink, uint art) = vat.urns(gilk, achap);
         assertEq(ink, lock);
         assertEq(art, draw);
 
         data = abi.encodeWithSelector(chap.gem_release.selector, agold, lock, draw);
-        vat.flash(agold, draw, achap, data);
+        vat.flash(gems, wads, achap, data);
         assertEq(gold.balanceOf(achap), chap_gold1);
         assertEq(rico.balanceOf(achap) + 1, chap_rico1);
         assertEq(gold.balanceOf(avat), vat_gold1);
