@@ -891,12 +891,12 @@ contract DssClipTest is DssJsTest {
         vow.bail(i0, me);
     }
 
-    function test_kick_zero_lot() public _clip_ {
-        // but cut == 0 if ink == 0
-        // TODO curb_ramp handle undefined?
-        // vel/rel similar to dss lot
-        curb(address(gem), 0, WAD, block.timestamp, 1);
-        vm.expectRevert(); // todo need error types for zero cases
-        vow.bail(i0, me);
-    }
+//    function test_kick_zero_lot() public _clip_ {
+//        // but cut == 0 if ink == 0
+//        // TODO curb_ramp handle undefined?
+//        // vel/rel similar to dss lot
+//        curb(address(gem), 0, WAD, block.timestamp, 1);
+//        vm.expectRevert(); // todo need error types for zero cases
+//        vow.bail(i0, me);
+//    }
 }

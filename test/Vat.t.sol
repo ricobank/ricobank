@@ -449,46 +449,32 @@ contract VatTest is Test, RicoSetUp {
         assertEq(gold.balanceOf(avat), vat_gold1);
         assertEq(rico.balanceOf(avat), vat_rico1);
     }
-}
 
-
-contract VatJsTest is VatTest {
-    address me;
-    address ali;
-    bytes32 i0;
-
-    modifier _js_ {
-        me = address(this);
-        ali = me;
-        i0 = ilks[0];
-        _;
+    function test_init_conditions() public {
+        assertEq(vat.wards(self), true);
     }
 
-    function test_init_conditions() public _js_ {
-        assertEq(vat.wards(ali), true);
-    }
-
-    function test_rejects_unsafe_frob() public _js_ {
-        (uint ink, uint art) = vat.urns(i0, ali);
+    function test_rejects_unsafe_frob() public {
+        (uint ink, uint art) = vat.urns(gilk, self);
         assertEq(ink, 0);
         assertEq(art, 0);
         vm.expectRevert(Vat.ErrNotSafe.selector);
-        vat.frob(i0, ali, 0, int(WAD));
+        vat.frob(gilk, self, 0, int(WAD));
     }
 
     function owed() internal returns (uint) {
-        vat.drip(i0);
-        (,uint rack,,,,,,,,,,) = vat.ilks(i0);
-        (,uint art) = vat.urns(i0, ali);
+        vat.drip(gilk);
+        (,uint rack,,,,,,,,,,) = vat.ilks(gilk);
+        (,uint art) = vat.urns(gilk, self);
         return rack * art;
     }
 
-    function test_drip() public _js_ {
-        vat.filk(i0, 'fee', RAY + RAY / 50);
+    function test_drip() public {
+        vat.filk(gilk, 'fee', RAY + RAY / 50);
 
         skip(1);
-        vat.drip(i0);
-        vat.frob(i0, ali, int(100 * WAD), int(50 * WAD));
+        vat.drip(gilk);
+        vat.frob(gilk, self, int(100 * WAD), int(50 * WAD));
 
         skip(1);
         uint debt0 = owed();
@@ -498,28 +484,28 @@ contract VatJsTest is VatTest {
         assertEq(debt1, debt0 + debt0 / 50);
     }
 
-    function test_feed_plot_safe() public _js_ {
-        Vat.Spot safe0 = vat.safe(i0, ali);
+    function test_feed_plot_safe() public {
+        Vat.Spot safe0 = vat.safe(gilk, self);
         assertEq(uint(safe0), uint(Vat.Spot.Safe));
 
-        vat.frob(i0, ali, int(100 * WAD), int(50 * WAD));
+        vat.frob(gilk, self, int(100 * WAD), int(50 * WAD));
 
-        Vat.Spot safe1 = vat.safe(i0, ali);
+        Vat.Spot safe1 = vat.safe(gilk, self);
         assertEq(uint(safe1), uint(Vat.Spot.Safe));
 
 
-        (uint ink, uint art) = vat.urns(i0, ali);
+        (uint ink, uint art) = vat.urns(gilk, self);
         assertEq(ink, 100 * WAD);
         assertEq(art, 50 * WAD);
 
         feed.push(gtag, bytes32(RAY), block.timestamp + 1000);
 
-        Vat.Spot safe2 = vat.safe(i0, ali);
+        Vat.Spot safe2 = vat.safe(gilk, self);
         assertEq(uint(safe2), uint(Vat.Spot.Safe));
 
         feed.push(gtag, bytes32(RAY / 50), block.timestamp + 1000);
 
-        Vat.Spot safe3 = vat.safe(i0, ali);
+        Vat.Spot safe3 = vat.safe(gilk, self);
         assertEq(uint(safe3), uint(Vat.Spot.Sunk));
     }
 }
