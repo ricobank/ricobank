@@ -17,7 +17,7 @@ import './task/deploy-ricobank'
  */
 export default {
   solidity: {
-    version: "0.8.15",
+    version: "0.8.17",
     settings: {
       outputSelection: {
         "*": {

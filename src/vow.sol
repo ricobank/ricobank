@@ -2,7 +2,7 @@
 
 // Copyright (C) 2022 the bank
 
-pragma solidity 0.8.15;
+pragma solidity 0.8.17;
 
 import { Flow, Flowback } from './flow.sol';
 import { GemLike } from './abi.sol';

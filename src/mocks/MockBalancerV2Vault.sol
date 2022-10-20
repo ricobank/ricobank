@@ -2,7 +2,7 @@
 
 // Copyright (C) 2021 the bank
 
-pragma solidity 0.8.15;
+pragma solidity 0.8.17;
 
 interface IAsset {}
 interface BalancerV2Types {
