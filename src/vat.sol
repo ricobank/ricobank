@@ -83,7 +83,7 @@ contract Vat is Lock, Math, Ward, Flog {
     uint256 public rest;  // [rad] Remainder from
     uint256 public debt;  // [rad] Total Rico Issued
     uint256 public ceil;  // [rad] Total Debt Ceiling
-    uint256 public par;   // [wad] System Price (rico/ref)
+    uint256 public par;   // [ray] System Price (rico/ref)
 
     Feedbase public feeds;
     Gem     public rico;

@@ -11,6 +11,7 @@ import { Ball } from '../src/ball.sol';
 import { GemLike } from '../src/abi.sol';
 import { Vat } from '../src/vat.sol';
 import { Vow } from '../src/vow.sol';
+import { Vox } from '../src/vox.sol';
 
 import { BalSetUp } from "./BalHelper.sol";
 
@@ -41,12 +42,14 @@ abstract contract RicoSetUp is BalSetUp, Math {
     GemLike  public risk;
     Vat      public vat;
     Vow      public vow;
+    Vox      public vox;
     address  public arico;
     address  public arisk;
     address  public agold;
     address  public aruby;
     address  public avat;
     address  public avow;
+    address  public avox;
 
     function make_bank() public {
         feed = new Feedbase();
@@ -57,10 +60,12 @@ abstract contract RicoSetUp is BalSetUp, Math {
         risk = GemLike(ball.risk());
         vat  = Vat(address(ball.vat()));
         vow  = Vow(address(ball.vow()));
+        vox  = Vox(address(ball.vox()));
         flow = ball.flow();
 
         avat  = address(vat);
         avow  = address(vow);
+        avox  = address(vox);
         arico = address(rico);
         arisk = address(risk);
 
