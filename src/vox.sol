@@ -66,7 +66,7 @@ contract Vox is Math, Ward {
     {
              if (key == "vat") { vat = VatLike(val); }
         else if (key == "fb") { fb = FeedbaseLike(val); }
-        else if (key == "tip") { tip = val; } // TODO consider putting in `file`
+        else if (key == "tip") { tip = val; }
         else revert ErrWrongKey();
     }
 

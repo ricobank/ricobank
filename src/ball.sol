@@ -44,8 +44,12 @@ contract Ball {
     error ErrGFHash();
     error ErrFBHash();
 
+    bytes32 internal constant WILK = "weth";
+    bytes32 internal constant WTAG = "wethusd";
     uint256 internal constant HALF = 5 * 10**17;
     uint256 internal constant FEE  = 3 * 10**15;
+    uint256 internal constant RAY  = 10 ** 27;
+    uint256 internal constant RAD  = 10 ** 45;
     address public rico;
     address public risk;
     BalancerFlower public flow;
@@ -56,7 +60,7 @@ contract Ball {
     bytes32 public immutable gemFabHash = 0x3d4566ab42065aeb1aa89c121b828f7cce52f908859617efe6f5c85247df2b3b;
     bytes32 public immutable feedbaseHash = 0x444a69f35a859778fe48a0d50c8c24a3d891d8e7287c6db0df0d17f9fcb9c71b;
 
-    constructor(GemFabLike gemfab, address feedbase, address weth, address poolfab, address bal_vault) {
+    constructor(GemFabLike gemfab, address feedbase, address weth, address wethsrc, address poolfab, address bal_vault) {
 //        bytes32 codeHash;
 //        assembly { codeHash := extcodehash(gemfab) }
 //        if (gemFabHash != codeHash) revert ErrGFHash();
@@ -94,6 +98,15 @@ contract Ball {
 
         vat.ward(address(vow),  true);
         vat.ward(address(vox),  true);
+        vat.init(WILK, weth, wethsrc, WTAG);
+        // TODO select weth ilk values
+        vat.filk(WILK, 'chop', RAD);
+        vat.filk(WILK, 'dust', 90 * RAD);
+        vat.filk(WILK, 'fee',  1000000001546067052200000000);  // 5%
+        vat.filk(WILK, 'line', 100000 * RAD);
+        vat.filk(WILK, 'liqr', RAY);
+        vat.list(weth, true);
+        vow.grant(weth);
 
         GemLike(rico).ward(address(vat), true);
         GemLike(risk).ward(address(vow), true);

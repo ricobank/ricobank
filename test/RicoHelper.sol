@@ -52,9 +52,13 @@ abstract contract RicoSetUp is BalSetUp, Math {
     address  public avox;
 
     function make_bank() public {
+        make_bank(self);
+    }
+
+    function make_bank(address wethsrc) public {
         feed = new Feedbase();
         gemfab = GemFabLike(address(new GemFab()));
-        ball = new Ball(gemfab, address(feed), WETH, BAL_W_P_F, BAL_VAULT);
+        ball = new Ball(gemfab, address(feed), WETH, wethsrc, BAL_W_P_F, BAL_VAULT);
 
         rico = GemLike(ball.rico());
         risk = GemLike(ball.risk());

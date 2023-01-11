@@ -145,7 +145,6 @@ contract VowJsTest is Test, RicoSetUp {
         cat = new Usr(vat, weth);
         b = address(bob);
         c = address(cat);
-        me = address(this);
         i0 = wilk;
         ilks.push(i0);
 
@@ -153,11 +152,8 @@ contract VowJsTest is Test, RicoSetUp {
         risk.mint(me, 10000 * WAD);
         weth.approve(avat, UINT256_MAX);
 
-        vat.init(i0, WETH, me, wtag);
-
         vat.file('ceil', 10000 * RAD);
         vat.filk(i0, 'line', 10000 * RAD);
-        vat.filk(i0, 'liqr', RAY);
         vat.filk(i0, 'chop', RAY * 11 / 10);
 
         curb(arisk, WAD, WAD / 10000, 0, 60);

@@ -10,19 +10,9 @@ contract SetupScript is Script, RicoSetUp {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address deployerPublicKey  = vm.envAddress("PUBLIC_ADDRESS");
         vm.startBroadcast(deployerPrivateKey);
-        make_bank();
-
-        WethLike(WETH).deposit{value: 1000 * WAD}();
-        vat.init(wilk, WETH, deployerPublicKey, wtag);
-        vat.drip(wilk);
-        vat.filk(wilk, 'fee',  1000000001546067052200000000);  // 5%
-        vat.list(WETH, true);
-        vat.filk(wilk, 'chop', RAD);
-        vat.filk(wilk, 'dust', 100 * RAD);
-        vat.filk(wilk, 'line', 100000 * RAD);
+        make_bank(deployerPublicKey);
         feed.push(wtag, bytes32(RAY * 1000), block.timestamp + 1000);
-        vow.grant(WETH);
-
+        WethLike(WETH).deposit{value: 1000 * WAD}();
         console.log('vat @ %s, vox at %s, fb @ %s', avat, avox, address(feed));
         vm.stopBroadcast();
     }

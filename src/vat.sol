@@ -86,7 +86,7 @@ contract Vat is Lock, Math, Ward, Flog {
     uint256 public par;   // [ray] System Price (rico/ref)
 
     Feedbase public feeds;
-    Gem     public rico;
+    Gem      public rico;
 
     constructor() {
         par = RAY;
@@ -183,11 +183,11 @@ contract Vat is Lock, Math, Ward, Flog {
         Urn storage urn = urns[i][u];
         Ilk storage ilk = ilks[i];
 
-        uint tab = rmul(urn.art, ilk.rack);
+        uint tab  = rmul(urn.art, ilk.rack);
         uint bill = rmul(ilk.chop, tab);
 
-        urn.ink = add(urn.ink, dink);
-        urn.art = add(urn.art, dart);
+        urn.ink  = add(urn.ink, dink);
+        urn.art  = add(urn.art, dart);
         ilk.tart = add(ilk.tart, dart);
 
         int dtab = mul(ilk.rack, dart);
