@@ -16,7 +16,7 @@ contract Vow is Flowback, Math, Ward {
         address urn;
     }
 
-    mapping(bytes32 => Sale) public sales;
+    mapping(uint256 => Sale) public sales;
 
     error ErrOverflow();
     error ErrSafeBail();
@@ -29,7 +29,7 @@ contract Vow is Flowback, Math, Ward {
     Gem  public RICO;
     Gem  public RISK;
 
-    function keep(bytes32[] calldata ilks) external {
+    function keep(bytes32[] calldata ilks) external returns (uint256 aid) {
         for (uint256 i = 0; i < ilks.length; i++) {
             vat.drip(ilks[i]);
         }
@@ -41,25 +41,25 @@ contract Vow is Flowback, Math, Ward {
         if (rico > sin) {
             if (sin > 1) vat.heal(sin - 1);
             uint over = (rico - sin);
-            flow.flow(address(RICO), over, address(RISK), type(uint256).max);
+            aid = flow.flow(address(RICO), over, address(RISK), type(uint256).max);
         } else if (sin > rico) {
             if (rico > 1) vat.heal(rico - 1);
             (, uint flop,) = flow.clip(self, address(RISK), type(uint256).max);
             RISK.mint(self, flop);
-            flow.flow(address(RISK), flop, address(RICO), type(uint256).max);
+            aid = flow.flow(address(RISK), flop, address(RICO), type(uint256).max);
         }
     }
 
-    function bail(bytes32 ilk, address urn) external {
+    function bail(bytes32 ilk, address urn) external returns (uint256 aid) {
         vat.drip(ilk);
         if (vat.safe(ilk, urn) != Vat.Spot.Sunk) revert ErrSafeBail();
         (uint ink, uint art) = vat.urns(ilk, urn);
         (uint bill, address gem) = vat.grab(ilk, urn, -int(ink), -int(art));
-        bytes32 aid = flow.flow(gem, ink, address(RICO), bill);
+        aid = flow.flow(gem, ink, address(RICO), bill);
         sales[aid] = Sale({ ilk: ilk, urn: urn });
     }
 
-    function flowback(bytes32 aid, uint refund) external
+    function flowback(uint256 aid, uint refund) external
       _ward_ {
         if (refund == 0)  return;
         if (refund > 2 ** 255) revert ErrOverflow();

@@ -87,10 +87,10 @@ contract VowTest is Test, RicoSetUp {
         feed.push(gtag, bytes32(RAY), block.timestamp + 10000);
 
         // create the sin and kick off risk sale
-        vow.bail(gilk, self);
-        flow.glug(bytes32(flow.count()));
-        vow.keep(ilks);
-        flow.glug(bytes32(flow.count()));
+        uint256 aid = vow.bail(gilk, self);
+        flow.glug(aid);
+        aid = vow.keep(ilks);
+        flow.glug(aid);
         (tokens, balances1, lastChangeBlock) = vault.getPoolTokens(pool_id_rico_risk);
 
         // correct risk ramp usage should limit sale to one
@@ -209,8 +209,8 @@ contract VowJsTest is Test, RicoSetUp {
         assertEq(vow_rico0, 0);
 
         vm.expectCall(address(flow), abi.encodePacked(flow.flow.selector));
-        vow.bail(i0, me);
-        flow.glug(bytes32(flow.count()));
+        uint256 aid = vow.bail(i0, me);
+        flow.glug(aid);
 
         (uint ink, uint art) = vat.urns(i0, me);
         uint sin1 = vat.sin(avow);
@@ -268,11 +268,11 @@ contract VowJsTest is Test, RicoSetUp {
         vat.filk(i0, 'fee', 1000000021964508878400000000);  // ray(2 ** (1/BANKYEAR)
         curb(arisk, WAD / 1000, 1000000 * WAD, 0, 1000);
         skip(BANKYEAR);
-        vow.bail(i0, c); flow.glug(bytes32(flow.count()));
-        vow.keep(ilks); flow.glug(bytes32(flow.count()));
+        uint256 aid = vow.bail(i0, c); flow.glug(aid);
+        aid = vow.keep(ilks); flow.glug(aid);
         uint risksupply1 = risk.totalSupply();
         skip(500);
-        vow.keep(ilks); flow.glug(bytes32(flow.count()));
+        aid = vow.keep(ilks); flow.glug(aid);
         uint risksupply2 = risk.totalSupply();
 
         // should have had a mint of the full vel*cel and then half vel*cel
@@ -290,11 +290,11 @@ contract VowJsTest is Test, RicoSetUp {
         // for same results as above the rel rate is set to 1 / risk supply * vel used above
         curb(arisk, 1000000 * WAD, WAD / 10000000, 0, 1000);
         skip(BANKYEAR);
-        vow.bail(i0, c); flow.glug(bytes32(flow.count()));
-        vow.keep(ilks); flow.glug(bytes32(flow.count()));
+        uint256 aid = vow.bail(i0, c); flow.glug(aid);
+        aid = vow.keep(ilks); flow.glug(aid);
         uint risksupply1 = risk.totalSupply();
         skip(500);
-        vow.keep(ilks); flow.glug(bytes32(flow.count()));
+        aid = vow.keep(ilks); flow.glug(aid);
         uint risksupply2 = risk.totalSupply();
 
         // should have had a mint of the full vel*cel and then half vel*cel
@@ -310,12 +310,12 @@ contract VowJsTest is Test, RicoSetUp {
         // run a flap and ensure risk is burnt
         uint risk_initial_supply = risk.totalSupply();
         skip(BANKYEAR);
-        vow.keep(ilks);
-        flow.glug(bytes32(flow.count()));
+        uint256 aid = vow.keep(ilks);
+        flow.glug(aid);
         skip(60);
         vm.expectCall(address(flow), abi.encodePacked(flow.flow.selector));
-        vow.keep(ilks); // call again to burn risk given to vow the first time
-        flow.glug(bytes32(flow.count()));
+        aid = vow.keep(ilks); // call again to burn risk given to vow the first time
+        flow.glug(aid);
         uint risk_post_flap_supply = risk.totalSupply();
         assertLt(risk_post_flap_supply, risk_initial_supply);
 
@@ -323,8 +323,8 @@ contract VowJsTest is Test, RicoSetUp {
         uint vow_rico_0 = rico.balanceOf(avow);
         uint vat_weth_0 = weth.balanceOf(avat);
         vm.expectCall(address(flow), abi.encodePacked(flow.flow.selector));
-        vow.bail(i0, me);
-        flow.glug(bytes32(flow.count()));
+        aid = vow.bail(i0, me);
+        flow.glug(aid);
         uint vow_rico_1 = rico.balanceOf(avow);
         uint vat_weth_1 = weth.balanceOf(avat);
         assertGt(vow_rico_1, vow_rico_0);
@@ -332,8 +332,8 @@ contract VowJsTest is Test, RicoSetUp {
 
         // although the keep joins the rico sin is still greater due to fees so we flop
         vm.expectCall(address(flow), abi.encodePacked(flow.flow.selector));
-        vow.keep(ilks);
-        flow.glug(bytes32(flow.count()));
+        aid = vow.keep(ilks);
+        flow.glug(aid);
         // now vow should hold more rico than anti tokens
         uint sin = vat.sin(avow);
         uint vow_rico = rico.balanceOf(avow);

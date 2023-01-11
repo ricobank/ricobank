@@ -37,10 +37,10 @@ abstract contract RicoSetUp is BalSetUp, Math {
     GemFabLike public gemfab;
     Ball     public ball;
     Feedbase public feed;
-    Gem  public gold;
-    Gem  public ruby;
-    Gem  public rico;
-    Gem  public risk;
+    Gem      public gold;
+    Gem      public ruby;
+    Gem      public rico;
+    Gem      public risk;
     Vat      public vat;
     Vow      public vow;
     Vox      public vox;

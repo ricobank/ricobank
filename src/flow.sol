@@ -7,7 +7,7 @@ import "./swap.sol";
 import { Gem } from '../lib/gemfab/src/gem.sol';
 
 interface Flowback {
-    function flowback(bytes32 aid, uint refund) external;
+    function flowback(uint256 aid, uint refund) external;
 }
 
 contract BalancerFlower is Math, BalancerSwapper
@@ -29,7 +29,7 @@ contract BalancerFlower is Math, BalancerSwapper
     }
 
     mapping (address => mapping (address => Ramp)) public ramps;  // client -> gem -> ramp
-    mapping (bytes32 => Auction) public auctions;
+    mapping (uint256 => Auction) public auctions;
 
     error ErrCurbKey();
     error ErrEmptyAid();
@@ -38,9 +38,9 @@ contract BalancerFlower is Math, BalancerSwapper
 
     uint256 public count;
 
-    function flow(address hag, uint ham, address wag, uint wam) external returns (bytes32 aid) {
+    function flow(address hag, uint ham, address wag, uint wam) external returns (uint256 aid) {
         Gem(hag).transferFrom(msg.sender, address(this), ham);
-        aid = bytes32(++count);
+        aid = ++count;
         address vow = msg.sender;
         auctions[aid].vow = vow;
         auctions[aid].hag = hag;
@@ -53,7 +53,7 @@ contract BalancerFlower is Math, BalancerSwapper
         }
     }
 
-    function glug(bytes32 aid) external {
+    function glug(uint256 aid) external {
         Auction storage auction = auctions[aid];
         address hag = auction.hag;
         address vow = auction.vow;

@@ -451,8 +451,8 @@ contract DssBiteTest is DssVatTest {
         // cat.file dunk N/A vow always bails whole urn
         // cat.litter N/A vow always bails urn immediately
         assertEq(rico.balanceOf(address(vow)), 0);
-        vow.bail(i0, me);
-        flow.glug(bytes32(flow.count())); // glug succeeds because gold's bel is low
+        uint256 aid = vow.bail(i0, me);
+        flow.glug(aid); // glug succeeds because gold's bel is low
         assertEq(_ink(i0, me), 0);
         assertEq(_art(i0, me), 0);
         // vow.sin(now) N/A rico vow has no debt queue
@@ -467,8 +467,8 @@ contract DssBiteTest is DssVatTest {
         }
 
         skip(1);
-        vow.keep(ilks);
-        flow.glug(bytes32(flow.count()));
+        aid = vow.keep(ilks);
+        flow.glug(aid);
     }
 
     // test_partial_litterbox
@@ -531,9 +531,8 @@ contract DssBiteTest is DssVatTest {
         assertEq(vat.sin(address(vow)), 0);
         assertEq(rico.balanceOf(address(vow)), 0);
         assertEq(rico.balanceOf(address(vow)), 0);
-        vow.bail(i0, me);
+        uint256 aid = vow.bail(i0, me);
         // glug fails since no time has passed
-        bytes32 aid = bytes32(flow.count());
         vm.expectRevert(BalancerFlower.ErrSwapFail.selector);
         flow.glug(aid);
         assertEq(vat.sin(address(vow)), 100 * RAD);
@@ -541,18 +540,18 @@ contract DssBiteTest is DssVatTest {
 
         skip(1);
         // todo test keep without skip, always reverts on deficit with or without glug
-        flow.glug(bytes32(flow.count()));
+        flow.glug(aid);
 
         assertEq(vat.sin(address(vow)), 100 * RAD);
         uint ricobought = rico.balanceOf(address(vow));
         assertRange(ricobought, bailamt * RAY / goldprice, WAD / 50);
 
-        vow.keep(ilks);
-        flow.glug(bytes32(flow.count()));
+        aid = vow.keep(ilks);
+        flow.glug(aid);
         assertEq(vat.sin(address(vow)), 100 * RAD - (ricobought - 1) * RAY); // leaves 1 rico to save gas
         assertRange(rico.balanceOf(address(vow)), riskamt, WAD / 50);
-        skip(1); vow.keep(ilks); flow.glug(bytes32(flow.count()));
-        skip(1); vow.keep(ilks); flow.glug(bytes32(flow.count()));
+        skip(1); aid = vow.keep(ilks); flow.glug(aid);
+        skip(1); aid = vow.keep(ilks); flow.glug(aid);
         assertEq(vat.sin(address(vow)), RAY); // healed all but 1 rico to save gas
         assertEq(rico.balanceOf(address(vow)), 1);
     }
@@ -566,27 +565,25 @@ contract DssBiteTest is DssVatTest {
         curb(address(rico), 100 * WAD, WAD, block.timestamp, 1);
         assertEq(vow_Awe(), 0);
 
-        vow.keep(ilks);
-        uint aid = flow.count();
+        uint256 aid = vow.keep(ilks);
         vm.expectRevert(BalancerFlower.ErrSwapFail.selector);
-        flow.glug(bytes32(aid));
+        flow.glug(aid);
 
         assertEq(rico.balanceOf(address(vow)), 0);
         assertEq(vow_Awe(), 0);
         assertEq(gov.balanceOf(address(vow)), 0);
 
         skip(1);
-        flow.glug(bytes32(flow.count()));
+        flow.glug(aid);
         assertEq(rico.balanceOf(address(vow)), 0);
         assertEq(vow_Awe(), 0);
         assertGt(gov.balanceOf(address(vow)), 0);
 
-        vow.keep(ilks);
-        aid = flow.count();
+        aid = vow.keep(ilks);
         // no surplus or deficit, keep didn't create an auction
         // previous auction has already been deleted
         vm.expectRevert(BalancerFlower.ErrEmptyAid.selector);
-        flow.glug(bytes32(aid));
+        flow.glug(aid);
         assertEq(rico.balanceOf(address(vow)), 0);
         assertEq(vow_Awe(), 0);
         assertEq(gov.balanceOf(address(vow)), 0);
@@ -683,7 +680,7 @@ contract DssFlipTest is DssJsTest {
 contract DssFlapTest is DssJsTest {
 
     uint nrefunds;
-    function flowback(bytes32, address, uint refund) external {
+    function flowback(uint256, address, uint refund) external {
         if (refund > 0) {
             nrefunds++;
         }
@@ -743,7 +740,7 @@ contract DssFlopTest is DssJsTest {
         assertEq(rico.balanceOf(me), 600 * WAD);
 
         (address v, address hag, uint ham, address wag, uint wam)
-            = flow.auctions(bytes32(flow.count()));
+            = flow.auctions(flow.count());
 
         assertEq(v, me);
         assertEq(hag, address(risk));
@@ -843,7 +840,7 @@ contract DssClipTest is DssJsTest {
         assertEq(art, 100 * WAD);
 
         ali.bail(i0, me); // no keeper arg
-        bytes32 aid = bytes32(flow.count());
+        uint256 aid = flow.count();
         vm.expectRevert(BalancerFlower.ErrSwapFail.selector);
         flow.glug(aid);
 
@@ -874,7 +871,7 @@ contract DssClipTest is DssJsTest {
 
         (ink, art) = vat.urns(i0, me);
         bob.bail(i0, me);
-        flow.glug(bytes32(flow.count()));
+        flow.glug(flow.count());
         // clip.kicks() N/A rico flow doesn't count flips
         // clip.sales() N/A rico flow doesn't store sale information
 
