@@ -282,7 +282,7 @@ contract VatTest is Test, RicoSetUp {
         bytes memory data = abi.encodeWithSelector(chap.nop.selector);
         gems.push(arico);
         wads.push(2 * stack);
-        vm.expectRevert(rico.ErrOverflow.selector);
+        vm.expectRevert(Gem.ErrOverflow.selector);
         vat.flash(gems, wads, achap, data);
     }
 
@@ -328,7 +328,7 @@ contract VatTest is Test, RicoSetUp {
         bytes memory data = abi.encodeWithSelector(chap.nop.selector);
         gems.push(arisk);
         wads.push(stack);
-        vm.expectRevert(risk.ErrWard.selector);
+        vm.expectRevert(Gem.ErrWard.selector);
         vat.flash(gems, wads, achap, data);
     }
 
@@ -405,7 +405,7 @@ contract VatTest is Test, RicoSetUp {
         wads.push(init_join * WAD);
         vat.flash(gems, wads, achap, data);
         vat.list(agold, false);
-        vm.expectRevert(gold.ErrWard.selector);
+        vm.expectRevert(Gem.ErrWard.selector);
         vat.flash(gems, wads, achap, data);
     }
 

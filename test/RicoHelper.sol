@@ -5,19 +5,20 @@ pragma solidity 0.8.17;
 import '../src/mixin/math.sol';
 import { BalancerFlower } from '../src/flow.sol';
 import { Feedbase } from '../lib/feedbase/src/Feedbase.sol';
-import { GemFab } from '../lib/gemfab/src/gem.sol';
+import { GemFab, Gem } from '../lib/gemfab/src/gem.sol';
 import { GemFabLike } from '../src/ball.sol';
 import { Ball } from '../src/ball.sol';
-import { GemLike } from '../src/abi.sol';
 import { Vat } from '../src/vat.sol';
 import { Vow } from '../src/vow.sol';
 import { Vox } from '../src/vox.sol';
 
 import { BalSetUp } from "./BalHelper.sol";
 
-interface WethLike is GemLike {
+interface WethLike {
     function deposit() external payable;
-    function withdraw(uint256 amount) external;
+    function approve(address, uint) external;
+    function allowance(address, address) external returns (uint);
+    function balanceOf(address) external returns (uint);
 }
 
 abstract contract RicoSetUp is BalSetUp, Math {
@@ -36,10 +37,10 @@ abstract contract RicoSetUp is BalSetUp, Math {
     GemFabLike public gemfab;
     Ball     public ball;
     Feedbase public feed;
-    GemLike  public gold;
-    GemLike  public ruby;
-    GemLike  public rico;
-    GemLike  public risk;
+    Gem  public gold;
+    Gem  public ruby;
+    Gem  public rico;
+    Gem  public risk;
     Vat      public vat;
     Vow      public vow;
     Vox      public vox;
@@ -60,8 +61,8 @@ abstract contract RicoSetUp is BalSetUp, Math {
         gemfab = GemFabLike(address(new GemFab()));
         ball = new Ball(gemfab, address(feed), WETH, wethsrc, BAL_W_P_F, BAL_VAULT);
 
-        rico = GemLike(ball.rico());
-        risk = GemLike(ball.risk());
+        rico = Gem(ball.rico());
+        risk = Gem(ball.risk());
         vat  = Vat(address(ball.vat()));
         vow  = Vow(address(ball.vow()));
         vox  = Vox(address(ball.vox()));
@@ -77,7 +78,7 @@ abstract contract RicoSetUp is BalSetUp, Math {
     }
 
     function init_gold() public {
-        gold = GemLike(address(gemfab.build(bytes32("Gold"), bytes32("GOLD"))));
+        gold = Gem(address(gemfab.build(bytes32("Gold"), bytes32("GOLD"))));
         gold.mint(self, init_mint * WAD);
         gold.approve(avat, type(uint256).max);
         vat.init(gilk, address(gold), self, gtag);
@@ -91,7 +92,7 @@ abstract contract RicoSetUp is BalSetUp, Math {
     }
 
     function init_ruby() public {
-        ruby = GemLike(address(gemfab.build(bytes32("Ruby"), bytes32("RUBY"))));
+        ruby = Gem(address(gemfab.build(bytes32("Ruby"), bytes32("RUBY"))));
         ruby.mint(self, init_mint * WAD);
         ruby.approve(avat, type(uint256).max);
         vat.init(rilk, address(ruby), self, rtag);

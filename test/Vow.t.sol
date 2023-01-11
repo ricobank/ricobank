@@ -4,10 +4,10 @@ pragma solidity 0.8.17;
 import "forge-std/Test.sol";
 
 import { Ball } from '../src/ball.sol';
-import { GemLike, ERC20 } from '../src/abi.sol';
+import { Gem } from '../lib/gemfab/src/gem.sol';
 import { Vat } from '../src/vat.sol';
 import { Vow } from '../src/vow.sol';
-import { RicoSetUp } from "./RicoHelper.sol";
+import { RicoSetUp, WethLike } from "./RicoHelper.sol";
 import { Asset, PoolArgs } from "./BalHelper.sol";
 import { BalancerFlower } from '../src/flow.sol';
 
@@ -116,14 +116,8 @@ contract Usr {
         vat.frob(ilk, usr, dink, dart);
     }
     function transfer(address gem, address dst, uint amt) public {
-        GemLike(gem).transfer(dst, amt);
+        Gem(gem).transfer(dst, amt);
     }
-}
-
-interface WethLike is ERC20 {
-    function deposit() external payable;
-    function approve(address, uint) external;
-    function allowance(address, address) external returns (uint);
 }
 
 contract VowJsTest is Test, RicoSetUp {

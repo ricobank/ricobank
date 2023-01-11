@@ -18,14 +18,15 @@ pragma solidity 0.8.17;
 import './mixin/math.sol';
 import './mixin/ward.sol';
 
-import { VatLike, FeedbaseLike } from './abi.sol';
+import { Vat } from './vat.sol';
+import { Feedbase } from '../lib/feedbase/src/Feedbase.sol';
 
 // RicoLikeVox
 contract Vox is Math, Ward {
     error ErrWrongKey();
 
-    VatLike      public vat;
-    FeedbaseLike public fb;
+    Vat      public vat;
+    Feedbase public fb;
 
     address public tip; // feedbase `src` address
     bytes32 public tag; // feedbase `tag` bytes32
@@ -64,8 +65,8 @@ contract Vox is Math, Ward {
     function link(bytes32 key, address val) external
       _ward_
     {
-             if (key == "vat") { vat = VatLike(val); }
-        else if (key == "fb") { fb = FeedbaseLike(val); }
+             if (key == "vat") { vat = Vat(val); }
+        else if (key == "fb") { fb = Feedbase(val); }
         else if (key == "tip") { tip = val; }
         else revert ErrWrongKey();
     }

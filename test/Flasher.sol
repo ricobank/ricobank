@@ -4,17 +4,18 @@
 
 pragma solidity 0.8.17;
 
-import { GemLike, VatLike } from '../src/abi.sol';
+import { Vat } from '../src/vat.sol';
+import { Gem } from '../lib/gemfab/src/gem.sol';
 
 contract Flasher {
-    VatLike public vat;
-    GemLike public rico;
+    Vat public vat;
+    Gem public rico;
     bytes32 ilk0;
     error ErrBroken();
 
     constructor(address vat_, address rico_, bytes32 ilk0_) {
-        vat = VatLike(vat_);
-        rico = GemLike(rico_);
+        vat = Vat(vat_);
+        rico = Gem(rico_);
         ilk0 = ilk0_;
     }
 
@@ -22,18 +23,18 @@ contract Flasher {
     }
 
     function approve_vat(address gem, uint256 wad) public {
-        GemLike(gem).approve(address(vat), wad);
+        Gem(gem).approve(address(vat), wad);
     }
 
     function approve_sender(address gem, uint256 wad) public {
-        GemLike(gem).approve(msg.sender, wad);
+        Gem(gem).approve(msg.sender, wad);
     }
 
     function welch(address[] memory gems, uint256[] memory wads, uint256 welch_index) public {
         for (uint256 i = 0; i < gems.length; i++) {
             approve_vat(gems[i], wads[i]);
             if (i == welch_index) {
-                GemLike(gems[i]).transfer(address(0), 1);
+                Gem(gems[i]).transfer(address(0), 1);
             }
         }
     }
@@ -53,8 +54,8 @@ contract Flasher {
     }
 
     function multi_borrow(address gem1, uint256 bal1, address gem2, uint256 bal2) public {
-        require(GemLike(gem1).balanceOf(address(this)) >= bal1, 'missing borrowed tokens 1');
-        require(GemLike(gem2).balanceOf(address(this)) >= bal2, 'missing borrowed tokens 2');
+        require(Gem(gem1).balanceOf(address(this)) >= bal1, 'missing borrowed tokens 1');
+        require(Gem(gem2).balanceOf(address(this)) >= bal2, 'missing borrowed tokens 2');
         approve_vat(gem1, bal1);
         approve_vat(gem2, bal2);
     }
@@ -85,11 +86,11 @@ contract Flasher {
 
     function _buy_gem(address gem, uint256 amount) internal {
         rico.burn(address(this), amount);
-        GemLike(gem).mint(address(this), amount);
+        Gem(gem).mint(address(this), amount);
     }
 
     function _sell_gem(address gem, uint256 amount) internal {
-        GemLike(gem).burn(address(this), amount);
+        Gem(gem).burn(address(this), amount);
         rico.mint(address(this), amount);
     }
 }

@@ -4,8 +4,8 @@ pragma solidity 0.8.17;
 import "forge-std/Test.sol";
 
 import { Ball } from '../src/ball.sol';
-import { VatLike, GemLike, Flow } from '../src/abi.sol';
 import { Vat } from '../src/vat.sol';
+import { Gem } from '../lib/gemfab/src/gem.sol';
 import { Vow } from '../src/vow.sol';
 import { BalancerFlower } from '../src/flow.sol';
 import { RicoSetUp } from "./RicoHelper.sol";
@@ -47,7 +47,7 @@ contract Usr {
     }
 
     function approve(address gem) public {
-        GemLike(gem).approve(address(vat), type(uint).max);
+        Gem(gem).approve(address(vat), type(uint).max);
     }
 }
 
@@ -66,8 +66,8 @@ contract DssJsTest is Test, RicoSetUp {
     address b;
     address c;
     bytes32 i0;
-    GemLike gem;
-    GemLike joy;
+    Gem gem;
+    Gem joy;
     uint rico_gemrico = 10000 * WAD;
     uint goldprice = 40 * RAY / 110;
     uint gembal = rico_gemrico * goldprice / RAY;
@@ -77,7 +77,7 @@ contract DssJsTest is Test, RicoSetUp {
     uint ceil = total_pool_rico + 300 * WAD;
 
     function init_gem(uint init_mint) public {
-        gold = GemLike(address(gemfab.build(bytes32("Gold"), bytes32("GOLD"))));
+        gold = Gem(address(gemfab.build(bytes32("Gold"), bytes32("GOLD"))));
         gold.mint(self, init_mint);
         gold.approve(address(vat), type(uint256).max);
         vat.init(gilk, address(gold), self, gtag);
@@ -178,7 +178,7 @@ contract DssJsTest is Test, RicoSetUp {
         c = address(cat);
     }
 
-    function _slip(GemLike g, address usr, uint amt) internal {
+    function _slip(Gem g, address usr, uint amt) internal {
         g.mint(usr, amt);
     }
 
@@ -208,7 +208,7 @@ contract DssFrobTest is DssVatTest {
     function _frob_setUp() internal {
         _vat_setUp();
         assertEq(gem.balanceOf(me), 0);
-        assertEq(GemLike(gem).balanceOf(me), 0);
+        assertEq(Gem(gem).balanceOf(me), 0);
         gem.mint(me, 1000 * WAD);
         feed.push(gtag, bytes32(RAY), block.timestamp + 1000);
         vat.filk(i0, 'line', 1000 * RAD);
@@ -365,7 +365,7 @@ contract DssFrobTest is DssVatTest {
 }
 
 contract DssBiteTest is DssVatTest {
-    GemLike gov;
+    Gem gov;
 
     function _bite_setUp() internal {
         _vat_setUp();

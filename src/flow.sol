@@ -4,9 +4,13 @@ pragma solidity 0.8.17;
 
 import './mixin/math.sol';
 import "./swap.sol";
-import { Flow, Flowback, GemLike } from './abi.sol';
+import { Gem } from '../lib/gemfab/src/gem.sol';
 
-contract BalancerFlower is Math, BalancerSwapper, Flow
+interface Flowback {
+    function flowback(bytes32 aid, uint refund) external;
+}
+
+contract BalancerFlower is Math, BalancerSwapper
 {
     struct Ramp {
         uint256 vel;  // [wad] Stream speed wei/sec
@@ -35,7 +39,7 @@ contract BalancerFlower is Math, BalancerSwapper, Flow
     uint256 public count;
 
     function flow(address hag, uint ham, address wag, uint wam) external returns (bytes32 aid) {
-        GemLike(hag).transferFrom(msg.sender, address(this), ham);
+        Gem(hag).transferFrom(msg.sender, address(this), ham);
         aid = bytes32(++count);
         address vow = msg.sender;
         auctions[aid].vow = vow;
@@ -74,7 +78,7 @@ contract BalancerFlower is Math, BalancerSwapper, Flow
         uint rest = auction.ham - cost;
 
         if (last) {
-            GemLike(hag).transfer(vow, rest);
+            Gem(hag).transfer(vow, rest);
             Flowback(vow).flowback(aid, rest);
             delete auctions[aid];
         } else {
@@ -87,7 +91,7 @@ contract BalancerFlower is Math, BalancerSwapper, Flow
 
     function clip(address back, address gem, uint top) public view returns (bool, uint, uint) {
         Ramp storage ramp = ramps[back][gem];
-        uint supply = GemLike(gem).totalSupply();
+        uint supply = Gem(gem).totalSupply();
         uint slope = min(ramp.vel, wmul(ramp.rel, supply));
         uint charge = slope * min(ramp.cel, block.timestamp - ramp.bel);
         uint lot = min(charge, top);
@@ -104,7 +108,7 @@ contract BalancerFlower is Math, BalancerSwapper, Flow
     }
 
     function approve_gem(address gem) external {
-        GemLike(gem).approve(address(bvault), type(uint256).max);
+        Gem(gem).approve(address(bvault), type(uint256).max);
     }
 
     function curb(address gem, bytes32 key, uint val) external {

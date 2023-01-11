@@ -6,11 +6,15 @@ import "forge-std/Test.sol";
 import '../src/mixin/math.sol';
 import { Ball } from '../src/ball.sol';
 import { BalancerFlower } from '../src/flow.sol';
-import { Flow, Flowback, GemLike } from '../src/abi.sol';
+import { Gem } from '../lib/gemfab/src/gem.sol';
 import { RicoSetUp } from "./RicoHelper.sol";
 import { Asset, PoolArgs } from "./BalHelper.sol";
 
-contract FlowTest is Test, RicoSetUp, Flowback {
+interface Flowback {
+    function flowback(bytes32 aid, uint refund) external;
+}
+
+contract FlowTest is Test, RicoSetUp {
     uint256 rico_index = 0;
     uint256 risk_index = 1;
     uint256 back_count = 0;
