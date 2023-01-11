@@ -7,6 +7,7 @@ import { Ball } from '../src/ball.sol';
 import { VatLike, GemLike, Flow } from '../src/abi.sol';
 import { Vat } from '../src/vat.sol';
 import { Vow } from '../src/vow.sol';
+import { BalancerFlower } from '../src/flow.sol';
 import { RicoSetUp } from "./RicoHelper.sol";
 import { Asset, BalSetUp, PoolArgs } from "./BalHelper.sol";
 
@@ -451,6 +452,7 @@ contract DssBiteTest is DssVatTest {
         // cat.litter N/A vow always bails urn immediately
         assertEq(rico.balanceOf(address(vow)), 0);
         vow.bail(i0, me);
+        flow.glug(bytes32(flow.count())); // glug succeeds because gold's bel is low
         assertEq(_ink(i0, me), 0);
         assertEq(_art(i0, me), 0);
         // vow.sin(now) N/A rico vow has no debt queue
@@ -466,6 +468,7 @@ contract DssBiteTest is DssVatTest {
 
         skip(1);
         vow.keep(ilks);
+        flow.glug(bytes32(flow.count()));
     }
 
     // test_partial_litterbox
@@ -528,7 +531,11 @@ contract DssBiteTest is DssVatTest {
         assertEq(vat.sin(address(vow)), 0);
         assertEq(rico.balanceOf(address(vow)), 0);
         assertEq(rico.balanceOf(address(vow)), 0);
-        vow.bail(i0, me); // glug fails since no time has passed
+        vow.bail(i0, me);
+        // glug fails since no time has passed
+        bytes32 aid = bytes32(flow.count());
+        vm.expectRevert(BalancerFlower.ErrSwapFail.selector);
+        flow.glug(aid);
         assertEq(vat.sin(address(vow)), 100 * RAD);
         assertEq(rico.balanceOf(address(vow)), 0);
 
@@ -541,10 +548,11 @@ contract DssBiteTest is DssVatTest {
         assertRange(ricobought, bailamt * RAY / goldprice, WAD / 50);
 
         vow.keep(ilks);
+        flow.glug(bytes32(flow.count()));
         assertEq(vat.sin(address(vow)), 100 * RAD - (ricobought - 1) * RAY); // leaves 1 rico to save gas
         assertRange(rico.balanceOf(address(vow)), riskamt, WAD / 50);
-        skip(1); vow.keep(ilks);
-        skip(1); vow.keep(ilks);
+        skip(1); vow.keep(ilks); flow.glug(bytes32(flow.count()));
+        skip(1); vow.keep(ilks); flow.glug(bytes32(flow.count()));
         assertEq(vat.sin(address(vow)), RAY); // healed all but 1 rico to save gas
         assertEq(rico.balanceOf(address(vow)), 1);
     }
@@ -559,6 +567,9 @@ contract DssBiteTest is DssVatTest {
         assertEq(vow_Awe(), 0);
 
         vow.keep(ilks);
+        uint aid = flow.count();
+        vm.expectRevert(BalancerFlower.ErrSwapFail.selector);
+        flow.glug(bytes32(aid));
 
         assertEq(rico.balanceOf(address(vow)), 0);
         assertEq(vow_Awe(), 0);
@@ -571,6 +582,11 @@ contract DssBiteTest is DssVatTest {
         assertGt(gov.balanceOf(address(vow)), 0);
 
         vow.keep(ilks);
+        aid = flow.count();
+        // no surplus or deficit, keep didn't create an auction
+        // previous auction has already been deleted
+        vm.expectRevert(BalancerFlower.ErrEmptyAid.selector);
+        flow.glug(bytes32(aid));
         assertEq(rico.balanceOf(address(vow)), 0);
         assertEq(vow_Awe(), 0);
         assertEq(gov.balanceOf(address(vow)), 0);
@@ -827,6 +843,9 @@ contract DssClipTest is DssJsTest {
         assertEq(art, 100 * WAD);
 
         ali.bail(i0, me); // no keeper arg
+        bytes32 aid = bytes32(flow.count());
+        vm.expectRevert(BalancerFlower.ErrSwapFail.selector);
+        flow.glug(aid);
 
         // clip.kicks() N/A rico flow doesn't count flips
         // clip.sales() N/A rico flow doesn't store sale information
@@ -855,6 +874,7 @@ contract DssClipTest is DssJsTest {
 
         (ink, art) = vat.urns(i0, me);
         bob.bail(i0, me);
+        flow.glug(bytes32(flow.count()));
         // clip.kicks() N/A rico flow doesn't count flips
         // clip.sales() N/A rico flow doesn't store sale information
 

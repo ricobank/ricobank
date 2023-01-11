@@ -9,6 +9,7 @@ import { Vat } from '../src/vat.sol';
 import { Vow } from '../src/vow.sol';
 import { RicoSetUp } from "./RicoHelper.sol";
 import { Asset, PoolArgs } from "./BalHelper.sol";
+import { BalancerFlower } from '../src/flow.sol';
 
 contract VowTest is Test, RicoSetUp {
     uint256 public init_join = 1000;
@@ -87,7 +88,9 @@ contract VowTest is Test, RicoSetUp {
 
         // create the sin and kick off risk sale
         vow.bail(gilk, self);
+        flow.glug(bytes32(flow.count()));
         vow.keep(ilks);
+        flow.glug(bytes32(flow.count()));
         (tokens, balances1, lastChangeBlock) = vault.getPoolTokens(pool_id_rico_risk);
 
         // correct risk ramp usage should limit sale to one
@@ -213,6 +216,7 @@ contract VowJsTest is Test, RicoSetUp {
 
         vm.expectCall(address(flow), abi.encodePacked(flow.flow.selector));
         vow.bail(i0, me);
+        flow.glug(bytes32(flow.count()));
 
         (uint ink, uint art) = vat.urns(i0, me);
         uint sin1 = vat.sin(avow);
@@ -270,11 +274,11 @@ contract VowJsTest is Test, RicoSetUp {
         vat.filk(i0, 'fee', 1000000021964508878400000000);  // ray(2 ** (1/BANKYEAR)
         curb(arisk, WAD / 1000, 1000000 * WAD, 0, 1000);
         skip(BANKYEAR);
-        vow.bail(i0, c);
-        vow.keep(ilks);
+        vow.bail(i0, c); flow.glug(bytes32(flow.count()));
+        vow.keep(ilks); flow.glug(bytes32(flow.count()));
         uint risksupply1 = risk.totalSupply();
         skip(500);
-        vow.keep(ilks);
+        vow.keep(ilks); flow.glug(bytes32(flow.count()));
         uint risksupply2 = risk.totalSupply();
 
         // should have had a mint of the full vel*cel and then half vel*cel
@@ -292,11 +296,11 @@ contract VowJsTest is Test, RicoSetUp {
         // for same results as above the rel rate is set to 1 / risk supply * vel used above
         curb(arisk, 1000000 * WAD, WAD / 10000000, 0, 1000);
         skip(BANKYEAR);
-        vow.bail(i0, c);
-        vow.keep(ilks);
+        vow.bail(i0, c); flow.glug(bytes32(flow.count()));
+        vow.keep(ilks); flow.glug(bytes32(flow.count()));
         uint risksupply1 = risk.totalSupply();
         skip(500);
-        vow.keep(ilks);
+        vow.keep(ilks); flow.glug(bytes32(flow.count()));
         uint risksupply2 = risk.totalSupply();
 
         // should have had a mint of the full vel*cel and then half vel*cel
@@ -313,9 +317,11 @@ contract VowJsTest is Test, RicoSetUp {
         uint risk_initial_supply = risk.totalSupply();
         skip(BANKYEAR);
         vow.keep(ilks);
+        flow.glug(bytes32(flow.count()));
         skip(60);
         vm.expectCall(address(flow), abi.encodePacked(flow.flow.selector));
         vow.keep(ilks); // call again to burn risk given to vow the first time
+        flow.glug(bytes32(flow.count()));
         uint risk_post_flap_supply = risk.totalSupply();
         assertLt(risk_post_flap_supply, risk_initial_supply);
 
@@ -324,6 +330,7 @@ contract VowJsTest is Test, RicoSetUp {
         uint vat_weth_0 = weth.balanceOf(avat);
         vm.expectCall(address(flow), abi.encodePacked(flow.flow.selector));
         vow.bail(i0, me);
+        flow.glug(bytes32(flow.count()));
         uint vow_rico_1 = rico.balanceOf(avow);
         uint vat_weth_1 = weth.balanceOf(avat);
         assertGt(vow_rico_1, vow_rico_0);
@@ -332,9 +339,31 @@ contract VowJsTest is Test, RicoSetUp {
         // although the keep joins the rico sin is still greater due to fees so we flop
         vm.expectCall(address(flow), abi.encodePacked(flow.flow.selector));
         vow.keep(ilks);
+        flow.glug(bytes32(flow.count()));
         // now vow should hold more rico than anti tokens
         uint sin = vat.sin(avow);
         uint vow_rico = rico.balanceOf(avow);
         assertGt(vow_rico * RAY, sin);
     }
+
+    function test_tiny_flap_fail() public {
+        vow.pair(arico, 'del', 10000 * WAD);
+        skip(BANKYEAR);
+        vow.bail(i0, me);
+        vm.expectRevert(BalancerFlower.ErrTinyFlow.selector);
+        vow.keep(ilks);
+        vow.pair(arico, 'del', 1 * WAD);
+        vow.keep(ilks);
+    }
+
+    function test_tiny_flop_fail() public {
+        vow.pair(arisk, 'del', 10000 * WAD);
+        skip(BANKYEAR / 2);
+        vow.bail(i0, me);
+        vm.expectRevert(BalancerFlower.ErrTinyFlow.selector);
+        vow.keep(ilks);
+        vow.pair(arisk, 'del', 1 * WAD);
+        vow.keep(ilks);
+    }
 }
+

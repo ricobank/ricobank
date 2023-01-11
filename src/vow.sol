@@ -41,14 +41,12 @@ contract Vow is Flowback, Math, Ward {
         if (rico > sin) {
             if (sin > 1) vat.heal(sin - 1);
             uint over = (rico - sin);
-            bytes32 aid = flow.flow(address(RICO), over, address(RISK), type(uint256).max);
-            try flow.glug(aid) {} catch {}
+            flow.flow(address(RICO), over, address(RISK), type(uint256).max);
         } else if (sin > rico) {
             if (rico > 1) vat.heal(rico - 1);
             (, uint flop,) = flow.clip(self, address(RISK), type(uint256).max);
             RISK.mint(self, flop);
-            bytes32 aid = flow.flow(address(RISK), flop, address(RICO), type(uint256).max);
-            flow.glug(aid);
+            flow.flow(address(RISK), flop, address(RICO), type(uint256).max);
         }
     }
 
@@ -59,7 +57,6 @@ contract Vow is Flowback, Math, Ward {
         (uint bill, address gem) = vat.grab(ilk, urn, -int(ink), -int(art));
         bytes32 aid = flow.flow(gem, ink, address(RICO), bill);
         sales[aid] = Sale({ ilk: ilk, urn: urn });
-        try flow.glug(aid) {} catch {}
     }
 
     function flowback(bytes32 aid, uint refund) external

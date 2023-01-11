@@ -30,17 +30,23 @@ contract BalancerFlower is Math, BalancerSwapper, Flow
     error ErrCurbKey();
     error ErrEmptyAid();
     error ErrSwapFail();
+    error ErrTinyFlow();
 
     uint256 public count;
 
     function flow(address hag, uint ham, address wag, uint wam) external returns (bytes32 aid) {
         GemLike(hag).transferFrom(msg.sender, address(this), ham);
         aid = bytes32(++count);
-        auctions[aid].vow = msg.sender;
+        address vow = msg.sender;
+        auctions[aid].vow = vow;
         auctions[aid].hag = hag;
         auctions[aid].ham = ham;
         auctions[aid].wag = wag;
         auctions[aid].wam = wam;
+        // check dust
+        if (ramps[vow][hag].del > ham) {
+            revert ErrTinyFlow();
+        }
     }
 
     function glug(bytes32 aid) external {

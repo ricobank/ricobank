@@ -206,6 +206,11 @@ contract FlowTest is Test, RicoSetUp, Flowback {
         flow.glug(aid);
         skip(2);
         flow.glug(aid);
+
+        skip(1);
+        vm.expectRevert(BalancerFlower.ErrTinyFlow.selector);
+        flow.flow(address(rico), WAD * 19, address(risk), type(uint256).max);
+        flow.flow(address(rico), WAD * 20, address(risk), type(uint256).max);
     }
 
     function test_repeat_and_concurrant_sales() public {
