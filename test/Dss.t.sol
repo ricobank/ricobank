@@ -894,18 +894,12 @@ contract DssClipTest is DssJsTest {
     //   N/A rico has no auction (todo now it does...)
 
     function test_kick_basic() public _clip_ {
-        vow.bail(i0, me);
+        flow.flow(address(gem), 1 * WAD, address(1), UINT256_MAX);
     }
 
     function test_kick_zero_tab() public _clip_ {
-        (,uint art) = vat.urns(i0, me);
-        // rico doesn't have kick() or a way to specify tab in bail
-        // but tab == 0 if art == 0
-        vat.frob(i0, me, 0, -int(art));
-        (,art) = vat.urns(i0, me);
-        assertEq(art, 0);
-        vm.expectRevert(Vow.ErrSafeBail.selector);
-        vow.bail(i0, me);
+        // difference from dss: can flow (dss kick) with zero tab
+        flow.flow(address(gem), 1 * WAD, address(1), 0);
     }
 
 //    function test_kick_zero_lot() public _clip_ {
@@ -916,4 +910,81 @@ contract DssClipTest is DssJsTest {
 //        vm.expectRevert(); // todo need error types for zero cases
 //        vow.bail(i0, me);
 //    }
+
+    function test_kick_zero_usr() public _clip_ {
+        // flow.flow (dss kick) actually uses msg.sender
+        // so this is kind of N/A
+        // but test bail's (dss bark) usr anyway
+        vm.expectRevert(Vow.ErrSafeBail.selector);
+        vow.bail(i0, address(0));
+    }
+
+    // opposite behavior, bail takes the whole urn
+    // refunds later through flowback
+    function test_bark_not_leaving_dust() public _clip_ {
+        uint aid = vow.bail(i0, me);
+
+        (bytes32 ilk, address urn) = vow.sales(aid);
+        assertEq(ilk, i0);
+        assertEq(urn, me);
+
+        (uint ink, uint art) = vat.urns(i0, me);
+        assertEq(ink, 0);
+        assertEq(art, 0);
+    }
+
+    // test_bark_not_leaving_dust_over_hole
+    //   N/A rico has no hole
+
+    // test_bark_not_leaving_dust_rate
+    //   N/A dart depends on hole, rico doesn't have hole, always takes entire urn
+    //   and refunds later
+
+    // test_bark_only_leaving_dust_over_hole_rate
+    // test_Hole_hole
+    // test_partial_liquidation_Hole_limit
+    // test_partial_liquidation_hole_limit
+    //   N/A no hole or Hole or partial liquidations
+
+    // test_take_*, testFail_take_*, test_auction_*
+    //   N/A no standing auction, rico v1 goes through balancer
+
+    // test_redo_*
+    //   N/A currently no way to reset dead auctions
+
+    // test_stopped_*
+    //   N/A no stopped/pause
+
+    // test_incentive_max_values
+    //   N/A rico is an MEV snack
+
+    // test_Clipper_yank
+    //   N/A no shutdown
+
+    // test_remove_id
+    // testFail_id_out_of_range
+    //   N/A rico doesn't keep flow auctions as a list because maximum auction id is so high
+
+
+    // testFail_not_enough_dai
+    // test_flashsale
+    // testFail_reentrancy_take
+    // testFail_reentrancy_redo
+    // testFail_reentrancy_kick
+    // testFail_reentrancy_file_uint
+    // testFail_reentrancy_file_addr
+    // testFail_reentrancy_yank
+    // testFail_take_impersonation
+    // test_gas_partial_take
+    // test_gas_full_take
+    //   N/A no standing auction, rico v1 goes through balancer, no take
+    //   also no clipper-like callback
+
+    function test_gas_bark_kick() public _clip_ {
+        uint pregas = gasleft();
+        vm.expectCall(address(flow), bytes(''));
+        vow.bail(i0, me);
+        uint diffgas = pregas - gasleft();
+        console.log("bark with kick gas %s", diffgas);
+    }
 }
