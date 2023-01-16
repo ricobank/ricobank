@@ -10,8 +10,7 @@ interface Flowback {
     function flowback(uint256 aid, uint refund) external;
 }
 
-contract BalancerFlower is Math, BalancerSwapper
-{
+contract BalancerFlower is Math, BalancerSwapper {
     struct Ramp {
         uint256 vel;  // [wad] Stream speed wei/sec
         uint256 rel;  // [wad] Speed relative to supply
@@ -58,7 +57,7 @@ contract BalancerFlower is Math, BalancerSwapper
         address hag = auction.hag;
         address vow = auction.vow;
         if (hag == address(0)) revert ErrEmptyAid();
-        (bool last, uint hunk, uint bel) = clip(vow, hag, auction.ham);
+        (bool last, uint hunk, uint bel) = clip(vow, hag, address(0), auction.ham);
         ramps[vow][hag].bel = bel;
         uint cost = SWAP_ERR;
         uint gain;
@@ -89,8 +88,9 @@ contract BalancerFlower is Math, BalancerSwapper
         }
     }
 
-    function clip(address back, address gem, uint top) public view returns (bool, uint, uint) {
+    function clip(address back, address gem, address alt, uint top) public view returns (bool, uint, uint) {
         Ramp storage ramp = ramps[back][gem];
+        if (alt != address(0)) gem = alt;
         uint supply = Gem(gem).totalSupply();
         uint slope = min(ramp.vel, wmul(ramp.rel, supply));
         uint charge = slope * min(ramp.cel, block.timestamp - ramp.bel);

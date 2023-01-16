@@ -31,6 +31,7 @@ abstract contract RicoSetUp is BalSetUp, Math {
     bytes32 constant public rtag = "rubyusd";
     uint256 constant public init_mint = 10000;
     uint256 constant public BANKYEAR = (365 * 24 + 6) * 3600;
+    address public immutable azero = address(0);
     address public immutable self = address(this);
 
     BalancerFlower public flow;

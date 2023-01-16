@@ -176,6 +176,8 @@ contract DssJsTest is Test, RicoSetUp {
         a = address(ali);
         b = address(bob);
         c = address(cat);
+
+        curb(azero, 1000 * WAD, WAD, block.timestamp - 1, 1);
     }
 
     function _slip(Gem g, address usr, uint amt) internal {

@@ -22,7 +22,8 @@ contract Vow is Flowback, Math, Ward {
     error ErrSafeBail();
     error ErrWrongKey();
 
-    address  public immutable self = address(this);
+    address internal immutable yank = address(0);
+    address internal immutable self = address(this);
 
     BalancerFlower public flow;
     Vat  public vat;
@@ -44,7 +45,8 @@ contract Vow is Flowback, Math, Ward {
             aid = flow.flow(address(RICO), over, address(RISK), type(uint256).max);
         } else if (sin > rico) {
             if (rico > 1) vat.heal(rico - 1);
-            (, uint flop,) = flow.clip(self, address(RISK), type(uint256).max);
+            (, uint flop, uint bel) = flow.clip(self, yank, address(RISK), type(uint256).max);
+            flow.curb(yank, "bel", bel);
             RISK.mint(self, flop);
             aid = flow.flow(address(RISK), flop, address(RICO), type(uint256).max);
         }

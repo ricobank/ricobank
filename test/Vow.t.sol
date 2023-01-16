@@ -30,18 +30,10 @@ contract VowTest is Test, RicoSetUp {
         vat.frob(gilk, address(this), int(init_join * WAD), int(stack) * 1000);
         risk.mint(address(this), 10000 * WAD);
 
-        vow.pair(agold, 'vel', 1e18);
-        vow.pair(agold, 'rel', 1e12);
-        vow.pair(agold, 'cel', 600);
-        vow.pair(arico, 'vel', 1e18);
-        vow.pair(arico, 'rel', 1e12);
-        vow.pair(arico, 'cel', 600);
-        vow.pair(arisk, 'vel', 1e18);
-        vow.pair(arisk, 'rel', 1e12);
-        vow.pair(arisk, 'cel', 600);
-        vow.pair(address(0), 'vel', 1e18);
-        vow.pair(address(0), 'rel', 1e12);
-        vow.pair(address(0), 'cel', 600);
+        curb(agold, 1e18, 1e12, 0, 600);
+        curb(arico, 1e18, 1e12, 0, 600);
+        curb(arisk, 1e18, 1e12, 0, 600);
+        curb(azero, 1e18, 1e12, 0, 600);
 
         // have 10k each of rico, risk and gold
         gold.approve(BAL_VAULT, type(uint256).max);
@@ -154,6 +146,7 @@ contract VowJsTest is Test, RicoSetUp {
         vat.filk(i0, 'chop', RAY * 11 / 10);
 
         curb(arisk, WAD, WAD / 10000, 0, 60);
+        curb(azero, WAD, WAD / 10000, 0, 60);
 
         feed.push(wtag, bytes32(RAY), block.timestamp + 2 * BANKYEAR);
         uint fee = 1000000001546067052200000000; // == ray(1.05 ** (1/BANKYEAR))
@@ -223,7 +216,6 @@ contract VowJsTest is Test, RicoSetUp {
         assertEq(gembal1, 0);
     }
 
-
     function test_bail_urns_when_safe() public {
         vm.expectRevert(Vow.ErrSafeBail.selector);
         vow.bail(i0, me);
@@ -267,6 +259,7 @@ contract VowJsTest is Test, RicoSetUp {
         uint risksupply0 = risk.totalSupply();
         vat.filk(i0, 'fee', 1000000021964508878400000000);  // ray(2 ** (1/BANKYEAR)
         curb(arisk, WAD / 1000, 1000000 * WAD, 0, 1000);
+        curb(azero, WAD / 1000, 1000000 * WAD, 0, 1000);
         skip(BANKYEAR);
         uint256 aid = vow.bail(i0, c); flow.glug(aid);
         aid = vow.keep(ilks); flow.glug(aid);
@@ -289,6 +282,7 @@ contract VowJsTest is Test, RicoSetUp {
         vat.filk(i0, 'fee', 1000000021964508878400000000);
         // for same results as above the rel rate is set to 1 / risk supply * vel used above
         curb(arisk, 1000000 * WAD, WAD / 10000000, 0, 1000);
+        curb(azero, 1000000 * WAD, WAD / 10000000, 0, 1000);
         skip(BANKYEAR);
         uint256 aid = vow.bail(i0, c); flow.glug(aid);
         aid = vow.keep(ilks); flow.glug(aid);
@@ -358,6 +352,15 @@ contract VowJsTest is Test, RicoSetUp {
         vow.keep(ilks);
         vow.pair(arisk, 'del', 1 * WAD);
         vow.keep(ilks);
+    }
+
+    function test_flops_bounded() public {
+        uint count0 = flow.count();
+        skip(BANKYEAR);
+        vow.keep(ilks);
+        vow.keep(ilks);
+        uint count1 = flow.count();
+        assertEq(count0 + 1, count1);
     }
 }
 
