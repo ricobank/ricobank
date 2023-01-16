@@ -81,7 +81,7 @@ contract DssJsTest is Test, RicoSetUp {
         gold.mint(self, init_mint);
         gold.approve(address(vat), type(uint256).max);
         vat.init(gilk, address(gold), self, gtag);
-        vat.filk(gilk, bytes32('chop'), RAD);
+        vat.filk(gilk, bytes32('chop'), RAY);
         vat.filk(gilk, bytes32("line"), init_mint * 10 * RAY);
         //vat.filk(gilk, bytes32('fee'), 1000000001546067052200000000);  // 5%
         feed.push(gtag, bytes32(RAY), block.timestamp + 1000);
@@ -190,6 +190,7 @@ contract DssJsTest is Test, RicoSetUp {
     }
 }
 
+// vat
 contract DssVatTest is DssJsTest {
     function _vat_setUp() internal {}
     modifier _vat_ { _vat_setUp(); _; }
@@ -989,4 +990,82 @@ contract DssClipTest is DssJsTest {
         uint diffgas = pregas - gasleft();
         console.log("bark with kick gas %s", diffgas);
     }
+}
+
+// end
+//   N/A no end
+// cure
+//   N/A no cure, only thing that uses cure is end
+// dai
+//   N/A rico uses gem, already tested
+//
+
+contract DssVowTest is DssJsTest {
+    function _vow_setUp() internal {
+        gem.mint(me, 10000 * WAD);
+        gem.approve(avat, UINT256_MAX);
+        curb(azero, 100 * WAD, WAD, block.timestamp, 1);
+    }
+    modifier _vow_ { _vow_setUp(); _; }
+
+    function test_change_flap_flop() public _vow_ {
+        assertEq(address(vow.flow()), address(flow));
+        vow.link('flow', address(1));
+        assertEq(address(vow.flow()), address(1));
+        // van.can N/A no rico equivalent
+    }
+
+    // test_flog_wait
+    //   N/A no vow.wait in rico
+
+    function test_no_reflop() public _vow_ {
+        skip(1);
+        vat.frob(i0, me, 100, 100);
+        feed.push(gtag, bytes32(0), UINT256_MAX);
+        vow.bail(i0, me); // lots of debt
+        uint aid = vow.keep(ilks);
+        (,address hag,,,) = flow.auctions(aid);
+        assertEq(arisk, hag);
+        assertEq(vow.keep(ilks), 0); // new flop
+        skip(1);
+        assertGt(vow.keep(ilks), 0); // new flop
+        // TODO reflop after all glugged test?
+    }
+
+    function test_flap() public _vow_ {
+        vat.drip(i0);
+        vat.filk(gilk, bytes32('chop'), RAY * 11 / 10);
+        vat.filk(i0, 'fee', RAY * 15 / 10);
+        vat.frob(i0, me, int(200 * WAD), int(100 * WAD));
+        skip(10);
+        uint aid = vow.keep(ilks);
+        assertGt(aid, 0);
+        (,address hag,,,) = flow.auctions(aid);
+        assertEq(hag, arico);
+    }
+
+    // test_no_flap_pending_sin
+    //   N/A keep always flops on debt and flaps on surplus, there's no debt queue
+
+    // test_no_flap_nonzero_woe
+    //   N/A this test is actually the same as test_no_flap_pending_sin
+
+    // test_no_flap_pending_flop
+    // test_no_flap_pending_heal
+    //   N/A keep can flap while there's a pending flop auction if a surplus is generated
+    //   uses ramps to rate limit both
+
+    function test_no_surplus_after_good_flop() public _vow_ {
+        vat.frob(i0, me, 100, 100);
+        feed.push(gtag, bytes32(0), UINT256_MAX);
+        vow.bail(i0, me); // lots of debt
+        skip(1);
+        uint aid = vow.keep(ilks);
+        (,address hag,,,) = flow.auctions(aid);
+        assertEq(hag, arisk); // it's a flop
+        assertEq(rico.balanceOf(address(vow)), 0);
+    }
+
+    // test_multiple_flop_dents
+    //   N/A no standing auction mechanism, no dent, trades through AMM
 }

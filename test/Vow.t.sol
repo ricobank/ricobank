@@ -55,6 +55,7 @@ contract VowTest is Test, RicoSetUp {
         pool_id_gold_rico = create_and_join_pool(gold_rico_args);
 
         flow.setPool(agold, arico, pool_id_gold_rico);
+
     }
 
     // goldusd, par, and liqr all = 1 after set up.
@@ -66,9 +67,9 @@ contract VowTest is Test, RicoSetUp {
         uint256 lastChangeBlock;
         uint rico_index = 0;
         uint risk_index = 1;
-        vow.pair(arisk, 'vel', 1);
-        vow.pair(arisk, 'rel', 1);
-        vow.pair(arisk, 'cel', 1);
+        // set mint ramp higher to use risk ramp
+        curb(azero, WAD, WAD, block.timestamp - 1, 1);
+        curb(arisk, 1, 1, block.timestamp - 1, 1);
         (tokens, balances0, lastChangeBlock) = vault.getPoolTokens(pool_id_rico_risk);
         if (arisk == tokens[0]) {
             risk_index = 0;
@@ -186,6 +187,8 @@ contract VowJsTest is Test, RicoSetUp {
         flow.approve_gem(arisk);
         flow.approve_gem(WETH);
         prevcount = flow.count();
+
+        curb(azero, 200 * WAD, WAD, block.timestamp, 1);
     }
 
     function test_bail_urns_1yr_unsafe() public {
@@ -258,8 +261,8 @@ contract VowJsTest is Test, RicoSetUp {
     function test_keep_rate_limiting_flop_absolute_rate() public {
         uint risksupply0 = risk.totalSupply();
         vat.filk(i0, 'fee', 1000000021964508878400000000);  // ray(2 ** (1/BANKYEAR)
-        curb(arisk, WAD / 1000, 1000000 * WAD, 0, 1000);
-        curb(azero, WAD / 1000, 1000000 * WAD, 0, 1000);
+        curb(arisk, WAD, 1000000 * WAD, 0, 1000);
+        curb(azero, WAD / 1000, 1000000 * WAD, 0, 1000); // mint ramp < risk ramp
         skip(BANKYEAR);
         uint256 aid = vow.bail(i0, c); flow.glug(aid);
         aid = vow.keep(ilks); flow.glug(aid);
@@ -281,8 +284,8 @@ contract VowJsTest is Test, RicoSetUp {
         uint risksupply0 = risk.totalSupply();
         vat.filk(i0, 'fee', 1000000021964508878400000000);
         // for same results as above the rel rate is set to 1 / risk supply * vel used above
-        curb(arisk, 1000000 * WAD, WAD / 10000000, 0, 1000);
-        curb(azero, 1000000 * WAD, WAD / 10000000, 0, 1000);
+        curb(arisk, 1000000 * WAD, WAD / 1000000, 0, 1000);
+        curb(azero, 1000000 * WAD, WAD / 10000000, 0, 1000); // mint ramp < risk ramp
         skip(BANKYEAR);
         uint256 aid = vow.bail(i0, c); flow.glug(aid);
         aid = vow.keep(ilks); flow.glug(aid);
