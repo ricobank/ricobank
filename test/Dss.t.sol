@@ -1069,3 +1069,57 @@ contract DssVowTest is DssJsTest {
     // test_multiple_flop_dents
     //   N/A no standing auction mechanism, no dent, trades through AMM
 }
+
+contract DssDogTest is DssJsTest {
+    Usr gal;
+
+    function _dog_setUp() internal {
+        vat.file('ceil', 10000 * RAD);
+        vat.filk(i0, 'line', 10000 * RAD);
+        gem.mint(me, 100000 * WAD);
+        gem.approve(avat, UINT256_MAX);
+        vow.keep(ilks);
+        feed.push(gtag, bytes32(1000 * RAY), UINT256_MAX);
+    }
+
+    modifier _dog_ { _dog_setUp(); _; }
+
+    function setUrn(uint ink, uint art) internal {
+        (bytes32 price, uint ttl) = feed.pull(me, gtag);
+        feed.push(gtag, bytes32(2 * RAY * art / ink), UINT256_MAX);
+        vat.frob(i0, me, int(ink), int(art));
+        feed.push(gtag, price, ttl);
+    }
+
+    function test_bark_basic() public _dog_ {
+        feed.push(gtag, bytes32(0), UINT256_MAX);
+        setUrn(WAD, 2000 * WAD);
+        vow.bail(i0, me);
+        (uint ink, uint art) = vat.urns(i0, me);
+        assertEq(ink, 0);
+        assertEq(art, 0);
+    }
+
+    function test_bark_not_unsafe() public _dog_ {
+        setUrn(WAD, 500 * WAD);
+        vm.expectRevert(Vow.ErrSafeBail.selector);
+        vow.bail(i0, me);
+    }
+
+    function test_bark_dusty_vault() public {
+        // difference from dss: error on dust
+        uint dust = 200;
+        vat.filk(i0, 'dust', dust * RAD);
+        vm.expectRevert(Vat.ErrUrnDust.selector);
+        vat.frob(i0, me, int(200000 * WAD), int(199 * WAD));
+    }
+
+    // test_bark_partial_liquidation_dirt_exceeds_hole_to_avoid_dusty_remnant
+    // test_bark_partial_liquidation_dirt_does_not_exceed_hole_if_remnant_is_nondusty
+    // test_bark_partial_liquidation_Dirt_exceeds_Hole_to_avoid_dusty_remnant
+    // test_bark_partial_liquidation_Dirt_does_not_exceed_Hole_if_remnant_is_nondusty
+    // test_bark_dusty_vault_dusty_room
+    // test_bark_do_not_create_dusty_auction_hole
+    // test_bark_do_not_create_dusty_auction_Hole
+    //   N/A no hole
+}
