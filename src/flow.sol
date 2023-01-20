@@ -38,18 +38,15 @@ contract BalancerFlower is Math, BalancerSwapper {
     uint256 public count;
 
     function flow(address hag, uint ham, address wag, uint wam) external returns (uint256 aid) {
+        address vow = msg.sender;
+        if (ramps[vow][hag].del > ham) revert ErrTinyFlow();
         Gem(hag).transferFrom(msg.sender, address(this), ham);
         aid = ++count;
-        address vow = msg.sender;
         auctions[aid].vow = vow;
         auctions[aid].hag = hag;
         auctions[aid].ham = ham;
         auctions[aid].wag = wag;
         auctions[aid].wam = wam;
-        // check dust
-        if (ramps[vow][hag].del > ham) {
-            revert ErrTinyFlow();
-        }
     }
 
     function glug(uint256 aid) external {
