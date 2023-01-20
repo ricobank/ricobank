@@ -30,10 +30,10 @@ contract VowTest is Test, RicoSetUp {
         vat.frob(gilk, address(this), int(init_join * WAD), int(stack) * 1000);
         risk.mint(address(this), 10000 * WAD);
 
-        curb(agold, 1e18, 1e12, 0, 600);
-        curb(arico, 1e18, 1e12, 0, 600);
-        curb(arisk, 1e18, 1e12, 0, 600);
-        curb(azero, 1e18, 1e12, 0, 600);
+        curb(agold, 1e18, 1e12, 0, 600, 1);
+        curb(arico, 1e18, 1e12, 0, 600, 1);
+        curb(arisk, 1e18, 1e12, 0, 600, 1);
+        curb(azero, 1e18, 1e12, 0, 600, 1);
 
         // have 10k each of rico, risk and gold
         gold.approve(BAL_VAULT, type(uint256).max);
@@ -68,8 +68,8 @@ contract VowTest is Test, RicoSetUp {
         uint rico_index = 0;
         uint risk_index = 1;
         // set mint ramp higher to use risk ramp
-        curb(azero, WAD, WAD, block.timestamp - 1, 1);
-        curb(arisk, 1, 1, block.timestamp - 1, 1);
+        curb(azero, WAD, WAD, block.timestamp - 1, 1, 1);
+        curb(arisk, 1, 1, block.timestamp - 1, 1, 1);
         (tokens, balances0, lastChangeBlock) = vault.getPoolTokens(pool_id_rico_risk);
         if (arisk == tokens[0]) {
             risk_index = 0;
@@ -146,8 +146,8 @@ contract VowJsTest is Test, RicoSetUp {
         vat.filk(i0, 'line', 10000 * RAD);
         vat.filk(i0, 'chop', RAY * 11 / 10);
 
-        curb(arisk, WAD, WAD / 10000, 0, 60);
-        curb(azero, WAD, WAD / 10000, 0, 60);
+        curb(arisk, WAD, WAD / 10000, 0, 60, 1);
+        curb(azero, WAD, WAD / 10000, 0, 60, 1);
 
         feed.push(wtag, bytes32(RAY), block.timestamp + 2 * BANKYEAR);
         uint fee = 1000000001546067052200000000; // == ray(1.05 ** (1/BANKYEAR))
@@ -180,15 +180,15 @@ contract VowJsTest is Test, RicoSetUp {
         PoolArgs memory risk_rico_args = PoolArgs(risk_asset, rico_asset, "mock", "MOCK", WAD / 100);
         join_pool(risk_rico_args, poolid_risk_rico);
 
-        curb(WETH, WAD, WAD / 10000, 0, 600);
-        curb(arico, WAD, WAD / 10000, 0, 600);
+        curb(WETH, WAD, WAD / 10000, 0, 600, 1);
+        curb(arico, WAD, WAD / 10000, 0, 600, 1);
 
         flow.approve_gem(arico);
         flow.approve_gem(arisk);
         flow.approve_gem(WETH);
         prevcount = flow.count();
 
-        curb(azero, 200 * WAD, WAD, block.timestamp, 1);
+        curb(azero, 200 * WAD, WAD, block.timestamp, 1, 1);
     }
 
     function test_bail_urns_1yr_unsafe() public {
@@ -261,8 +261,8 @@ contract VowJsTest is Test, RicoSetUp {
     function test_keep_rate_limiting_flop_absolute_rate() public {
         uint risksupply0 = risk.totalSupply();
         vat.filk(i0, 'fee', 1000000021964508878400000000);  // ray(2 ** (1/BANKYEAR)
-        curb(arisk, WAD, 1000000 * WAD, 0, 1000);
-        curb(azero, WAD / 1000, 1000000 * WAD, 0, 1000); // mint ramp < risk ramp
+        curb(arisk, WAD, 1000000 * WAD, 0, 1000, 1);
+        curb(azero, WAD / 1000, 1000000 * WAD, 0, 1000, 1); // mint ramp < risk ramp
         skip(BANKYEAR);
         uint256 aid = vow.bail(i0, c); flow.glug(aid);
         aid = vow.keep(ilks); flow.glug(aid);
@@ -284,8 +284,8 @@ contract VowJsTest is Test, RicoSetUp {
         uint risksupply0 = risk.totalSupply();
         vat.filk(i0, 'fee', 1000000021964508878400000000);
         // for same results as above the rel rate is set to 1 / risk supply * vel used above
-        curb(arisk, 1000000 * WAD, WAD / 1000000, 0, 1000);
-        curb(azero, 1000000 * WAD, WAD / 10000000, 0, 1000); // mint ramp < risk ramp
+        curb(arisk, 1000000 * WAD, WAD / 1000000, 0, 1000, 1);
+        curb(azero, 1000000 * WAD, WAD / 10000000, 0, 1000, 1); // mint ramp < risk ramp
         skip(BANKYEAR);
         uint256 aid = vow.bail(i0, c); flow.glug(aid);
         aid = vow.keep(ilks); flow.glug(aid);

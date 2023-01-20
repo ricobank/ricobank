@@ -177,7 +177,7 @@ contract DssJsTest is Test, RicoSetUp {
         b = address(bob);
         c = address(cat);
 
-        curb(azero, 1000 * WAD, WAD, block.timestamp - 1, 1);
+        curb(azero, 1000 * WAD, WAD, block.timestamp - 1, 1, 1);
     }
 
     function _slip(Gem g, address usr, uint amt) internal {
@@ -389,9 +389,9 @@ contract DssBiteTest is DssVatTest {
         gold.approve(address(vat), UINT256_MAX);
         // gov approve flap N/A not sure what to do with gov atm...
 
-        curb(address(gold), UINT256_MAX, WAD, block.timestamp, 1);
-        curb(address(rico), UINT256_MAX, WAD, block.timestamp, 1);
-        curb(address(risk), UINT256_MAX, WAD, block.timestamp, 1);
+        curb(address(gold), UINT256_MAX, WAD, block.timestamp, 1, 1);
+        curb(address(rico), UINT256_MAX, WAD, block.timestamp, 1, 1);
+        curb(address(risk), UINT256_MAX, WAD, block.timestamp, 1, 1);
     }
 
     modifier _bite_ { _bite_setUp(); _; }
@@ -431,7 +431,7 @@ contract DssBiteTest is DssVatTest {
 
     function test_happy_bite() public _bite_ {
         // set ramps high so flip flips whole gem balance
-        curb(address(gold), 1000 * WAD, 1000 * WAD, 0, 1);
+        curb(address(gold), 1000 * WAD, 1000 * WAD, 0, 1, 1);
         // dss: spot = tag / (par . mat), tag=5, mat=2
         // rico: mark = feed.val = 2.5
         // create urn (push, frob)
@@ -525,8 +525,8 @@ contract DssBiteTest is DssVatTest {
         // mimic dss auction rates...need to flop wad(1000) risk
         uint bailamt = 30 * WAD;
         uint riskamt = 10 * WAD;
-        curb(address(gold), bailamt, WAD, block.timestamp, 1);
-        curb(address(risk), riskamt, WAD, block.timestamp, 1);
+        curb(address(gold), bailamt, WAD, block.timestamp, 1, 1);
+        curb(address(risk), riskamt, WAD, block.timestamp, 1, 1);
 
         assertEq(gov.balanceOf(address(flow)), 0);
         // dunk N/A bail always liquidates whole urn
@@ -565,7 +565,7 @@ contract DssBiteTest is DssVatTest {
         assertEq(rico.balanceOf(address(vow)), 100 * WAD);
         assertEq(gov.balanceOf(me), 100 * WAD);
 
-        curb(address(rico), 100 * WAD, WAD, block.timestamp, 1);
+        curb(address(rico), 100 * WAD, WAD, block.timestamp, 1, 1);
         assertEq(vow_Awe(), 0);
 
         uint256 aid = vow.keep(ilks);
@@ -650,7 +650,7 @@ contract DssFlipTest is DssJsTest {
         rico.mint(a, 200 * WAD);
         rico.mint(b, 200 * WAD);
 
-        curb(address(gem), UINT256_MAX, WAD, block.timestamp, 1);
+        curb(address(gem), UINT256_MAX, WAD, block.timestamp, 1, 1);
         gal = cat;
     }
 
@@ -819,7 +819,7 @@ contract DssClipTest is DssJsTest {
         rico.mint(a, 1000 * WAD);
         rico.mint(b, 1000 * WAD);
 
-        curb(address(gold), UINT256_MAX, WAD, block.timestamp, 1);
+        curb(address(gold), UINT256_MAX, WAD, block.timestamp, 1, 1);
     }
 
     modifier _clip_ { _clip_setup(); _; }
@@ -1004,7 +1004,7 @@ contract DssVowTest is DssJsTest {
     function _vow_setUp() internal {
         gem.mint(me, 10000 * WAD);
         gem.approve(avat, UINT256_MAX);
-        curb(azero, 100 * WAD, WAD, block.timestamp, 1);
+        curb(azero, 100 * WAD, WAD, block.timestamp, 1, 1);
     }
     modifier _vow_ { _vow_setUp(); _; }
 
@@ -1019,16 +1019,28 @@ contract DssVowTest is DssJsTest {
     //   N/A no vow.wait in rico
 
     function test_no_reflop() public _vow_ {
+        uint amt = WAD / 1000;
+        curb(arisk, amt * 2, WAD, block.timestamp, 1, amt);
+        curb(azero, amt * 2, WAD, block.timestamp, 1, amt);
         skip(1);
-        vat.frob(i0, me, 100, 100);
+        vat.frob(i0, me, int(amt), int(amt));
         feed.push(gtag, bytes32(0), UINT256_MAX);
         vow.bail(i0, me); // lots of debt
         uint aid = vow.keep(ilks);
         (,address hag,,,) = flow.auctions(aid);
         assertEq(arisk, hag);
-        assertEq(vow.keep(ilks), 0); // new flop
+
+        vm.expectRevert(BalancerFlower.ErrTinyFlow.selector);
+        vow.keep(ilks);
+
         skip(1);
-        assertGt(vow.keep(ilks), 0); // new flop
+        flow.glug(aid);
+        aid = vow.keep(ilks);
+        (,hag,,,) = flow.auctions(aid);
+        assertEq(arico, hag); // flap, not flop
+
+
+
         // TODO reflop after all glugged test?
     }
 

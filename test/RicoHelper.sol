@@ -106,10 +106,11 @@ abstract contract RicoSetUp is BalSetUp, Math {
         vow.grant(aruby);
     }
 
-    function curb(address g, uint vel, uint rel, uint bel, uint cel) internal {
+    function curb(address g, uint vel, uint rel, uint bel, uint cel, uint del) internal {
         vow.pair(g, 'vel', vel);
         vow.pair(g, 'rel', rel);
         vow.pair(g, 'bel', bel);
         vow.pair(g, 'cel', cel);
+        vow.pair(g, 'del', del);
     }
 }

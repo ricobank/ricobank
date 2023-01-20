@@ -93,7 +93,9 @@ contract Ball {
 
         vow.pair(address(risk), 'vel', 1e18);
         vow.pair(address(risk), 'rel', 1e12);
+        vow.pair(address(risk), 'bel', 0);
         vow.pair(address(risk), 'cel', 600);
+        //vow.pair(address(risk), 'del', 1);
         vow.ward(address(flow), true);
 
         vat.ward(address(vow),  true);
