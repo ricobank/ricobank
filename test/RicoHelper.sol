@@ -13,6 +13,7 @@ import { Vow } from '../src/vow.sol';
 import { Vox } from '../src/vox.sol';
 
 import { BalSetUp } from "./BalHelper.sol";
+import { UniSetUp } from "./UniHelper.sol";
 
 interface WethLike {
     function deposit() external payable;
