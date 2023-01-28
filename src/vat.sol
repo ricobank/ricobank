@@ -2,6 +2,8 @@
 
 /// vat.sol -- Rico CDP database
 
+// Copyright (C) 2023 the bank
+// Copyright (C) 2022 the bank
 // Copyright (C) 2021 monospace
 // Copyright (C) 2018 Rain <rainbreak@riseup.net>
 //
