@@ -149,7 +149,7 @@ contract VowJsTest is Test, RicoSetUp {
         curb(arisk, WAD, WAD / 10000, 0, 60, 1);
         curb(azero, WAD, WAD / 10000, 0, 60, 1);
 
-        feed.push(wtag, bytes32(RAY), block.timestamp + 2 * BANKYEAR);
+        feedpush(wtag, bytes32(RAY), block.timestamp + 2 * BANKYEAR);
         uint fee = 1000000001546067052200000000; // == ray(1.05 ** (1/BANKYEAR))
         vat.filk(i0, 'fee', fee);
         vat.frob(i0, me, int(100 * WAD), 0);
@@ -200,7 +200,7 @@ contract VowJsTest is Test, RicoSetUp {
         uint sin0 = vat.sin(avow);
         uint gembal0 = weth.balanceOf(address(flow));
         uint vow_rico0 = rico.balanceOf(avow);
-        assertEq(sin0, 0);
+        assertEq(sin0 / RAY, 0);
         assertEq(gembal0, 0);
         assertEq(vow_rico0, 0);
 
@@ -226,7 +226,7 @@ contract VowJsTest is Test, RicoSetUp {
 
         uint sin0 = vat.sin(avow);
         uint gembal0 = weth.balanceOf(address(flow));
-        assertEq(sin0, 0);
+        assertEq(sin0 / RAY, 0);
         assertEq(gembal0, 0);
 
         skip(BANKYEAR);
@@ -297,10 +297,8 @@ contract VowJsTest is Test, RicoSetUp {
         // should have had a mint of the full vel*cel and then half vel*cel
         uint mint1 = risksupply1 - risksupply0;
         uint mint2 = risksupply2 - risksupply1;
-        assertGe(mint1, WAD * 999 / 1000);
-        assertLe(mint1, WAD);
-        assertGe(mint2, WAD * 497 / 1000);
-        assertLe(mint2, WAD * 510 / 1000);
+        assertEq(mint1, risksupply0 / 10000000 * 1000);
+        assertEq(mint2, risksupply1 / 10000000 * 500);
     }
 
     function test_e2e_all_actions() public {

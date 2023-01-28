@@ -22,14 +22,14 @@ contract FlowTest is Test, RicoSetUp {
 
     function setUp() public {
         make_bank();
-        rico.mint(self, 10000 * WAD);
-        risk.mint(self, 10000 * WAD);
+        rico.mint(self, 1000000 * WAD);
+        risk.mint(self, 1000000 * WAD);
         rico.approve(BAL_VAULT, type(uint256).max);
         risk.approve(BAL_VAULT, type(uint256).max);
         rico.approve(address(flow), type(uint256).max);
         risk.approve(address(flow), type(uint256).max);
-        Asset memory rico_asset = Asset(arico, 5 * WAD / 10, 1000 * WAD);
-        Asset memory risk_asset = Asset(arisk, 5 * WAD / 10, 1000 * WAD);
+        Asset memory rico_asset = Asset(arico, 5 * WAD / 10, 100000 * WAD);
+        Asset memory risk_asset = Asset(arisk, 5 * WAD / 10, 100000 * WAD);
         PoolArgs memory rico_risk_args = PoolArgs(rico_asset, risk_asset, "mock", "MOCK", WAD / 100);
         pool_id_rico_risk = flow.pools(arico, arisk);
         join_pool(rico_risk_args, pool_id_rico_risk);
@@ -90,7 +90,8 @@ contract FlowTest is Test, RicoSetUp {
         // recharge at 1/s up to 100s, limit is abs, rel much higher
         // rate should be equal to above test as 10k tokens exist, this time rel provides limit
         flow.curb(address(rico), 'vel', WAD * 10000);
-        flow.curb(address(rico), 'rel', WAD / 10000);
+        flow.curb(address(rico), 'rel', WAD / 1000000);
+        flow.curb(address(rico), 'bel', block.timestamp);
         flow.curb(address(rico), 'cel', 100);
 
         address[] memory tokens;
@@ -100,6 +101,7 @@ contract FlowTest is Test, RicoSetUp {
         uint256[] memory balances3;
         uint256 lastChangeBlock;
 
+        skip(200); // past cel
         // create sale of 1k rico for as much risk as it can get
         uint256 back_pre_flow_rico = rico.balanceOf(self);
         uint256 aid = flow.flow(address(rico), WAD * 1000, address(risk), type(uint256).max);
@@ -111,7 +113,7 @@ contract FlowTest is Test, RicoSetUp {
         // flow glugs once to empty ramps charge
         flow.glug(aid);
         (tokens, balances1, lastChangeBlock) = vault.getPoolTokens(pool_id_rico_risk);
-        assertEq(balances0[rico_index], balances1[rico_index] - 100*WAD);
+        assertEq(balances1[rico_index] - balances0[rico_index], 100 * rico.totalSupply() / 1000000);
         uint256 back_risk_2 = risk.balanceOf(self);
         assertGt(back_risk_2, back_risk_1 + 80*WAD);  // 80 is some significant portion of 100 but less due to slippage
 
@@ -125,7 +127,7 @@ contract FlowTest is Test, RicoSetUp {
         skip(50);
         flow.glug(aid);
         (tokens, balances3, lastChangeBlock) = vault.getPoolTokens(pool_id_rico_risk);
-        assertEq(balances1[rico_index], balances3[rico_index] - 50*WAD);
+        assertEq(balances1[rico_index], balances3[rico_index] - 50 * rico.totalSupply() / 1000000);
 
         assertEq(back_count, 0);
     }
@@ -169,7 +171,7 @@ contract FlowTest is Test, RicoSetUp {
         flow.curb(address(rico), 'vel', WAD);
         flow.curb(address(rico), 'rel', WAD * 100000);
         flow.curb(address(rico), 'cel', 100);
-        flow.flow(address(rico), WAD * 100000, address(risk), type(uint256).max);
+        flow.flow(address(rico), WAD * 1000000, address(risk), type(uint256).max);
     }
 
     function test_dust() public {

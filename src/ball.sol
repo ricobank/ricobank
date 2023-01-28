@@ -11,6 +11,13 @@ import {Vat} from './vat.sol';
 import {Vow} from './vow.sol';
 import {Vox} from './vox.sol';
 import {BalancerFlower} from './flow.sol';
+import {Feedbase} from "../lib/feedbase/src/Feedbase.sol";
+import {Medianizer} from "../lib/feedbase/src/Medianizer.sol";
+import {Gem} from "../lib/gemfab/src/gem.sol";
+import {Math} from '../src/mixin/math.sol';
+import { WethLike } from "../test/RicoHelper.sol";
+import { Asset, UniSetUp, PoolArgs } from "../test/UniHelper.sol";
+import { IUniswapV3Pool } from "../src/TEMPinterface.sol";
 
 interface GemFabLike {
     function build(
@@ -40,16 +47,16 @@ interface Pool {
     function getPoolId() external view returns (bytes32);
 }
 
-contract Ball {
+contract Ball is Math, UniSetUp {
     error ErrGFHash();
     error ErrFBHash();
 
     bytes32 internal constant WILK = "weth";
     bytes32 internal constant WTAG = "wethusd";
+    bytes32 internal constant RTAG = "ricousd";
     uint256 internal constant HALF = 5 * 10**17;
     uint256 internal constant FEE  = 3 * 10**15;
-    uint256 internal constant RAY  = 10 ** 27;
-    uint256 internal constant RAD  = 10 ** 45;
+    address internal constant BUSD = 0x4Fabb145d64652a948d72533023f6E7A623C7C53;
     address public rico;
     address public risk;
     BalancerFlower public flow;
@@ -57,18 +64,22 @@ contract Ball {
     Vow public vow;
     Vox public vox;
 
+    IUniswapV3Pool public ricoref;
+    IUniswapV3Pool public riskrico;
+    uint160 constant init_sqrtparx96 = 250 * 2 ** 96 / 100;
+
     bytes32 public immutable gemFabHash = 0x3d4566ab42065aeb1aa89c121b828f7cce52f908859617efe6f5c85247df2b3b;
     bytes32 public immutable feedbaseHash = 0x444a69f35a859778fe48a0d50c8c24a3d891d8e7287c6db0df0d17f9fcb9c71b;
 
-    constructor(GemFabLike gemfab, address feedbase, address weth, address wethsrc, address poolfab, address bal_vault) {
-//        bytes32 codeHash;
-//        assembly { codeHash := extcodehash(gemfab) }
-//        if (gemFabHash != codeHash) revert ErrGFHash();
-//        assembly { codeHash := extcodehash(feedbase) }
-//        if (feedbaseHash != codeHash) revert ErrFBHash();
+    bytes32 risk_pool_id;
+    bytes32 weth_pool_id;
+    address risk_pool;
+    address weth_pool;
 
+    Medianizer mdn;
+
+    constructor(GemFabLike gemfab, address feedbase, address weth, address wethsrc, address poolfab, address bal_vault) payable {
         address roll = msg.sender;
-
         flow = new BalancerFlower();
 
         rico = address(gemfab.build(bytes32("Rico"), bytes32("RICO")));
@@ -100,7 +111,9 @@ contract Ball {
 
         vat.ward(address(vow),  true);
         vat.ward(address(vox),  true);
-        vat.init(WILK, weth, wethsrc, WTAG);
+
+        mdn = new Medianizer(feedbase);
+        vat.init(WILK, weth, address(mdn), WTAG);
         // TODO select weth ilk values
         vat.filk(WILK, 'chop', RAD);
         vat.filk(WILK, 'dust', 90 * RAD);
@@ -117,7 +130,7 @@ contract Ball {
         GemLike(rico).ward(roll, true);
         GemLike(rico).ward(address(this), false);
         GemLike(risk).ward(roll, true);
-        GemLike(risk).ward(address(this), false);
+        // don't unward for risk yet...need to create pool
 
         address[] memory risk_tokens  = new address[](2);
         address[] memory weth_tokens  = new address[](2);
@@ -138,12 +151,12 @@ contract Ball {
         }
         weights[0] = HALF;
         weights[1] = HALF;
-        address risk_pool = WeightedPoolFactoryLike(poolfab).create(
+        risk_pool = WeightedPoolFactoryLike(poolfab).create(
             '50 RICO 50 RISK', 'B-50RICO-50RISK', risk_tokens, weights, FEE, roll);
-        address weth_pool = WeightedPoolFactoryLike(poolfab).create(
+        weth_pool = WeightedPoolFactoryLike(poolfab).create(
             '50 RICO 50 WETH', 'B-50RICO-50WETH', weth_tokens, weights, FEE, roll);
-        bytes32 risk_pool_id = Pool(risk_pool).getPoolId();
-        bytes32 weth_pool_id = Pool(weth_pool).getPoolId();
+        risk_pool_id = Pool(risk_pool).getPoolId();
+        weth_pool_id = Pool(weth_pool).getPoolId();
         flow.setPool(rico, risk, risk_pool_id);
         flow.setPool(risk, rico, risk_pool_id);
         flow.setPool(weth, rico, weth_pool_id);
@@ -156,5 +169,13 @@ contract Ball {
         vow.give(roll);
         vox.give(roll);
         vat.give(roll);
+
+        ricoref = create_pool(PoolArgs(
+            Asset(rico, 0), Asset(BUSD, 0), 500, init_sqrtparx96, 0, 0, 0
+        ));
+
+        address[] memory sources = new address[](1);
+        sources[0] = roll;
+        mdn.setSources(sources);
     }
 }

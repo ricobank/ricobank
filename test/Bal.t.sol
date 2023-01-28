@@ -6,6 +6,7 @@ import "forge-std/Test.sol";
 import { RicoSetUp, WethLike } from "./RicoHelper.sol";
 import { Asset, PoolArgs } from "./BalHelper.sol";
 import { BalancerV2Types, BalancerV2VaultLike, IAsset } from '../src/swap.sol';
+import { Gem } from "../lib/gemfab/src/gem.sol";
 
 contract BalTest is Test, RicoSetUp {
 

@@ -5,6 +5,7 @@ pragma solidity 0.8.17;
 import '../src/mixin/math.sol';
 import { BalancerFlower } from '../src/flow.sol';
 import { Feedbase } from '../lib/feedbase/src/Feedbase.sol';
+import { Medianizer } from '../lib/feedbase/src/Medianizer.sol';
 import { GemFab, Gem } from '../lib/gemfab/src/gem.sol';
 import { GemFabLike } from '../src/ball.sol';
 import { Ball } from '../src/ball.sol';
@@ -53,14 +54,21 @@ abstract contract RicoSetUp is BalSetUp, Math {
     address  public avat;
     address  public avow;
     address  public avox;
+    Medianizer mdn;
 
     function make_bank() public {
         make_bank(self);
     }
 
+    function feedpush(bytes32 tag, bytes32 val, uint ttl) internal {
+        feed.push(tag, val, ttl);
+        mdn.poke(tag);
+    }
+
     function make_bank(address wethsrc) public {
         feed = new Feedbase();
         gemfab = GemFabLike(address(new GemFab()));
+
         ball = new Ball(gemfab, address(feed), WETH, wethsrc, BAL_W_P_F, BAL_VAULT);
 
         rico = Gem(ball.rico());
@@ -77,6 +85,9 @@ abstract contract RicoSetUp is BalSetUp, Math {
         arisk = address(risk);
 
         rico.approve(avat, type(uint256).max);
+
+        (,,address fsrc,,,,,,,,,) = vat.ilks(wilk);
+        mdn = Medianizer(fsrc);
     }
 
     function init_gold() public {
@@ -87,7 +98,7 @@ abstract contract RicoSetUp is BalSetUp, Math {
         vat.filk(gilk, bytes32('chop'), RAD);
         vat.filk(gilk, bytes32('line'), init_mint * 10 * RAD);
         vat.filk(gilk, bytes32('fee'),  1000000001546067052200000000);  // 5%
-        feed.push(gtag, bytes32(RAY), block.timestamp + 1000);
+        feedpush(gtag, bytes32(RAY), block.timestamp + 1000);
         vat.list(address(gold), true);
         agold = address(gold);
         vow.grant(agold);
@@ -101,7 +112,7 @@ abstract contract RicoSetUp is BalSetUp, Math {
         vat.filk(rilk, bytes32('chop'), RAD);
         vat.filk(rilk, bytes32('line'), init_mint * 10 * RAD);
         vat.filk(rilk, bytes32('fee'),  1000000001546067052200000000);  // 5%
-        feed.push(rtag, bytes32(RAY), block.timestamp + 1000);
+        feedpush(rtag, bytes32(RAY), block.timestamp + 1000);
         vat.list(address(ruby), true);
         aruby = address(ruby);
         vow.grant(aruby);

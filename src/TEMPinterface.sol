@@ -216,10 +216,59 @@ interface IUniswapV3PoolState {
         );
 }
 
+interface INonfungiblePositionManager {
+    struct MintParams {
+        address token0;
+        address token1;
+        uint24 fee;
+        int24 tickLower;
+        int24 tickUpper;
+        uint256 amount0Desired;
+        uint256 amount1Desired;
+        uint256 amount0Min;
+        uint256 amount1Min;
+        address recipient;
+        uint256 deadline;
+    }
+
+    function mint(MintParams calldata params) external
+        returns (
+            uint256 tokenId,
+            uint128 liquidity,
+            uint256 amount0,
+            uint256 amount1
+        );
+}
+
 interface IUniswapV3Pool is
     IUniswapV3PoolActions,
     IUniswapV3PoolState
-{}
+{
+    struct Slot0 {
+        // the current price
+        uint160 sqrtPriceX96;
+        // the current tick
+        int24 tick;
+        // the most-recently updated index of the observations array
+        uint16 observationIndex;
+        // the current maximum number of observations that are being stored
+        uint16 observationCardinality;
+        // the next maximum number of observations to store, triggered in observations.write
+        uint16 observationCardinalityNext;
+        // the current protocol fee as a percentage of the swap fee taken on withdrawal
+        // represented as an integer denominator (1/x)%
+        uint8 feeProtocol;
+        // whether the pool is locked
+        bool unlocked;
+    }
+
+    function initialize(uint160) external;
+    function mint(address,int24,int24,uint128,bytes calldata) external returns (uint,uint);
+    function swap(address,bool,int,uint160,bytes calldata) external returns (int,int);
+    function token0() external view returns (address);
+    function token1() external view returns (address);
+    function tickSpacing() external view returns (int24);
+}
 
 interface IUniswapV3SwapCallback {
     /// @notice Called to `msg.sender` after executing a swap via IUniswapV3Pool#swap.

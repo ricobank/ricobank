@@ -17,7 +17,7 @@
     "build:gemfab": "cd lib/gemfab && npm run build",
     "prejs-test": "npm run build:sol",
     "js-test": "ts-mocha --timeout 100000 jstest/*",
-    "test": "forge test --fork-block-number 15440000 --optimize --optimizer-runs 10000 -vv -f",
+    "test": "forge test --fork-block-number 16445606 --optimize --optimizer-runs 10000 -vv -f",
     "script-test-deploy": "forge script script/TestSetup.s.sol:SetupScript --rpc-url http://127.0.0.1:8545 --broadcast --verify -vvvv",
     "fmt": "ts-standard --fix task test"
   },

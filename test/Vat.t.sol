@@ -278,7 +278,7 @@ contract VatTest is Test, RicoSetUp {
     }
 
     function test_rico_flash_over_max_supply_reverts() public {
-        rico.mint(self, type(uint256).max - stack);
+        rico.mint(self, type(uint256).max - stack - rico.totalSupply());
         bytes memory data = abi.encodeWithSelector(chap.nop.selector);
         gems.push(arico);
         wads.push(2 * stack);

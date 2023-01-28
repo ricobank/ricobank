@@ -3,9 +3,9 @@ pragma solidity 0.8.17;
 
 import "forge-std/Test.sol";
 
-import { Gem } from '../lib/gemfab/src/gem.sol';
+import { Gem, GemFab } from '../lib/gemfab/src/gem.sol';
 import { Math } from "../src/mixin/math.sol";
-import { UniSetUp } from './UniHelper.sol';
+import { Asset, PoolArgs, UniSetUp } from './UniHelper.sol';
 import { UniSwapper } from '../src/swap2.sol';
 import { WethLike } from "./RicoHelper.sol";
 
@@ -33,8 +33,12 @@ contract UniTest is Test, UniSetUp, Math {
     uint8   public immutable EXACT_OUT = 1;
     WethLike weth = WethLike(WETH);
     Swapper swap;
+    GemFab gemfab;
+    address[] addr2;
+    uint24[] fees1;
 
     function setUp() public {
+        gemfab = new GemFab();
         swap = new Swapper();
         swap.approveGem(BAL, ROUTER);
         swap.approveGem(CRV, ROUTER);
@@ -53,8 +57,8 @@ contract UniTest is Test, UniSetUp, Math {
         Gem(WETH).transfer(address(swap), lump);
 
         // Create a path to swap UNI for WETH in a single hop
-        address [] memory addr2 = new address[](2);
-        uint24  [] memory fees1 = new uint24 [](1);
+        addr2 = new address[](2);
+        fees1 = new uint24 [](1);
         addr2[0] = UNI;
         addr2[1] = WETH;
         fees1[0] = 500;
@@ -125,5 +129,68 @@ contract UniTest is Test, UniSetUp, Math {
 
         assertGt(uni2, uni1);
         assertLt(bal2, bal1);
+    }
+
+    function test_join(Gem token0, Gem token1) private {
+        swap.approveGem(address(token0), ROUTER);
+        swap.approveGem(address(token1), ROUTER);
+        addr2 = new address[](2);
+        fees1 = new uint24 [](1);
+        addr2[0] = address(token0);
+        addr2[1] = address(token1);
+        fees1[0] = 500;
+        bytes memory fore;
+        bytes memory rear;
+        (fore, rear) = create_path(addr2, fees1);
+        swap.setPath(address(token0), address(token1), fore, rear);
+
+
+        uint amt0 = WAD;
+        uint amt1 = 4 * WAD;
+        uint24 fee = 500;
+        uint160 sqrtPriceX96 = x96(2);
+        uint160 sqrtSpreadX96 = x96div(x96(101), x96(100));
+        uint160 low = x96div(sqrtPriceX96, sqrtSpreadX96);
+        uint160 high = x96mul(sqrtPriceX96, sqrtSpreadX96);
+        assertLt(low, high);
+
+        token0.mint(address(this), amt0);
+        token1.mint(address(this), amt1);
+        create_and_join_pool(PoolArgs(
+            Asset(address(token0), amt0),
+            Asset(address(token1), amt1),
+            fee,
+            sqrtPriceX96,
+            low,
+            high,
+            10 // whatever, we know it's 10
+        ));
+
+        token0.mint(address(swap), WAD * 1000);
+        token1.mint(address(swap), WAD * 1000);
+        uint tok1before = token1.balanceOf(address(swap));
+        uint tok0before = token0.balanceOf(address(swap));
+        uint res = swap.swap(address(token0), address(token1), address(swap), EXACT_IN, WAD, 0);
+        assertLt(token0.balanceOf(address(swap)), tok0before);
+        assertGt(token1.balanceOf(address(swap)), tok1before);
+        assert(swap.SWAP_ERR() != res);
+    }
+
+    function test_join_forward() public {
+        Gem token0 = gemfab.build("TOK0", "token 0");
+        Gem token1 = gemfab.build("TOK1", "token 1");
+        do {
+            token1 = gemfab.build("TOK1", "token 1");
+        } while (token0 > token1);
+        test_join(token0, token1);
+    }
+
+    function test_join_reverse() public {
+        Gem token0 = gemfab.build("TOK0", "token 0");
+        Gem token1;
+        do {
+            token1 = gemfab.build("TOK1", "token 1");
+        } while (token0 < token1);
+        test_join(token0, token1);
     }
 }
