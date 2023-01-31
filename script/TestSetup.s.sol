@@ -11,7 +11,7 @@ contract SetupScript is Script, RicoSetUp {
         address deployerPublicKey  = vm.envAddress("PUBLIC_ADDRESS");
         vm.startBroadcast(deployerPrivateKey);
         make_bank(deployerPublicKey);
-        feed.push(wtag, bytes32(RAY * 1000), block.timestamp + 1000);
+        feedpush(wrtag, bytes32(RAY * 1000), block.timestamp + 1000);
         WethLike(WETH).deposit{value: 1000 * WAD}();
         console.log('vat @ %s, vox at %s, fb @ %s', avat, avox, address(feed));
         vm.stopBroadcast();

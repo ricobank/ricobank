@@ -26,7 +26,7 @@ contract VowTest is Test, RicoSetUp {
 
         vow.grant(address(gold));
 
-        feed.push(gtag, bytes32(RAY * 1000), block.timestamp + 1000);
+        feed.push(grtag, bytes32(RAY * 1000), block.timestamp + 1000);
         vat.frob(gilk, address(this), int(init_join * WAD), int(stack) * 1000);
         risk.mint(address(this), 10000 * WAD);
 
@@ -77,7 +77,7 @@ contract VowTest is Test, RicoSetUp {
         }
 
         // setup frobbed to edge, dropping gold price puts system way underwater
-        feed.push(gtag, bytes32(RAY), block.timestamp + 10000);
+        feed.push(grtag, bytes32(RAY), block.timestamp + 10000);
 
         // create the sin and kick off risk sale
         uint256 aid = vow.bail(gilk, self);
@@ -149,7 +149,7 @@ contract VowJsTest is Test, RicoSetUp {
         curb(arisk, WAD, WAD / 10000, 0, 60, 1);
         curb(azero, WAD, WAD / 10000, 0, 60, 1);
 
-        feedpush(wtag, bytes32(RAY), block.timestamp + 2 * BANKYEAR);
+        feedpush(wrtag, bytes32(RAY), block.timestamp + 2 * BANKYEAR);
         uint fee = 1000000001546067052200000000; // == ray(1.05 ** (1/BANKYEAR))
         vat.filk(i0, 'fee', fee);
         vat.frob(i0, me, int(100 * WAD), 0);

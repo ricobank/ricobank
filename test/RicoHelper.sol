@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 pragma solidity 0.8.17;
+import 'forge-std/Test.sol';
 
 import '../src/mixin/math.sol';
 import { BalancerFlower } from '../src/flow.sol';
 import { Feedbase } from '../lib/feedbase/src/Feedbase.sol';
+import { Divider } from '../lib/feedbase/src/combinators/Divider.sol';
 import { Medianizer } from '../lib/feedbase/src/Medianizer.sol';
 import { GemFab, Gem } from '../lib/gemfab/src/gem.sol';
 import { GemFabLike } from '../src/ball.sol';
@@ -28,9 +30,10 @@ abstract contract RicoSetUp is BalSetUp, Math {
     bytes32 constant public gilk = "gold";
     bytes32 constant public wilk = "weth";
     bytes32 constant public rilk = "ruby";
-    bytes32 constant public gtag = "goldusd";
-    bytes32 constant public wtag = "wethusd";
-    bytes32 constant public rtag = "rubyusd";
+    bytes32 constant public grtag = "goldrico";
+    bytes32 constant public wrtag = "wethrico";
+
+    bytes32 constant public rtag = "ricousd";
     uint256 constant public init_mint = 10000;
     uint256 constant public BANKYEAR = (365 * 24 + 6) * 3600;
     address public immutable azero = address(0);
@@ -55,6 +58,7 @@ abstract contract RicoSetUp is BalSetUp, Math {
     address  public avow;
     address  public avox;
     Medianizer mdn;
+    Divider divider;
 
     function make_bank() public {
         make_bank(self);
@@ -62,7 +66,16 @@ abstract contract RicoSetUp is BalSetUp, Math {
 
     function feedpush(bytes32 tag, bytes32 val, uint ttl) internal {
         feed.push(tag, val, ttl);
+        divider.poke(tag);
         mdn.poke(tag);
+    }
+
+    function make_feed(bytes32 tag) internal {
+        address[] memory sources = new address[](2);
+        bytes32[] memory tags = new bytes32[](2);
+        sources[0] = address(this); tags[0] = bytes32(tag);
+        sources[1] = address(this); tags[1] = bytes32("ONE");
+        divider.setConfig(tag, Divider.Config(sources, tags));
     }
 
     function make_bank(address wethsrc) public {
@@ -88,17 +101,24 @@ abstract contract RicoSetUp is BalSetUp, Math {
 
         (,,address fsrc,,,,,,,,,) = vat.ilks(wilk);
         mdn = Medianizer(fsrc);
+        divider = ball.divider();
+        
+        feed.push(bytes32("ONE"), bytes32(RAY), type(uint).max);
+        make_feed(rtag);
+        make_feed(wrtag);
+        make_feed(grtag);
+ 
     }
 
     function init_gold() public {
         gold = Gem(address(gemfab.build(bytes32("Gold"), bytes32("GOLD"))));
         gold.mint(self, init_mint * WAD);
         gold.approve(avat, type(uint256).max);
-        vat.init(gilk, address(gold), self, gtag);
+        vat.init(gilk, address(gold), self, grtag);
         vat.filk(gilk, bytes32('chop'), RAD);
         vat.filk(gilk, bytes32('line'), init_mint * 10 * RAD);
         vat.filk(gilk, bytes32('fee'),  1000000001546067052200000000);  // 5%
-        feedpush(gtag, bytes32(RAY), block.timestamp + 1000);
+        feedpush(grtag, bytes32(RAY), block.timestamp + 1000);
         vat.list(address(gold), true);
         agold = address(gold);
         vow.grant(agold);

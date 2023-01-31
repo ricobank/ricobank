@@ -29,10 +29,10 @@ export async function curb_ramp(contract, gem, vals) {
   }
 }
 
-export async function all_gas_used() {
+export async function all_gas_used(startblock, endblock) {
   const block_num = await ethers.provider.getBlockNumber()
   let gas_sum = 0
-  for ( let i = 1; i <= block_num; i++) {
+  for ( let i = startblock; i <= endblock; i++) {
     let block = await ethers.provider.send('eth_getBlockByNumber', [ethers.utils.hexValue(i), true])
     gas_sum += BigNumber.from(block.gasUsed).toNumber()
   }
@@ -40,10 +40,11 @@ export async function all_gas_used() {
 }
 
 export async function task_total_gas(hh, task, params) {
-  const gas0 = await all_gas_used()
+  const startblock = await ethers.provider.getBlockNumber() + 1
   const result = await hh.run(task, params);
-  const gas1 = await all_gas_used()
-  return [gas1 - gas0, result]
+  const endblock = await ethers.provider.getBlockNumber()
+  const gas = await all_gas_used(startblock, endblock)
+  return [gas, result]
 }
 
 let snaps  = []

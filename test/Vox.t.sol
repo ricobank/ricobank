@@ -21,7 +21,7 @@ contract VoxTest is Test, RicoSetUp {
     }
 
     function test_sway() public {
-        feed.push(rtag, bytes32(7 * WAD), block.timestamp + 1000);
+        feedpush(rtag, bytes32(7 * WAD), block.timestamp + 1000);
 
         skip(100);
         vox.poke();
@@ -37,7 +37,7 @@ contract VoxTest is Test, RicoSetUp {
         vox.poke(); // how == way == 1, par stuck at 7
         uint how = RAY + (RAY * 12 / 10) / (10 ** 16);
         vox.file(bytes32('how'), bytes32(how));
-        feed.push(rtag, bytes32(1 * WAD), 10 ** 12);
+        feedpush(rtag, bytes32(1 * WAD), 10 ** 12);
 
         vox.poke(); // no time has passed
         assertEq(vat.par(), 7 * WAD);
@@ -51,7 +51,7 @@ contract VoxTest is Test, RicoSetUp {
         assertEq(vat.par(), expectedpar2); // way > 1 -> par increases
 
         skip(1);
-        feed.push(rtag, bytes32(10 * WAD), 10 ** 12); // raise mar above par
+        feedpush(rtag, bytes32(10 * WAD), 10 ** 12); // raise mar above par
         vox.poke(); // poke updates par before way, par should increase again
         // this time it's multiplied by how ** 2
         uint expectedpar3 = 7 * WAD * how / RAY * how / RAY * how / RAY;
@@ -74,7 +74,7 @@ contract VoxTest is Test, RicoSetUp {
         vox.poke();
         assertLe(vat.par(), expectedpar2);
 
-        feed.push(rtag, bytes32(0), 10 ** 12);
+        feedpush(rtag, bytes32(0), 10 ** 12);
         skip(100000000);
         // way doesn't change until after par update
         vox.poke();

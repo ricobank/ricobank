@@ -6,12 +6,15 @@
 // this one.
 
 pragma solidity 0.8.17;
+import 'forge-std/Test.sol';
 
 import {Vat} from './vat.sol';
 import {Vow} from './vow.sol';
 import {Vox} from './vox.sol';
 import {BalancerFlower} from './flow.sol';
 import {Feedbase} from "../lib/feedbase/src/Feedbase.sol";
+import {Divider} from "../lib/feedbase/src/combinators/Divider.sol";
+import {UniswapV3Adapter} from "../lib/feedbase/src/adapters/UniswapV3Adapter.sol";
 import {Medianizer} from "../lib/feedbase/src/Medianizer.sol";
 import {Gem} from "../lib/gemfab/src/gem.sol";
 import {Math} from '../src/mixin/math.sol';
@@ -53,6 +56,7 @@ contract Ball is Math, UniSetUp {
 
     bytes32 internal constant WILK = "weth";
     bytes32 internal constant WTAG = "wethusd";
+    bytes32 internal constant WRTAG = "wethrico";
     bytes32 internal constant RTAG = "ricousd";
     uint256 internal constant HALF = 5 * 10**17;
     uint256 internal constant FEE  = 3 * 10**15;
@@ -66,7 +70,7 @@ contract Ball is Math, UniSetUp {
 
     IUniswapV3Pool public ricoref;
     IUniswapV3Pool public riskrico;
-    uint160 constant init_sqrtparx96 = 250 * 2 ** 96 / 100;
+    uint160 constant init_sqrtparx96 = 2 ** 96;
 
     bytes32 public immutable gemFabHash = 0x3d4566ab42065aeb1aa89c121b828f7cce52f908859617efe6f5c85247df2b3b;
     bytes32 public immutable feedbaseHash = 0x444a69f35a859778fe48a0d50c8c24a3d891d8e7287c6db0df0d17f9fcb9c71b;
@@ -77,6 +81,8 @@ contract Ball is Math, UniSetUp {
     address weth_pool;
 
     Medianizer mdn;
+    UniswapV3Adapter public adapt;
+    Divider public divider;
 
     constructor(GemFabLike gemfab, address feedbase, address weth, address wethsrc, address poolfab, address bal_vault) payable {
         address roll = msg.sender;
@@ -113,7 +119,7 @@ contract Ball is Math, UniSetUp {
         vat.ward(address(vox),  true);
 
         mdn = new Medianizer(feedbase);
-        vat.init(WILK, weth, address(mdn), WTAG);
+        vat.init(WILK, weth, address(mdn), WRTAG);
         // TODO select weth ilk values
         vat.filk(WILK, 'chop', RAD);
         vat.filk(WILK, 'dust', 90 * RAD);
@@ -167,15 +173,50 @@ contract Ball is Math, UniSetUp {
 
         flow.give(roll);
         vow.give(roll);
-        vox.give(roll);
         vat.give(roll);
 
         ricoref = create_pool(PoolArgs(
             Asset(rico, 0), Asset(BUSD, 0), 500, init_sqrtparx96, 0, 0, 0
         ));
 
-        address[] memory sources = new address[](1);
-        sources[0] = roll;
+        adapt = new UniswapV3Adapter(Feedbase(feedbase));
+        address ethbusdpooladdr = 0x4Ff7E1E713E30b0D1Fb9CD00477cEF399ff9D493;
+        // quarter day twap range, 1hr ttl
+        adapt.setConfig(
+            WTAG,
+            UniswapV3Adapter.Config(ethbusdpooladdr, 20000, 3600, true)
+        );
+        adapt.setConfig(
+            RTAG,
+            UniswapV3Adapter.Config(address(ricoref), 20000, 3600, BUSD < rico)
+        );
+        adapt.ward(roll, true);
+        adapt.ward(address(this), false);
+
+        divider = new Divider(feedbase, RAY);
+        address[] memory sources = new address[](2);
+        bytes32[] memory tags    = new bytes32[](2);
+        sources[0] = address(adapt); tags[0] = WTAG;
+        sources[1] = address(adapt); tags[1] = RTAG;
+        divider.setConfig(WRTAG, Divider.Config(sources, tags));
+
+        // TODO - this is hack, dividing by one until medianizer has proper Config
+        sources[0] = address(adapt); tags[0] = RTAG;
+        sources[1] = address(this); tags[1] = bytes32("ONE");
+        divider.setConfig(RTAG, Divider.Config(sources, tags));
+        Feedbase(feedbase).push(bytes32("ONE"), bytes32(RAY), type(uint).max);
+        divider.ward(roll, true);
+        divider.ward(address(this), false);
+
+        // median([(dbusd / dweth) / (dbusd / drico)]) == drico / dweth
+        sources = new address[](1);
+        sources[0] = address(divider);
         mdn.setSources(sources);
+        mdn.setOwner(roll);
+
+        // vox needs rico-busd
+        vox.link('tip', address(mdn));
+        vox.file('tag', RTAG);
+        vox.give(roll);
     }
 }

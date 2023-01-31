@@ -1,6 +1,7 @@
 [submodule "lib/feedbase"]
 	path = lib/feedbase
 	url = https://github.com/feedbase/feedbase
+	branch = main
 [submodule "lib/gemfab"]
 	path = lib/gemfab
 	url = https://github.com/ricobank/gemfab

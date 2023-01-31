@@ -40,7 +40,7 @@ contract VatTest is Test, RicoSetUp {
 
     function test_ilk_reset() public {
         vm.expectRevert(Vat.ErrMultiIlk.selector);
-        vat.init(gilk, address(gold), self, gtag);
+        vat.init(gilk, address(gold), self, grtag);
     }
 
     /* urn safety tests */
@@ -86,10 +86,10 @@ contract VatTest is Test, RicoSetUp {
         vat.frob(gilk, address(this), int(stack), int(stack));
         assertTrue(vat.safe(gilk, self) == Vat.Spot.Safe);
 
-        feed.push(gtag, bytes32(RAY / 2), block.timestamp + 1000);
+        feed.push(grtag, bytes32(RAY / 2), block.timestamp + 1000);
         assertTrue(vat.safe(gilk, self) == Vat.Spot.Sunk);
 
-        feed.push(gtag, bytes32(RAY * 2), block.timestamp + 1000);
+        feed.push(grtag, bytes32(RAY * 2), block.timestamp + 1000);
         assertTrue(vat.safe(gilk, self) == Vat.Spot.Safe);
     }
 
@@ -102,7 +102,7 @@ contract VatTest is Test, RicoSetUp {
         assertTrue(vat.safe(gilk, self) == Vat.Spot.Iffy);
 
         // without a drip an update should refloat urn
-        feed.push(gtag, bytes32(RAY), block.timestamp + 1000);
+        feed.push(grtag, bytes32(RAY), block.timestamp + 1000);
         assertTrue(vat.safe(gilk, self) == Vat.Spot.Safe);
     }
 
@@ -110,7 +110,7 @@ contract VatTest is Test, RicoSetUp {
         vat.frob(gilk, address(this), int(stack), int(stack));
         assertTrue(vat.safe(gilk, self) == Vat.Spot.Safe);
 
-        feed.push(gtag, bytes32(RAY / 2), block.timestamp + 1000);
+        feed.push(grtag, bytes32(RAY / 2), block.timestamp + 1000);
         assertTrue(vat.safe(gilk, self) == Vat.Spot.Sunk);
 
         vat.frob(gilk, address(this), int(stack), int(0));
@@ -121,7 +121,7 @@ contract VatTest is Test, RicoSetUp {
         vat.frob(gilk, address(this), int(stack), int(stack));
         assertTrue(vat.safe(gilk, self) == Vat.Spot.Safe);
 
-        feed.push(gtag, bytes32(RAY / 2), block.timestamp + 1000);
+        feed.push(grtag, bytes32(RAY / 2), block.timestamp + 1000);
         assertTrue(vat.safe(gilk, self) == Vat.Spot.Sunk);
 
         //should always be able to decrease art
@@ -498,12 +498,12 @@ contract VatTest is Test, RicoSetUp {
         assertEq(ink, 100 * WAD);
         assertEq(art, 50 * WAD);
 
-        feed.push(gtag, bytes32(RAY), block.timestamp + 1000);
+        feed.push(grtag, bytes32(RAY), block.timestamp + 1000);
 
         Vat.Spot safe2 = vat.safe(gilk, self);
         assertEq(uint(safe2), uint(Vat.Spot.Safe));
 
-        feed.push(gtag, bytes32(RAY / 50), block.timestamp + 1000);
+        feed.push(grtag, bytes32(RAY / 50), block.timestamp + 1000);
 
         Vat.Spot safe3 = vat.safe(gilk, self);
         assertEq(uint(safe3), uint(Vat.Spot.Sunk));

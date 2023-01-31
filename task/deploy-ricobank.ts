@@ -27,7 +27,7 @@ task('deploy-ricobank', '')
     const ball_artifact = require('../artifacts/src/ball.sol/Ball.json')
     const ball_type = hre.ethers.ContractFactory.fromSolidity(ball_artifact, ali)
     const ball = await ball_type.deploy(deps.objects.gemfab.address, deps.objects.feedbase.address,
-        deps.objects.weth.address, ali.address, deps.objects.weighted_pool_factory.address, deps.objects.vault.address)
+        deps.objects.weth.address, ali.address, deps.objects.weighted_pool_factory.address, deps.objects.vault.address, { gasLimit: 30000000 })
     const gem_artifact = await dpack.getIpfsJson(deps.types.Gem.artifact['/'])
 
     const contracts = [['flow', 'BalancerFlower', require('../artifacts/src/flow.sol/BalancerFlower.json')],

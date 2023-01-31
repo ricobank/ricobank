@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 pragma solidity 0.8.17;
-import "forge-std/Test.sol";
 
 import { Gem } from '../lib/gemfab/src/gem.sol';
 import { Ball } from '../src/ball.sol';
@@ -40,7 +39,7 @@ abstract contract UniSetUp {
     uint160 internal constant X96            = 2 ** 96;
 
     function create_path(address[] memory tokens, uint24[] memory fees)
-            public pure returns (bytes memory fore, bytes memory rear) {
+            internal pure returns (bytes memory fore, bytes memory rear) {
         require(tokens.length == fees.length + 1, "invalid path");
 
         for (uint i = 0; i < tokens.length - 1; i++) {
@@ -74,7 +73,7 @@ abstract contract UniSetUp {
         }
     }
 
-    function create_pool(PoolArgs memory args) public returns (IUniswapV3Pool pool) {
+    function create_pool(PoolArgs memory args) internal returns (IUniswapV3Pool pool) {
         Asset memory a;
         Asset memory b;
         uint160 sqrtPriceX96 = args.sqrtPriceX96;
@@ -92,12 +91,12 @@ abstract contract UniSetUp {
         ));
     }
 
-    function create_and_join_pool(PoolArgs memory args) public {
+    function create_and_join_pool(PoolArgs memory args) internal {
         create_pool(args);
         join_pool(args);
     }
 
-    function join_pool(PoolArgs memory args) public returns (
+    function join_pool(PoolArgs memory args) internal returns (
         uint256 tokenId,
         uint128 liquidity,
         uint256 amount0,

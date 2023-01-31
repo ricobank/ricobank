@@ -80,11 +80,11 @@ contract DssJsTest is Test, RicoSetUp {
         gold = Gem(address(gemfab.build(bytes32("Gold"), bytes32("GOLD"))));
         gold.mint(self, init_mint);
         gold.approve(address(vat), type(uint256).max);
-        vat.init(gilk, address(gold), self, gtag);
+        vat.init(gilk, address(gold), self, grtag);
         vat.filk(gilk, bytes32('chop'), RAY);
         vat.filk(gilk, bytes32("line"), init_mint * 10 * RAY);
         //vat.filk(gilk, bytes32('fee'), 1000000001546067052200000000);  // 5%
-        feedpush(gtag, bytes32(RAY), block.timestamp + 1000);
+        feedpush(grtag, bytes32(RAY), block.timestamp + 1000);
         agold = address(gold);
         vow.grant(agold);
     }
@@ -109,7 +109,7 @@ contract DssJsTest is Test, RicoSetUp {
         vat.file('ceil', ceil * RAD);
         vat.filk(i0, 'line', 1000 * RAD);
 
-        feedpush(gtag, bytes32(RAY), block.timestamp + 1000);
+        feedpush(grtag, bytes32(RAY), block.timestamp + 1000);
 
         gem.approve(BAL_VAULT, UINT256_MAX);
         rico.approve(BAL_VAULT, UINT256_MAX);
@@ -213,7 +213,7 @@ contract DssFrobTest is DssVatTest {
         assertEq(gem.balanceOf(me), 0);
         assertEq(Gem(gem).balanceOf(me), 0);
         gem.mint(me, 1000 * WAD);
-        feedpush(gtag, bytes32(RAY), block.timestamp + 1000);
+        feedpush(grtag, bytes32(RAY), block.timestamp + 1000);
         vat.filk(i0, 'line', 1000 * RAD);
     }
     modifier _frob_ { _frob_setUp(); _; }
@@ -267,7 +267,7 @@ contract DssFrobTest is DssVatTest {
         // decreased. remaining unsafe is ok as long as you're nice
 
         vat.frob(i0, me, int(10 * WAD), int(10 * WAD));
-        feedpush(gtag, bytes32(RAY / 2), block.timestamp + 1000);
+        feedpush(grtag, bytes32(RAY / 2), block.timestamp + 1000);
         // debt can't increase if unsafe
         vm.expectRevert(Vat.ErrNotSafe.selector);
         vat.frob(i0, me, 0, int(WAD));
@@ -291,7 +291,7 @@ contract DssFrobTest is DssVatTest {
 
         // ink can decrease if end state is safe
         vat.frob(i0, me, -int(WAD), -int(4 * WAD));
-        feedpush(gtag, bytes32(RAY * 2 / 5), block.timestamp + 1000);
+        feedpush(grtag, bytes32(RAY * 2 / 5), block.timestamp + 1000);
         // debt can increase if end state is safe
         vat.frob(i0, me, int(5 * WAD), int(WAD));
     }
@@ -381,7 +381,7 @@ contract DssBiteTest is DssVatTest {
 
         gold.mint(me, 1000 * WAD);
 
-        feedpush(gtag, bytes32(RAY), block.timestamp + 1000);
+        feedpush(grtag, bytes32(RAY), block.timestamp + 1000);
         vat.filk(i0, 'line', 1000 * RAD);
         // cat.box N/A bail liquidates entire urn
         vat.filk(i0, 'chop', RAY);
@@ -435,12 +435,12 @@ contract DssBiteTest is DssVatTest {
         // dss: spot = tag / (par . mat), tag=5, mat=2
         // rico: mark = feed.val = 2.5
         // create urn (push, frob)
-        feedpush(gtag, bytes32(RAY * 5 / 2), block.timestamp + 1000);
+        feedpush(grtag, bytes32(RAY * 5 / 2), block.timestamp + 1000);
         vat.frob(i0, me, int(40 * WAD), int(100 * WAD));
 
         // tag=4, mat=2
         // make urn unsafe, set liquidation penalty
-        feedpush(gtag, bytes32(RAY * 2), block.timestamp + 1000);
+        feedpush(grtag, bytes32(RAY * 2), block.timestamp + 1000);
         vat.filk(i0, 'chop', RAY * 11 / 10);
 
         assertEq(_ink(i0, me), 40 * WAD);
@@ -503,7 +503,7 @@ contract DssBiteTest is DssVatTest {
     //   N/A bail amount doesn't depend on spot, only reverts if urn is safe
 
     function testFail_vault_is_safe() public _bite_ {
-        feedpush(gtag, bytes32(RAY * 5 / 2), block.timestamp + 1000);
+        feedpush(grtag, bytes32(RAY * 5 / 2), block.timestamp + 1000);
         vat.frob(i0, me, int(100 * WAD), int(150 * WAD));
 
         assertEq(_ink(i0, me), 100 * WAD);
@@ -517,10 +517,10 @@ contract DssBiteTest is DssVatTest {
     }
 
     function test_floppy_bite() public _bite_ {
-        feedpush(gtag, bytes32(RAY * 5 / 2), block.timestamp + 1000);
+        feedpush(grtag, bytes32(RAY * 5 / 2), block.timestamp + 1000);
         uint ricoamt = 100 * WAD;
         vat.frob(i0, me, int(40 * WAD), int(ricoamt));
-        feedpush(gtag, bytes32(2 * RAY), block.timestamp + 1000);
+        feedpush(grtag, bytes32(2 * RAY), block.timestamp + 1000);
 
         // mimic dss auction rates...need to flop wad(1000) risk
         uint bailamt = 30 * WAD;
@@ -606,7 +606,7 @@ contract DssFoldTest is DssVatTest {
     function draw(bytes32 ilk, uint joy) internal {
         vat.file('ceil', joy * RAD + total_pool_rico * RAY);
         vat.filk(ilk, 'line', joy * RAD);
-        feedpush(gtag, bytes32(RAY), block.timestamp + 1000);
+        feedpush(grtag, bytes32(RAY), block.timestamp + 1000);
 
         _slip(gem, me, WAD);
         vat.drip(i0);
@@ -796,7 +796,7 @@ contract DssClipTest is DssJsTest {
 
         vat.filk(i0, 'liqr', RAY / 2); // dss mat (rico uses inverse)
 
-        feedpush(gtag, bytes32(goldprice), block.timestamp + 1000);
+        feedpush(grtag, bytes32(goldprice), block.timestamp + 1000);
 
         vat.filk(i0, 'dust', 20 * RAD);
         vat.filk(i0, 'line', 10000 * RAD);
@@ -812,7 +812,7 @@ contract DssClipTest is DssJsTest {
         assertEq(gold.balanceOf(me), (1000 - 40) * WAD);
         assertEq(rico.balanceOf(me), 100 * WAD);
 
-        feedpush(gtag, bytes32(4 * RAY), block.timestamp + 1000); // now unsafe
+        feedpush(grtag, bytes32(4 * RAY), block.timestamp + 1000); // now unsafe
 
         // dss me/ali/bob hope clip N/A, rico vat wards vow
 
@@ -857,13 +857,13 @@ contract DssClipTest is DssJsTest {
 
 
         // Spot = $2.5
-        feedpush(gtag, bytes32(goldprice), block.timestamp + 1000); // dss pip.poke
+        feedpush(grtag, bytes32(goldprice), block.timestamp + 1000); // dss pip.poke
 
         skip(100);
         vat.frob(i0, me, int(40 * WAD), int(100 * WAD)); // dss pip.poke
 
         // Spot = $2
-        feedpush(gtag, bytes32(4 * RAY), block.timestamp + 1000); /// dss spot.poke, now unsafe
+        feedpush(grtag, bytes32(4 * RAY), block.timestamp + 1000); /// dss spot.poke, now unsafe
 
         // clip.sales N/A
 
@@ -889,7 +889,7 @@ contract DssClipTest is DssJsTest {
     }
 
     function testFail_kick_zero_price() public _clip_ {
-        feedpush(gtag, bytes32(0), UINT256_MAX);
+        feedpush(grtag, bytes32(0), UINT256_MAX);
         vm.expectRevert(); // todo need error types for zero cases
         vow.bail(i0, me);
     }
@@ -1025,7 +1025,7 @@ contract DssVowTest is DssJsTest {
         curb(azero, amt * 2, WAD, block.timestamp, 1, amt);
         skip(1);
         vat.frob(i0, me, int(amt), int(amt));
-        feed.push(gtag, bytes32(0), UINT256_MAX);
+        feed.push(grtag, bytes32(0), UINT256_MAX);
         vow.bail(i0, me); // lots of debt
         uint aid = vow.keep(ilks);
         (,address hag,,,) = flow.auctions(aid);
@@ -1067,7 +1067,7 @@ contract DssVowTest is DssJsTest {
 
     function test_no_surplus_after_good_flop() public _vow_ {
         vat.frob(i0, me, 100, 100);
-        feedpush(gtag, bytes32(0), UINT256_MAX);
+        feedpush(grtag, bytes32(0), UINT256_MAX);
         vow.bail(i0, me); // lots of debt
         skip(1);
         uint aid = vow.keep(ilks);
@@ -1089,20 +1089,20 @@ contract DssDogTest is DssJsTest {
         gem.mint(me, 100000 * WAD);
         gem.approve(avat, UINT256_MAX);
         vow.keep(ilks);
-        feedpush(gtag, bytes32(1000 * RAY), UINT256_MAX);
+        feedpush(grtag, bytes32(1000 * RAY), UINT256_MAX);
     }
 
     modifier _dog_ { _dog_setUp(); _; }
 
     function setUrn(uint ink, uint art) internal {
-        (bytes32 price, uint ttl) = feed.pull(me, gtag);
-        feedpush(gtag, bytes32(2 * RAY * art / ink), UINT256_MAX);
+        (bytes32 price, uint ttl) = feed.pull(me, grtag);
+        feedpush(grtag, bytes32(2 * RAY * art / ink), UINT256_MAX);
         vat.frob(i0, me, int(ink), int(art));
-        feedpush(gtag, price, ttl);
+        feedpush(grtag, price, ttl);
     }
 
     function test_bark_basic() public _dog_ {
-        feedpush(gtag, bytes32(0), UINT256_MAX);
+        feedpush(grtag, bytes32(0), UINT256_MAX);
         setUrn(WAD, 2000 * WAD);
         vow.bail(i0, me);
         (uint ink, uint art) = vat.urns(i0, me);
