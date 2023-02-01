@@ -3,6 +3,7 @@ pragma solidity 0.8.17;
 
 import { Gem } from '../lib/gemfab/src/gem.sol';
 import { Ball } from '../src/ball.sol';
+import { UniSwapper } from '../src/swap2.sol';
 import { INonfungiblePositionManager, IUniswapV3Factory, IUniswapV3Pool } from '../src/TEMPinterface.sol';
 
 struct Asset {
@@ -18,6 +19,17 @@ struct PoolArgs {
     uint160 low; // sqrtx96
     uint160 high; // sqrtx96
     int24 tickSpacing;
+}
+
+contract Swapper is UniSwapper {
+    function swap(address tokIn, address tokOut, address receiver, uint8 kind, uint amt, uint limit)
+            public returns (uint256 result) {
+        result = _swap(tokIn, tokOut, receiver, SwapKind(kind), amt, limit);
+    }
+
+    function approveGem(address gem, address target) external {
+        Gem(gem).approve(target, type(uint256).max);
+    }
 }
 
 abstract contract UniSetUp {

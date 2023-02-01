@@ -30,7 +30,6 @@ export async function curb_ramp(contract, gem, vals) {
 }
 
 export async function all_gas_used(startblock, endblock) {
-  const block_num = await ethers.provider.getBlockNumber()
   let gas_sum = 0
   for ( let i = startblock; i <= endblock; i++) {
     let block = await ethers.provider.send('eth_getBlockByNumber', [ethers.utils.hexValue(i), true])

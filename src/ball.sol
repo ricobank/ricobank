@@ -6,7 +6,6 @@
 // this one.
 
 pragma solidity 0.8.17;
-import 'forge-std/Test.sol';
 
 import {Vat} from './vat.sol';
 import {Vow} from './vow.sol';
@@ -16,9 +15,7 @@ import {Feedbase} from "../lib/feedbase/src/Feedbase.sol";
 import {Divider} from "../lib/feedbase/src/combinators/Divider.sol";
 import {UniswapV3Adapter} from "../lib/feedbase/src/adapters/UniswapV3Adapter.sol";
 import {Medianizer} from "../lib/feedbase/src/Medianizer.sol";
-import {Gem} from "../lib/gemfab/src/gem.sol";
 import {Math} from '../src/mixin/math.sol';
-import { WethLike } from "../test/RicoHelper.sol";
 import { Asset, UniSetUp, PoolArgs } from "../test/UniHelper.sol";
 import { IUniswapV3Pool } from "../src/TEMPinterface.sol";
 
@@ -72,9 +69,6 @@ contract Ball is Math, UniSetUp {
     IUniswapV3Pool public riskrico;
     uint160 constant init_sqrtparx96 = 2 ** 96;
 
-    bytes32 public immutable gemFabHash = 0x3d4566ab42065aeb1aa89c121b828f7cce52f908859617efe6f5c85247df2b3b;
-    bytes32 public immutable feedbaseHash = 0x444a69f35a859778fe48a0d50c8c24a3d891d8e7287c6db0df0d17f9fcb9c71b;
-
     bytes32 risk_pool_id;
     bytes32 weth_pool_id;
     address risk_pool;
@@ -84,7 +78,7 @@ contract Ball is Math, UniSetUp {
     UniswapV3Adapter public adapt;
     Divider public divider;
 
-    constructor(GemFabLike gemfab, address feedbase, address weth, address wethsrc, address poolfab, address bal_vault) payable {
+    constructor(GemFabLike gemfab, address feedbase, address weth, address poolfab, address bal_vault) payable {
         address roll = msg.sender;
         flow = new BalancerFlower();
 

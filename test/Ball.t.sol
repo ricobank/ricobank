@@ -2,7 +2,7 @@
 pragma solidity 0.8.17;
 
 import "forge-std/Test.sol";
-import { UniSetUp } from "../test/UniHelper.sol";
+import { Swapper, UniSetUp } from "../test/UniHelper.sol";
 
 import { Ball, GemFabLike } from '../src/ball.sol';
 import { INonfungiblePositionManager, IUniswapV3Pool } from '../src/TEMPinterface.sol';
@@ -16,18 +16,6 @@ import { UniSwapper } from '../src/swap2.sol';
 import { Vat } from '../src/vat.sol';
 import { Math } from '../src/mixin/math.sol';
 import { WethLike } from '../test/RicoHelper.sol';
-
-contract Swapper is UniSwapper {
-    function swap(address tokIn, address tokOut, address receiver, uint8 kind, uint amt, uint limit)
-            public returns (uint256 result) {
-        result = _swap(tokIn, tokOut, receiver, SwapKind(kind), amt, limit);
-    }
-
-    function approveGem(address gem, address target) external {
-        Gem(gem).approve(target, type(uint256).max);
-    }
-}
-
 
 contract BallTest is Test, BalSetUp, UniSetUp, Math {
     bytes32 internal constant WILK = "weth";
@@ -54,8 +42,7 @@ contract BallTest is Test, BalSetUp, UniSetUp, Math {
         Feedbase fb = new Feedbase();
         // todo par arg
         Ball ball = new Ball(
-            gf, address(fb), aweth, address(this),
-            BAL_W_P_F, BAL_VAULT
+            gf, address(fb), aweth, BAL_W_P_F, BAL_VAULT
         );
         skip(BANKYEAR);
         uint usedgas     = gas - gasleft();

@@ -31,6 +31,7 @@ export default {
   },
   networks: {
       hardhat: {
+          blockGasLimit: 100000000,
           forking: {
               url: process.env["RPC_URL"],
               blockNumber: 16445606

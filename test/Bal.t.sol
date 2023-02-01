@@ -6,7 +6,6 @@ import "forge-std/Test.sol";
 import { RicoSetUp, WethLike } from "./RicoHelper.sol";
 import { Asset, PoolArgs } from "./BalHelper.sol";
 import { BalancerV2Types, BalancerV2VaultLike, IAsset } from '../src/swap.sol';
-import { Gem } from "../lib/gemfab/src/gem.sol";
 
 contract BalTest is Test, RicoSetUp {
 
@@ -16,7 +15,7 @@ contract BalTest is Test, RicoSetUp {
 
     function setUp() public {
         me = address(this);
-        make_bank(me);
+        make_bank();
         rico.mint(me, 10000 * WAD);
         weth.deposit{value: 10000 * WAD}();
         bvault = BalancerV2VaultLike(BAL_VAULT);

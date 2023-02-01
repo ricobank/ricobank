@@ -4,7 +4,6 @@ pragma solidity 0.8.17;
 import "forge-std/Test.sol";
 
 import { RicoSetUp } from "./RicoHelper.sol";
-import { Gem } from '../lib/gemfab/src/gem.sol';
 
 contract VoxTest is Test, RicoSetUp {
     uint256 public init_join = 1000;

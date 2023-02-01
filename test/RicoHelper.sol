@@ -60,10 +60,6 @@ abstract contract RicoSetUp is BalSetUp, Math {
     Medianizer mdn;
     Divider divider;
 
-    function make_bank() public {
-        make_bank(self);
-    }
-
     function feedpush(bytes32 tag, bytes32 val, uint ttl) internal {
         feed.push(tag, val, ttl);
         divider.poke(tag);
@@ -78,11 +74,11 @@ abstract contract RicoSetUp is BalSetUp, Math {
         divider.setConfig(tag, Divider.Config(sources, tags));
     }
 
-    function make_bank(address wethsrc) public {
+    function make_bank() public {
         feed = new Feedbase();
         gemfab = GemFabLike(address(new GemFab()));
 
-        ball = new Ball(gemfab, address(feed), WETH, wethsrc, BAL_W_P_F, BAL_VAULT);
+        ball = new Ball(gemfab, address(feed), WETH, BAL_W_P_F, BAL_VAULT);
 
         rico = Gem(ball.rico());
         risk = Gem(ball.risk());

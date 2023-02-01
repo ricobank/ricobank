@@ -5,20 +5,10 @@ import "forge-std/Test.sol";
 
 import { Gem, GemFab } from '../lib/gemfab/src/gem.sol';
 import { Math } from "../src/mixin/math.sol";
-import { Asset, PoolArgs, UniSetUp } from './UniHelper.sol';
-import { UniSwapper } from '../src/swap2.sol';
+import { Asset, PoolArgs, Swapper, UniSetUp } from './UniHelper.sol';
 import { WethLike } from "./RicoHelper.sol";
 
-contract Swapper is UniSwapper {
-    function swap(address tokIn, address tokOut, address receiver, uint8 kind, uint amt, uint limit)
-            public returns (uint256 result) {
-        result = _swap(tokIn, tokOut, receiver, SwapKind(kind), amt, limit);
-    }
 
-    function approveGem(address gem, address target) external {
-        Gem(gem).approve(target, type(uint256).max);
-    }
-}
 
 ///@notice unit test of UniSwapper only, excludes use of ricobank and pool creation
 contract UniTest is Test, UniSetUp, Math {

@@ -8,9 +8,8 @@ import { WethLike } from "../test/RicoHelper.sol";
 contract SetupScript is Script, RicoSetUp {
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        address deployerPublicKey  = vm.envAddress("PUBLIC_ADDRESS");
         vm.startBroadcast(deployerPrivateKey);
-        make_bank(deployerPublicKey);
+        make_bank();
         feedpush(wrtag, bytes32(RAY * 1000), block.timestamp + 1000);
         WethLike(WETH).deposit{value: 1000 * WAD}();
         console.log('vat @ %s, vox at %s, fb @ %s', avat, avox, address(feed));
