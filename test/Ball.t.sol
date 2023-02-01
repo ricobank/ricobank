@@ -21,8 +21,8 @@ contract BallTest is Test, BalSetUp, UniSetUp, Math {
     bytes32 internal constant WILK = "weth";
     uint8   public immutable EXACT_IN  = 0;
     uint8   public immutable EXACT_OUT = 1;
-    address internal constant BUSD = 0x4Fabb145d64652a948d72533023f6E7A623C7C53;
-    address internal constant PSM  = 0xF977814e90dA44bFA03b6295A0616a897441aceC;
+    address internal constant DAI   = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
+    address internal constant VAULT = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;
     // TODO these should have dashes
     bytes32 internal constant WTAG = "wethusd";
     bytes32 internal constant WRTAG = "wethrico";
@@ -56,26 +56,26 @@ contract BallTest is Test, BalSetUp, UniSetUp, Math {
 
         swap = new Swapper();
         rico = ball.rico();
-        swap.approveGem(BUSD, ROUTER);
+        swap.approveGem(DAI, ROUTER);
         swap.approveGem(rico, ROUTER);
         swap.setSwapRouter(ROUTER);
         // Create a path to swap UNI for WETH in a single hop
         address [] memory addr2 = new address[](2);
         uint24  [] memory fees1 = new uint24 [](1);
-        addr2[0] = BUSD;
+        addr2[0] = DAI;
         addr2[1] = ball.rico();
         fees1[0] = 500;
         bytes memory fore;
         bytes memory rear;
 
         (fore, rear) = create_path(addr2, fees1);
-        swap.setPath(BUSD, rico, fore, rear);
+        swap.setPath(DAI, rico, fore, rear);
 
-        vm.prank(PSM);
-        Gem(BUSD).transfer(address(this), 500 * WAD);
+        vm.prank(VAULT);
+        Gem(DAI).transfer(address(this), 500 * WAD);
 
-        Gem(BUSD).transfer(address(swap), 300 * WAD);
-        uint res = swap.swap(BUSD, rico, address(swap), EXACT_IN, 300 * WAD, 1);
+        Gem(DAI).transfer(address(swap), 300 * WAD);
+        uint res = swap.swap(DAI, rico, address(swap), EXACT_IN, 300 * WAD, 1);
         // pool has no liquidity
         assert(swap.SWAP_ERR() == res);
 

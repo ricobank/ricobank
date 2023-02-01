@@ -57,7 +57,7 @@ contract Ball is Math, UniSetUp {
     bytes32 internal constant RTAG = "ricousd";
     uint256 internal constant HALF = 5 * 10**17;
     uint256 internal constant FEE  = 3 * 10**15;
-    address internal constant BUSD = 0x4Fabb145d64652a948d72533023f6E7A623C7C53;
+    address internal constant DAI = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
     address public rico;
     address public risk;
     BalancerFlower public flow;
@@ -170,19 +170,19 @@ contract Ball is Math, UniSetUp {
         vat.give(roll);
 
         ricoref = create_pool(PoolArgs(
-            Asset(rico, 0), Asset(BUSD, 0), 500, init_sqrtparx96, 0, 0, 0
+            Asset(rico, 0), Asset(DAI, 0), 500, init_sqrtparx96, 0, 0, 0
         ));
 
         adapt = new UniswapV3Adapter(Feedbase(feedbase));
-        address ethbusdpooladdr = 0x4Ff7E1E713E30b0D1Fb9CD00477cEF399ff9D493;
+        address ethdaipooladdr = 0xC2e9F25Be6257c210d7Adf0D4Cd6E3E881ba25f8;
         // quarter day twap range, 1hr ttl
         adapt.setConfig(
             WTAG,
-            UniswapV3Adapter.Config(ethbusdpooladdr, 20000, 3600, true)
+            UniswapV3Adapter.Config(ethdaipooladdr, 20000, 3600, true)
         );
         adapt.setConfig(
             RTAG,
-            UniswapV3Adapter.Config(address(ricoref), 20000, 3600, BUSD < rico)
+            UniswapV3Adapter.Config(address(ricoref), 20000, 3600, DAI < rico)
         );
         adapt.ward(roll, true);
         adapt.ward(address(this), false);
@@ -202,13 +202,13 @@ contract Ball is Math, UniSetUp {
         divider.ward(roll, true);
         divider.ward(address(this), false);
 
-        // median([(dbusd / dweth) / (dbusd / drico)]) == drico / dweth
+        // median([(ddai / dweth) / (ddai / drico)]) == drico / dweth
         sources = new address[](1);
         sources[0] = address(divider);
         mdn.setSources(sources);
         mdn.setOwner(roll);
 
-        // vox needs rico-busd
+        // vox needs rico-dai
         vox.link('tip', address(mdn));
         vox.file('tag', RTAG);
         vox.give(roll);

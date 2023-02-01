@@ -9,13 +9,11 @@ import { Asset, PoolArgs, Swapper, UniSetUp } from './UniHelper.sol';
 import { WethLike } from "./RicoHelper.sol";
 
 
-
 ///@notice unit test of UniSwapper only, excludes use of ricobank and pool creation
 contract UniTest is Test, UniSetUp, Math {
     address public immutable self   = address(this);
     address public immutable GATE   = 0xa3A7B6F88361F48403514059F1F16C8E78d60EeC;
     address public immutable BAL    = 0xba100000625a3754423978a60c9317c58a424e3D;
-    address public immutable CRV    = 0xD533a949740bb3306d119CC777fa900bA034cd52;
     address public immutable UNI    = 0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984;
     uint256 public immutable lump   = 10000 * WAD;
     uint256 public immutable chip   = 100 * WAD;
@@ -31,7 +29,6 @@ contract UniTest is Test, UniSetUp, Math {
         gemfab = new GemFab();
         swap = new Swapper();
         swap.approveGem(BAL, ROUTER);
-        swap.approveGem(CRV, ROUTER);
         swap.approveGem(UNI, ROUTER);
         swap.approveGem(WETH, ROUTER);
 
@@ -39,8 +36,6 @@ contract UniTest is Test, UniSetUp, Math {
 
         vm.prank(GATE);
         Gem(BAL).transfer(address(swap), lump);
-        vm.prank(GATE);
-        Gem(CRV).transfer(address(swap), lump);
         vm.prank(GATE);
         Gem(UNI).transfer(address(swap), lump);
         weth.deposit{value: lump}();
