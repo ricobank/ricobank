@@ -508,4 +508,13 @@ contract VatTest is Test, RicoSetUp {
         Vat.Spot safe3 = vat.safe(gilk, self);
         assertEq(uint(safe3), uint(Vat.Spot.Sunk));
     }
+
+    function test_par() public {
+        assertEq(vat.par(), RAY);
+        vat.frob(gilk, self, int(100 * WAD), int(50 * WAD));
+        assertEq(uint(vat.safe(gilk, self)), uint(Vat.Spot.Safe));
+        // par increase should increase collateral requirement
+        vat.prod(RAY * 3);
+        assertEq(uint(vat.safe(gilk, self)), uint(Vat.Spot.Sunk));
+    }
 }
