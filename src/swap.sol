@@ -2,72 +2,65 @@
 
 pragma solidity 0.8.17;
 
+import { ISwapRouter } from './TEMPinterface.sol';
 import './mixin/ward.sol';
 
-interface IAsset {}
-interface BalancerV2Types {
-    enum SwapKind { GIVEN_IN, GIVEN_OUT }
-    struct SingleSwap {
-       bytes32 poolId;
-       SwapKind kind;
-       IAsset assetIn;
-       IAsset assetOut;
-       uint256 amount;
-       bytes userData;
+abstract contract UniSwapper is Ward {
+    struct Path {
+        bytes fore;
+        bytes rear;
     }
-    struct FundManagement {
-        address sender;
-        bool fromInternalBalance;
-        address payable recipient;
-        bool toInternalBalance;
-    }
-}
+    enum SwapKind {EXACT_IN, EXACT_OUT}
+    // tokIn -> kind -> Path
+    mapping(address=>mapping(address=>Path)) public paths;
 
-interface BalancerV2VaultLike is BalancerV2Types {
-    function swap(
-        SingleSwap calldata singleSwap,
-        FundManagement calldata funds,
-        uint256 limit,
-        uint256 deadline
-    ) external returns (uint256);
-}
-
-abstract contract BalancerSwapper is BalancerV2Types, Ward {
     uint256 public constant SWAP_ERR = type(uint256).max;
-    BalancerV2VaultLike public bvault;
-    // tokIn -> tokOut -> poolID
-    mapping(address=>mapping(address=>bytes32)) public pools;
 
-    function setPool(address a, address b, bytes32 id)
+    ISwapRouter public router;
+
+    function setPath(address tokIn, address tokOut, bytes calldata fore, bytes calldata rear)
       _ward_ external {
-        pools[a][b] = id;
+        Path storage path = paths[tokIn][tokOut];
+        path.fore = fore;
+        path.rear = rear;
     }
 
-    function setVault(address v)
+    function setSwapRouter(address r)
       _ward_ external {
-        bvault = BalancerV2VaultLike(v);
+        router = ISwapRouter(r);
     }
 
     function _swap(address tokIn, address tokOut, address receiver, SwapKind kind, uint amt, uint limit)
             internal returns (uint256 result) {
-        SingleSwap memory ss = SingleSwap({
-            poolId: pools[tokIn][tokOut],
-            kind: kind,
-            assetIn: IAsset(tokIn),
-            assetOut: IAsset(tokOut),
-            amount: amt,
-            userData: ""
-        });
-        FundManagement memory fm = FundManagement({
-            sender: address(this),
-            fromInternalBalance: false,
-            recipient: payable(receiver),
-            toInternalBalance: false
-        });
-        try bvault.swap(ss, fm, limit, block.timestamp) returns (uint res) {
-            result = res;
-        } catch {
-            result = SWAP_ERR;
+        if (kind == SwapKind.EXACT_IN) {
+            ISwapRouter.ExactInputParams memory params =
+                ISwapRouter.ExactInputParams({
+                    path : paths[tokIn][tokOut].fore,
+                    recipient : receiver,
+                    deadline : block.timestamp,
+                    amountIn : amt,
+                    amountOutMinimum : limit
+                });
+            try router.exactInput(params) returns (uint res) {
+                result = res;
+            } catch {
+                result = SWAP_ERR;
+            }
+        } else {
+            ISwapRouter.ExactOutputParams memory params =
+                ISwapRouter.ExactOutputParams({
+                    path: paths[tokIn][tokOut].rear,
+                    recipient: receiver,
+                    deadline: block.timestamp,
+                    amountOut: amt,
+                    amountInMaximum: limit
+                });
+
+            try router.exactOutput(params) returns (uint res) {
+                result = res;
+            } catch {
+                result = SWAP_ERR;
+            }
         }
     }
 }

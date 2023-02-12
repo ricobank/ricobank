@@ -8,9 +8,9 @@
 [submodule "lib/weth"]
 	path = lib/weth
 	url = https://github.com/etherpacks/weth
-[submodule "lib/balancer2"]
-	path = lib/balancer2
-	url = https://github.com/etherpacks/balancer2
 [submodule "lib/forge-std"]
 	path = lib/forge-std
 	url = https://github.com/foundry-rs/forge-std
+[submodule "lib/uniswapv3"]
+	path = lib/uniswapv3
+	url = https://github.com/etherpacks/uniswapv3.git

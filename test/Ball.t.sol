@@ -11,18 +11,18 @@ import { Feedbase } from '../lib/feedbase/src/Feedbase.sol';
 import { Divider } from '../lib/feedbase/src/combinators/Divider.sol';
 import { Medianizer } from '../lib/feedbase/src/Medianizer.sol';
 import { UniswapV3Adapter } from "../lib/feedbase/src/adapters/UniswapV3Adapter.sol";
-import { BalSetUp } from "./RicoHelper.sol";
-import { UniSwapper } from '../src/swap2.sol';
+import { UniSwapper } from '../src/swap.sol';
 import { Vat } from '../src/vat.sol';
 import { Math } from '../src/mixin/math.sol';
 import { WethLike } from '../test/RicoHelper.sol';
 
-contract BallTest is Test, BalSetUp, UniSetUp, Math {
+contract BallTest is Test, UniSetUp, Math {
     bytes32 internal constant WILK = "weth";
     uint8   public immutable EXACT_IN  = 0;
     uint8   public immutable EXACT_OUT = 1;
     address internal constant DAI   = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
     address internal constant VAULT = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;
+    address internal constant WETH  = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
     // TODO these should have dashes
     bytes32 internal constant WTAG = "wethusd";
     bytes32 internal constant WRTAG = "wethrico";
@@ -41,9 +41,7 @@ contract BallTest is Test, BalSetUp, UniSetUp, Math {
         GemFabLike gf = GemFabLike(address(new GemFab()));
         Feedbase fb = new Feedbase();
         // todo par arg
-        Ball ball = new Ball(
-            gf, address(fb), aweth, BAL_W_P_F, BAL_VAULT
-        );
+        Ball ball = new Ball(gf, address(fb), aweth, factory, router);
         skip(BANKYEAR);
         uint usedgas     = gas - gasleft();
         uint expectedgas = 25271853;
@@ -56,9 +54,9 @@ contract BallTest is Test, BalSetUp, UniSetUp, Math {
 
         swap = new Swapper();
         rico = ball.rico();
-        swap.approveGem(DAI, ROUTER);
-        swap.approveGem(rico, ROUTER);
-        swap.setSwapRouter(ROUTER);
+        swap.approveGem(DAI, router);
+        swap.approveGem(rico, router);
+        swap.setSwapRouter(router);
         // Create a path to swap UNI for WETH in a single hop
         address [] memory addr2 = new address[](2);
         uint24  [] memory fees1 = new uint24 [](1);
@@ -67,7 +65,6 @@ contract BallTest is Test, BalSetUp, UniSetUp, Math {
         fees1[0] = 500;
         bytes memory fore;
         bytes memory rear;
-
         (fore, rear) = create_path(addr2, fees1);
         swap.setPath(DAI, rico, fore, rear);
 

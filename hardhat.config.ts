@@ -3,11 +3,10 @@ import '@nomiclabs/hardhat-ethers'
 import './lib/gemfab/task/deploy-gemfab'
 import './lib/feedbase/task/deploy-feedbase'
 import './lib/weth/task/deploy-mock-weth'
-import './lib/balancer2/task/deploy-mock-balancer'
+import './lib/uniswapv3/task/deploy-uniswapv3'
 
 import './task/deploy-mock-gemfab'
 import './task/deploy-mock-feedbase'
-import './task/build-weighted-bpool'
 
 import './task/deploy-mock-dependencies'
 import './task/deploy-ricobank'

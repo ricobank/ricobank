@@ -3,7 +3,7 @@ pragma solidity 0.8.17;
 
 import { Gem } from '../lib/gemfab/src/gem.sol';
 import { Ball } from '../src/ball.sol';
-import { UniSwapper } from '../src/swap2.sol';
+import { UniSwapper } from '../src/swap.sol';
 import { INonfungiblePositionManager, IUniswapV3Factory, IUniswapV3Pool } from '../src/TEMPinterface.sol';
 
 struct Asset {
@@ -33,12 +33,8 @@ contract Swapper is UniSwapper {
 }
 
 abstract contract UniSetUp {
-    address constant FACTORY = 0x1F98431c8aD98523631AE4a59f267346ea31F984;
     INonfungiblePositionManager constant nfpm =
         INonfungiblePositionManager(0xC36442b4a4522E871399CD717aBDD847Ab11FE88);
-    address constant ROUTER  = 0xE592427A0AEce92De3Edee1F18E0157C05861564;
-    address constant WETH    = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
-
     // copied from:
     // https://github.com/Uniswap/v3-core/blob/main/contracts/libraries/TickMath.sol
     // SPDX-License-Identifier: GPL-2.0-or-later
@@ -49,6 +45,9 @@ abstract contract UniSetUp {
     //////////////////////////////////
 
     uint160 internal constant X96            = 2 ** 96;
+
+    address factory = 0x1F98431c8aD98523631AE4a59f267346ea31F984;
+    address router  = 0xE592427A0AEce92De3Edee1F18E0157C05861564;
 
     function create_path(address[] memory tokens, uint24[] memory fees)
             internal pure returns (bytes memory fore, bytes memory rear) {
@@ -65,6 +64,21 @@ abstract contract UniSetUp {
         }
     }
 
+    function getPoolAddr(address token0, address token1, uint24 fee) internal view returns (address pool) {
+        pool = IUniswapV3Factory(factory).getPool(token0, token1, fee);
+    }
+
+    function getArgs(address tok1, uint256 amt1, address tok2, uint256 amt2, uint24 fee, uint160 sqrtPriceX96)
+            internal view returns (PoolArgs memory args) {
+        Asset memory a1 = Asset(tok1, amt1);
+        Asset memory a2 = Asset(tok2, amt2);
+        uint160 sqrtSpreadX96 = x96div(x96(101), x96(100));
+        uint160 low = x96div(sqrtPriceX96, sqrtSpreadX96);
+        uint160 high = x96mul(sqrtPriceX96, sqrtSpreadX96);
+        int24  spacing = IUniswapV3Factory(factory).feeAmountTickSpacing(fee);
+        args = PoolArgs(a1, a2, fee, sqrtPriceX96, low, high, spacing);
+    }
+
     function createAndInitializePoolIfNecessary(
         address token0,
         address token1,
@@ -72,10 +86,10 @@ abstract contract UniSetUp {
         uint160 sqrtPriceX96
     ) internal returns (address pool) {
         require(token0 < token1);
-        pool = IUniswapV3Factory(FACTORY).getPool(token0, token1, fee);
+        pool = IUniswapV3Factory(factory).getPool(token0, token1, fee);
 
         if (pool == address(0)) {
-            pool = IUniswapV3Factory(FACTORY).createPool(token0, token1, fee);
+            pool = IUniswapV3Factory(factory).createPool(token0, token1, fee);
             IUniswapV3Pool(pool).initialize(sqrtPriceX96);
         } else {
             (uint160 sqrtPriceX96Existing, , , , , , ) = IUniswapV3Pool(pool).slot0();
@@ -103,8 +117,8 @@ abstract contract UniSetUp {
         ));
     }
 
-    function create_and_join_pool(PoolArgs memory args) internal {
-        create_pool(args);
+    function create_and_join_pool(PoolArgs memory args) internal returns (IUniswapV3Pool pool)  {
+        pool = create_pool(args);
         join_pool(args);
     }
 
@@ -119,7 +133,7 @@ abstract contract UniSetUp {
             (0 == args.low && 0 == args.high),
             "low and high must be both 0, or both positive"
         );
- 
+
         if (args.a1.token > args.a2.token){
             Asset memory a;
             a = args.a1;

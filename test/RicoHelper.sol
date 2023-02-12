@@ -4,7 +4,7 @@ pragma solidity 0.8.17;
 import 'forge-std/Test.sol';
 
 import '../src/mixin/math.sol';
-import { BalancerFlower } from '../src/flow.sol';
+import { UniFlower } from '../src/flow.sol';
 import { Feedbase } from '../lib/feedbase/src/Feedbase.sol';
 import { Divider } from '../lib/feedbase/src/combinators/Divider.sol';
 import { Medianizer } from '../lib/feedbase/src/Medianizer.sol';
@@ -15,7 +15,6 @@ import { Vat } from '../src/vat.sol';
 import { Vow } from '../src/vow.sol';
 import { Vox } from '../src/vox.sol';
 
-import { BalSetUp } from "./BalHelper.sol";
 import { UniSetUp } from "./UniHelper.sol";
 
 interface WethLike {
@@ -25,11 +24,15 @@ interface WethLike {
     function balanceOf(address) external returns (uint);
 }
 
-abstract contract RicoSetUp is BalSetUp, Math {
-    address constant public WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+abstract contract RicoSetUp is UniSetUp, Math, Test {
+    address constant public DAI   = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
+    address constant public WETH  = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+    address constant public VAULT = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;
+    bytes32 constant public dilk = "dai";
     bytes32 constant public gilk = "gold";
     bytes32 constant public wilk = "weth";
     bytes32 constant public rilk = "ruby";
+    bytes32 constant public dutag = "daiusd";
     bytes32 constant public grtag = "goldrico";
     bytes32 constant public wrtag = "wethrico";
 
@@ -39,10 +42,11 @@ abstract contract RicoSetUp is BalSetUp, Math {
     address public immutable azero = address(0);
     address public immutable self = address(this);
 
-    BalancerFlower public flow;
+    UniFlower public flow;
     GemFabLike public gemfab;
     Ball     public ball;
     Feedbase public feed;
+    Gem      public dai;
     Gem      public gold;
     Gem      public ruby;
     Gem      public rico;
@@ -78,7 +82,7 @@ abstract contract RicoSetUp is BalSetUp, Math {
         feed = new Feedbase();
         gemfab = GemFabLike(address(new GemFab()));
 
-        ball = new Ball(gemfab, address(feed), WETH, BAL_W_P_F, BAL_VAULT);
+        ball = new Ball(gemfab, address(feed), WETH, factory, router);
 
         rico = Gem(ball.rico());
         risk = Gem(ball.risk());
@@ -103,7 +107,20 @@ abstract contract RicoSetUp is BalSetUp, Math {
         make_feed(rtag);
         make_feed(wrtag);
         make_feed(grtag);
- 
+    }
+
+    function init_dai() public {
+        dai = Gem(DAI);
+        vm.prank(VAULT);
+        dai.transfer(address(this), 10000 * WAD);
+        dai.approve(avat, type(uint256).max);
+        vat.init(dilk, address(dai), self, dutag);
+        vat.filk(dilk, bytes32('chop'), RAD);
+        vat.filk(dilk, bytes32('line'), init_mint * 10 * RAD);
+        vat.filk(dilk, bytes32('fee'),  1000000001546067052200000000);  // 5%
+        // feedpush(dutag, bytes32(RAY), block.timestamp + 1000);
+        vat.list(DAI, true);
+        vow.grant(DAI);
     }
 
     function init_gold() public {

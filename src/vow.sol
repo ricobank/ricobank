@@ -5,7 +5,7 @@
 
 pragma solidity 0.8.17;
 
-import { BalancerFlower, Flowback } from './flow.sol';
+import { UniFlower, Flowback } from './flow.sol';
 import { Math } from './mixin/math.sol';
 import { Vat } from './vat.sol';
 import { Gem } from '../lib/gemfab/src/gem.sol';
@@ -26,7 +26,7 @@ contract Vow is Flowback, Math, Ward {
     address internal immutable yank = address(0);
     address internal immutable self = address(this);
 
-    BalancerFlower public flow;
+    UniFlower public flow;
     Vat  public vat;
     Gem  public RICO;
     Gem  public RISK;
@@ -84,7 +84,7 @@ contract Vow is Flowback, Math, Ward {
 
     function link(bytes32 key, address val) external
       _ward_ {
-             if (key == "flow") { flow = BalancerFlower(val); }
+             if (key == "flow") { flow = UniFlower(val); }
         else if (key == "RISK") { RISK = Gem(val); }
         else if (key == "RICO") { RICO = Gem(val); }
         else if (key == "vat")  { vat  = Vat(val); }

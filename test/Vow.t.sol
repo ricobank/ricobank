@@ -8,15 +8,14 @@ import { Gem } from '../lib/gemfab/src/gem.sol';
 import { Vat } from '../src/vat.sol';
 import { Vow } from '../src/vow.sol';
 import { RicoSetUp, WethLike } from "./RicoHelper.sol";
-import { Asset, PoolArgs } from "./BalHelper.sol";
-import { BalancerFlower } from '../src/flow.sol';
+import { Asset, PoolArgs } from "./UniHelper.sol";
+import { UniFlower } from '../src/flow.sol';
 
 contract VowTest is Test, RicoSetUp {
     uint256 public init_join = 1000;
     uint stack = WAD * 10;
     bytes32[] ilks;
-    bytes32 pool_id_rico_risk;
-    bytes32 pool_id_gold_rico;
+    address rico_risk_pool;
 
     function setUp() public {
         make_bank();
@@ -36,45 +35,38 @@ contract VowTest is Test, RicoSetUp {
         curb(azero, 1e18, 1e12, 0, 600, 1);
 
         // have 10k each of rico, risk and gold
-        gold.approve(BAL_VAULT, type(uint256).max);
-        rico.approve(BAL_VAULT, type(uint256).max);
-        risk.approve(BAL_VAULT, type(uint256).max);
+        gold.approve(router, type(uint256).max);
+        rico.approve(router, type(uint256).max);
+        risk.approve(router, type(uint256).max);
         gold.approve(address(flow), type(uint256).max);
         rico.approve(address(flow), type(uint256).max);
         risk.approve(address(flow), type(uint256).max);
 
-        Asset memory gold_asset = Asset(agold, 5 * WAD / 10, 1000 * WAD);
-        Asset memory rico_asset = Asset(arico, 5 * WAD / 10, 1000 * WAD);
-        Asset memory risk_asset = Asset(arisk, 5 * WAD / 10, 1000 * WAD);
+        rico_risk_pool = getPoolAddr(arico, arisk, 3000);
+        PoolArgs memory rico_risk_args = getArgs(arico, 1000 * WAD, arisk, 1000 * WAD, 3000, x96(1));
+        join_pool(rico_risk_args);
 
-        PoolArgs memory rico_risk_args = PoolArgs(rico_asset, risk_asset, "mock", "MOCK", WAD / 100);
-        PoolArgs memory gold_rico_args = PoolArgs(gold_asset, rico_asset, "mock", "MOCK", WAD / 100);
+        PoolArgs memory gold_rico_args = getArgs(agold, 1000 * WAD, arico, 1000 * WAD, 3000, x96(1));
+        create_and_join_pool(gold_rico_args);
 
-        pool_id_rico_risk = flow.pools(arico, arisk);
-        join_pool(rico_risk_args, pool_id_rico_risk);
-        pool_id_gold_rico = create_and_join_pool(gold_rico_args);
-
-        flow.setPool(agold, arico, pool_id_gold_rico);
-
+        address [] memory addr2 = new address[](2);
+        uint24  [] memory fees1 = new uint24 [](1);
+        bytes memory fore;
+        bytes memory rear;
+        addr2[0] = agold;
+        addr2[1] = arico;
+        fees1[0] = 3000;
+        (fore, rear) = create_path(addr2, fees1);
+        flow.setPath(agold, arico, fore, rear);
     }
 
     // goldusd, par, and liqr all = 1 after set up.
     function test_risk_ramp_is_used() public {
         // set rate of risk sales to near zero
-        address[] memory tokens;
-        uint256[] memory balances0;
-        uint256[] memory balances1;
-        uint256 lastChangeBlock;
-        uint rico_index = 0;
-        uint risk_index = 1;
         // set mint ramp higher to use risk ramp
         curb(azero, WAD, WAD, block.timestamp - 1, 1, 1);
         curb(arisk, 1, 1, block.timestamp - 1, 1, 1);
-        (tokens, balances0, lastChangeBlock) = vault.getPoolTokens(pool_id_rico_risk);
-        if (arisk == tokens[0]) {
-            risk_index = 0;
-            rico_index = 1;
-        }
+        uint256 pool_risk_0 = risk.balanceOf(rico_risk_pool);
 
         // setup frobbed to edge, dropping gold price puts system way underwater
         feed.push(grtag, bytes32(RAY), block.timestamp + 10000);
@@ -84,10 +76,10 @@ contract VowTest is Test, RicoSetUp {
         flow.glug(aid);
         aid = vow.keep(ilks);
         flow.glug(aid);
-        (tokens, balances1, lastChangeBlock) = vault.getPoolTokens(pool_id_rico_risk);
+        uint256 pool_risk_1 = risk.balanceOf(rico_risk_pool);
 
         // correct risk ramp usage should limit sale to one
-        uint risk_sold = balances1[risk_index] - balances0[risk_index];
+        uint risk_sold = pool_risk_1 - pool_risk_0;
         assertTrue(risk_sold == 1);
     }
 }
@@ -120,15 +112,15 @@ contract VowJsTest is Test, RicoSetUp {
     Usr cat;
     address b;
     address c;
+    address rico_risk_pool;
     WethLike weth;
-    bytes32 poolid_weth_rico;
-    bytes32 poolid_risk_rico;
     bytes32 i0;
     bytes32[] ilks;
     uint prevcount;
 
     function setUp() public {
         make_bank();
+        init_dai();
         weth = WethLike(WETH);
         me = address(this);
         bob = new Usr(vat, weth);
@@ -165,26 +157,24 @@ contract VowJsTest is Test, RicoSetUp {
         cat.frob(i0, c, int(4001 * WAD), int(4000 * WAD));
         cat.transfer(arico, me, 4000 * WAD);
 
-        weth.approve(address(vault), UINT256_MAX);
-        rico.approve(address(vault), UINT256_MAX);
-        risk.approve(address(vault), UINT256_MAX);
+        weth.approve(address(router), UINT256_MAX);
+        rico.approve(address(router), UINT256_MAX);
+        risk.approve(address(router), UINT256_MAX);
+        dai.approve(address(router), UINT256_MAX);
 
-        poolid_weth_rico = flow.pools(WETH, arico);
-        Asset memory weth_asset = Asset(WETH, 5 * WAD / 10, 2000 * WAD);
-        Asset memory rico_asset = Asset(arico, 5 * WAD / 10, 2000 * WAD);
-        PoolArgs memory weth_rico_args = PoolArgs(weth_asset, rico_asset, "mock", "MOCK", WAD / 100);
-        join_pool(weth_rico_args, poolid_weth_rico);
+        PoolArgs memory dai_rico_args = getArgs(DAI, 2000 * WAD, arico, 2000 * WAD, 500, x96(1));
+        join_pool(dai_rico_args);
 
-        Asset memory risk_asset = Asset(arisk, 5 * WAD / 10, 2000 * WAD);
-        poolid_risk_rico = flow.pools(arisk, arico);
-        PoolArgs memory risk_rico_args = PoolArgs(risk_asset, rico_asset, "mock", "MOCK", WAD / 100);
-        join_pool(risk_rico_args, poolid_risk_rico);
+        PoolArgs memory risk_rico_args = getArgs(arisk, 2000 * WAD, arico, 2000 * WAD, 3000, x96(1));
+        join_pool(risk_rico_args);
+        rico_risk_pool = getPoolAddr(arisk, arico, 3000);
 
         curb(WETH, WAD, WAD / 10000, 0, 600, 1);
         curb(arico, WAD, WAD / 10000, 0, 600, 1);
 
         flow.approve_gem(arico);
         flow.approve_gem(arisk);
+        flow.approve_gem(DAI);
         flow.approve_gem(WETH);
         prevcount = flow.count();
 
@@ -206,13 +196,19 @@ contract VowJsTest is Test, RicoSetUp {
 
         vm.expectCall(address(flow), abi.encodePacked(flow.flow.selector));
         uint256 aid = vow.bail(i0, me);
-        flow.glug(aid);
-
+        // after bail the ink should have been grabbed
         (uint ink, uint art) = vat.urns(i0, me);
+        assertEq(ink, 0);
+        assertEq(art, 0);
+
+        flow.glug(aid);
+        (ink, art) = vat.urns(i0, me);
+        // weth-dai market price is much higher than 1 in fork block, expect a refund
+        assertGt(ink, 0);
+
         uint sin1 = vat.sin(avow);
         uint gembal1 = weth.balanceOf(address(flow));
         uint vow_rico1 = rico.balanceOf(avow);
-        assertEq(ink, 0);
         assertEq(art, 0);
         assertGt(sin1, 0);
         assertGt(vow_rico1, 0);
@@ -318,28 +314,31 @@ contract VowJsTest is Test, RicoSetUp {
         uint vow_rico_0 = rico.balanceOf(avow);
         uint vat_weth_0 = weth.balanceOf(avat);
         vm.expectCall(address(flow), abi.encodePacked(flow.flow.selector));
-        aid = vow.bail(i0, me);
+        uint bail_aid = vow.bail(i0, me);
+
+        // collateral has been grabbed but not sold, so we flop
+        vm.expectCall(address(flow), abi.encodePacked(flow.flow.selector));
+        uint vow_pre_flop_rico = rico.balanceOf(avow);
+        aid = vow.keep(ilks);
         flow.glug(aid);
+
+        // now vow should hold more rico
+        uint vow_post_flop_rico = rico.balanceOf(avow);
+        assertGt(vow_post_flop_rico, vow_pre_flop_rico);
+
+        // now complete the liquidation
+        flow.glug(bail_aid);
         uint vow_rico_1 = rico.balanceOf(avow);
         uint vat_weth_1 = weth.balanceOf(avat);
         assertGt(vow_rico_1, vow_rico_0);
         assertLt(vat_weth_1, vat_weth_0);
-
-        // although the keep joins the rico sin is still greater due to fees so we flop
-        vm.expectCall(address(flow), abi.encodePacked(flow.flow.selector));
-        aid = vow.keep(ilks);
-        flow.glug(aid);
-        // now vow should hold more rico than anti tokens
-        uint sin = vat.sin(avow);
-        uint vow_rico = rico.balanceOf(avow);
-        assertGt(vow_rico * RAY, sin);
     }
 
     function test_tiny_flap_fail() public {
         vow.pair(arico, 'del', 10000 * WAD);
         skip(BANKYEAR);
         vow.bail(i0, me);
-        vm.expectRevert(BalancerFlower.ErrTinyFlow.selector);
+        vm.expectRevert(UniFlower.ErrTinyFlow.selector);
         vow.keep(ilks);
         vow.pair(arico, 'del', 1 * WAD);
         vow.keep(ilks);
@@ -349,7 +348,7 @@ contract VowJsTest is Test, RicoSetUp {
         vow.pair(arisk, 'del', 10000 * WAD);
         skip(BANKYEAR / 2);
         vow.bail(i0, me);
-        vm.expectRevert(BalancerFlower.ErrTinyFlow.selector);
+        vm.expectRevert(UniFlower.ErrTinyFlow.selector);
         vow.keep(ilks);
         vow.pair(arisk, 'del', 1 * WAD);
         vow.keep(ilks);

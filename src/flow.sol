@@ -3,14 +3,14 @@
 pragma solidity 0.8.17;
 
 import './mixin/math.sol';
-import "./swap.sol";
 import { Gem } from '../lib/gemfab/src/gem.sol';
+import "./swap.sol";
 
 interface Flowback {
     function flowback(uint256 aid, uint refund) external;
 }
 
-contract BalancerFlower is Math, BalancerSwapper {
+contract UniFlower is Math, UniSwapper {
     struct Ramp {
         uint256 vel;  // [wad] Stream speed wei/sec
         uint256 rel;  // [wad] Speed relative to supply
@@ -60,14 +60,14 @@ contract BalancerFlower is Math, BalancerSwapper {
         uint gain;
 
         if (auction.wam != type(uint256).max) {
-            cost = _swap(hag, auction.wag, vow, SwapKind.GIVEN_OUT, auction.wam, hunk);
+            cost = _swap(hag, auction.wag, vow, SwapKind.EXACT_OUT, auction.wam, hunk);
         }
 
         if (cost != SWAP_ERR) {
             gain = auction.wam;
             last = true;
         } else {
-            gain = _swap(hag, auction.wag, vow, SwapKind.GIVEN_IN, hunk, 0);
+            gain = _swap(hag, auction.wag, vow, SwapKind.EXACT_IN, hunk, 0);
             if (gain == SWAP_ERR) revert ErrSwapFail();
             cost = hunk;
         }
@@ -105,7 +105,7 @@ contract BalancerFlower is Math, BalancerSwapper {
     }
 
     function approve_gem(address gem) external {
-        Gem(gem).approve(address(bvault), type(uint256).max);
+        Gem(gem).approve(address(router), type(uint256).max);
     }
 
     function curb(address gem, bytes32 key, uint val) external {

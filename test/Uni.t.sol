@@ -11,14 +11,15 @@ import { WethLike } from "./RicoHelper.sol";
 
 ///@notice unit test of UniSwapper only, excludes use of ricobank and pool creation
 contract UniTest is Test, UniSetUp, Math {
-    address public immutable self   = address(this);
-    address public immutable GATE   = 0xa3A7B6F88361F48403514059F1F16C8E78d60EeC;
-    address public immutable BAL    = 0xba100000625a3754423978a60c9317c58a424e3D;
-    address public immutable UNI    = 0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984;
-    uint256 public immutable lump   = 10000 * WAD;
-    uint256 public immutable chip   = 100 * WAD;
+    address public immutable self = address(this);
+    address public immutable GATE = 0xa3A7B6F88361F48403514059F1F16C8E78d60EeC;
+    address public immutable BAL  = 0xba100000625a3754423978a60c9317c58a424e3D;
+    address public immutable UNI  = 0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984;
+    uint256 public immutable lump = 10000 * WAD;
+    uint256 public immutable chip = 100 * WAD;
     uint8   public immutable EXACT_IN  = 0;
     uint8   public immutable EXACT_OUT = 1;
+    address public constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
     WethLike weth = WethLike(WETH);
     Swapper swap;
     GemFab gemfab;
@@ -28,11 +29,11 @@ contract UniTest is Test, UniSetUp, Math {
     function setUp() public {
         gemfab = new GemFab();
         swap = new Swapper();
-        swap.approveGem(BAL, ROUTER);
-        swap.approveGem(UNI, ROUTER);
-        swap.approveGem(WETH, ROUTER);
+        swap.approveGem(BAL, router);
+        swap.approveGem(UNI, router);
+        swap.approveGem(WETH, router);
 
-        swap.setSwapRouter(ROUTER);
+        swap.setSwapRouter(router);
 
         vm.prank(GATE);
         Gem(BAL).transfer(address(swap), lump);
@@ -117,8 +118,8 @@ contract UniTest is Test, UniSetUp, Math {
     }
 
     function test_join(Gem token0, Gem token1) private {
-        swap.approveGem(address(token0), ROUTER);
-        swap.approveGem(address(token1), ROUTER);
+        swap.approveGem(address(token0), router);
+        swap.approveGem(address(token1), router);
         addr2 = new address[](2);
         fees1 = new uint24 [](1);
         addr2[0] = address(token0);

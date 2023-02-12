@@ -7,9 +7,9 @@ import { Ball } from '../src/ball.sol';
 import { Vat } from '../src/vat.sol';
 import { Gem } from '../lib/gemfab/src/gem.sol';
 import { Vow } from '../src/vow.sol';
-import { BalancerFlower } from '../src/flow.sol';
+import { UniFlower } from '../src/flow.sol';
 import { RicoSetUp } from "./RicoHelper.sol";
-import { Asset, BalSetUp, PoolArgs } from "./BalHelper.sol";
+import { Asset, PoolArgs } from "./UniHelper.sol";
 
 contract Usr {
     Vat public vat;
@@ -56,8 +56,8 @@ contract DssJsTest is Test, RicoSetUp {
     uint256 public init_join = 1000;
     uint stack = WAD * 10;
     bytes32[] ilks;
-    bytes32 pool_id_rico_risk;
-    bytes32 pool_id_gold_rico;
+    address rico_risk_pool;
+    address gold_rico_pool;
     address me;
     Usr ali;
     Usr bob;
@@ -70,6 +70,7 @@ contract DssJsTest is Test, RicoSetUp {
     Gem joy;
     uint rico_gemrico = 10000 * WAD;
     uint goldprice = 40 * RAY / 110;
+    uint160 market_price = x96(15) / 10;
     uint gembal = rico_gemrico * goldprice / RAY;
     uint constant rico_riskrico = 10000 * WAD;
     uint total_pool_rico = rico_gemrico + rico_riskrico;
@@ -111,9 +112,9 @@ contract DssJsTest is Test, RicoSetUp {
 
         feedpush(grtag, bytes32(RAY), block.timestamp + 1000);
 
-        gem.approve(BAL_VAULT, UINT256_MAX);
-        rico.approve(BAL_VAULT, UINT256_MAX);
-        risk.approve(BAL_VAULT, UINT256_MAX);
+        gem.approve(router, UINT256_MAX);
+        rico.approve(router, UINT256_MAX);
+        risk.approve(router, UINT256_MAX);
         gem.approve(address(flow), UINT256_MAX);
         rico.approve(address(flow), UINT256_MAX);
         risk.approve(address(flow), UINT256_MAX);
@@ -123,23 +124,29 @@ contract DssJsTest is Test, RicoSetUp {
         risk.mint(me, total_pool_risk);
 
         // connecting flower
-        flow.setVault(BAL_VAULT);
         flow.approve_gem(address(gem));
 
         // create pool
-        Asset memory gold_rico_asset = Asset(address(gold), 5 * WAD / 10, gembal);
-        Asset memory rico_gold_asset = Asset(address(rico), 5 * WAD / 10, rico_gemrico);
-        Asset memory rico_risk_asset = Asset(address(rico), 5 * WAD / 10, rico_riskrico);
-        Asset memory risk_rico_asset = Asset(address(risk), 5 * WAD / 10, total_pool_risk);
+        PoolArgs memory gold_rico_args = getArgs(agold, gembal, arico, rico_gemrico, 3000, market_price);
+        gold_rico_pool = address(create_and_join_pool(gold_rico_args));
 
-        PoolArgs memory rico_risk_args = PoolArgs(risk_rico_asset, rico_risk_asset, "mock", "MOCK", WAD / 100);
-        PoolArgs memory gold_rico_args = PoolArgs(gold_rico_asset, rico_gold_asset, "mock", "MOCK", WAD / 100);
+        PoolArgs memory rico_risk_args = getArgs(arico, rico_riskrico, arisk, total_pool_risk, 3000, x96(1));
+        join_pool(rico_risk_args);
+        rico_risk_pool = getPoolAddr(arico, arisk, 3000);
 
-        pool_id_gold_rico = create_and_join_pool(gold_rico_args);
-        pool_id_rico_risk = create_and_join_pool(rico_risk_args);
-        flow.setPool(address(gem), address(rico), pool_id_gold_rico);
-        flow.setPool(address(risk), address(rico), pool_id_rico_risk);
-        flow.setPool(address(rico), address(risk), pool_id_rico_risk);
+        address [] memory addr2 = new address[](2);
+        uint24  [] memory fees1 = new uint24 [](1);
+        bytes memory fore;
+        bytes memory rear;
+        addr2[0] = agold;
+        addr2[1] = arico;
+        fees1[0] = 3000;
+        (fore, rear) = create_path(addr2, fees1);
+        flow.setPath(agold, arico, fore, rear);
+        flow.setPath(arico, agold, rear, fore);
+
+        // price when entering gold rico isn't perfect, remove gem balance
+        gem.burn(me, gem.balanceOf(me));
 
         assertEq(gem.balanceOf(me), 0);
         assertEq(rico.balanceOf(me), 0);
@@ -494,7 +501,7 @@ contract DssBiteTest is DssVatTest {
 
     // testFail_null_auctions_dink_artificial_values
     //   TODO might be relevant, need to update flow.  right now bill isn't even used, so rico trades all the ink
-    //   with balancer.  N/A for now
+    //   through uniswapv3.  N/A for now
 
     // testFail_null_auctions_dink_artificial_values_2
     //   N/A no dunk, vow always bails whole urn
@@ -535,7 +542,7 @@ contract DssBiteTest is DssVatTest {
         assertEq(rico.balanceOf(address(vow)), 0);
         uint256 aid = vow.bail(i0, me);
         // glug fails since no time has passed
-        vm.expectRevert(BalancerFlower.ErrSwapFail.selector);
+        vm.expectRevert(UniFlower.ErrSwapFail.selector);
         flow.glug(aid);
         assertEq(vat.sin(address(vow)) / RAY, ricoamt);
         assertEq(rico.balanceOf(address(vow)), 0);
@@ -546,13 +553,16 @@ contract DssBiteTest is DssVatTest {
 
         assertEq(vat.sin(address(vow)) / RAY, ricoamt);
         uint ricobought = rico.balanceOf(address(vow));
-        assertRange(ricobought, bailamt * RAY / goldprice, WAD / 50);
+        uint160 sqrt_price_10x = (market_price * 10) / 2**96;
+        assertRange(ricobought, bailamt * sqrt_price_10x * sqrt_price_10x / 100, WAD / 50);
 
         aid = vow.keep(ilks);
         flow.glug(aid);
         // leaves 1 rico to save gas (on top of what's already left, because this is another flop
         assertEq(vat.sin(address(vow)) / RAY, ricoamt - (ricobought - 1));
         assertRange(rico.balanceOf(address(vow)), riskamt, WAD / 50);
+        skip(1); aid = vow.keep(ilks); flow.glug(aid);
+        skip(1); aid = vow.keep(ilks); flow.glug(aid);
         skip(1); aid = vow.keep(ilks); flow.glug(aid);
         skip(1); aid = vow.keep(ilks); flow.glug(aid);
         assertEq(vat.sin(address(vow)), RAY); // healed all but 1 rico to save gas
@@ -570,7 +580,7 @@ contract DssBiteTest is DssVatTest {
         assertEq(vow_Awe() / RAY, 0);
 
         uint256 aid = vow.keep(ilks);
-        vm.expectRevert(BalancerFlower.ErrSwapFail.selector);
+        vm.expectRevert(UniFlower.ErrSwapFail.selector);
         flow.glug(aid);
 
         assertEq(rico.balanceOf(address(vow)), 0);
@@ -586,7 +596,7 @@ contract DssBiteTest is DssVatTest {
         aid = vow.keep(ilks);
         // no surplus or deficit, keep didn't create an auction
         // previous auction has already been deleted
-        vm.expectRevert(BalancerFlower.ErrEmptyAid.selector);
+        vm.expectRevert(UniFlower.ErrEmptyAid.selector);
         flow.glug(aid);
         assertEq(rico.balanceOf(address(vow)), 0);
         assertEq(vow_Awe() / RAY, 0);
@@ -670,11 +680,11 @@ contract DssFlipTest is DssJsTest {
     // test_beg
     // test_deal
     // test_tick
-    //   N/A rico has no auction, immediately trades with balancer
+    //   N/A rico has no auction, trades through uniswapv3
 
     // test_yank_tend
     // test_yank_dent
-    //   N/A rico has no auction, immediately trades with balancer, no shutdown (dss yank is for shutdown) (todo not anymore...)
+    //   N/A rico has no auction, trades through uniswapv3, no shutdown (dss yank is for shutdown) (todo not anymore...)
 
     // test_no_deal_after_end
     //   N/A rico currently has no end
@@ -719,7 +729,7 @@ contract DssFlapTest is DssJsTest {
     // test_tend_dent_same_bidder
     // test_beg
     // test_tick
-    //   N/A rico has standing auction mechanism, immediately trades with balancer (todo not anymore...)
+    //   N/A rico has standing auction mechanism, trades through uniswapv3
 }
 
 
@@ -757,7 +767,7 @@ contract DssFlopTest is DssJsTest {
     // test_dent_Ash_less_than_bid
     // test_dent_same_bidder
     // test_tick
-    //   N/A rico has standing auction mechanism, immediately trades with balancer (todo not anymore...)
+    //   N/A rico has standing auction mechanism, trades through uniswapv3
 
 
     // test_no_deal_after_end
@@ -765,7 +775,7 @@ contract DssFlopTest is DssJsTest {
 
     // test_yank
     // test_yank_no_bids
-    //   N/A rico has no auction, immediately trades with balancer, no shutdown (dss yank is for shutdown) (todo not anymore...)
+    //   N/A rico has no auction, trades through uniswapv3, no shutdown (dss yank is for shutdown)
 }
 
 contract DssClipTest is DssJsTest {
@@ -775,16 +785,6 @@ contract DssClipTest is DssJsTest {
         goldprice = 5 * RAY;
         rico_gemrico = gembal * (goldprice * 11 / 10) / RAY;
         total_pool_rico = rico_gemrico + rico_riskrico;
-
-        gold.mint(me, gembal);
-        rico.mint(me, rico_gemrico);
-        Asset memory gold_rico_asset = Asset(address(gold), 5 * WAD / 10, gembal);
-        Asset memory rico_gold_asset = Asset(address(rico), 5 * WAD / 10, rico_gemrico);
-        PoolArgs memory gold_rico_args = PoolArgs(gold_rico_asset, rico_gold_asset, "mock", "MOCK", WAD / 100);
-
-        pool_id_gold_rico = create_and_join_pool(gold_rico_args);
-        flow.setPool(address(gem), address(rico), pool_id_gold_rico);
-
 
         // vault already has a bunch of rico (dai) and gem (gold)...skip transfers
         // rico (dai) already wards port (DaiJoin)
@@ -800,7 +800,7 @@ contract DssClipTest is DssJsTest {
 
         vat.filk(i0, 'dust', 20 * RAD);
         vat.filk(i0, 'line', 10000 * RAD);
-        vat.file('ceil', (10000 + total_pool_rico) * RAD); // rico has balancer pools, dss doesn't
+        vat.file('ceil', (10000 + total_pool_rico) * RAD); // rico has uni pools, dss doesn't
 
         vat.filk(i0, 'chop', 11 * RAY / 10); // dss uses wad, rico uses ray
         // hole, Hole N/A (similar to cat.box), no rico equivalent, rico bails entire urn
@@ -845,7 +845,7 @@ contract DssClipTest is DssJsTest {
 
         ali.bail(i0, me); // no keeper arg
         uint256 aid = flow.count();
-        vm.expectRevert(BalancerFlower.ErrSwapFail.selector);
+        vm.expectRevert(UniFlower.ErrSwapFail.selector);
         flow.glug(aid);
 
         // clip.kicks() N/A rico flow doesn't count flips
@@ -881,8 +881,8 @@ contract DssClipTest is DssJsTest {
 
         assertEq(gold.balanceOf(me), (1000 - 80) * WAD);
         (ink, art) = vat.urns(i0, me);
-        // dss ink was 0, but rico auctions have flowback
-        assertRange(ink, 110 * WAD * RAY / (goldprice * 11 / 10), WAD / 50);
+        // dss ink was 0, but rico auctions have flowback. In this case the swap doesn't earn enough for a refund
+        assertEq(ink, 0);
         assertEq(art, 0);
 
         assertEq(rico.balanceOf(b), 1000 * WAD); // dss has bailer rewards, rico bark doesn't
@@ -951,7 +951,7 @@ contract DssClipTest is DssJsTest {
     //   N/A no hole or Hole or partial liquidations
 
     // test_take_*, testFail_take_*, test_auction_*
-    //   N/A no standing auction, rico v1 goes through balancer
+    //   N/A no standing auction, rico v1 goes through uniswapv3
 
     // test_redo_*
     //   N/A currently no way to reset dead auctions
@@ -981,7 +981,7 @@ contract DssClipTest is DssJsTest {
     // testFail_take_impersonation
     // test_gas_partial_take
     // test_gas_full_take
-    //   N/A no standing auction, rico v1 goes through balancer, no take
+    //   N/A no standing auction, rico v1 goes through uniswapv3, no take
     //   also no clipper-like callback
 
     function test_gas_bark_kick() public _clip_ {
@@ -1031,7 +1031,7 @@ contract DssVowTest is DssJsTest {
         (,address hag,,,) = flow.auctions(aid);
         assertEq(arisk, hag);
 
-        vm.expectRevert(BalancerFlower.ErrTinyFlow.selector);
+        vm.expectRevert(UniFlower.ErrTinyFlow.selector);
         vow.keep(ilks);
 
         skip(1);
