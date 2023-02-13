@@ -76,6 +76,19 @@ contract Ball is Math, UniSetUp {
 
     address constant DAI_USD_AGG = 0xAed0c38402a5d19df6E4c03F4E2DceD6e29c1ee9;
     address constant XAU_USD_AGG = 0x214eD9Da11D2fbe465a6fc601a91E62EbEc1a0D6;
+    struct IlkParams {
+        bytes32 ilk;
+        address gem;
+        address pool;
+        uint    chop;
+        uint    dust;
+        uint    fee;
+        uint    line;
+        uint    liqr;
+        UniFlower.Ramp ramp;
+        uint    ttl;
+        uint    range;
+    }
 
     struct BallArgs {
         address gemfab;
@@ -84,16 +97,27 @@ contract Ball is Math, UniSetUp {
         address factory;
         address router;
         uint    sqrtpar;
-        bytes32[] ilks;
-        address[] gems;
-        address[] pools;
+        uint    ceil;
+        uint    ricodairange;
+        uint    ricodaittl;
+        uint    daiusdttl;
+        uint    xauusdttl;
+        uint    twaprange;
+        uint    twapttl;
+        uint    progstart;
+        uint    progend;
+        uint    progperiod;
+        UniFlower.Ramp ricoramp;
+        UniFlower.Ramp riskramp;
+        UniFlower.Ramp mintramp;
     }
 
-    constructor(BallArgs memory args) payable {
+    constructor(
+        BallArgs       memory args,
+        IlkParams[]    memory ilks
+    ) payable {
         router = args.router;
         factory = args.factory;
-        require(args.ilks.length == args.gems.length, "ilks and gems don't match");
-        require(args.ilks.length == args.pools.length, "ilks and pools don't match");
         address roll = msg.sender;
         flow = new UniFlower();
 
@@ -115,15 +139,10 @@ contract Ball is Math, UniSetUp {
         vox.link('tip', roll);
         vox.link('vat', address(vat));
 
-        vat.file('ceil',  100000e45);
+        vat.file('ceil',  args.ceil);
         vat.link('feeds', args.feedbase);
         vat.link('rico',  address(rico));
 
-        vow.pair(address(risk), 'vel', 1e18);
-        vow.pair(address(risk), 'rel', 1e12);
-        vow.pair(address(risk), 'bel', 0);
-        vow.pair(address(risk), 'cel', 600);
-        //vow.pair(address(risk), 'del', 1);
         vow.ward(address(flow), true);
 
         vat.ward(address(vow),  true);
@@ -138,46 +157,58 @@ contract Ball is Math, UniSetUp {
         adapt = new UniswapV3Adapter(Feedbase(args.feedbase));
         divider = new Divider(args.feedbase, RAY);
         flow.setSwapRouter(args.router);
-        for (uint i = 0; i < args.ilks.length; i++) {
-            bytes32 ilk = args.ilks[i];
-            address gem = args.gems[i];
-            address pool = args.pools[i];
+        for (uint i = 0; i < ilks.length; i++) {
+            IlkParams memory ilkparams = ilks[i];
+            bytes32 ilk = ilkparams.ilk;
+            address gem = ilkparams.gem;
+            address pool = ilkparams.pool;
             vat.init(ilk, gem, address(mdn), concat(ilk, 'rico'));
             // TODO ilk config values, do we need them in arguments?
-            vat.filk(ilk, 'chop', RAD);
-            vat.filk(ilk, 'dust', 90 * RAD);
-            vat.filk(ilk, 'fee',  1000000001546067052200000000);  // 5%
-            vat.filk(ilk, 'line', 100000 * RAD);
-            vat.filk(ilk, 'liqr', RAY);
+            vat.filk(ilk, 'chop', ilkparams.chop);
+            vat.filk(ilk, 'dust', ilkparams.dust);
+            vat.filk(ilk, 'fee',  ilkparams.fee);  // 5%
+            vat.filk(ilk, 'line', ilkparams.line);
+            vat.filk(ilk, 'liqr', ilkparams.liqr);
             vat.list(gem, true);
             vow.grant(gem);
 
-            address [] memory addr3 = new address[](3);
-            uint24  [] memory fees2 = new uint24 [](2);
-            addr3[0] = gem;
-            addr3[1] = DAI;
-            addr3[2] = rico;
-            fees2[0] = 3000;
-            fees2[1] = 500;
-            (bytes memory f, bytes memory r) = create_path(addr3, fees2);
+            bytes memory f;
+            bytes memory r;
+            if (gem == DAI) {
+                address [] memory a2 = new address[](2);
+                uint24  [] memory f1 = new uint24 [](1);
+                a2[0] = DAI;
+                a2[1] = rico;
+                f1[0] = RICO_FEE;
+                (f, r) = create_path(a2, f1);
+                // dai/rico feed created later
+            } else {
+                address [] memory addr3 = new address[](3);
+                uint24  [] memory fees2 = new uint24 [](2);
+                addr3[0] = gem;
+                addr3[1] = DAI;
+                addr3[2] = rico;
+                fees2[0] = IUniswapV3Pool(pool).fee();
+                fees2[1] = RICO_FEE;
+                (f, r) = create_path(addr3, fees2);
+
+                address[] memory ss = new address[](2);
+                bytes32[] memory ts = new bytes32[](2);
+                ss[0] = address(adapt); ts[0] = concat(ilk, 'dai');
+                ss[1] = address(adapt); ts[1] = RICO_DAI_TAG;
+                adapt.setConfig(
+                    concat(ilk, 'dai'),
+                    UniswapV3Adapter.Config(pool, ilkparams.ttl, ilkparams.range, gem > DAI)
+                );
+                divider.setConfig(concat(ilk, 'rico'), Divider.Config(ss, ts));
+            }
+
             flow.setPath(gem, rico, f, r);
-            vow.pair(gem, "vel", WAD / 1000);
-            vow.pair(gem, "rel", WAD);
-            vow.pair(gem, "bel", block.timestamp);
-            vow.pair(gem, "cel", 1);
-            vow.pair(gem, "del", WAD / 100);
-
-            // quarter day twap range, 1hr ttl
-            adapt.setConfig(
-                concat(ilk, 'dai'),
-                UniswapV3Adapter.Config(pool, 20000, BANKYEAR / 4, true)
-            );
-
-            address[] memory ss = new address[](2);
-            bytes32[] memory ts = new bytes32[](2);
-            ss[0] = address(adapt); ts[0] = concat(ilk, 'dai');
-            ss[1] = address(adapt); ts[1] = RICO_DAI_TAG;
-            divider.setConfig(concat(ilk, 'rico'), Divider.Config(ss, ts));
+            vow.pair(gem, "vel", ilkparams.ramp.vel);
+            vow.pair(gem, "rel", ilkparams.ramp.rel);
+            vow.pair(gem, "bel", ilkparams.ramp.bel);
+            vow.pair(gem, "cel", ilkparams.ramp.cel);
+            vow.pair(gem, "del", ilkparams.ramp.del);
             vow.grant(gem);
         }
 
@@ -201,23 +232,23 @@ contract Ball is Math, UniSetUp {
         (fore, rear) = create_path(addr2, fees1);
         flow.setPath(risk, rico, fore, rear);
         // todo ramp config
-        vow.pair(risk, "vel", WAD);
-        vow.pair(risk, "rel", WAD);
-        vow.pair(risk, "bel", block.timestamp);
-        vow.pair(risk, "cel", 1);
-        vow.pair(risk, "del", WAD / 100);
-        vow.pair(address(0), "vel", WAD);
-        vow.pair(address(0), "rel", WAD);
-        vow.pair(address(0), "bel", block.timestamp);
-        vow.pair(address(0), "cel", 1);
-        vow.pair(address(0), "del", WAD / 100);
+        vow.pair(risk, "vel", args.riskramp.vel);
+        vow.pair(risk, "rel", args.riskramp.rel);
+        vow.pair(risk, "bel", args.riskramp.bel);
+        vow.pair(risk, "cel", args.riskramp.cel);
+        vow.pair(risk, "del", args.riskramp.del);
+        vow.pair(address(0), "vel", args.mintramp.vel);
+        vow.pair(address(0), "rel", args.mintramp.rel);
+        vow.pair(address(0), "bel", args.mintramp.bel);
+        vow.pair(address(0), "cel", args.mintramp.cel);
+        vow.pair(address(0), "del", args.mintramp.del);
 
         flow.setPath(rico, risk, rear, fore);
-        vow.pair(rico, "vel", WAD);
-        vow.pair(rico, "rel", WAD);
-        vow.pair(rico, "bel", block.timestamp);
-        vow.pair(rico, "cel", 1);
-        vow.pair(rico, "del", WAD / 100);
+        vow.pair(rico, "vel", args.ricoramp.vel);
+        vow.pair(rico, "rel", args.ricoramp.rel);
+        vow.pair(rico, "bel", args.ricoramp.bel);
+        vow.pair(rico, "cel", args.ricoramp.cel);
+        vow.pair(rico, "del", args.ricoramp.del);
 
         vow.grant(rico);
         vow.grant(risk);
@@ -232,7 +263,7 @@ contract Ball is Math, UniSetUp {
 
         adapt.setConfig(
             RICO_DAI_TAG,
-            UniswapV3Adapter.Config(address(ricodai), 20000, BANKYEAR / 4, DAI < rico)
+            UniswapV3Adapter.Config(address(ricodai), args.ricodairange, args.ricodaittl, DAI < rico)
         );
         adapt.ward(roll, true);
         adapt.ward(address(this), false);
@@ -250,8 +281,8 @@ contract Ball is Math, UniSetUp {
         // XAU/USD CL -- divider-->divider-->twap-->prog-->inv-->RICO/REF
         // DAI/USD CL ----|
         cladapt = new ChainlinkAdapter(args.feedbase);
-        cladapt.setConfig(XAU_USD_TAG, ChainlinkAdapter.Config(XAU_USD_AGG, BANKYEAR, RAY));
-        cladapt.setConfig(DAI_USD_TAG, ChainlinkAdapter.Config(DAI_USD_AGG, BANKYEAR, RAY));
+        cladapt.setConfig(XAU_USD_TAG, ChainlinkAdapter.Config(XAU_USD_AGG, args.xauusdttl, RAY));
+        cladapt.setConfig(DAI_USD_TAG, ChainlinkAdapter.Config(DAI_USD_AGG, args.daiusdttl, RAY));
         sources[0] = address(cladapt); tags[0] = XAU_USD_TAG;
         sources[1] = address(cladapt); tags[1] = DAI_USD_TAG;
         divider.setConfig(XAU_DAI_TAG, Divider.Config(sources, tags));
@@ -260,14 +291,14 @@ contract Ball is Math, UniSetUp {
         divider.setConfig(XAU_RICO_TAG, Divider.Config(sources, tags));
 
         twap = new TWAP(args.feedbase);
-        twap.setConfig(XAU_RICO_TAG, TWAP.Config(address(divider), 10000, BANKYEAR));
+        twap.setConfig(XAU_RICO_TAG, TWAP.Config(address(divider), args.twaprange, args.twapttl));
         
         progression = new Progression(Feedbase(args.feedbase));
         progression.setConfig(REF_RICO_TAG, Progression.Config(
             address(divider), DAI_RICO_TAG,
             address(twap),    XAU_RICO_TAG,
             // TODO discuss whether 10y is appropriate, decide on period
-            block.timestamp,  block.timestamp + BANKYEAR * 10, BANKYEAR / 12
+            args.progstart,  args.progend, args.progperiod
         ));
 
         sources[0] = address(this); tags[0] = bytes32("ONE");

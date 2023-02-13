@@ -74,18 +74,50 @@ contract BallTest is Test, UniSetUp, Math {
         gf = GemFabLike(address(new GemFab()));
         fb = new Feedbase();
 
-        bytes32[] memory ilks = new bytes32[](1);
-        ilks[0] = WILK;
-        address[] memory gems = new address[](1);
-        gems[0] = WETH;
-        address[] memory pools = new address[](1);
-        pools[0] = WETH_DAI_POOL;
-        Ball ball = new Ball(Ball.BallArgs(
-            address(gf), address(fb), aweth, factory, router, INIT_SQRTPAR, ilks, gems, pools
-        ));
+        Ball.IlkParams[] memory ips = new Ball.IlkParams[](1);
+        ips[0] = Ball.IlkParams(
+            'weth',
+            WETH,
+            WETH_DAI_POOL,
+            RAD, // chop
+            90 * RAD, // dust
+            1000000001546067052200000000, // fee
+            100000 * RAD, // line
+            RAY, // liqr
+            UniFlower.Ramp(WAD / 1000, WAD, block.timestamp, 1, WAD / 100),
+            20000, // ttl
+            BANKYEAR / 4 // range
+        );
+        UniFlower.Ramp memory stdramp = UniFlower.Ramp(
+            WAD, WAD, block.timestamp, 1, WAD / 100
+        );
+        Ball.BallArgs memory bargs = Ball.BallArgs(
+            address(gf),
+            address(fb),
+            aweth,
+            factory,
+            router,
+            INIT_SQRTPAR,
+            100000 * RAD,
+            20000, // ricodai
+            BANKYEAR / 4,
+            BANKYEAR, // daiusd
+            BANKYEAR, // xauusd
+            10000, // twap
+            BANKYEAR,
+            block.timestamp, // prog
+            block.timestamp + BANKYEAR * 10,
+            BANKYEAR / 12,
+            stdramp,
+            stdramp,
+            stdramp
+        );
+
+        Ball ball = new Ball(bargs, ips);
+
         skip(BANKYEAR / 2);
         uint usedgas     = gas - gasleft();
-        uint expectedgas = 27299482;
+        uint expectedgas = 27296180;
         if (usedgas < expectedgas) {
             console.log("ball saved %s gas...currently %s", expectedgas - usedgas, usedgas);
         }

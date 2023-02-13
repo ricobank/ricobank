@@ -83,15 +83,46 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
         feed = new Feedbase();
         gemfab = GemFabLike(address(new GemFab()));
 
-        bytes32[] memory ilks = new bytes32[](1);
-        ilks[0] = wilk;
-        address[] memory gems = new address[](1);
-        gems[0] = WETH;
-        address[] memory pools = new address[](1);
-        pools[0] = WETH_DAI_POOL;
-        ball = new Ball(Ball.BallArgs(
-            address(gemfab), address(feed), WETH, factory, router, RAY, ilks, gems, pools
-        ));
+        Ball.IlkParams[] memory ips = new Ball.IlkParams[](1);
+        ips[0] = Ball.IlkParams(
+            'weth',
+            WETH,
+            WETH_DAI_POOL,
+            RAD, // chop
+            90 * RAD, // dust
+            1000000001546067052200000000, // fee
+            100000 * RAD, // line
+            RAY, // liqr
+            UniFlower.Ramp(WAD / 1000, WAD, block.timestamp, 1, WAD / 100),
+            20000, // ttl
+            BANKYEAR / 4 // range
+        );
+        UniFlower.Ramp memory stdramp = UniFlower.Ramp(
+            WAD, WAD, block.timestamp, 1, WAD / 100
+        );
+        Ball.BallArgs memory bargs = Ball.BallArgs(
+            address(gemfab),
+            address(feed),
+            WETH,
+            factory,
+            router,
+            RAY,
+            100000 * RAD,
+            20000, // ricodai
+            BANKYEAR / 4,
+            BANKYEAR, // daiusd
+            BANKYEAR, // xauusd
+            10000, // twap
+            BANKYEAR,
+            block.timestamp, // prog
+            block.timestamp + BANKYEAR * 10,
+            BANKYEAR / 12,
+            stdramp,
+            stdramp,
+            stdramp
+        );
+        ball = new Ball(bargs, ips);
+
 
         rico = Gem(ball.rico());
         risk = Gem(ball.risk());

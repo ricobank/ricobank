@@ -268,6 +268,7 @@ interface IUniswapV3Pool is
     function token0() external view returns (address);
     function token1() external view returns (address);
     function tickSpacing() external view returns (int24);
+    function fee() external view returns (uint24);
 }
 
 interface IUniswapV3SwapCallback {
