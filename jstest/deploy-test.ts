@@ -11,10 +11,10 @@ describe('deployments', ()=>{
       debug(Object.keys(hh.network))
       debug(hh.network.name)
       const [gas, pack] = await task_total_gas(hh, 'deploy-ricobank', {mock:'true'})
-      const expectedgas = 48102197
+      const expectedgas = 43109301
       want(gas).to.be.at.most(expectedgas)
       if (gas < expectedgas) {
-          console.log("deploy saved", expectedgas, "gas")
+          console.log("deploy saved", expectedgas - gas, "gas")
       }
       want(pack.objects.vat).exists
     })

@@ -47,12 +47,8 @@ contract Ball is Math, UniSetUp {
     bytes32 internal constant XAU_RICO_TAG = "xaurico";
     bytes32 internal constant REF_RICO_TAG = "refrico";
     bytes32 internal constant RICO_REF_TAG = "ricoref";
-
-    uint256 internal constant HALF = 5 * 10**17;
-    uint256 internal constant FEE  = 3 * 10**15;
-    uint256 internal constant BANKYEAR = ((365 * 24) + 6) * 3600;
-
     bytes32 internal constant RTAG = "ricousd";
+    uint256 internal constant BANKYEAR = ((365 * 24) + 6) * 3600;
     uint160 internal constant risk_price = 2 ** 96;
     uint24  internal constant RICO_FEE = 500;
     uint24  internal constant RISK_FEE = 3000;
@@ -294,19 +290,11 @@ contract Ball is Math, UniSetUp {
     }
 
     function concat(bytes32 a, bytes32 b) internal pure returns (bytes32 res) {
-        uint ai;
-        for (ai = 0; ai < 32; ai++) {
-            if (bytes32(uint(a) & (0xff << ((31 - ai)*8))) == bytes32(0)) {
-                break;
-            }
+        uint i;
+        while (true) {
+            if (a[i] == 0) break;
+            unchecked{ i++; }
         }
-
-        res = a;
-        for (uint bi = 0; bi < 32; bi++) {
-            if (bytes32(uint(b) & (0xff << ((31 - bi)*8))) == bytes32(0)) {
-                break;
-            }
-            res = bytes32(uint(res) | ((uint(b) & (0xff << ((31 - bi)*8))) >> (ai * 8)));
-        }
+        res = a | (b >> (i << 3));
     }
 }
