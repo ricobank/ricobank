@@ -2,6 +2,7 @@ import { task } from 'hardhat/config'
 
 const debug = require('debug')('ricobank:task')
 const dpack = require('@etherpacks/dpack')
+import { b32, ray } from 'minihat'
 
 task('deploy-ricobank', '')
   .addOptionalParam('mock', 'Ignore dependency args and deploy new mock dependencies')
@@ -26,8 +27,18 @@ task('deploy-ricobank', '')
 
     const ball_artifact = require('../artifacts/src/ball.sol/Ball.json')
     const ball_type = hre.ethers.ContractFactory.fromSolidity(ball_artifact, ali)
-    const ball = await ball_type.deploy(deps.objects.gemfab.address, deps.objects.feedbase.address,
-        deps.objects.weth.address, deps.objects.uniswapV3Factory.address, deps.objects.swapRouter.address,
+    const ballargs = {
+        gemfab: deps.objects.gemfab.address,
+        feedbase: deps.objects.feedbase.address,
+        weth: deps.objects.weth.address,
+        factory: deps.objects.uniswapV3Factory.address,
+        router: deps.objects.swapRouter.address,
+        sqrtpar: ray(1),
+        ilks: [b32('weth')],
+        gems: [deps.objects.weth.address],
+        pools: ["0xC2e9F25Be6257c210d7Adf0D4Cd6E3E881ba25f8"] // uni wethdai pool
+    }
+    const ball = await ball_type.deploy(ballargs,
         { gasLimit: 50000000 })
     const gem_artifact = await dpack.getIpfsJson(deps.types.Gem.artifact['/'])
 

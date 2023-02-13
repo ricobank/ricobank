@@ -1020,6 +1020,7 @@ contract DssVowTest is DssJsTest {
     //   N/A no vow.wait in rico
 
     function test_no_reflop() public _vow_ {
+        curb(arico, 100 * WAD, WAD, block.timestamp, 1, 1);
         uint amt = WAD / 1000;
         curb(arisk, amt * 2, WAD, block.timestamp, 1, amt);
         curb(azero, amt * 2, WAD, block.timestamp, 1, amt);

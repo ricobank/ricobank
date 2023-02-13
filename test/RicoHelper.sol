@@ -27,6 +27,7 @@ interface WethLike {
 abstract contract RicoSetUp is UniSetUp, Math, Test {
     address constant public DAI   = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
     address constant public WETH  = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+    address constant public WETH_DAI_POOL  = 0xC2e9F25Be6257c210d7Adf0D4Cd6E3E881ba25f8;
     address constant public VAULT = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;
     bytes32 constant public dilk = "dai";
     bytes32 constant public gilk = "gold";
@@ -82,7 +83,15 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
         feed = new Feedbase();
         gemfab = GemFabLike(address(new GemFab()));
 
-        ball = new Ball(gemfab, address(feed), WETH, factory, router);
+        bytes32[] memory ilks = new bytes32[](1);
+        ilks[0] = wilk;
+        address[] memory gems = new address[](1);
+        gems[0] = WETH;
+        address[] memory pools = new address[](1);
+        pools[0] = WETH_DAI_POOL;
+        ball = new Ball(Ball.BallArgs(
+            address(gemfab), address(feed), WETH, factory, router, RAY, ilks, gems, pools
+        ));
 
         rico = Gem(ball.rico());
         risk = Gem(ball.risk());
