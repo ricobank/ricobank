@@ -34,13 +34,14 @@ contract UniFlower is Math, UniSwapper {
     error ErrEmptyAid();
     error ErrSwapFail();
     error ErrTinyFlow();
+    error ErrTransfer();
 
     uint256 public count;
 
     function flow(address hag, uint ham, address wag, uint wam) external returns (uint256 aid) {
         address vow = msg.sender;
         if (ramps[vow][hag].del > ham) revert ErrTinyFlow();
-        Gem(hag).transferFrom(msg.sender, address(this), ham);
+        if (!Gem(hag).transferFrom(msg.sender, address(this), ham)) revert ErrTransfer();
         aid = ++count;
         auctions[aid].vow = vow;
         auctions[aid].hag = hag;
@@ -74,7 +75,7 @@ contract UniFlower is Math, UniSwapper {
         uint rest = auction.ham - cost;
 
         if (last) {
-            Gem(hag).transfer(vow, rest);
+            if (!Gem(hag).transfer(vow, rest)) revert ErrTransfer();
             Flowback(vow).flowback(aid, rest);
             delete auctions[aid];
         } else {
