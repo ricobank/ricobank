@@ -1,7 +1,7 @@
 pragma solidity 0.8.17;
 
 import "forge-std/Test.sol";
-import { Swapper, UniSetUp } from "../test/UniHelper.sol";
+import { Swapper, UniSetUp, PoolArgs, Asset } from "../test/UniHelper.sol";
 
 import { Ball, GemFabLike } from '../src/ball.sol';
 import { INonfungiblePositionManager, IUniswapV3Pool } from '../src/TEMPinterface.sol';
@@ -57,15 +57,48 @@ contract BallTest is Test, UniSetUp, Math {
     Swapper swap;
     uint256 constant public BANKYEAR = (365 * 24 + 6) * 3600;
     address rico;
+    address risk;
     uint constant INIT_SQRTPAR = RAY * 2;
     uint constant INIT_PAR = (INIT_SQRTPAR ** 2) / RAY;
     uint constant wethricoprice = 1500 * RAY * RAY / INIT_PAR;
     uint constant wethamt = WAD;
     int constant dart = int(wethamt * wethricoprice / INIT_PAR);
+    bytes32[] ilks;
+    IUniswapV3Pool public ricorisk;
+    uint DEV_FUND_RISK = 1000000 * WAD;
 
     Vat vat;
     Vow vow;
     UniFlower flow;
+
+    function advance_chainlink() internal {
+        // chainlink adapter advances from chainlink time
+        // prank ttl to uint max
+        (bytes32 v,) = fb.pull(address(cladapt), XAU_USD_TAG);
+        vm.prank(address(cladapt));
+        fb.push(XAU_USD_TAG, v, type(uint).max);
+        (v,) = fb.pull(address(cladapt), DAI_USD_TAG);
+        vm.prank(address(cladapt));
+        fb.push(DAI_USD_TAG, v, type(uint).max);
+    }
+
+    function look_poke() internal {
+        advance_chainlink();
+        adapt.look(WETH_DAI_TAG);
+        adapt.look(RICO_DAI_TAG);
+
+        divider.poke(WETH_RICO_TAG);
+        divider.poke(DAI_RICO_TAG);
+        divider.poke(XAU_DAI_TAG);
+        divider.poke(XAU_RICO_TAG);
+
+        twap.poke(XAU_RICO_TAG);
+        progression.poke(REF_RICO_TAG);
+        divider.poke(RICO_REF_TAG);
+
+        mdn.poke(WETH_RICO_TAG);
+        mdn.poke(RICO_REF_TAG);
+    }
 
     function setUp() public {
         address aweth = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
@@ -75,6 +108,9 @@ contract BallTest is Test, UniSetUp, Math {
         fb = new Feedbase();
 
         Ball.IlkParams[] memory ips = new Ball.IlkParams[](1);
+        ilks = new bytes32[](1);
+        ilks[0] = WETH_ILK;
+        assertEq(ilks.length, 1);
         ips[0] = Ball.IlkParams(
             'weth',
             WETH,
@@ -117,7 +153,7 @@ contract BallTest is Test, UniSetUp, Math {
 
         skip(BANKYEAR / 2);
         uint usedgas     = gas - gasleft();
-        uint expectedgas = 27296180;
+        uint expectedgas = 27362548;
         if (usedgas < expectedgas) {
             console.log("ball saved %s gas...currently %s", expectedgas - usedgas, usedgas);
         }
@@ -127,6 +163,7 @@ contract BallTest is Test, UniSetUp, Math {
 
         swap = new Swapper();
         rico = ball.rico();
+        risk = ball.risk();
         swap.approveGem(DAI, router);
         swap.approveGem(rico, router);
         swap.setSwapRouter(router);
@@ -168,79 +205,70 @@ contract BallTest is Test, UniSetUp, Math {
 
         cladapt.look(XAU_USD_TAG);
         cladapt.look(DAI_USD_TAG);
-        {
-            // chainlink adapter advances from chainlink time
-            // prank ttl to uint max
-            (bytes32 v,) = fb.pull(address(cladapt), XAU_USD_TAG);
-            vm.prank(address(cladapt));
-            fb.push(XAU_USD_TAG, v, type(uint).max);
-            (v,) = fb.pull(address(cladapt), DAI_USD_TAG);
-            vm.prank(address(cladapt));
-            fb.push(DAI_USD_TAG, v, type(uint).max);
-        }
 
         look_poke();
 
         vow = ball.vow();
 
-        bool reverse = rico > DAI;
         uint daiamt = 10000 * WAD;
         vm.prank(COMPOUND_CDAI);
         Gem(DAI).transfer(address(this), daiamt * 10);
         Gem(rico).mint(address(this), daiamt * RAY / INIT_SQRTPAR);
-        Gem(DAI).approve(address(nfpm), type(uint).max);
-        Gem(rico).approve(address(nfpm), type(uint).max);
-        if (reverse) {
-            int24 tick = getTickAtSqrtRatio(uint160(RAY ** 2 / INIT_SQRTPAR * 2 ** 96 / RAY));
-            tick = tick / 10 * 10;
-            nfpm.mint(INonfungiblePositionManager.MintParams(
-                DAI, rico,
-                500,
-                tick - 10,
-                tick + 10,
-                daiamt,
-                daiamt * RAY / INIT_SQRTPAR,
-                0,
-                0,
-                address(this),
-                type(uint).max
-            ));
-                
-        } else {
-            int24 tick = getTickAtSqrtRatio(uint160(INIT_SQRTPAR * 2 ** 96 / RAY));
-            tick = tick / 10 * 10;
-            nfpm.mint(INonfungiblePositionManager.MintParams(
-                rico, DAI,
-                500,
-                tick - 10,
-                tick + 10,
-                daiamt * RAY / INIT_SQRTPAR,
-                daiamt,
-                0,
-                0,
-                address(this),
-                type(uint).max
-            ));
-        }
+        join_pool(PoolArgs(
+            Asset(rico, daiamt * RAY / INIT_SQRTPAR), Asset(DAI, daiamt),
+            500,
+            uint160(INIT_SQRTPAR * X96 / RAY),
+            uint160(INIT_SQRTPAR * X96 / RAY) * 99 / 100,
+            uint160(INIT_SQRTPAR * X96 / RAY) * 100 / 99, 10
+        ));
 
         flow = ball.flow();
+
+        Gem(risk).mint(address(this), DEV_FUND_RISK);
     }
 
-    function look_poke() internal {
-        adapt.look(WETH_DAI_TAG);
-        adapt.look(RICO_DAI_TAG);
+    modifier _flap_after_ {
+        _;
+        uint rico_before = Gem(rico).balanceOf(address(flow));
+        uint aid = vow.keep(ilks);
+        uint rico_after = Gem(rico).balanceOf(address(flow));
+        assertGt(rico_after, rico_before);
 
-        divider.poke(WETH_RICO_TAG);
-        divider.poke(DAI_RICO_TAG);
-        divider.poke(XAU_DAI_TAG);
-        divider.poke(XAU_RICO_TAG);
+        // fund the pool
+        // tick spacing 60 for 0.3%
+        join_pool(PoolArgs(
+            Asset(rico, Gem(rico).balanceOf(me)), Asset(risk, 10000 * WAD),
+            3000, X96, X96 * 99 / 100, X96 * 100 / 99, 60
+        ));
+        rico_before = Gem(rico).balanceOf(address(flow));
+        flow.glug(aid);
+        rico_after = Gem(rico).balanceOf(address(flow));
+        assertLt(rico_after, rico_before);
+    }
 
-        twap.poke(XAU_RICO_TAG);
-        progression.poke(REF_RICO_TAG);
-        divider.poke(RICO_REF_TAG);
+    modifier _flop_after_ {
+        _;
+        uint risk_before = Gem(risk).balanceOf(address(flow));
+        uint aid = vow.keep(ilks);
+        uint risk_after = Gem(risk).balanceOf(address(flow));
+        assertGt(risk_after, risk_before);
 
-        mdn.poke(WETH_RICO_TAG);
-        mdn.poke(RICO_REF_TAG);
+        // fund the pool
+        // tick spacing 60 for 0.3%
+        join_pool(PoolArgs(
+            Asset(rico, Gem(rico).balanceOf(me)), Asset(risk, 10000 * WAD),
+            3000, X96, X96 * 99 / 100, X96 * 100 / 99, 60
+        ));
+        risk_before = Gem(risk).balanceOf(address(flow));
+        flow.glug(aid);
+        risk_after = Gem(risk).balanceOf(address(flow));
+        assertLt(risk_after, risk_before);
+    }
+
+    modifier _balanced_after_ {
+        _;
+        uint aid = vow.keep(ilks);
+        assertEq(aid, 0);
     }
 
     function test_basic() public {
@@ -258,7 +286,7 @@ contract BallTest is Test, UniSetUp, Math {
         vat.frob(WETH_ILK, me, 0, dart);
     }
 
-    function test_fee_bail() public {
+    function test_fee_bail_flop() public _flop_after_ {
         vat.frob(WETH_ILK, me, int(wethamt), dart);
         vm.expectRevert(Vow.ErrSafeBail.selector);
         vow.bail(WETH_ILK, me);
@@ -270,4 +298,47 @@ contract BallTest is Test, UniSetUp, Math {
         uint aid = vow.bail(WETH_ILK, me);
         flow.glug(aid);
     }
+
+
+    function test_ball_flap() public _flap_after_ {
+        vat.frob(WETH_ILK, me, int(wethamt), dart);
+        vm.expectRevert(Vow.ErrSafeBail.selector);
+        vow.bail(WETH_ILK, me);
+        skip(BANKYEAR * 100);
+    }
+
+    // user pays down the urn first, then try to flap
+    function test_ball_pay_flap_fail() public {
+        vat.frob(WETH_ILK, me, int(wethamt), dart);
+        vm.expectRevert(Vow.ErrSafeBail.selector);
+        vow.bail(WETH_ILK, me);
+        skip(BANKYEAR * 100); advance_chainlink(); look_poke();
+
+        (uint inkleft,uint artleft) = vat.urns(WETH_ILK, me);
+        Gem(rico).mint(me, artleft);
+        vat.frob(WETH_ILK, me, -int(inkleft), -int(artleft));
+        (inkleft, artleft) = vat.urns(WETH_ILK, me);
+        assertEq(inkleft, 0);
+        assertEq(artleft, 0);
+        // can't keep because there was never a drip
+        vm.expectRevert(UniFlower.ErrTinyFlow.selector);
+        vow.keep(ilks);
+    }
+
+    function test_ball_pay_flap_success() public  _balanced_after_ {
+        vat.frob(WETH_ILK, me, int(wethamt), dart);
+        vm.expectRevert(Vow.ErrSafeBail.selector);
+        vow.bail(WETH_ILK, me);
+        skip(BANKYEAR * 100); look_poke();
+
+        (uint inkleft,uint artleft) = vat.urns(WETH_ILK, me);
+        vow.keep(ilks); // drips
+        Gem(rico).mint(me, artleft * 1000);
+        vat.frob(WETH_ILK, me, -int(inkleft), -int(artleft));
+        (inkleft, artleft) = vat.urns(WETH_ILK, me);
+        assertEq(inkleft, 0);
+        assertEq(artleft, 0);
+        // balanced now because already kept
+    }
+
 }
