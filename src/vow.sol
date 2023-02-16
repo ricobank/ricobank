@@ -3,7 +3,7 @@
 // Copyright (C) 2023 the bank
 // Copyright (C) 2022 the bank
 
-pragma solidity 0.8.17;
+pragma solidity 0.8.18;
 
 import { UniFlower, Flowback } from './flow.sol';
 import { Math } from './mixin/math.sol';
@@ -17,7 +17,7 @@ contract Vow is Flowback, Math, Ward {
         address urn;
     }
 
-    mapping(uint256 => Sale) public sales;
+    mapping(uint256 aid => Sale) public sales;
 
     error ErrOverflow();
     error ErrSafeBail();

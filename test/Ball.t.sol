@@ -1,4 +1,4 @@
-pragma solidity 0.8.17;
+pragma solidity 0.8.18;
 
 import "forge-std/Test.sol";
 import { Swapper, UniSetUp, PoolArgs, Asset } from "../test/UniHelper.sol";
@@ -153,7 +153,7 @@ contract BallTest is Test, UniSetUp, Math {
 
         skip(BANKYEAR / 2);
         uint usedgas     = gas - gasleft();
-        uint expectedgas = 27362548;
+        uint expectedgas = 27171759;
         if (usedgas < expectedgas) {
             console.log("ball saved %s gas...currently %s", expectedgas - usedgas, usedgas);
         }

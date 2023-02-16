@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-pragma solidity 0.8.17;
+pragma solidity 0.8.18;
 
 import { ISwapRouter } from './TEMPinterface.sol';
 import './mixin/ward.sol';
@@ -12,7 +12,7 @@ abstract contract UniSwapper is Ward {
     }
     enum SwapKind {EXACT_IN, EXACT_OUT}
     // tokIn -> kind -> Path
-    mapping(address=>mapping(address=>Path)) public paths;
+    mapping(address tokIn => mapping(address tokOut => Path)) public paths;
 
     uint256 public constant SWAP_ERR = type(uint256).max;
 

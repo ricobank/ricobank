@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-pragma solidity 0.8.17;
+pragma solidity 0.8.18;
 
 contract Ward {
     event SetWard(address indexed caller, address indexed trusts, bool bit);
     error ErrWard(address caller, address object, bytes4 sig);
 
-    mapping (address => bool) public wards;
+    mapping (address usr => bool) public wards;
 
     constructor() {
         wards[msg.sender] = true;

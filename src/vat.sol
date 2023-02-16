@@ -20,7 +20,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity 0.8.17;
+pragma solidity 0.8.18;
 
 import './mixin/lock.sol';
 import './mixin/math.sol';
@@ -61,10 +61,10 @@ contract Vat is Lock, Math, Ward, Flog {
         uint256 art;   // [wad] Normalised Debt
     }
 
-    mapping (bytes32 => Ilk)                       public ilks;
-    mapping (bytes32 => mapping (address => Urn )) public urns;
-    mapping (address => bool)                      public pass;
-    mapping (address => uint256)                   public sin;  // [rad]
+    mapping (bytes32 ilk => Ilk)                           public ilks;
+    mapping (bytes32 ilk => mapping (address usr => Urn )) public urns;
+    mapping (address gem => bool)                          public pass;
+    mapping (address usr => uint256)                       public sin;  // [rad]
 
     enum Spot {Sunk, Iffy, Safe}
 

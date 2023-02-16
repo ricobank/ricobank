@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-pragma solidity 0.8.17;
+pragma solidity 0.8.18;
 
 import './mixin/math.sol';
 import { Gem } from '../lib/gemfab/src/gem.sol';
@@ -27,8 +27,8 @@ contract UniFlower is Math, UniSwapper {
         uint256 wam;  // want amount
     }
 
-    mapping (address => mapping (address => Ramp)) public ramps;  // client -> gem -> ramp
-    mapping (uint256 => Auction) public auctions;
+    mapping (address usr => mapping (address gem => Ramp)) public ramps;  // client -> gem -> ramp
+    mapping (uint256 aid => Auction) public auctions;
 
     error ErrCurbKey();
     error ErrEmptyAid();

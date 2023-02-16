@@ -5,7 +5,7 @@
 // efficient deployment sequences against the result of
 // this one.
 
-pragma solidity 0.8.17;
+pragma solidity 0.8.18;
 
 import {Vat} from './vat.sol';
 import {Vow} from './vow.sol';
