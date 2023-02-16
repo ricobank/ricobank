@@ -5,6 +5,7 @@ import { Gem } from '../lib/gemfab/src/gem.sol';
 import { Ball } from '../src/ball.sol';
 import { UniSwapper } from '../src/swap.sol';
 import { INonfungiblePositionManager, IUniswapV3Factory, IUniswapV3Pool } from '../src/TEMPinterface.sol';
+import { Pool } from '../src/mixin/pool.sol';
 
 struct Asset {
     address token;
@@ -32,7 +33,7 @@ contract Swapper is UniSwapper {
     }
 }
 
-abstract contract UniSetUp {
+abstract contract UniSetUp is Pool {
     INonfungiblePositionManager constant nfpm =
         INonfungiblePositionManager(0xC36442b4a4522E871399CD717aBDD847Ab11FE88);
     // copied from:
@@ -44,25 +45,8 @@ abstract contract UniSetUp {
     int24   internal constant MAX_TICK       = -MIN_TICK;
     //////////////////////////////////
 
-    uint160 internal constant X96            = 2 ** 96;
-
     address factory = 0x1F98431c8aD98523631AE4a59f267346ea31F984;
     address router  = 0xE592427A0AEce92De3Edee1F18E0157C05861564;
-
-    function create_path(address[] memory tokens, uint24[] memory fees)
-            internal pure returns (bytes memory fore, bytes memory rear) {
-        require(tokens.length == fees.length + 1, "invalid path");
-
-        for (uint i = 0; i < tokens.length - 1; i++) {
-            fore = abi.encodePacked(fore, tokens[i], fees[i]);
-        }
-        fore = abi.encodePacked(fore, tokens[tokens.length - 1]);
-
-        rear = abi.encodePacked(rear, tokens[tokens.length - 1]);
-        for (uint j = tokens.length - 1; j > 0; j--) {
-            rear = abi.encodePacked(rear, fees[j - 1], tokens[j - 1]);
-        }
-    }
 
     function getPoolAddr(address token0, address token1, uint24 fee) internal view returns (address pool) {
         pool = IUniswapV3Factory(factory).getPool(token0, token1, fee);
@@ -79,46 +63,8 @@ abstract contract UniSetUp {
         args = PoolArgs(a1, a2, fee, sqrtPriceX96, low, high, spacing);
     }
 
-    function createAndInitializePoolIfNecessary(
-        address token0,
-        address token1,
-        uint24 fee,
-        uint160 sqrtPriceX96
-    ) internal returns (address pool) {
-        require(token0 < token1);
-        pool = IUniswapV3Factory(factory).getPool(token0, token1, fee);
-
-        if (pool == address(0)) {
-            pool = IUniswapV3Factory(factory).createPool(token0, token1, fee);
-            IUniswapV3Pool(pool).initialize(sqrtPriceX96);
-        } else {
-            (uint160 sqrtPriceX96Existing, , , , , , ) = IUniswapV3Pool(pool).slot0();
-            if (sqrtPriceX96Existing == 0) {
-                IUniswapV3Pool(pool).initialize(sqrtPriceX96);
-            }
-        }
-    }
-
-    function create_pool(PoolArgs memory args) internal returns (IUniswapV3Pool pool) {
-        Asset memory a;
-        Asset memory b;
-        uint160 sqrtPriceX96 = args.sqrtPriceX96;
-        if (args.a1.token < args.a2.token){
-            a = args.a1;
-            b = args.a2;
-        } else {
-            a = args.a2;
-            b = args.a1;
-            sqrtPriceX96 = x96inv(args.sqrtPriceX96);
-        }
-        // todo maybe move this to ../src ...
-        pool = IUniswapV3Pool(createAndInitializePoolIfNecessary(
-            a.token, b.token, args.fee, sqrtPriceX96
-        ));
-    }
-
     function create_and_join_pool(PoolArgs memory args) internal returns (IUniswapV3Pool pool)  {
-        pool = create_pool(args);
+        pool = create_pool(factory, args.a1.token, args.a2.token, args.fee, args.sqrtPriceX96);
         join_pool(args);
     }
 
@@ -162,17 +108,10 @@ abstract contract UniSetUp {
         ));
     }
 
-    function x96inv(uint160 x) internal pure returns (uint160) {
-        return x96div(X96, x);
-    }
-
     function x96(uint160 x) internal pure returns (uint160) {
         return x * uint160(2 ** 96);
     }
 
-    function x96div(uint160 x, uint160 y) internal pure returns (uint160) {
-        return uint160(uint(x) * uint(X96) / uint(y));
-    }
     function x96mul(uint160 x, uint160 y) internal pure returns (uint160) {
         return uint160(uint(x) * uint(y) / uint(X96));
     }

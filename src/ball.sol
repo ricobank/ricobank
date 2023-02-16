@@ -19,7 +19,7 @@ import {TWAP} from "../lib/feedbase/src/combinators/TWAP.sol";
 import {Progression} from "../lib/feedbase/src/combinators/Progression.sol";
 import {ChainlinkAdapter} from "../lib/feedbase/src/adapters/ChainlinkAdapter.sol";
 import {Math} from '../src/mixin/math.sol';
-import { Asset, UniSetUp, PoolArgs } from "../test/UniHelper.sol";
+import {Pool} from '../src/mixin/pool.sol';
 import { IUniswapV3Pool } from "../src/TEMPinterface.sol";
 
 interface GemFabLike {
@@ -35,7 +35,7 @@ interface GemLike {
     ) payable external;
 }
 
-contract Ball is Math, UniSetUp {
+contract Ball is Math, Pool {
     error ErrGFHash();
     error ErrFBHash();
 
@@ -116,8 +116,6 @@ contract Ball is Math, UniSetUp {
         BallArgs       memory args,
         IlkParams[]    memory ilks
     ) payable {
-        router = args.router;
-        factory = args.factory;
         address roll = msg.sender;
         flow = new UniFlower();
 
@@ -150,9 +148,7 @@ contract Ball is Math, UniSetUp {
 
         mdn = new Medianizer(args.feedbase);
         uint160 sqrtparx96 = uint160(args.sqrtpar * (2 ** 96) / RAY);
-        ricodai = create_pool(PoolArgs(
-            Asset(rico, 0), Asset(DAI, 0), 500, sqrtparx96, 0, 0, 0
-        ));
+        ricodai = create_pool(args.factory, rico, DAI, 500, sqrtparx96);
  
         adapt = new UniswapV3Adapter(Feedbase(args.feedbase));
         divider = new Divider(args.feedbase, RAY);
@@ -257,9 +253,7 @@ contract Ball is Math, UniSetUp {
         vow.give(roll);
         vat.give(roll);
 
-        ricorisk = create_pool(PoolArgs(
-            Asset(rico, 0), Asset(risk, 0), RISK_FEE, risk_price, 0, 0, 0
-        ));
+        ricorisk = create_pool(args.factory, rico, risk, RISK_FEE, risk_price);
 
         adapt.setConfig(
             RICO_DAI_TAG,
