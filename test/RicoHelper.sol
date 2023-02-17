@@ -65,6 +65,10 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
     Medianizer mdn;
     Divider divider;
 
+    function feedpull(bytes32 tag) internal view returns (bytes32, uint) {
+        return feed.pull(address(mdn), tag);
+    }
+
     function feedpush(bytes32 tag, bytes32 val, uint ttl) internal {
         feed.push(tag, val, ttl);
         divider.poke(tag);
@@ -168,7 +172,8 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
         gold.mint(self, init_mint * WAD);
         gold.approve(avat, type(uint256).max);
         vat.init(gilk, address(gold), self, grtag);
-        vat.filk(gilk, bytes32('chop'), RAD);
+        // todo fix other chops, should be rays
+        vat.filk(gilk, bytes32('chop'), RAY);
         vat.filk(gilk, bytes32('line'), init_mint * 10 * RAD);
         vat.filk(gilk, bytes32('fee'),  1000000001546067052200000000);  // 5%
         feedpush(grtag, bytes32(RAY), block.timestamp + 1000);

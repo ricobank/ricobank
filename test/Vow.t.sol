@@ -10,12 +10,46 @@ import { Vow } from '../src/vow.sol';
 import { RicoSetUp, WethLike } from "./RicoHelper.sol";
 import { Asset, PoolArgs } from "./UniHelper.sol";
 import { UniFlower } from '../src/flow.sol';
+import { Ward } from '../src/mixin/ward.sol';
+import { Math } from '../src/mixin/math.sol';
 
+contract GemUsr {
+    Vat vat;
+    constructor(Vat _vat) {
+        vat  = _vat;
+    }
+    function approve(address gem, address usr, uint amt) public {
+        Gem(gem).approve(usr, amt);
+    }
+    function frob(bytes32 ilk, address usr, int dink, int dart) public {
+        vat.frob(ilk, usr, dink, dart);
+    }
+    function transfer(address gem, address dst, uint amt) public {
+        Gem(gem).transfer(dst, amt);
+    }
+}
+
+
+
+// integrated vow/flow tests
 contract VowTest is Test, RicoSetUp {
     uint256 public init_join = 1000;
     uint stack = WAD * 10;
     bytes32[] ilks;
     address rico_risk_pool;
+
+    function rico_mint(uint amt) internal {
+        GemUsr usr = new GemUsr(vat);
+        (bytes32 v, uint t) = feedpull(grtag);
+        feedpush(grtag, bytes32(RAY), type(uint).max);
+        gold.mint(address(usr), amt);
+        usr.approve(agold, avat, amt);
+        usr.frob(gilk, address(usr), int(amt), int(amt));
+        feedpush(grtag, bytes32(0), type(uint).max);
+        vow.bail(gilk, address(usr));
+        usr.transfer(arico, self, amt);
+        feedpush(grtag, v, t);
+    }
 
     function setUp() public {
         make_bank();
@@ -24,10 +58,6 @@ contract VowTest is Test, RicoSetUp {
         rico.approve(address(flow), type(uint256).max);
 
         vow.grant(address(gold));
-
-        feed.push(grtag, bytes32(RAY * 1000), block.timestamp + 1000);
-        vat.frob(gilk, address(this), int(init_join * WAD), int(stack) * 1000);
-        risk.mint(address(this), 10000 * WAD);
 
         curb(agold, 1e18, 1e12, 0, 600, 1);
         curb(arico, 1e18, 1e12, 0, 600, 1);
@@ -43,6 +73,8 @@ contract VowTest is Test, RicoSetUp {
         risk.approve(address(flow), type(uint256).max);
 
         rico_risk_pool = getPoolAddr(arico, arisk, 3000);
+        rico_mint(2000 * WAD);
+        risk.mint(self, 1000 * WAD);
         PoolArgs memory rico_risk_args = getArgs(arico, 1000 * WAD, arisk, 1000 * WAD, 3000, x96(1));
         join_pool(rico_risk_args);
 
@@ -62,6 +94,9 @@ contract VowTest is Test, RicoSetUp {
 
     // goldusd, par, and liqr all = 1 after set up.
     function test_risk_ramp_is_used() public {
+        feedpush(grtag, bytes32(RAY * 1000), block.timestamp + 1000);
+        vat.frob(gilk, address(this), int(init_join * WAD), int(stack) * 1000);
+ 
         // set rate of risk sales to near zero
         // set mint ramp higher to use risk ramp
         curb(azero, WAD, WAD, block.timestamp - 1, 1, 1);
@@ -69,7 +104,7 @@ contract VowTest is Test, RicoSetUp {
         uint256 pool_risk_0 = risk.balanceOf(rico_risk_pool);
 
         // setup frobbed to edge, dropping gold price puts system way underwater
-        feed.push(grtag, bytes32(RAY), block.timestamp + 10000);
+        feedpush(grtag, bytes32(RAY), block.timestamp + 10000);
 
         // create the sin and kick off risk sale
         uint256 aid = vow.bail(gilk, self);
@@ -82,6 +117,193 @@ contract VowTest is Test, RicoSetUp {
         uint risk_sold = pool_risk_1 - pool_risk_0;
         assertTrue(risk_sold == 1);
     }
+
+    function test_wards() public {
+        vow.flowback(0, 0);
+        vow.pair(address(0), 'vel', WAD);
+        vow.link('flow', address(flow));
+
+        vow.give(address(0));
+
+        vm.expectRevert();
+        vow.flowback(0, 0);
+        vow.grant(arico);
+        vm.expectRevert();
+        vow.pair(address(0), 'vel', WAD);
+        vm.expectRevert();
+        vow.link('flow', address(flow));
+
+        vow.keep(ilks);
+        vat.frob(gilk, self, int(WAD), int(WAD));
+        vm.expectRevert(Vow.ErrSafeBail.selector);
+        vow.bail(gilk, self);
+    }
+
+    function test_flowback() public {
+        curb(agold, 100000 * WAD, WAD, 0, 1, 1);
+        (uint ink, uint art) = vat.urns(gilk, self);
+        feedpush(grtag, bytes32(1000000 * RAY), type(uint).max);
+        vat.frob(gilk, self, int(WAD), int(WAD / 2));
+
+        feedpush(grtag, bytes32(0), type(uint).max);
+        uint aid = vow.bail(gilk, self);
+
+        (ink,) = vat.urns(gilk, self);
+        assertEq(ink, 0);
+        flow.glug(aid);
+
+        (ink, art) = vat.urns(gilk, self);
+        assertEq(art, 0);
+        assertGt(ink, 0);
+
+        // sale gone
+        (bytes32 saleilk, address saleurn) = vow.sales(aid);
+        assertEq(saleilk, bytes32(0));
+        assertEq(saleurn, azero);
+    }
+
+    // these next few maybe belong in flow tests...
+    // first glug covers the debt without remainder, flowback with high del
+    // (exact out)
+    uint del_test_endink = 498493239915892134;
+    function test_tiny_flowback() public {
+        curb(agold, WAD * 3 / 4, WAD, 0, 1, WAD / 4 + 1); // high del
+
+        feedpush(grtag, bytes32(1000000 * RAY), type(uint).max);
+        vat.frob(gilk, self, int(WAD), int(WAD / 2));
+
+        feedpush(grtag, bytes32(0), type(uint).max);
+        uint aid = vow.bail(gilk, self);
+
+        flow.glug(aid);
+        vm.expectRevert(UniFlower.ErrEmptyAid.selector);
+        flow.glug(aid);
+        (uint ink, uint art) = vat.urns(gilk, self);
+
+        (ink, art) = vat.urns(gilk, self);
+        assertEq(art, 0);
+        // hardcoding this to use in test_del_flowback
+        assertEq(ink, del_test_endink);
+
+        // sale gone
+        (bytes32 saleilk, address saleurn) = vow.sales(aid);
+        assertEq(saleilk, bytes32(0));
+        assertEq(saleurn, azero);
+    }
+
+    // first glug covers the debt without remainder, flowback with low del
+    // (exact out)
+    function test_del_flowback() public {
+        curb(agold, WAD * 3 / 4, WAD, 0, 1, WAD / 8); // low del
+
+        feedpush(grtag, bytes32(1000000 * RAY), type(uint).max);
+        vat.frob(gilk, self, int(WAD), int(WAD / 2));
+
+        feedpush(grtag, bytes32(0), type(uint).max);
+        uint aid = vow.bail(gilk, self);
+
+        flow.glug(aid);
+        vm.expectRevert(UniFlower.ErrEmptyAid.selector);
+        flow.glug(aid);
+
+        (uint ink, uint art) = vat.urns(gilk, self);
+        assertEq(art, 0);
+        // hardcoding to reuse use in test_del_flowback
+        assertEq(ink, del_test_endink);
+
+        // sale gone
+        (bytes32 saleilk, address saleurn) = vow.sales(aid);
+        assertEq(saleilk, bytes32(0));
+        assertEq(saleurn, azero);
+    }
+
+    // first glug covers the debt with remainder, flowback with high del
+    function test_del_nocover_then_flowback() public {
+        curb(agold, WAD * 2 / 3, WAD, 0, 1, WAD / 2); // high del
+
+        feedpush(grtag, bytes32(1000000 * RAY), type(uint).max);
+        vat.frob(gilk, self, int(WAD), int(WAD * 9 / 10));
+
+        feedpush(grtag, bytes32(0), type(uint).max);
+        uint aid = vow.bail(gilk, self);
+        (uint ink, uint art) = vat.urns(gilk, self);
+        assertEq(ink, 0);
+        assertEq(art, 0);
+
+        flow.glug(aid);
+        skip(1);
+        vm.expectRevert(UniFlower.ErrEmptyAid.selector);
+        flow.glug(aid);
+
+        (ink, art) = vat.urns(gilk, self);
+        assertEq(ink, 97284596799900971); 
+        assertEq(art, 0);
+
+        // sale gone
+        (bytes32 saleilk, address saleurn) = vow.sales(aid);
+        assertEq(saleilk, bytes32(0));
+        assertEq(saleurn, azero);
+    }
+
+    // first glug could cover the debt with remainder, but del low
+    function test_first_glug_could_cover_low_del() public {
+        curb(agold, WAD * 2 / 3, WAD, 0, 1, WAD / 100); // low del
+
+        feedpush(grtag, bytes32(1000000 * RAY), type(uint).max);
+        vat.frob(gilk, self, int(WAD), int(WAD * 9 / 10));
+
+        feedpush(grtag, bytes32(0), type(uint).max);
+        uint aid = vow.bail(gilk, self);
+        (uint ink, uint art) = vat.urns(gilk, self);
+        assertEq(ink, 0);
+        assertEq(art, 0);
+
+        flow.glug(aid);
+        skip(1);
+        flow.glug(aid);
+
+        (ink, art) = vat.urns(gilk, self);
+        assertEq(ink, 97284596799900971); 
+        assertEq(art, 0);
+
+        // sale gone
+        (bytes32 saleilk, address saleurn) = vow.sales(aid);
+        assertEq(saleilk, bytes32(0));
+        assertEq(saleurn, azero);
+    }
+
+    // can't bail 2**255, but can keep 2**255
+    function test_flowback_negative_one() public {
+        uint UINT_NEG_ONE = 2 ** 255;
+        curb(agold, WAD, WAD, 0, 1, 0);
+        feedpush(grtag, bytes32(1000000 * RAY), type(uint).max);
+        vat.frob(gilk, self, int(WAD), int(WAD));
+        skip(BANKYEAR * 1000);
+        uint aid = vow.bail(gilk, self);
+        // with both mints, should end up with totalSupply
+        // around UINT_NEG_ONE*3/4
+        risk.mint(self, UINT_NEG_ONE / 2);
+        curb(azero, UINT_NEG_ONE, 3 * WAD, 0, 1, 0);
+        curb(arisk, UINT_NEG_ONE, WAD, 0, 1, 0);
+
+        // should fail to wmul(rel, totalSupply) in clip
+        // making such high refunds impossible
+        // todo error selector once math has proper errors
+        vm.expectRevert();
+        vow.keep(ilks);
+
+        // ok but flowback from here instead...
+        // todo vat test to show UINT_NEG_ONE ink impossible
+        vm.expectRevert(Vow.ErrOverflow.selector);
+        vow.flowback(aid, 2 ** 255 + 1);
+        vm.expectRevert(Math.ErrIntUnder.selector);
+        vow.flowback(aid, 2 ** 255);
+        // should fail from rad conversion in safe
+        // todo error selector once math has proper errors
+        vm.expectRevert();
+        vow.flowback(aid, 2 ** 255 - 1);
+    }
+
 }
 
 contract Usr {
