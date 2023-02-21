@@ -3,8 +3,8 @@
 pragma solidity 0.8.18;
 
 contract Lock {
-    uint256 private immutable LOCKED = 1;
-    uint256 private immutable UNLOCKED = 2;
+    uint256 private constant LOCKED = 1;
+    uint256 private constant UNLOCKED = 2;
     uint256 private _LOCK_STATUS = 2; // UNLOCKED
 
     error ErrLock();

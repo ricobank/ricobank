@@ -5,12 +5,13 @@ pragma solidity 0.8.18;
 import './mixin/math.sol';
 import { Gem } from '../lib/gemfab/src/gem.sol';
 import "./swap.sol";
+import { Lock } from './mixin/lock.sol';
 
 interface Flowback {
     function flowback(uint256 aid, uint refund) external;
 }
 
-contract UniFlower is Math, UniSwapper {
+contract UniFlower is Math, UniSwapper, Lock {
     struct Ramp {
         uint256 vel;  // [wad] Stream speed wei/sec
         uint256 rel;  // [wad] Speed relative to supply
@@ -38,7 +39,12 @@ contract UniFlower is Math, UniSwapper {
 
     uint256 public count;
 
-    function flow(address hag, uint ham, address wag, uint wam) external returns (uint256 aid) {
+    function flow(
+        address hag, 
+        uint    ham,
+        address wag,
+        uint    wam
+    ) external returns (uint256 aid) {
         address vow = msg.sender;
         if (ramps[vow][hag].del > ham) revert ErrTinyFlow();
         if (!Gem(hag).transferFrom(msg.sender, address(this), ham)) revert ErrTransfer();
@@ -50,7 +56,7 @@ contract UniFlower is Math, UniSwapper {
         auctions[aid].wam = wam;
     }
 
-    function glug(uint256 aid) external {
+    function glug(uint256 aid) external _lock_ {
         Auction storage auction = auctions[aid];
         address hag = auction.hag;
         address vow = auction.vow;
