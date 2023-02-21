@@ -67,8 +67,10 @@ contract Vow is Flowback, Math, Ward {
         if (refund == 0)  return;
         if (refund > 2 ** 255) revert ErrOverflow();
         Sale storage sale = sales[aid];
-        vat.frob(sale.ilk, sale.urn, int(refund), 0);
+        bytes32 ilk = sale.ilk;
+        address urn = sale.urn;
         delete sales[aid];
+        vat.frob(ilk, urn, int(refund), 0);
     }
 
     function grant(address gem) external {

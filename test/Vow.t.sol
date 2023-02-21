@@ -304,6 +304,39 @@ contract VowTest is Test, RicoSetUp {
         vow.flowback(aid, 2 ** 255 - 1);
     }
 
+    uint depth_rf;
+    bytes32 lastilk_rf;
+    address lasturn_rf;
+    uint aid_rf;
+    function frob(bytes32 ilk, address urn,int,int) external {
+        lastilk_rf = ilk;
+        lasturn_rf = urn;
+        if (depth_rf > 0) {
+            depth_rf--;
+            vow.flowback(aid_rf, 2);
+        }
+    }
+
+    function test_reentrant_flowback() public {
+        curb(agold, WAD, WAD, 0, 1, 0);
+        feedpush(grtag, bytes32(1000000 * RAY), type(uint).max);
+        vat.frob(gilk, self, int(WAD), int(WAD));
+        skip(BANKYEAR * 1000);
+        aid_rf = vow.bail(gilk, self);
+ 
+        // ward self
+        vm.prank(address(flow));
+        vow.give(self);
+        vow.link('vat', self);
+
+        // will recursively call flowback
+        // second call should be on deleted sale
+        depth_rf = 1;
+        vow.flowback(aid_rf, 2);
+        assertEq(uint(lastilk_rf), 0);
+        assertEq(uint160(lasturn_rf), 0);
+    }
+
 }
 
 contract Usr {
