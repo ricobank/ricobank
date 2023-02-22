@@ -162,12 +162,6 @@ contract Vat is Lock, Math, Ward, Flog {
         // urn has no debt, or a non-dusty amount
         if (both(urn.art != 0, tab < ilk.dust)) revert ErrUrnDust();
 
-        if (dink > 0) {
-            if (!Gem(ilk.gem).transferFrom(msg.sender, address(this), uint(dink))) revert ErrTransfer();
-        } else if (dink < 0) {
-            if (!Gem(ilk.gem).transfer(msg.sender, uint(-dink))) revert ErrTransfer();
-        }
-
         if (dtab > 0) {
             rico.mint(msg.sender, uint(dtab) / RAY);
             rest += uint(dtab) % RAY;
@@ -175,6 +169,12 @@ contract Vat is Lock, Math, Ward, Flog {
             uint wad = uint(-dtab) / RAY + 1;
             rest += add(wad * RAY, dtab);
             rico.burn(msg.sender, wad);
+        }
+
+        if (dink > 0) {
+            if (!Gem(ilk.gem).transferFrom(msg.sender, address(this), uint(dink))) revert ErrTransfer();
+        } else if (dink < 0) {
+            if (!Gem(ilk.gem).transfer(msg.sender, uint(-dink))) revert ErrTransfer();
         }
     }
 
@@ -195,8 +195,8 @@ contract Vat is Lock, Math, Ward, Flog {
 
         address vow = msg.sender;
         address gem = ilks[i].gem;
-        if (!Gem(gem).transfer(vow, uint(-dink))) revert ErrTransfer();
         sin[vow]    = sub(sin[vow],    dtab);
+        if (!Gem(gem).transfer(vow, uint(-dink))) revert ErrTransfer();
 
         return (bill, gem);
     }

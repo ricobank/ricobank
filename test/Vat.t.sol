@@ -10,6 +10,7 @@ import { Gem } from '../lib/gemfab/src/gem.sol';
 import { Vat } from '../src/vat.sol';
 import '../src/mixin/lock.sol';
 import '../src/mixin/math.sol';
+import { OverrideableGem } from './mixin/OverrideableGem.sol';
 
 contract VatTest is Test, RicoSetUp {
     uint256 public init_join = 1000;
@@ -516,5 +517,215 @@ contract VatTest is Test, RicoSetUp {
         // par increase should increase collateral requirement
         vat.prod(RAY * 3);
         assertEq(uint(vat.safe(gilk, self)), uint(Vat.Spot.Sunk));
+    }
+
+    function test_frob_reentrancy() public {
+        bytes32 htag = 'hgmrico';
+        bytes32 hilk = 'hgm';
+        uint dink = WAD;
+        uint dart = WAD + 1;
+        Gem hgm = Gem(address(new HackyGem(Frobber(self), vat, "hacky gem", "HGM")));
+        HackyGem(address(hgm)).setargs(hilk, self, int(dink), int(dart));
+        HackyGem(address(hgm)).setdepth(1);
+        uint amt = WAD;
+
+        hgm.mint(self, amt * 5);
+        hgm.approve(avat, type(uint).max);
+        make_feed(htag);
+        vat.init(hilk, address(hgm), address(mdn), htag);
+        vat.filk(hilk, 'line', 100000000 * RAD);
+        vat.prod(RAY);
+        feedpush(htag, bytes32(RAY), type(uint).max);
+        uint fee = RAY + 1;
+        vat.filk(hilk, bytes32('fee'),  fee); 
+
+        skip(1);
+        // with one frob rest would be WAD + 1
+        // should be double that with an extra recursive frob
+        vat.drip(hilk);
+        feedpush(htag, bytes32(RAY * 1000000), type(uint).max);
+        vat.frob(hilk, self, int(dink), int(dart));
+        assertEq(vat.rest(), 2 * (WAD + 1));
+    }
+
+    function test_frob_reentrancy_toggle_rico() public {
+        bytes32 htag = 'hgmrico';
+        bytes32 hilk = 'hgm';
+        uint dink = WAD;
+        uint dart = WAD + 1;
+        Gem hgm = Gem(address(new HackyGem(Frobber(self), vat, "hacky gem", "HGM")));
+        HackyGem(address(hgm)).setargs(hilk, self, int(dink), int(dart));
+        HackyGem(address(hgm)).setdepth(1);
+
+        hgm.mint(self, dink * 1000);
+        hgm.approve(avat, type(uint).max);
+        make_feed(htag);
+        vat.init(hilk, address(hgm), address(mdn), htag);
+        vat.filk(hilk, 'line', 100000000 * RAD);
+        vat.prod(RAY);
+        feedpush(htag, bytes32(RAY), type(uint).max);
+        uint fee = RAY + 1;
+        vat.filk(hilk, bytes32('fee'),  fee); 
+
+        skip(1);
+        // with one frob rest would be WAD + 1
+        // should be double that with an extra recursive frob
+        vat.drip(hilk);
+        feedpush(htag, bytes32(RAY * 1000000), type(uint).max);
+        // rico balance should underflow
+        vat.frob(hilk, self, int(dink), int(dart));
+        assertEq(vat.rest(), 2 * (WAD + 1));
+
+
+        // throw most out
+        // minus one for rounding in system's favor
+        rico.transfer(azero, rico.balanceOf(self) - 1);
+        assertEq(rico.balanceOf(self), 1);
+        HackyGem(address(hgm)).setdepth(1);
+        // should fail because not enough left to send to vat
+        vm.expectRevert(OverrideableGem.ErrUnderflow.selector);
+        vat.frob(hilk, self, int(dink), -int(dart));
+    }
+
+    function dofrob(bytes32 i, address u, int dink, int dart) public {
+        vat.frob(i, u, dink, dart);
+    }
+
+    function test_grab_reentrancy() public {
+        bytes32 grabtag = 'ggmrico';
+        bytes32 grabilk = 'ggm';
+        uint dink = WAD;
+        uint dart = WAD;
+        Gem ggm = Gem(address(new GrabbyGem(Grabber(self), vat, "grabby gem", "GGM")));
+        GrabbyGem(address(ggm)).setargs(grabilk, self, -int(dink), -int(dart));
+
+        ggm.mint(self, dink * 1000);
+        ggm.approve(avat, type(uint).max);
+        vat.init(grabilk, address(ggm), address(mdn), grabtag);
+        vat.filk(grabilk, 'line', 100000000 * RAD);
+        vat.prod(RAY);
+        make_feed(grabtag);
+        feedpush(grabtag, bytes32(RAY * 1000000), type(uint).max);
+        vat.filk(grabilk, 'chop', RAY);
+
+        vat.frob(grabilk, self, int(dink * 2), int(dart));
+        GrabbyGem(address(ggm)).setdepth(1);
+        // sin should underflow
+        // todo update when we have better math errors...
+        vm.expectRevert();
+        vat.grab(grabilk, self, -int(dink), int(dart));
+    }
+
+    function dograb(bytes32 i, address u, int dink, int dart) public {
+        vat.grab(i, u, dink, dart);
+    }
+}
+
+interface Frobber {
+    function dofrob(bytes32 i, address u, int dink, int dart) external;
+}
+
+contract HackyGem is OverrideableGem {
+    Vat vat;
+    uint depth;
+    bytes32 i;
+    address u;
+    int dink;
+    int dart;
+    Frobber frobber;
+
+    constructor(Frobber _frobber, Vat _vat, bytes32 name, bytes32 symbol) OverrideableGem(name, symbol) {
+        vat = _vat;
+        frobber = _frobber;
+    }
+
+    function setdepth(uint _depth) public {
+        depth = _depth;
+    }
+
+    function setargs(bytes32 _i, address _u, int _dink, int _dart) public {
+        i = _i;
+        u = _u;
+        dink = _dink;
+        dart = _dart;
+    }
+
+    function transferFrom(address src, address dst, uint wad) public payable virtual override returns (bool ok) {
+
+        if (depth > 0) {
+            depth--;
+            frobber.dofrob(i, u, dink, dart);
+        }
+
+        unchecked {
+            ok              = true;
+            balanceOf[dst] += wad;
+            uint256 prevB   = balanceOf[src];
+            balanceOf[src]  = prevB - wad;
+            uint256 prevA   = allowance[src][msg.sender];
+
+            emit Transfer(src, dst, wad);
+
+            if ( prevA != type(uint256).max ) {
+                allowance[src][msg.sender] = prevA - wad;
+                if( prevA < wad ) {
+                    revert ErrUnderflow();
+                }
+            }
+
+            if( prevB < wad ) {
+                revert ErrUnderflow();
+            }
+        }
+    }
+}
+
+interface Grabber {
+    function dograb(bytes32 i, address u, int dink, int dart) external;
+}
+
+contract GrabbyGem is OverrideableGem {
+    Vat vat;
+    uint depth;
+    bytes32 i;
+    address u;
+    int dink;
+    int dart;
+    Grabber grabber;
+
+    constructor(Grabber _grabber, Vat _vat, bytes32 name, bytes32 symbol) OverrideableGem(name, symbol) {
+        vat = _vat;
+        grabber = _grabber;
+    }
+
+    function setdepth(uint _depth) public {
+        depth = _depth;
+    }
+
+    function setargs(bytes32 _i, address _u, int _dink, int _dart) public {
+        i = _i;
+        u = _u;
+        dink = _dink;
+        dart = _dart;
+    }
+
+    function transfer(address dst, uint wad)
+      payable external virtual override returns (bool ok)
+    {
+        if (depth > 0) {
+            depth--;
+            grabber.dograb(i, u, dink, dart);
+        }
+
+        unchecked {
+            ok = true;
+            uint256 prev = balanceOf[msg.sender];
+            balanceOf[msg.sender] = prev - wad;
+            balanceOf[dst]       += wad;
+            emit Transfer(msg.sender, dst, wad);
+            if( prev < wad ) {
+                revert ErrUnderflow();
+            }
+        }
     }
 }
