@@ -195,7 +195,7 @@ contract VatTest is Test, RicoSetUp {
         vat.frob(gilk, self, int(10), int(11));
 
         // revert for trying to exit gems from other users
-        vm.expectRevert(Math.ErrIntUnder.selector);
+        vm.expectRevert(Math.ErrUintUnder.selector);
         vat.frob(gilk, self, int(-1), 0);
 
         // gems are taken from user when joining, and rico given to user

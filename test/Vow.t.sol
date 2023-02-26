@@ -294,9 +294,7 @@ contract VowTest is Test, RicoSetUp {
 
         // ok but flowback from here instead...
         // todo vat test to show UINT_NEG_ONE ink impossible
-        vm.expectRevert(Vow.ErrOverflow.selector);
-        vow.flowback(aid, 2 ** 255 + 1);
-        vm.expectRevert(Math.ErrIntUnder.selector);
+        vm.expectRevert(Vow.ErrBigFlowback.selector);
         vow.flowback(aid, 2 ** 255);
         // should fail from rad conversion in safe
         // todo error selector once math has proper errors

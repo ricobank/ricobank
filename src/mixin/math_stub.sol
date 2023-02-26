@@ -21,10 +21,6 @@ contract MathStub is Math {
         return add(x, y);
     }
 
-    function _diff(uint x, uint y) public pure returns (int z) {
-      return diff(x, y);
-    }
-
     function _wmul(uint256 x, uint256 y) public pure returns (uint256 z) {
         return wmul(x, y);
     }

@@ -22,8 +22,14 @@
 pragma solidity 0.8.18;
 
 contract Math {
+    // when a (uint, int) arithmetic operation over/underflows
+    // Err{returnty}{Over|Under}
+    // need these because solidity has no native (uint, int) 
+    // overflow checks
     error ErrUintOver();
+    error ErrUintUnder();
     error ErrIntUnder();
+    error ErrIntOver();
 
     uint256 internal constant BLN = 10 **  9;
     uint256 internal constant WAD = 10 ** 18;
@@ -46,33 +52,28 @@ contract Math {
 
     function add(uint x, int y) internal pure returns (uint z) {
         unchecked {
-            if (x >= uint(type(int256).max)) revert ErrUintOver();
-            int sz = int(x) + y;
-            if (sz < 0) revert ErrIntUnder();
-            return uint(sz);
+            z = x + uint(y);
+            if (y > 0 && z <= x) revert ErrUintOver();
+            if (y < 0 && z >= x) revert ErrUintUnder();
         }
     }
 
     function sub(uint x, int y) internal pure returns (uint z) {
-        unchecked { // TODO explain
-          z = x - uint(y);
-        }
-        require(y <= 0 || z <= x);
-        require(y >= 0 || z >= x);
-    }
-
-    function diff(uint x, uint y) internal pure returns (int z) {
         unchecked {
-            z = int(x) - int(y);
+            z = x - uint(y);
+            if (y > 0 && z >= x) revert ErrUintUnder();
+            if (y < 0 && z <= x) revert ErrUintOver();
         }
-        require(int(x) >= 0 && int(y) >= 0);
     }
 
     function mul(uint x, int y) internal pure returns (int z) {
         unchecked {
             z = int(x) * y;
-            require(int(x) >= 0);
-            require(y == 0 || z / y == int(x));
+            if (int(x) < 0) revert ErrIntOver();
+            if (y != 0 && z / y != int(x)) {
+                if (y > 0 && z < int(x)) revert ErrIntOver();
+                if (y < 0 && z > int(x)) revert ErrIntUnder();
+            }
         }
     }
 

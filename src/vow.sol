@@ -19,7 +19,7 @@ contract Vow is Flowback, Math, Ward {
 
     mapping(uint256 aid => Sale) public sales;
 
-    error ErrOverflow();
+    error ErrBigFlowback();
     error ErrSafeBail();
     error ErrWrongKey();
 
@@ -65,7 +65,7 @@ contract Vow is Flowback, Math, Ward {
     function flowback(uint256 aid, uint refund) external
       _ward_ {
         if (refund == 0)  return;
-        if (refund > 2 ** 255) revert ErrOverflow();
+        if (refund >= 2 ** 255) revert ErrBigFlowback();
         Sale storage sale = sales[aid];
         bytes32 ilk = sale.ilk;
         address urn = sale.urn;
