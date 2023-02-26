@@ -87,6 +87,8 @@ contract BallTest is Test, UniSetUp, Math {
         adapt.look(WETH_DAI_TAG);
         adapt.look(RICO_DAI_TAG);
 
+        twap.poke(WETH_DAI_TAG);
+
         divider.poke(WETH_RICO_TAG);
         divider.poke(DAI_RICO_TAG);
         divider.poke(XAU_DAI_TAG);
@@ -102,7 +104,6 @@ contract BallTest is Test, UniSetUp, Math {
 
     function setUp() public {
         address aweth = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
-
         uint gas = gasleft();
         gf = GemFabLike(address(new GemFab()));
         fb = new Feedbase();
@@ -122,7 +123,7 @@ contract BallTest is Test, UniSetUp, Math {
             RAY, // liqr
             UniFlower.Ramp(WAD / 1000, WAD, block.timestamp, 1, WAD / 100),
             20000, // ttl
-            BANKYEAR / 4 // range
+            1 // range
         );
         UniFlower.Ramp memory stdramp = UniFlower.Ramp(
             WAD, WAD, block.timestamp, 1, WAD / 100
@@ -153,7 +154,7 @@ contract BallTest is Test, UniSetUp, Math {
 
         skip(BANKYEAR / 2);
         uint usedgas     = gas - gasleft();
-        uint expectedgas = 27136299;
+        uint expectedgas = 27249388;
         if (usedgas < expectedgas) {
             console.log("ball saved %s gas...currently %s", expectedgas - usedgas, usedgas);
         }
@@ -205,8 +206,15 @@ contract BallTest is Test, UniSetUp, Math {
 
         cladapt.look(XAU_USD_TAG);
         cladapt.look(DAI_USD_TAG);
+        adapt.look(WETH_DAI_TAG);
 
         look_poke();
+
+        // advance WETHDAI twap
+        skip(bargs.twaprange);
+        twap.poke(WETH_DAI_TAG);
+        divider.poke(WETH_RICO_TAG);
+        mdn.poke(WETH_RICO_TAG);
 
         vow = ball.vow();
 

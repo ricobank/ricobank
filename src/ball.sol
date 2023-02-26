@@ -73,7 +73,7 @@ contract Ball is Math, Pool {
     ChainlinkAdapter public cladapt;
     Progression public progression;
     TWAP public twap;
-
+   
     address constant DAI_USD_AGG = 0xAed0c38402a5d19df6E4c03F4E2DceD6e29c1ee9;
     address constant XAU_USD_AGG = 0x214eD9Da11D2fbe465a6fc601a91E62EbEc1a0D6;
     struct IlkParams {
@@ -147,11 +147,13 @@ contract Ball is Math, Pool {
         vat.ward(address(vox),  true);
 
         mdn = new Medianizer(args.feedbase);
+
         uint160 sqrtparx96 = uint160(args.sqrtpar * (2 ** 96) / RAY);
         ricodai = create_pool(args.factory, rico, DAI, 500, sqrtparx96);
- 
+
         adapt = new UniswapV3Adapter(Feedbase(args.feedbase));
         divider = new Divider(args.feedbase, RAY);
+        twap = new TWAP(args.feedbase);
         flow.setSwapRouter(args.router);
         for (uint i = 0; i < ilks.length; i++) {
             IlkParams memory ilkparams = ilks[i];
@@ -179,23 +181,29 @@ contract Ball is Math, Pool {
                 (f, r) = create_path(a2, f1);
                 // dai/rico feed created later
             } else {
-                address [] memory addr3 = new address[](3);
-                uint24  [] memory fees2 = new uint24 [](2);
-                addr3[0] = gem;
-                addr3[1] = DAI;
-                addr3[2] = rico;
-                fees2[0] = IUniswapV3Pool(pool).fee();
-                fees2[1] = RICO_FEE;
-                (f, r) = create_path(addr3, fees2);
+                // To avoid STD
+                {
+                    address [] memory addr3 = new address[](3);
+                    uint24  [] memory fees2 = new uint24 [](2);
+                    addr3[0] = gem;
+                    addr3[1] = DAI;
+                    addr3[2] = rico;
+                    fees2[0] = IUniswapV3Pool(pool).fee();
+                    fees2[1] = RICO_FEE;
+                    (f, r) = create_path(addr3, fees2);
+                }
 
-                address[] memory ss = new address[](2);
-                bytes32[] memory ts = new bytes32[](2);
-                ss[0] = address(adapt); ts[0] = concat(ilk, 'dai');
-                ss[1] = address(adapt); ts[1] = RICO_DAI_TAG;
                 adapt.setConfig(
                     concat(ilk, 'dai'),
                     UniswapV3Adapter.Config(pool, ilkparams.ttl, ilkparams.range, gem > DAI)
                 );
+
+                // TODO: Check what to use for range, ttl
+                twap.setConfig(concat(ilk, 'dai'), TWAP.Config(address(adapt), args.twaprange, args.twapttl));
+                address[] memory ss = new address[](2);
+                bytes32[] memory ts = new bytes32[](2);
+                ss[0] = address(twap); ts[0] = concat(ilk, 'dai');
+                ss[1] = address(adapt); ts[1] = RICO_DAI_TAG;
                 divider.setConfig(concat(ilk, 'rico'), Divider.Config(ss, ts));
             }
 
@@ -284,7 +292,6 @@ contract Ball is Math, Pool {
         sources[1] = address(adapt); tags[1] = RICO_DAI_TAG;
         divider.setConfig(XAU_RICO_TAG, Divider.Config(sources, tags));
 
-        twap = new TWAP(args.feedbase);
         twap.setConfig(XAU_RICO_TAG, TWAP.Config(address(divider), args.twaprange, args.twapttl));
         
         progression = new Progression(Feedbase(args.feedbase));
