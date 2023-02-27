@@ -71,8 +71,8 @@ contract Math {
             z = int(x) * y;
             if (int(x) < 0) revert ErrIntOver();
             if (y != 0 && z / y != int(x)) {
-                if (y > 0 && z < int(x)) revert ErrIntOver();
-                if (y < 0 && z > int(x)) revert ErrIntUnder();
+                if (y > 0) revert ErrIntOver();
+                else revert ErrIntUnder();
             }
         }
     }

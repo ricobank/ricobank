@@ -47,6 +47,12 @@ contract MathTest is Test, Math {
         assertEq(mul(1, 0), 0);
         assertEq(mul(0, -1), 0);
 
+        // overflow all the way back to same sign and greater magnitude should revert
+        vm.expectRevert(Math.ErrIntOver.selector);
+        bar = mul(uint(5), type(int).max / 2);
+        vm.expectRevert(Math.ErrIntUnder.selector);
+        bar = mul(uint(5), -type(int).max / 2);
+
         assertEq(mul(uint(type(int).max) - 1, 1), type(int).max - 1);
         vm.expectRevert(Math.ErrIntOver.selector);
         bar = mul(uint(type(int).max) + 1, 1);
