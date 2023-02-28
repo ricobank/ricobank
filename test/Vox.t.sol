@@ -81,5 +81,34 @@ contract VoxTest is Test, RicoSetUp {
         vox.poke();
         assertGe(vat.par(), 20 * WAD);
     }
+
+    function test_ttl() public {
+        uint old_way = vox.way();
+        vm.startPrank(vox.tip());
+        vox.fb().push(vox.tag(), bytes32(vat.par()), block.timestamp - 1);
+        vm.stopPrank();
+        vox.poke();
+        assertEq(old_way, vox.way());
+    }
+
+    function test_cap_min() public {
+        vox.poke();
+        skip(100000000);
+        vm.startPrank(vox.tip());
+        vox.fb().push(vox.tag(), 0, block.timestamp + 1);
+        vm.stopPrank();
+        vox.poke();
+        assertEq(vox.way(), vox.cap());
+    }
+
+    function test_cap_max() public {
+        vox.poke();
+        skip(100000000);
+        vm.startPrank(vox.tip());
+        vox.fb().push(vox.tag(), bytes32(type(uint).max), block.timestamp + 1 );
+        vm.stopPrank();
+        vox.poke();
+        assertEq(vox.way(), rinv(vox.cap()));
+    }
 }
 
