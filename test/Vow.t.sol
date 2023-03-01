@@ -335,6 +335,72 @@ contract VowTest is Test, RicoSetUp {
         assertEq(uint160(lasturn_rf), 0);
     }
 
+    function test_keep_balanced() public {
+        vat.filk(gilk, 'fee', 2 * RAY);
+
+        feedpush(grtag, bytes32(RAY * 1000), block.timestamp + 1000);
+        uint amt = vat.sin(avow) / RAY;
+        vat.frob(gilk, address(this), int(amt), int(amt));
+        skip(1);
+
+        feedpush(grtag, bytes32(0), block.timestamp + 10000);
+
+        assertEq(rico.balanceOf(avow), 0);
+        uint256 aid = vow.keep(ilks);
+        assertEq(rico.balanceOf(avow), vat.sin(avow) / RAY);
+        assertEq(aid, 0);
+    }
+
+    function test_keep_unbalanced_slightly_more_rico() public {
+        vat.filk(gilk, 'fee', 2 * RAY);
+
+        feedpush(grtag, bytes32(RAY * 1000), block.timestamp + 1000);
+        uint amt = vat.sin(avow) / RAY + 1;
+        vat.frob(gilk, address(this), int(amt), int(amt));
+        skip(1);
+
+        feedpush(grtag, bytes32(0), block.timestamp + 10000);
+
+        assertEq(rico.balanceOf(avow), 0);
+        uint256 aid = vow.keep(ilks);
+        assertEq(rico.balanceOf(avow), 1);
+        (address vow, address hag, uint ham, address wag, uint wam) = flow.auctions(aid);
+        assertEq(hag, arico);
+        assertEq(ham, 1);
+        assertEq(vat.sin(avow), RAY);
+        assertGt(aid, 0);
+
+        assertEq(vow, avow);
+        assertEq(wag, arisk);
+        assertEq(wam, type(uint).max);
+    }
+
+    function test_keep_unbalanced_slightly_more_sin() public {
+        vat.filk(gilk, 'fee', 2 * RAY);
+
+        feedpush(grtag, bytes32(RAY * 1000), block.timestamp + 1000);
+        uint amt = vat.sin(avow) / RAY - 1;
+        vat.frob(gilk, address(this), int(amt), int(amt));
+        skip(1);
+
+        feedpush(grtag, bytes32(0), block.timestamp + 10000);
+
+        assertEq(rico.balanceOf(avow), 0);
+        (,uint flop,) = flow.clip(avow, azero, arisk, type(uint).max);
+        assertGt(flop, 0);
+        uint256 aid = vow.keep(ilks);
+        assertEq(rico.balanceOf(avow), 1);
+        assertEq(vat.sin(avow), 2 * RAY);
+        assertGt(aid, 0);
+        (address vow, address hag, uint ham, address wag, uint wam) = flow.auctions(aid);
+        assertEq(hag, arisk);
+        assertEq(ham, flop);
+
+        assertEq(vow, avow);
+        assertEq(wag, arico);
+        assertEq(wam, type(uint).max);
+    }
+
 }
 
 contract Usr {
