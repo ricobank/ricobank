@@ -73,6 +73,10 @@ contract Vow is Flowback, Math, Ward {
         vat.frob(ilk, urn, int(refund), 0);
     }
 
+    function drip(bytes32 i) external {
+        vat.drip(i);
+    }
+
     function grant(address gem) external {
         Gem(gem).approve(address(flow), type(uint256).max);
         Gem(gem).approve(address(vat), type(uint256).max);

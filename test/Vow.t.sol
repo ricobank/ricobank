@@ -38,7 +38,7 @@ contract VowTest is Test, RicoSetUp {
     bytes32[] ilks;
     address rico_risk_pool;
 
-    function rico_mint(uint amt) internal {
+    function rico_mint(uint amt, bool bail) internal {
         GemUsr usr = new GemUsr(vat);
         (bytes32 v, uint t) = feedpull(grtag);
         feedpush(grtag, bytes32(RAY), type(uint).max);
@@ -46,7 +46,7 @@ contract VowTest is Test, RicoSetUp {
         usr.approve(agold, avat, amt);
         usr.frob(gilk, address(usr), int(amt), int(amt));
         feedpush(grtag, bytes32(0), type(uint).max);
-        vow.bail(gilk, address(usr));
+        if (bail) vow.bail(gilk, address(usr));
         usr.transfer(arico, self, amt);
         feedpush(grtag, v, t);
     }
@@ -73,7 +73,7 @@ contract VowTest is Test, RicoSetUp {
         risk.approve(address(flow), type(uint256).max);
 
         rico_risk_pool = getPoolAddr(arico, arisk, 3000);
-        rico_mint(2000 * WAD);
+        rico_mint(2000 * WAD, true);
         risk.mint(self, 1000 * WAD);
         PoolArgs memory rico_risk_args = getArgs(arico, 1000 * WAD, arisk, 1000 * WAD, 3000, x96(1));
         join_pool(rico_risk_args);
@@ -333,6 +333,32 @@ contract VowTest is Test, RicoSetUp {
         vow.flowback(aid_rf, 2);
         assertEq(uint(lastilk_rf), 0);
         assertEq(uint160(lasturn_rf), 0);
+    }
+
+    function test_drip() public {
+        (,,,,,,,uint rho,,,,) = vat.ilks(gilk);
+        assertEq(rho, block.timestamp);
+        assertEq(rico.balanceOf(self), 0);
+
+        vat.filk(gilk, 'fee', 2 * RAY);
+        feedpush(grtag, bytes32(RAY * 1000), type(uint).max);
+        vat.frob(gilk, address(this), int(WAD), int(WAD));
+        uint firstrico = rico.balanceOf(self);
+        rico_mint(1, false); // vat burns 1 extra to round in system's favor
+        vat.frob(gilk, address(this), -int(WAD), -int(WAD));
+
+        skip(1);
+        // can only mint a wad rico for a wad gold
+        vat.frob(gilk, address(this), int(WAD), int(WAD));
+        assertEq(rico.balanceOf(self), firstrico);
+        rico_mint(1, false);
+        vat.frob(gilk, address(this), -int(WAD), -int(WAD));
+
+        // until drip, then can mint more
+        vow.drip(gilk);
+        assertEq(rico.balanceOf(self), 0);
+        vat.frob(gilk, address(this), int(WAD), int(WAD));
+        assertEq(rico.balanceOf(self), firstrico * 2);
     }
 
     function test_keep_balanced() public {
