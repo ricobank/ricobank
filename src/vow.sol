@@ -57,9 +57,11 @@ contract Vow is Flowback, Math, Ward {
         vat.drip(ilk);
         if (vat.safe(ilk, urn) != Vat.Spot.Sunk) revert ErrSafeBail();
         (uint ink, uint art) = vat.urns(ilk, urn);
-        (uint bill, address gem) = vat.grab(ilk, urn, -int(ink), -int(art));
-        aid = flow.flow(gem, ink, address(RICO), bill);
-        sales[aid] = Sale({ ilk: ilk, urn: urn });
+        (uint bill, address gem, bool hooked) = vat.grab(ilk, urn, -int(ink), -int(art));
+        if (!hooked) {
+            aid = flow.flow(gem, ink, address(RICO), bill);
+            sales[aid] = Sale({ ilk: ilk, urn: urn });
+        }
     }
 
     function flowback(uint256 aid, uint refund) external

@@ -141,10 +141,6 @@ contract Vat is Lock, Math, Ward, Flog {
         // ilk has been initialised
         if (ilk.rack == 0) revert ErrIlkInit();
 
-        if (ilk.hook != address(0)) {
-            Hook(ilk.hook).hook(msg.sender, msg.data);
-        }
-
         urn.ink = add(urn.ink, dink);
         urn.art = add(urn.art, dart);
         ilk.tart = add(ilk.tart, dart);
@@ -171,15 +167,23 @@ contract Vat is Lock, Math, Ward, Flog {
             rico.burn(msg.sender, wad);
         }
 
-        if (dink > 0) {
-            if (!Gem(ilk.gem).transferFrom(msg.sender, address(this), uint(dink))) revert ErrTransfer();
-        } else if (dink < 0) {
-            if (!Gem(ilk.gem).transfer(msg.sender, uint(-dink))) revert ErrTransfer();
+        if (ilk.hook == address(0)) {
+            if (dink > 0) {
+                if (!Gem(ilk.gem).transferFrom(msg.sender, address(this), uint(dink))) {
+                    revert ErrTransfer();
+                }
+            } else if (dink < 0) {
+                if (!Gem(ilk.gem).transfer(msg.sender, uint(-dink))) {
+                    revert ErrTransfer();
+                }
+            }
+        } else {
+            Hook(ilk.hook).hook(msg.sender, msg.data);
         }
     }
 
     function grab(bytes32 i, address u, int dink, int dart)
-        _ward_ _flog_ external returns (uint256, address)
+        _ward_ _flog_ external returns (uint256, address, bool)
     {
         Urn storage urn = urns[i][u];
         Ilk storage ilk = ilks[i];
@@ -196,9 +200,15 @@ contract Vat is Lock, Math, Ward, Flog {
         address vow = msg.sender;
         address gem = ilks[i].gem;
         sin[vow]    = sub(sin[vow],    dtab);
-        if (!Gem(gem).transfer(vow, uint(-dink))) revert ErrTransfer();
 
-        return (bill, gem);
+        address hook = ilk.hook;
+        if (hook == address(0)) {
+            if (!Gem(gem).transfer(vow, uint(-dink))) revert ErrTransfer();
+            return (bill, gem, false);
+        } else {
+            Hook(hook).hook(msg.sender, msg.data);
+            return (bill, gem, true);
+        }
     }
 
     function prod(uint256 jam)

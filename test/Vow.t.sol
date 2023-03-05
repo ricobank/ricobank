@@ -427,6 +427,29 @@ contract VowTest is Test, RicoSetUp {
         assertEq(wam, type(uint).max);
     }
 
+    function test_bail_hook() public {
+        Hook hook = new Hook();
+        vat.filk(gilk, 'hook', uint(bytes32(bytes20(address(hook)))));
+        bytes memory hookdata = abi.encodeCall(
+            hook.hook,
+            (avow, abi.encodeCall(vat.grab, (gilk, self, -int(WAD), -int(WAD))))
+        );
+
+        feedpush(grtag, bytes32(RAY * 1000000), type(uint).max);
+        vat.frob(gilk, self, int(WAD), int(WAD));
+        feedpush(grtag, bytes32(0), type(uint).max);
+        uint vowgoldbefore = gold.balanceOf(avow);
+        vm.expectCall(address(hook), hookdata);
+        uint aid = vow.bail(gilk, self);
+        assertEq(gold.balanceOf(avow), vowgoldbefore);
+        assertEq(aid, 0);
+    }
+
+}
+
+contract Hook {
+    uint public hooks;
+    function hook(address, bytes calldata) public {}
 }
 
 contract Usr {

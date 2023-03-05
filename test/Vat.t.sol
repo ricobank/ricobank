@@ -619,6 +619,85 @@ contract VatTest is Test, RicoSetUp {
     function dograb(bytes32 i, address u, int dink, int dart) public {
         vat.grab(i, u, dink, dart);
     }
+
+    function test_frob_hook() public {
+        Hook hook = new Hook();
+        vat.filk(gilk, 'hook', uint(bytes32(bytes20(address(hook)))));
+        uint goldbefore = gold.balanceOf(self);
+        bytes memory hookdata = abi.encodeCall(
+            hook.hook,
+            (self, abi.encodeCall(vat.frob, (gilk, self, int(WAD), 0)))
+        );
+
+        vm.expectCall(address(hook), hookdata);
+        vat.frob(gilk, self, int(WAD), 0);
+        assertEq(gold.balanceOf(self), goldbefore);
+    }
+
+    function test_frob_hook_neg_dink() public {
+        Hook hook = new Hook();
+        vat.filk(gilk, 'hook', uint(bytes32(bytes20(address(hook)))));
+        uint goldbefore = gold.balanceOf(self);
+        vat.frob(gilk, self, int(WAD), 0);
+        bytes memory hookdata = abi.encodeCall(
+            hook.hook,
+            (self, abi.encodeCall(vat.frob, (gilk, self, -int(WAD), 0)))
+        );
+
+        vm.expectCall(address(hook), hookdata);
+        vat.frob(gilk, self, -int(WAD), 0);
+        assertEq(gold.balanceOf(self), goldbefore);
+    }
+
+    function test_frob_nohook() public {
+        vat.filk(gilk, 'hook', uint(bytes32(bytes20(address(0)))));
+        uint goldbefore = gold.balanceOf(self);
+        vat.frob(gilk, self, int(WAD), 0);
+        assertEq(gold.balanceOf(self), goldbefore - WAD);
+    }
+
+    function test_frob_nohook_neg_dink() public {
+        vat.filk(gilk, 'hook', uint(bytes32(bytes20(address(0)))));
+        vat.frob(gilk, self, int(WAD), 0);
+        uint goldbefore = gold.balanceOf(self);
+        vat.frob(gilk, self, -int(WAD), 0);
+        assertEq(gold.balanceOf(self), goldbefore + WAD);
+    }
+
+    function test_grab_hook() public {
+        Hook hook = new Hook();
+        vat.filk(gilk, 'hook', uint(bytes32(bytes20(address(hook)))));
+        bytes memory hookdata = abi.encodeCall(
+            hook.hook,
+            (self, abi.encodeCall(vat.grab, (gilk, self, -int(WAD), -int(WAD))))
+        );
+
+        feedpush(grtag, bytes32(RAY * 1000000), type(uint).max);
+        vat.frob(gilk, self, int(WAD), int(WAD));
+        feedpush(grtag, bytes32(0), type(uint).max);
+        uint goldbefore = gold.balanceOf(self);
+        vm.expectCall(address(hook), hookdata);
+        (,,bool hooked) = vat.grab(gilk, self, -int(WAD), -int(WAD));
+        assertTrue(hooked);
+        assertEq(gold.balanceOf(self), goldbefore);
+    }
+
+    function test_grab_nohook() public {
+        vat.filk(gilk, 'hook', uint(bytes32(bytes20(address(0)))));
+        feedpush(grtag, bytes32(RAY * 1000000), type(uint).max);
+        vat.frob(gilk, self, int(WAD), int(WAD));
+        feedpush(grtag, bytes32(0), type(uint).max);
+        uint goldbefore = gold.balanceOf(self);
+        (,,bool hooked) = vat.grab(gilk, self, -int(WAD), -int(WAD));
+        assertFalse(hooked);
+        assertEq(gold.balanceOf(self), goldbefore + WAD);
+    }
+
+}
+
+contract Hook {
+    uint public hooks;
+    function hook(address, bytes calldata) public {}
 }
 
 interface Frobber {
