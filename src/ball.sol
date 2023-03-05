@@ -263,6 +263,11 @@ contract Ball is Math, Pool {
 
         ricorisk = create_pool(args.factory, rico, risk, RISK_FEE, risk_price);
 
+        //                         rico/dai        dai/rico
+        // Rico/Dai AMM --------------|---->inv--->twap-------|
+        // XAU/USD CL -- divider---->divider------>twap---->prog-->inv-->RICO/REF
+        // DAI/USD CL ----|                   ^
+        //                                  xau/rico
         adapt.setConfig(
             RICO_DAI_TAG,
             UniswapV3Adapter.Config(address(ricodai), args.ricodairange, args.ricodaittl, DAI < rico)
@@ -278,10 +283,6 @@ contract Ball is Math, Pool {
         sources[1] = address(adapt); tags[1] = RICO_DAI_TAG;
         divider.setConfig(DAI_RICO_TAG, Divider.Config(sources, tags));
 
-        //                         rico/dai        dai/rico
-        // Rico/Dai AMM -------------|-------inv------|
-        // XAU/USD CL -- divider-->divider-->twap-->prog-->inv-->RICO/REF
-        // DAI/USD CL ----|
         cladapt = new ChainlinkAdapter(args.feedbase);
         cladapt.setConfig(XAU_USD_TAG, ChainlinkAdapter.Config(XAU_USD_AGG, args.xauusdttl, RAY));
         cladapt.setConfig(DAI_USD_TAG, ChainlinkAdapter.Config(DAI_USD_AGG, args.daiusdttl, RAY));
@@ -293,13 +294,14 @@ contract Ball is Math, Pool {
         divider.setConfig(XAU_RICO_TAG, Divider.Config(sources, tags));
 
         twap.setConfig(XAU_RICO_TAG, TWAP.Config(address(divider), args.twaprange, args.twapttl));
+        twap.setConfig(DAI_RICO_TAG, TWAP.Config(address(divider), args.twaprange, args.twapttl));
         
         progression = new Progression(Feedbase(args.feedbase));
         progression.setConfig(REF_RICO_TAG, Progression.Config(
-            address(divider), DAI_RICO_TAG,
-            address(twap),    XAU_RICO_TAG,
+            address(twap), DAI_RICO_TAG,
+            address(twap), XAU_RICO_TAG,
             // TODO discuss whether 10y is appropriate, decide on period
-            args.progstart,  args.progend, args.progperiod
+            args.progstart, args.progend, args.progperiod
         ));
 
         sources[0] = address(this); tags[0] = bytes32("ONE");

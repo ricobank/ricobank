@@ -95,9 +95,11 @@ contract BallTest is Test, UniSetUp, Math {
         divider.poke(XAU_RICO_TAG);
 
         twap.poke(XAU_RICO_TAG);
-        progression.poke(REF_RICO_TAG);
-        divider.poke(RICO_REF_TAG);
+        twap.poke(DAI_RICO_TAG);
 
+        progression.poke(REF_RICO_TAG);
+
+        divider.poke(RICO_REF_TAG);
         mdn.poke(WETH_RICO_TAG);
         mdn.poke(RICO_REF_TAG);
     }
@@ -151,16 +153,30 @@ contract BallTest is Test, UniSetUp, Math {
         );
 
         Ball ball = new Ball(bargs, ips);
-
-        skip(BANKYEAR / 2);
         uint usedgas     = gas - gasleft();
-        uint expectedgas = 27320753;
+        uint expectedgas = 28904829;
         if (usedgas < expectedgas) {
             console.log("ball saved %s gas...currently %s", expectedgas - usedgas, usedgas);
         }
         if (usedgas > expectedgas) {
             console.log("ball gas increase by %s...currently %s", usedgas - expectedgas, usedgas);
         }
+
+        vat = ball.vat();
+        cladapt = ball.cladapt();
+        adapt = ball.adapt();
+        divider = ball.divider();
+        twap = ball.twap();
+        progression = ball.progression();
+        (,,address _mdn,,,,,,,,,) = vat.ilks(WETH_ILK);
+        mdn = Medianizer(_mdn);
+
+        skip(40000);
+        cladapt.look(XAU_USD_TAG);
+        cladapt.look(DAI_USD_TAG);
+        adapt.look(WETH_DAI_TAG);
+        look_poke();
+        skip(BANKYEAR / 2);
 
         swap = new Swapper();
         rico = ball.rico();
@@ -187,22 +203,12 @@ contract BallTest is Test, UniSetUp, Math {
         // pool has no liquidity
         assert(swap.SWAP_ERR() == res);
 
-        vat = ball.vat();
         Gem(WETH).approve(address(vat), type(uint).max);
         me   = address(this);
         WethLike(WETH).deposit{value: wethamt * 100}();
         // try to frob 1 weth for at least $1k...shouldn't work because no look
         vm.expectRevert(Vat.ErrNotSafe.selector);
         vat.frob(WETH_ILK, me, int(wethamt), dart);
-
-        adapt = ball.adapt();
-        divider = ball.divider();
-        (,,address _mdn,,,,,,,,,) = vat.ilks(WETH_ILK);
-        mdn = Medianizer(_mdn);
- 
-        cladapt = ball.cladapt();
-        twap = ball.twap();
-        progression = ball.progression();
 
         cladapt.look(XAU_USD_TAG);
         cladapt.look(DAI_USD_TAG);
@@ -212,9 +218,9 @@ contract BallTest is Test, UniSetUp, Math {
 
         // advance WETHDAI twap
         skip(bargs.twaprange);
-        twap.poke(WETH_DAI_TAG);
-        divider.poke(WETH_RICO_TAG);
-        mdn.poke(WETH_RICO_TAG);
+        look_poke();
+        skip(bargs.twaprange);
+        look_poke();
 
         vow = ball.vow();
 
@@ -281,7 +287,8 @@ contract BallTest is Test, UniSetUp, Math {
 
     function test_basic() public {
         (bytes32 price, uint ttl) = fb.pull(address(mdn), RICO_REF_TAG);
-        assertEq(uint(price) / RAY, INIT_PAR / RAY);
+        assertGt(uint(price), INIT_PAR * 99 / 100);
+        assertLt(uint(price), INIT_PAR * 100 / 99);
         (price, ttl) = fb.pull(address(mdn), WETH_RICO_TAG);
         // ether price about 1600 rn
         assertGt(uint(price) / RAY, 1000 * RAY / INIT_PAR);
