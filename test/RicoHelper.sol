@@ -24,6 +24,22 @@ interface WethLike {
     function balanceOf(address) external returns (uint);
 }
 
+contract GemUsr {
+    Vat vat;
+    constructor(Vat _vat) {
+        vat  = _vat;
+    }
+    function approve(address gem, address usr, uint amt) public {
+        Gem(gem).approve(usr, amt);
+    }
+    function frob(bytes32 ilk, address usr, int dink, int dart) public {
+        vat.frob(ilk, usr, dink, dart);
+    }
+    function transfer(address gem, address dst, uint amt) public {
+        Gem(gem).transfer(dst, amt);
+    }
+}
+
 abstract contract RicoSetUp is UniSetUp, Math, Test {
     address constant public DAI   = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
     address constant public WETH  = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
@@ -64,6 +80,29 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
     address  public avox;
     Medianizer mdn;
     Divider divider;
+
+    function rico_mint(uint amt, bool bail) internal {
+        GemUsr usr = new GemUsr(vat);
+        (bytes32 v, uint t) = feedpull(grtag);
+        feedpush(grtag, bytes32(RAY), type(uint).max);
+        gold.mint(address(usr), amt);
+        usr.approve(agold, avat, amt);
+        usr.frob(gilk, address(usr), int(amt), int(amt));
+        feedpush(grtag, bytes32(0), type(uint).max);
+        if (bail) vow.bail(gilk, address(usr));
+        usr.transfer(arico, self, amt);
+        feedpush(grtag, v, t);
+    }
+
+    function check_gas(uint gas, uint expectedgas) internal view {
+        uint usedgas     = gas - gasleft();
+        if (usedgas < expectedgas) {
+            console.log("saved %s gas...currently %s", expectedgas - usedgas, usedgas);
+        }
+        if (usedgas > expectedgas) {
+            console.log("gas increase by %s...currently %s", usedgas - expectedgas, usedgas);
+        }
+    }
 
     function feedpull(bytes32 tag) internal view returns (bytes32, uint) {
         return feed.pull(address(mdn), tag);

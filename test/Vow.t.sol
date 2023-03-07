@@ -13,23 +13,6 @@ import { UniFlower } from '../src/flow.sol';
 import { Ward } from '../src/mixin/ward.sol';
 import { Math } from '../src/mixin/math.sol';
 
-contract GemUsr {
-    Vat vat;
-    constructor(Vat _vat) {
-        vat  = _vat;
-    }
-    function approve(address gem, address usr, uint amt) public {
-        Gem(gem).approve(usr, amt);
-    }
-    function frob(bytes32 ilk, address usr, int dink, int dart) public {
-        vat.frob(ilk, usr, dink, dart);
-    }
-    function transfer(address gem, address dst, uint amt) public {
-        Gem(gem).transfer(dst, amt);
-    }
-}
-
-
 
 // integrated vow/flow tests
 contract VowTest is Test, RicoSetUp {
@@ -37,19 +20,6 @@ contract VowTest is Test, RicoSetUp {
     uint stack = WAD * 10;
     bytes32[] ilks;
     address rico_risk_pool;
-
-    function rico_mint(uint amt, bool bail) internal {
-        GemUsr usr = new GemUsr(vat);
-        (bytes32 v, uint t) = feedpull(grtag);
-        feedpush(grtag, bytes32(RAY), type(uint).max);
-        gold.mint(address(usr), amt);
-        usr.approve(agold, avat, amt);
-        usr.frob(gilk, address(usr), int(amt), int(amt));
-        feedpush(grtag, bytes32(0), type(uint).max);
-        if (bail) vow.bail(gilk, address(usr));
-        usr.transfer(arico, self, amt);
-        feedpush(grtag, v, t);
-    }
 
     function setUp() public {
         make_bank();
@@ -90,6 +60,57 @@ contract VowTest is Test, RicoSetUp {
         fees1[0] = 3000;
         (fore, rear) = create_path(addr2, fees1);
         flow.setPath(agold, arico, fore, rear);
+    }
+
+    function test_keep_deficit_gas() public {
+        feedpush(grtag, bytes32(1000 * RAY), block.timestamp + 1000);
+        vat.frob(gilk, self, int(WAD), int(WAD));
+        feedpush(grtag, bytes32(0), block.timestamp + 1000);
+        vow.bail(gilk, self);
+
+        bytes32[] memory gilks = new bytes32[](2);
+        gilks[0] = gilk;
+        gilks[1] = gilk;
+        uint gas = gasleft();
+        uint aid = vow.keep(gilks);
+        check_gas(gas, 231230);
+        assertGt(aid, 0);
+    }
+
+    function test_keep_surplus_gas() public {
+        vat.filk(gilk, 'fee', 2 * RAY);
+        feedpush(grtag, bytes32(1000 * RAY), block.timestamp + 1000);
+        vat.frob(gilk, self, int(WAD), int(WAD));
+        skip(1);
+
+        bytes32[] memory gilks = new bytes32[](2);
+        gilks[0] = gilk;
+        gilks[1] = gilk;
+        uint gas = gasleft();
+        uint aid = vow.keep(gilks);
+        check_gas(gas, 294495);
+        assertGt(aid, 0);
+    }
+
+    function test_flowback_gas() public {
+        feedpush(grtag, bytes32(1000 * RAY), block.timestamp + 1000);
+        vat.frob(gilk, self, int(WAD), int(WAD));
+        feedpush(grtag, bytes32(0), block.timestamp + 1000);
+
+        uint aid = vow.bail(gilk, self);
+        gold.mint(avow, WAD);
+        uint gas = gasleft();
+        vow.flowback(aid, WAD);
+        check_gas(gas, 59914);
+    }
+
+    function test_bail_gas() public {
+        feedpush(grtag, bytes32(1000 * RAY), block.timestamp + 1000);
+        vat.frob(gilk, self, int(WAD), int(WAD));
+        feedpush(grtag, bytes32(0), block.timestamp + 1000);
+        uint gas = gasleft();
+        vow.bail(gilk, self);
+        check_gas(gas, 240935);
     }
 
     // goldusd, par, and liqr all = 1 after set up.

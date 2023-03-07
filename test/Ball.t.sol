@@ -106,7 +106,6 @@ contract BallTest is Test, UniSetUp, Math {
 
     function setUp() public {
         address aweth = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
-        uint gas = gasleft();
         gf = GemFabLike(address(new GemFab()));
         fb = new Feedbase();
 
@@ -152,9 +151,10 @@ contract BallTest is Test, UniSetUp, Math {
             stdramp
         );
 
+        uint gas = gasleft();
         Ball ball = new Ball(bargs, ips);
         uint usedgas     = gas - gasleft();
-        uint expectedgas = 28904829;
+        uint expectedgas = 26304319;
         if (usedgas < expectedgas) {
             console.log("ball saved %s gas...currently %s", expectedgas - usedgas, usedgas);
         }

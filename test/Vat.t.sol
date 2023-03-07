@@ -39,6 +39,49 @@ contract VatTest is Test, RicoSetUp {
         rico.mint(achap, 1);  // needs an extra for rounding
     }
 
+    function test_frob_gas() public {
+        feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
+        assertGt(gold.balanceOf(avat), 0);
+        uint gas = gasleft();
+        vat.frob(gilk, self, int(WAD), int(WAD));
+        check_gas(gas, 177370);
+        gas = gasleft();
+        vat.frob(gilk, self, int(WAD), int(WAD));
+        check_gas(gas, 18464);
+    }
+
+    function test_grab_gas() public {
+        feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
+        vat.frob(gilk, self, int(WAD), int(WAD));
+        uint gas = gasleft();
+        vat.grab(gilk, self, -int(WAD), -int(WAD));
+        check_gas(gas, 37331);
+    }
+
+    function test_heal_gas() public {
+        feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
+        vat.frob(gilk, self, int(WAD), int(WAD));
+        feedpush(grtag, bytes32(0), type(uint).max);
+        vat.grab(gilk, self, -int(WAD), -int(WAD));
+
+        uint gas = gasleft();
+        vat.heal(WAD - 1);
+        check_gas(gas, 7542);
+    }
+
+    function test_drip_gas() public {
+        uint gas = gasleft();
+        vat.drip(gilk);
+        check_gas(gas, 12091);
+
+        vat.filk(gilk, 'fee', 2 * RAY);
+        skip(1);
+        vat.frob(gilk, self, int(100 * WAD), int(50 * WAD));
+        gas = gasleft();
+        vat.drip(gilk);
+        check_gas(gas, 14854);
+    }
+
     function test_ilk_reset() public {
         vm.expectRevert(Vat.ErrMultiIlk.selector);
         vat.init(gilk, address(gold), self, grtag);

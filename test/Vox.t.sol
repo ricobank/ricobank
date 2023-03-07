@@ -32,8 +32,28 @@ contract VoxTest is Test, RicoSetUp {
         assertEq(vat.par(), 28 * WAD);
     }
 
+    function test_poke_highmar_gas() public {
+        skip(1);
+        uint way = vox.way();
+        feedpush(rtag, bytes32(10 * WAD), block.timestamp + 1000);
+        uint gas = gasleft();
+        vox.poke();
+        check_gas(gas, 34966);
+        assertLt(vox.way(), way);
+    }
+
+    function test_poke_lowmar_gas() public {
+        skip(1);
+        uint way = vox.way();
+        feedpush(rtag, bytes32(1 * WAD), block.timestamp + 1000);
+        uint gas = gasleft();
+        vox.poke();
+        check_gas(gas, 34479);
+        assertGt(vox.way(), way);
+    }
+
     function test_ricolike_vox() public {
-        vox.poke(); // how == way == 1, par stuck at 7
+        vox.poke(); // how > 1 but mar == par, par stuck at 7
         uint how = RAY + (RAY * 12 / 10) / (10 ** 16);
         vox.file(bytes32('how'), bytes32(how));
         feedpush(rtag, bytes32(1 * WAD), 10 ** 12);
