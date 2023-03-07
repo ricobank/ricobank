@@ -74,20 +74,16 @@ task('deploy-ricobank', '')
         ballargs, [ilk], { gasLimit: 50000000 }
     )
     const gem_artifact = await dpack.getIpfsJson(deps.types.Gem.artifact['/'])
-    const mdn_artifact = await dpack.getIpfsJson(deps.types.Medianizer.artifact['/'])
-    const div_artifact = await dpack.getIpfsJson(deps.types.Divider.artifact['/'])
 
     const contracts = [['flow', 'UniFlower', require('../artifacts/src/flow.sol/UniFlower.json')],
                        ['vat', 'Vat', require('../artifacts/src/vat.sol/Vat.json')],
                        ['vow', 'Vow', require('../artifacts/src/vow.sol/Vow.json')],
                        ['vox', 'Vox', require('../artifacts/src/vox.sol/Vox.json')],
                        ['rico', 'Gem', gem_artifact],
-                       ['risk', 'Gem', gem_artifact],
-                       ['mdn', 'Medianizer', mdn_artifact],
-                       ['divider', 'Divider', div_artifact]]
+                       ['risk', 'Gem', gem_artifact]]
 
     for await (const [state_var, typename, artifact] of contracts) {
-      const pack_type = ['Gem', 'Divider', 'Medianizer'].indexOf(typename) == -1
+      const pack_type = typename != 'Gem'
       await pb.packObject({
         objectname: state_var,
         address: await ball[state_var](),

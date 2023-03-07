@@ -67,7 +67,7 @@ contract Ball is Math, Pool {
     IUniswapV3Pool public ricodai;
     IUniswapV3Pool public ricorisk;
 
-    Medianizer public mdn;
+    Medianizer mdn;
     UniswapV3Adapter public adapt;
     Divider public divider;
     ChainlinkAdapter public cladapt;
