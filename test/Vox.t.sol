@@ -38,7 +38,7 @@ contract VoxTest is Test, RicoSetUp {
         feedpush(rtag, bytes32(10 * WAD), block.timestamp + 1000);
         uint gas = gasleft();
         vox.poke();
-        check_gas(gas, 34966);
+        check_gas(gas, 34894);
         assertLt(vox.way(), way);
     }
 
@@ -48,7 +48,7 @@ contract VoxTest is Test, RicoSetUp {
         feedpush(rtag, bytes32(1 * WAD), block.timestamp + 1000);
         uint gas = gasleft();
         vox.poke();
-        check_gas(gas, 34479);
+        check_gas(gas, 34407);
         assertGt(vox.way(), way);
     }
 

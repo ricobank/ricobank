@@ -31,7 +31,12 @@ import { Feedbase } from '../lib/feedbase/src/Feedbase.sol';
 import { Gem }      from '../lib/gemfab/src/gem.sol';
 
 interface Hook {
-    function hook(address urn, bytes calldata data) external;
+    function frobhook(
+        address urn, bytes32 i, address u, int dink, int dart
+    ) external;
+    function grabhook(
+        address urn, bytes32 i, address u, int dink, int dart, uint bill
+    ) external returns (uint);
 }
 
 contract Vat is Lock, Math, Ward, Flog {
@@ -167,29 +172,17 @@ contract Vat is Lock, Math, Ward, Flog {
             rico.burn(msg.sender, wad);
         }
 
-        if (ilk.hook == address(0)) {
-            if (dink > 0) {
-                if (!Gem(ilk.gem).transferFrom(msg.sender, address(this), uint(dink))) {
-                    revert ErrTransfer();
-                }
-            } else if (dink < 0) {
-                if (!Gem(ilk.gem).transfer(msg.sender, uint(-dink))) {
-                    revert ErrTransfer();
-                }
-            }
-        } else {
-            Hook(ilk.hook).hook(msg.sender, msg.data);
-        }
+        Hook(ilk.hook).frobhook(msg.sender, i, u, dink, dart);
     }
 
     function grab(bytes32 i, address u, int dink, int dart)
-        _ward_ _flog_ external returns (uint256, address, bool)
+        _ward_ _flog_ external returns (uint bill, uint aid)
     {
         Urn storage urn = urns[i][u];
         Ilk storage ilk = ilks[i];
 
         uint tab  = rmul(urn.art, ilk.rack);
-        uint bill = rmul(ilk.chop, tab);
+        bill = rmul(ilk.chop, tab);
 
         urn.ink  = add(urn.ink, dink);
         urn.art  = add(urn.art, dart);
@@ -198,17 +191,9 @@ contract Vat is Lock, Math, Ward, Flog {
         int dtab = mul(ilk.rack, dart);
 
         address vow = msg.sender;
-        address gem = ilks[i].gem;
         sin[vow]    = sub(sin[vow],    dtab);
 
-        address hook = ilk.hook;
-        if (hook == address(0)) {
-            if (!Gem(gem).transfer(vow, uint(-dink))) revert ErrTransfer();
-            return (bill, gem, false);
-        } else {
-            Hook(hook).hook(msg.sender, msg.data);
-            return (bill, gem, true);
-        }
+        aid = Hook(ilk.hook).grabhook(msg.sender, i, u, dink, dart, bill);
     }
 
     function prod(uint256 jam)
@@ -242,41 +227,6 @@ contract Vat is Lock, Math, Ward, Flog {
         rico.burn(u, wad);
     }
 
-    function flash(address[] calldata gems, uint[] calldata wads, address code, bytes calldata data)
-      _lock_ external returns (bytes memory result) {
-        if (gems.length != wads.length) revert ErrLoanArgs();
-        bool[] memory tags = new bool[](gems.length);
-        bool lent;
-        bool ok;
-
-        for(uint i = 0; i < gems.length; i++) {
-            if (pass[gems[i]]) {
-                tags[i] = true;
-                if (!Gem(gems[i]).transfer(code, wads[i])) revert ErrTransfer();
-            } else {
-                if (wads[i] > MINT || lent) revert ErrMintCeil();
-                lent = true;
-                Gem(gems[i]).mint(code, wads[i]);
-            }
-        }
-
-        (ok, result) = code.call(data);
-        require(ok, string(result));
-
-        for(uint i = 0; i < gems.length; i++) {
-            if (tags[i]) {
-                if (!Gem(gems[i]).transferFrom(code, address(this), wads[i])) revert ErrTransfer();
-            } else {
-                Gem(gems[i]).burn(code, wads[i]);
-            }
-        }
-    }
-
-    function list(address gem, bool bit)
-      _ward_ _flog_ external
-    {
-        pass[gem] = bit;
-    }
     function file(bytes32 key, uint256 val)
       _ward_ _flog_ external
     {

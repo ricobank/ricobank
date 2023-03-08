@@ -12,7 +12,7 @@ import { Asset, PoolArgs } from "./UniHelper.sol";
 import { UniFlower } from '../src/flow.sol';
 import { Ward } from '../src/mixin/ward.sol';
 import { Math } from '../src/mixin/math.sol';
-
+import { ERC20Hook } from '../src/hook/ERC20hook.sol';
 
 // integrated vow/flow tests
 contract VowTest is Test, RicoSetUp {
@@ -73,7 +73,7 @@ contract VowTest is Test, RicoSetUp {
         gilks[1] = gilk;
         uint gas = gasleft();
         uint aid = vow.keep(gilks);
-        check_gas(gas, 231230);
+        check_gas(gas, 257430);
         assertGt(aid, 0);
     }
 
@@ -88,7 +88,7 @@ contract VowTest is Test, RicoSetUp {
         gilks[1] = gilk;
         uint gas = gasleft();
         uint aid = vow.keep(gilks);
-        check_gas(gas, 294495);
+        check_gas(gas, 316645);
         assertGt(aid, 0);
     }
 
@@ -100,8 +100,8 @@ contract VowTest is Test, RicoSetUp {
         uint aid = vow.bail(gilk, self);
         gold.mint(avow, WAD);
         uint gas = gasleft();
-        vow.flowback(aid, WAD);
-        check_gas(gas, 59914);
+        hook.flowback(aid, WAD);
+        check_gas(gas, 39547);
     }
 
     function test_bail_gas() public {
@@ -110,7 +110,7 @@ contract VowTest is Test, RicoSetUp {
         feedpush(grtag, bytes32(0), block.timestamp + 1000);
         uint gas = gasleft();
         vow.bail(gilk, self);
-        check_gas(gas, 240935);
+        check_gas(gas, 238947);
     }
 
     // goldusd, par, and liqr all = 1 after set up.
@@ -140,14 +140,15 @@ contract VowTest is Test, RicoSetUp {
     }
 
     function test_wards() public {
-        vow.flowback(0, 0);
+        hook.flowback(0, 0);
         vow.pair(address(0), 'vel', WAD);
         vow.link('flow', address(flow));
 
         vow.give(address(0));
+        hook.give(address(0));
 
         vm.expectRevert();
-        vow.flowback(0, 0);
+        hook.flowback(0, 0);
         vow.grant(arico);
         vm.expectRevert();
         vow.pair(address(0), 'vel', WAD);
@@ -178,7 +179,7 @@ contract VowTest is Test, RicoSetUp {
         assertGt(ink, 0);
 
         // sale gone
-        (bytes32 saleilk, address saleurn) = vow.sales(aid);
+        (bytes32 saleilk, address saleurn) = hook.sales(aid);
         assertEq(saleilk, bytes32(0));
         assertEq(saleurn, azero);
     }
@@ -207,7 +208,7 @@ contract VowTest is Test, RicoSetUp {
         assertEq(ink, del_test_endink);
 
         // sale gone
-        (bytes32 saleilk, address saleurn) = vow.sales(aid);
+        (bytes32 saleilk, address saleurn) = hook.sales(aid);
         assertEq(saleilk, bytes32(0));
         assertEq(saleurn, azero);
     }
@@ -221,6 +222,7 @@ contract VowTest is Test, RicoSetUp {
         vat.frob(gilk, self, int(WAD), int(WAD / 2));
 
         feedpush(grtag, bytes32(0), type(uint).max);
+        hook.grant(agold);
         uint aid = vow.bail(gilk, self);
 
         flow.glug(aid);
@@ -233,7 +235,7 @@ contract VowTest is Test, RicoSetUp {
         assertEq(ink, del_test_endink);
 
         // sale gone
-        (bytes32 saleilk, address saleurn) = vow.sales(aid);
+        (bytes32 saleilk, address saleurn) = hook.sales(aid);
         assertEq(saleilk, bytes32(0));
         assertEq(saleurn, azero);
     }
@@ -261,7 +263,7 @@ contract VowTest is Test, RicoSetUp {
         assertEq(art, 0);
 
         // sale gone
-        (bytes32 saleilk, address saleurn) = vow.sales(aid);
+        (bytes32 saleilk, address saleurn) = hook.sales(aid);
         assertEq(saleilk, bytes32(0));
         assertEq(saleurn, azero);
     }
@@ -288,7 +290,7 @@ contract VowTest is Test, RicoSetUp {
         assertEq(art, 0);
 
         // sale gone
-        (bytes32 saleilk, address saleurn) = vow.sales(aid);
+        (bytes32 saleilk, address saleurn) = hook.sales(aid);
         assertEq(saleilk, bytes32(0));
         assertEq(saleurn, azero);
     }
@@ -315,12 +317,12 @@ contract VowTest is Test, RicoSetUp {
 
         // ok but flowback from here instead...
         // todo vat test to show UINT_NEG_ONE ink impossible
-        vm.expectRevert(Vow.ErrBigFlowback.selector);
-        vow.flowback(aid, 2 ** 255);
+        vm.expectRevert(ERC20Hook.ErrBigFlowback.selector);
+        hook.flowback(aid, 2 ** 255);
         // should fail from rad conversion in safe
         // todo error selector once math has proper errors
         vm.expectRevert();
-        vow.flowback(aid, 2 ** 255 - 1);
+        hook.flowback(aid, 2 ** 255 - 1);
     }
 
     uint depth_rf;
@@ -332,7 +334,7 @@ contract VowTest is Test, RicoSetUp {
         lasturn_rf = urn;
         if (depth_rf > 0) {
             depth_rf--;
-            vow.flowback(aid_rf, 2);
+            hook.flowback(aid_rf, 2);
         }
     }
 
@@ -351,7 +353,7 @@ contract VowTest is Test, RicoSetUp {
         // will recursively call flowback
         // second call should be on deleted sale
         depth_rf = 1;
-        vow.flowback(aid_rf, 2);
+        hook.flowback(aid_rf, 2);
         assertEq(uint(lastilk_rf), 0);
         assertEq(uint160(lasturn_rf), 0);
     }
@@ -411,13 +413,14 @@ contract VowTest is Test, RicoSetUp {
         assertEq(rico.balanceOf(avow), 0);
         uint256 aid = vow.keep(ilks);
         assertEq(rico.balanceOf(avow), 1);
-        (address vow, address hag, uint ham, address wag, uint wam) = flow.auctions(aid);
+        (address vow, address flo, address hag, uint ham, address wag, uint wam) = flow.auctions(aid);
         assertEq(hag, arico);
         assertEq(ham, 1);
         assertEq(vat.sin(avow), RAY);
         assertGt(aid, 0);
 
         assertEq(vow, avow);
+        assertEq(flo, avow);
         assertEq(wag, arisk);
         assertEq(wam, type(uint).max);
     }
@@ -439,11 +442,12 @@ contract VowTest is Test, RicoSetUp {
         assertEq(rico.balanceOf(avow), 1);
         assertEq(vat.sin(avow), 2 * RAY);
         assertGt(aid, 0);
-        (address vow, address hag, uint ham, address wag, uint wam) = flow.auctions(aid);
+        (address vow, address flo, address hag, uint ham, address wag, uint wam) = flow.auctions(aid);
         assertEq(hag, arisk);
         assertEq(ham, flop);
 
         assertEq(vow, avow);
+        assertEq(flo, avow);
         assertEq(wag, arico);
         assertEq(wam, type(uint).max);
     }
@@ -452,8 +456,8 @@ contract VowTest is Test, RicoSetUp {
         Hook hook = new Hook();
         vat.filk(gilk, 'hook', uint(bytes32(bytes20(address(hook)))));
         bytes memory hookdata = abi.encodeCall(
-            hook.hook,
-            (avow, abi.encodeCall(vat.grab, (gilk, self, -int(WAD), -int(WAD))))
+            hook.grabhook,
+            (avow, gilk, self, -int(WAD), -int(WAD), WAD)
         );
 
         feedpush(grtag, bytes32(RAY * 1000000), type(uint).max);
@@ -469,8 +473,12 @@ contract VowTest is Test, RicoSetUp {
 }
 
 contract Hook {
-    uint public hooks;
-    function hook(address, bytes calldata) public {}
+    function frobhook(
+        address urn, bytes32 i, address u, int dink, int dart
+    ) external {}
+    function grabhook(
+        address urn, bytes32 i, address u, int dink, int dart, uint bill
+    ) external returns (uint) {}
 }
 
 contract Usr {
@@ -521,7 +529,7 @@ contract VowJsTest is Test, RicoSetUp {
 
         weth.deposit{value: 6000 * WAD}();
         risk.mint(me, 10000 * WAD);
-        weth.approve(avat, UINT256_MAX);
+        weth.approve(address(hook), UINT256_MAX);
 
         vat.file('ceil', 10000 * RAD);
         vat.filk(i0, 'line', 10000 * RAD);
@@ -542,7 +550,7 @@ contract VowJsTest is Test, RicoSetUp {
         assertEq(uint(safe1), uint(Vat.Spot.Safe));
 
         cat.deposit{value: 7000 * WAD}();
-        cat.approve(avat, UINT256_MAX);
+        cat.approve(address(hook), UINT256_MAX);
         cat.frob(i0, c, int(4001 * WAD), int(4000 * WAD));
         cat.transfer(arico, me, 4000 * WAD);
 
@@ -701,7 +709,7 @@ contract VowJsTest is Test, RicoSetUp {
 
         // confirm bail trades the weth for rico
         uint vow_rico_0 = rico.balanceOf(avow);
-        uint vat_weth_0 = weth.balanceOf(avat);
+        uint vat_weth_0 = weth.balanceOf(address(hook));
         vm.expectCall(address(flow), abi.encodePacked(flow.flow.selector));
         uint bail_aid = vow.bail(i0, me);
 
@@ -718,7 +726,7 @@ contract VowJsTest is Test, RicoSetUp {
         // now complete the liquidation
         flow.glug(bail_aid);
         uint vow_rico_1 = rico.balanceOf(avow);
-        uint vat_weth_1 = weth.balanceOf(avat);
+        uint vat_weth_1 = weth.balanceOf(address(hook));
         assertGt(vow_rico_1, vow_rico_0);
         assertLt(vat_weth_1, vat_weth_0);
     }

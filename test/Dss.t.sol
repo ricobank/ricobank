@@ -10,13 +10,18 @@ import { Vow } from '../src/vow.sol';
 import { UniFlower } from '../src/flow.sol';
 import { RicoSetUp } from "./RicoHelper.sol";
 import { Asset, PoolArgs } from "./UniHelper.sol";
+import { ERC20Hook } from '../src/hook/ERC20hook.sol';
 
 contract Usr {
     Vat public vat;
     Vow public vow;
-    constructor(Vat vat_, Vow vow_) {
+    UniFlower public flow;
+    ERC20Hook hook;
+    constructor(Vat vat_, Vow vow_, UniFlower flow_, ERC20Hook hook_) {
         vat = vat_;
         vow = vow_;
+        flow = flow_;
+        hook = hook_;
     }
     function frob(bytes32 ilk, address u, int dink, int dart) public {
         vat.frob(ilk, u, dink, dart);
@@ -47,7 +52,8 @@ contract Usr {
     }
 
     function approve(address gem) public {
-        Gem(gem).approve(address(vat), type(uint).max);
+        Gem(gem).approve(address(hook), type(uint).max);
+        hook.grant(gem);
     }
 }
 
@@ -80,8 +86,11 @@ contract DssJsTest is Test, RicoSetUp {
     function init_gem(uint init_mint) public {
         gold = Gem(address(gemfab.build(bytes32("Gold"), bytes32("GOLD"))));
         gold.mint(self, init_mint);
-        gold.approve(address(vat), type(uint256).max);
+        gold.approve(address(hook), type(uint256).max);
         vat.init(gilk, address(gold), self, grtag);
+        vat.filk(gilk, 'hook', uint(bytes32(bytes20(address(hook)))));
+        hook.link(gilk, address(gold));
+        hook.grant(address(gold));
         vat.filk(gilk, bytes32('chop'), RAY);
         vat.filk(gilk, bytes32("line"), init_mint * 10 * RAY);
         //vat.filk(gilk, bytes32('fee'), 1000000001546067052200000000);  // 5%
@@ -102,7 +111,7 @@ contract DssJsTest is Test, RicoSetUp {
         init_gem(gembal);
         gem = gold;
         ilks.push(gilk);
-        gem.approve(address(vat), UINT256_MAX);
+        gem.approve(address(hook), UINT256_MAX);
 
         i0 = ilks[0];
 
@@ -174,9 +183,9 @@ contract DssJsTest is Test, RicoSetUp {
         // vat ward, hope vow
         vat.ward(address(vow), true);
 
-        ali = new Usr(vat, vow);
-        bob = new Usr(vat, vow);
-        cat = new Usr(vat, vow);
+        ali = new Usr(vat, vow, flow, hook);
+        bob = new Usr(vat, vow, flow, hook);
+        cat = new Usr(vat, vow, flow, hook);
         ali.approve(address(gem));
         bob.approve(address(gem));
         cat.approve(address(gem));
@@ -304,7 +313,6 @@ contract DssFrobTest is DssVatTest {
     }
 
     function test_alt_callers() public _frob_ {
-
         _slip(gem, a, 20 * WAD);
         _slip(gem, b, 20 * WAD);
         _slip(gem, c, 20 * WAD);
@@ -393,7 +401,7 @@ contract DssBiteTest is DssVatTest {
         // cat.box N/A bail liquidates entire urn
         vat.filk(i0, 'chop', RAY);
 
-        gold.approve(address(vat), UINT256_MAX);
+        gold.approve(address(hook), UINT256_MAX);
         // gov approve flap N/A not sure what to do with gov atm...
 
         curb(address(gold), UINT256_MAX, WAD, block.timestamp, 1, 1);
@@ -669,7 +677,7 @@ contract DssFlipTest is DssJsTest {
 
     function test_kick() public _flip_ {
         // no grab, no bill
-        flow.flow(address(gem), 100 * WAD, address(rico), UINT256_MAX);
+        flow.flow(me, address(gem), 100 * WAD, address(rico), UINT256_MAX);
     }
 
     // testFail_tend_empty
@@ -717,7 +725,7 @@ contract DssFlapTest is DssJsTest {
         assertEq(rico.balanceOf(address(flow)), 0);
         assertEq(flow.count(), 0); // dss flap.fill() == 0
 
-        flow.flow(address(rico), 100 * WAD, address(risk), 100000000000000000000 * WAD);
+        flow.flow(me, address(rico), 100 * WAD, address(risk), 100000000000000000000 * WAD);
         assertEq(risk.balanceOf(me), 0);
         assertEq(rico.balanceOf(me), 900 * WAD);
         assertEq(rico.balanceOf(address(flow)), 100 * WAD);
@@ -749,14 +757,15 @@ contract DssFlopTest is DssJsTest {
 
         assertEq(risk.balanceOf(me), 100 * WAD);
         assertEq(rico.balanceOf(me), 600 * WAD);
-        flow.flow(address(risk), 100 * WAD, address(rico), 10000000000000 * WAD);
+        flow.flow(me, address(risk), 100 * WAD, address(rico), 10000000000000 * WAD);
         assertEq(risk.balanceOf(me), 0);
         assertEq(rico.balanceOf(me), 600 * WAD);
 
-        (address v, address hag, uint ham, address wag, uint wam)
+        (address v, address flo, address hag, uint ham, address wag, uint wam)
             = flow.auctions(flow.count());
 
         assertEq(v, me);
+        assertEq(flo, me);
         assertEq(hag, address(risk));
         assertEq(ham, 100 * WAD);
         assertEq(wag, address(rico));
@@ -898,12 +907,12 @@ contract DssClipTest is DssJsTest {
     //   N/A rico has no auction (todo now it does...)
 
     function test_kick_basic() public _clip_ {
-        flow.flow(address(gem), 1 * WAD, address(1), UINT256_MAX);
+        flow.flow(me, address(gem), 1 * WAD, address(1), UINT256_MAX);
     }
 
     function test_kick_zero_tab() public _clip_ {
         // difference from dss: can flow (dss kick) with zero tab
-        flow.flow(address(gem), 1 * WAD, address(1), 0);
+        flow.flow(me, address(gem), 1 * WAD, address(1), 0);
     }
 
 //    function test_kick_zero_lot() public _clip_ {
@@ -928,7 +937,7 @@ contract DssClipTest is DssJsTest {
     function test_bark_not_leaving_dust() public _clip_ {
         uint aid = vow.bail(i0, me);
 
-        (bytes32 ilk, address urn) = vow.sales(aid);
+        (bytes32 ilk, address urn) = hook.sales(aid);
         assertEq(ilk, i0);
         assertEq(urn, me);
 
@@ -1004,7 +1013,7 @@ contract DssClipTest is DssJsTest {
 contract DssVowTest is DssJsTest {
     function _vow_setUp() internal {
         gem.mint(me, 10000 * WAD);
-        gem.approve(avat, UINT256_MAX);
+        gem.approve(address(hook), UINT256_MAX);
         curb(azero, 100 * WAD, WAD, block.timestamp, 1, 1);
     }
     modifier _vow_ { _vow_setUp(); _; }
@@ -1029,7 +1038,7 @@ contract DssVowTest is DssJsTest {
         feed.push(grtag, bytes32(0), UINT256_MAX);
         vow.bail(i0, me); // lots of debt
         uint aid = vow.keep(ilks);
-        (,address hag,,,) = flow.auctions(aid);
+        (,,address hag,,,) = flow.auctions(aid);
         assertEq(arisk, hag);
 
         vm.expectRevert(UniFlower.ErrTinyFlow.selector);
@@ -1038,7 +1047,7 @@ contract DssVowTest is DssJsTest {
         skip(1);
         flow.glug(aid);
         aid = vow.keep(ilks);
-        (,hag,,,) = flow.auctions(aid);
+        (,,hag,,,) = flow.auctions(aid);
         assertEq(arico, hag); // flap, not flop
         // TODO reflop after all glugged test?
     }
@@ -1051,7 +1060,7 @@ contract DssVowTest is DssJsTest {
         skip(10);
         uint aid = vow.keep(ilks);
         assertGt(aid, 0);
-        (,address hag,,,) = flow.auctions(aid);
+        (,,address hag,,,) = flow.auctions(aid);
         assertEq(hag, arico);
     }
 
@@ -1072,7 +1081,7 @@ contract DssVowTest is DssJsTest {
         vow.bail(i0, me); // lots of debt
         skip(1);
         uint aid = vow.keep(ilks);
-        (,address hag,,,) = flow.auctions(aid);
+        (,,address hag,,,) = flow.auctions(aid);
         assertEq(hag, arisk); // it's a flop
         assertEq(rico.balanceOf(address(vow)), 0);
     }
@@ -1088,7 +1097,7 @@ contract DssDogTest is DssJsTest {
         vat.file('ceil', 10000 * RAD);
         vat.filk(i0, 'line', 10000 * RAD);
         gem.mint(me, 100000 * WAD);
-        gem.approve(avat, UINT256_MAX);
+        gem.approve(address(hook), UINT256_MAX);
         vow.keep(ilks);
         feedpush(grtag, bytes32(1000 * RAY), UINT256_MAX);
     }

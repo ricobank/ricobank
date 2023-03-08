@@ -45,7 +45,7 @@ contract FlowTest is Test, RicoSetUp {
 
         // create sale of 1k rico for as much risk as it can get
         uint256 back_pre_flow_rico = rico.balanceOf(self);
-        uint256 aid = flow.flow(address(rico), WAD * 1000, address(risk), type(uint256).max);
+        uint256 aid = flow.flow(self, address(rico), WAD * 1000, address(risk), type(uint256).max);
         uint256 back_post_flow_rico = rico.balanceOf(self);
         assertEq(back_pre_flow_rico, back_post_flow_rico + 1000*WAD);
         uint256 pool_rico_0 = rico.balanceOf(rico_risk_pool);
@@ -84,7 +84,7 @@ contract FlowTest is Test, RicoSetUp {
         skip(200); // past cel
         // create sale of 1k rico for as much risk as it can get
         uint256 back_pre_flow_rico = rico.balanceOf(self);
-        uint256 aid = flow.flow(address(rico), WAD * 1000, address(risk), type(uint256).max);
+        uint256 aid = flow.flow(self, address(rico), WAD * 1000, address(risk), type(uint256).max);
         uint256 back_post_flow_rico = rico.balanceOf(self);
         assertEq(back_pre_flow_rico, back_post_flow_rico + 1000*WAD);
         uint256 pool_rico_0 = rico.balanceOf(rico_risk_pool);
@@ -119,7 +119,7 @@ contract FlowTest is Test, RicoSetUp {
 
         // create sale of 1k rico for 200 risk, three glugs should reach want amount
         uint256 back_pre_flow_rico = rico.balanceOf(self);
-        uint256 aid = flow.flow(address(rico), WAD * 1000, address(risk), WAD * 200);
+        uint256 aid = flow.flow(self, address(rico), WAD * 1000, address(risk), WAD * 200);
         uint256 back_post_flow_rico = rico.balanceOf(self);
         assertEq(back_pre_flow_rico, back_post_flow_rico + 1000*WAD);
         uint256 back_risk_1 = risk.balanceOf(self);
@@ -151,7 +151,7 @@ contract FlowTest is Test, RicoSetUp {
         flow.curb(address(rico), 'vel', WAD);
         flow.curb(address(rico), 'rel', WAD * 100000);
         flow.curb(address(rico), 'cel', 100);
-        flow.flow(address(rico), WAD * 1000000, address(risk), type(uint256).max);
+        flow.flow(self, address(rico), WAD * 1000000, address(risk), type(uint256).max);
     }
 
     function test_dust() public {
@@ -162,7 +162,7 @@ contract FlowTest is Test, RicoSetUp {
 
         // create sale of 110 rico for as much risk as it can get
         uint256 back_pre_flow_rico = rico.balanceOf(self);
-        uint256 aid = flow.flow(address(rico), WAD * 110, address(risk), type(uint256).max);
+        uint256 aid = flow.flow(self, address(rico), WAD * 110, address(risk), type(uint256).max);
         uint256 back_post_flow_rico = rico.balanceOf(self);
         assertEq(back_pre_flow_rico, back_post_flow_rico + 110*WAD);
         uint256 pool_rico_0 = rico.balanceOf(rico_risk_pool);
@@ -182,7 +182,7 @@ contract FlowTest is Test, RicoSetUp {
         // selling has gone over capacity, bell should be in the future
         // should have to wait 10 secs until charge > 0
         skip(9);
-        aid = flow.flow(address(rico), WAD * 50, address(risk), type(uint256).max);
+        aid = flow.flow(self, address(rico), WAD * 50, address(risk), type(uint256).max);
         vm.expectRevert(stdError.arithmeticError);
         flow.glug(aid);
         skip(2);
@@ -190,8 +190,8 @@ contract FlowTest is Test, RicoSetUp {
 
         skip(1);
         vm.expectRevert(UniFlower.ErrTinyFlow.selector);
-        flow.flow(address(rico), WAD * 19, address(risk), type(uint256).max);
-        flow.flow(address(rico), WAD * 20, address(risk), type(uint256).max);
+        flow.flow(self, address(rico), WAD * 19, address(risk), type(uint256).max);
+        flow.flow(self, address(rico), WAD * 20, address(risk), type(uint256).max);
     }
 
     function test_repeat_and_concurrant_sales() public {
@@ -235,7 +235,7 @@ contract FlowTest is Test, RicoSetUp {
 
         // make wam tiny so first glug is last
         // glug will run twice without reentrancyguard
-        uint aid = flow.flow(address(hgm), amt, arico, WAD);
+        uint aid = flow.flow(self, address(hgm), amt, arico, WAD);
         HackyGem(address(hgm)).setdepth(1);
         assertEq(back_count, 0);
         vm.expectRevert(Lock.ErrLock.selector);
@@ -276,14 +276,14 @@ contract FlowJsTest is Test, RicoSetUp, Flowback {
         flow.curb(arico, 'cel', 1000);
         uint256 pool_rico_0 = rico.balanceOf(rico_risk_pool);
         // consume half the allowance
-        uint256 aid = flow.flow(arico, 50 * WAD, arisk, UINT256_MAX);
+        uint256 aid = flow.flow(self, arico, 50 * WAD, arisk, UINT256_MAX);
         flow.glug(aid);
 
         uint256 pool_rico_1 = rico.balanceOf(rico_risk_pool);
         // recharge by a quarter of capacity so should sell 75%
         skip(250);
 
-        aid = flow.flow(arico, 100 * WAD, arisk, UINT256_MAX);
+        aid = flow.flow(self, arico, 100 * WAD, arisk, UINT256_MAX);
         flow.glug(aid);
 
         uint256 pool_rico_2 = rico.balanceOf(rico_risk_pool);
@@ -302,13 +302,13 @@ contract FlowJsTest is Test, RicoSetUp, Flowback {
 
         uint256 pool_rico_0 = rico.balanceOf(rico_risk_pool);
         // consume half the allowance
-        uint256 aid = flow.flow(arico, 50 * WAD, arisk, UINT256_MAX);
+        uint256 aid = flow.flow(self, arico, 50 * WAD, arisk, UINT256_MAX);
         flow.glug(aid);
 
         uint256 pool_rico_1 = rico.balanceOf(rico_risk_pool);
         skip(250);
 
-        aid = flow.flow(arico, 100 * WAD, arisk, UINT256_MAX);
+        aid = flow.flow(self, arico, 100 * WAD, arisk, UINT256_MAX);
         flow.glug(aid);
 
         uint256 pool_rico_2 = rico.balanceOf(rico_risk_pool);

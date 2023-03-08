@@ -21,7 +21,8 @@ contract UniFlower is Math, UniSwapper, Lock {
     }
 
     struct Auction {
-        address vow;  // client
+        address vow;  // vow
+        address flo;  // client
         address hag;  // have gem
         uint256 ham;  // have amount
         address wag;  // want gem
@@ -40,16 +41,18 @@ contract UniFlower is Math, UniSwapper, Lock {
     uint256 public count;
 
     function flow(
+        address vow,
         address hag, 
         uint    ham,
         address wag,
         uint    wam
     ) external returns (uint256 aid) {
-        address vow = msg.sender;
-        if (ramps[vow][hag].del > ham) revert ErrTinyFlow();
+        address flo = msg.sender;
+        if (ramps[flo][hag].del > ham) revert ErrTinyFlow();
         if (!Gem(hag).transferFrom(msg.sender, address(this), ham)) revert ErrTransfer();
         aid = ++count;
         auctions[aid].vow = vow;
+        auctions[aid].flo = msg.sender;
         auctions[aid].hag = hag;
         auctions[aid].ham = ham;
         auctions[aid].wag = wag;
@@ -82,7 +85,7 @@ contract UniFlower is Math, UniSwapper, Lock {
 
         if (last) {
             if (!Gem(hag).transfer(vow, rest)) revert ErrTransfer();
-            Flowback(vow).flowback(aid, rest);
+            Flowback(auction.flo).flowback(aid, rest);
             delete auctions[aid];
         } else {
             auction.ham = rest;

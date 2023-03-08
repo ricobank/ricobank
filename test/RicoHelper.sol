@@ -14,6 +14,7 @@ import { Ball } from '../src/ball.sol';
 import { Vat } from '../src/vat.sol';
 import { Vow } from '../src/vow.sol';
 import { Vox } from '../src/vox.sol';
+import {ERC20Hook} from '../src/hook/ERC20hook.sol';
 
 import { UniSetUp } from "./UniHelper.sol";
 
@@ -71,6 +72,7 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
     Vat      public vat;
     Vow      public vow;
     Vox      public vox;
+    ERC20Hook public hook;
     address  public arico;
     address  public arisk;
     address  public agold;
@@ -78,6 +80,7 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
     address  public avat;
     address  public avow;
     address  public avox;
+    address  public ahook;
     Medianizer mdn;
     Divider divider;
 
@@ -86,7 +89,7 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
         (bytes32 v, uint t) = feedpull(grtag);
         feedpush(grtag, bytes32(RAY), type(uint).max);
         gold.mint(address(usr), amt);
-        usr.approve(agold, avat, amt);
+        usr.approve(agold, address(hook), amt);
         usr.frob(gilk, address(usr), int(amt), int(amt));
         feedpush(grtag, bytes32(0), type(uint).max);
         if (bail) vow.bail(gilk, address(usr));
@@ -173,12 +176,14 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
         vow  = Vow(address(ball.vow()));
         vox  = Vox(address(ball.vox()));
         flow = ball.flow();
+        hook = ball.hook();
 
         avat  = address(vat);
         avow  = address(vow);
         avox  = address(vox);
         arico = address(rico);
         arisk = address(risk);
+        ahook = address(hook);
 
         rico.approve(avat, type(uint256).max);
 
@@ -196,27 +201,33 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
         dai = Gem(DAI);
         vm.prank(VAULT);
         dai.transfer(address(this), 10000 * WAD);
-        dai.approve(avat, type(uint256).max);
+        dai.approve(address(hook), type(uint256).max);
         vat.init(dilk, address(dai), self, dutag);
+        hook.link(dilk, address(dai));
+        hook.grant(address(dai));
+        vat.filk(dilk, 'hook', uint(bytes32(bytes20(address(hook)))));
         vat.filk(dilk, bytes32('chop'), RAD);
         vat.filk(dilk, bytes32('line'), init_mint * 10 * RAD);
         vat.filk(dilk, bytes32('fee'),  1000000001546067052200000000);  // 5%
         // feedpush(dutag, bytes32(RAY), block.timestamp + 1000);
-        vat.list(DAI, true);
+        hook.list(DAI, true);
         vow.grant(DAI);
     }
 
     function init_gold() public {
         gold = Gem(address(gemfab.build(bytes32("Gold"), bytes32("GOLD"))));
         gold.mint(self, init_mint * WAD);
-        gold.approve(avat, type(uint256).max);
+        gold.approve(address(hook), type(uint256).max);
         vat.init(gilk, address(gold), self, grtag);
+        hook.link(gilk, address(gold));
+        hook.grant(address(gold));
+        vat.filk(gilk, 'hook', uint(bytes32(bytes20(address(hook)))));
         // todo fix other chops, should be rays
         vat.filk(gilk, bytes32('chop'), RAY);
         vat.filk(gilk, bytes32('line'), init_mint * 10 * RAD);
         vat.filk(gilk, bytes32('fee'),  1000000001546067052200000000);  // 5%
         feedpush(grtag, bytes32(RAY), block.timestamp + 1000);
-        vat.list(address(gold), true);
+        hook.list(address(gold), true);
         agold = address(gold);
         vow.grant(agold);
     }
@@ -224,13 +235,16 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
     function init_ruby() public {
         ruby = Gem(address(gemfab.build(bytes32("Ruby"), bytes32("RUBY"))));
         ruby.mint(self, init_mint * WAD);
-        ruby.approve(avat, type(uint256).max);
+        ruby.approve(address(hook), type(uint256).max);
         vat.init(rilk, address(ruby), self, rtag);
+        hook.link(rilk, address(ruby));
+        hook.grant(address(ruby));
+        vat.filk(rilk, 'hook', uint(bytes32(bytes20(address(hook)))));
         vat.filk(rilk, bytes32('chop'), RAD);
         vat.filk(rilk, bytes32('line'), init_mint * 10 * RAD);
         vat.filk(rilk, bytes32('fee'),  1000000001546067052200000000);  // 5%
         feedpush(rtag, bytes32(RAY), block.timestamp + 1000);
-        vat.list(address(ruby), true);
+        hook.list(address(ruby), true);
         aruby = address(ruby);
         vow.grant(aruby);
     }

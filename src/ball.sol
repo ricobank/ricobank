@@ -21,6 +21,7 @@ import {ChainlinkAdapter} from "../lib/feedbase/src/adapters/ChainlinkAdapter.so
 import {Math} from '../src/mixin/math.sol';
 import {Pool} from '../src/mixin/pool.sol';
 import { IUniswapV3Pool } from "../src/TEMPinterface.sol";
+import {ERC20Hook} from './hook/ERC20hook.sol';
 
 interface GemFabLike {
     function build(
@@ -59,6 +60,7 @@ contract Ball is Math, Pool {
     Vat public vat;
     Vow public vow;
     Vox public vox;
+    ERC20Hook public hook;
 
 
     bytes32 risk_pool_id;
@@ -126,6 +128,8 @@ contract Ball is Math, Pool {
         vox = new Vox();
         vat = new Vat();
 
+        hook = new ERC20Hook(address(vat), address(flow), rico);
+
         vat.prod(args.sqrtpar ** 2 / RAY);
 
         vow.link('flow', address(flow));
@@ -146,6 +150,9 @@ contract Ball is Math, Pool {
         vat.ward(address(vow),  true);
         vat.ward(address(vox),  true);
 
+        hook.ward(address(flow), true); // flowback
+        hook.ward(address(vat), true);  // grabhook, frobhook
+
         mdn = new Medianizer(args.feedbase);
 
         uint160 sqrtparx96 = uint160(args.sqrtpar * (2 ** 96) / RAY);
@@ -161,13 +168,16 @@ contract Ball is Math, Pool {
             address gem = ilkparams.gem;
             address pool = ilkparams.pool;
             vat.init(ilk, gem, address(mdn), concat(ilk, 'rico'));
+            vat.filk(ilk, 'hook', uint(bytes32(bytes20(address(hook)))));
+            hook.link(ilk, gem);
+            hook.grant(gem);
             // TODO ilk config values, do we need them in arguments?
             vat.filk(ilk, 'chop', ilkparams.chop);
             vat.filk(ilk, 'dust', ilkparams.dust);
             vat.filk(ilk, 'fee',  ilkparams.fee);  // 5%
             vat.filk(ilk, 'line', ilkparams.line);
             vat.filk(ilk, 'liqr', ilkparams.liqr);
-            vat.list(gem, true);
+            hook.list(gem, true);
             vow.grant(gem);
 
             bytes memory f;
@@ -260,6 +270,7 @@ contract Ball is Math, Pool {
         flow.give(roll);
         vow.give(roll);
         vat.give(roll);
+        hook.give(roll);
 
         ricorisk = create_pool(args.factory, rico, risk, RISK_FEE, risk_price);
 
