@@ -68,7 +68,6 @@ contract Vat is Lock, Math, Ward, Flog {
 
     mapping (bytes32 ilk => Ilk)                           public ilks;
     mapping (bytes32 ilk => mapping (address usr => Urn )) public urns;
-    mapping (address gem => bool)                          public pass;
     mapping (address usr => uint256)                       public sin;  // [rad]
 
     enum Spot {Sunk, Iffy, Safe}
@@ -86,7 +85,6 @@ contract Vat is Lock, Math, Ward, Flog {
     error ErrWrongKey();
     error ErrWrongUrn();
 
-    uint256 public constant MINT = 2**140;
     uint256 public rest;  // [rad] Remainder from
     uint256 public debt;  // [rad] Total Rico Issued
     uint256 public ceil;  // [rad] Total Debt Ceiling
