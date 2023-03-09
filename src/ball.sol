@@ -62,10 +62,6 @@ contract Ball is Math, Pool {
     Vox public vox;
     ERC20Hook public hook;
 
-
-    bytes32 risk_pool_id;
-    address risk_pool;
-
     IUniswapV3Pool public ricodai;
     IUniswapV3Pool public ricorisk;
 
@@ -98,6 +94,7 @@ contract Ball is Math, Pool {
         address weth;
         address factory;
         address router;
+        address roll;
         uint    sqrtpar;
         uint    ceil;
         uint    ricodairange;
@@ -115,10 +112,10 @@ contract Ball is Math, Pool {
     }
 
     constructor(
-        BallArgs       memory args,
-        IlkParams[]    memory ilks
+        BallArgs    memory args,
+        IlkParams[] memory ilks
     ) payable {
-        address roll = msg.sender;
+        address roll = args.roll;
         flow = new UniFlower();
 
         rico = address(GemFabLike(args.gemfab).build(bytes32("Rico"), bytes32("RICO")));
@@ -171,7 +168,6 @@ contract Ball is Math, Pool {
             vat.filk(ilk, 'hook', uint(bytes32(bytes20(address(hook)))));
             hook.link(ilk, gem);
             hook.grant(gem);
-            // TODO ilk config values, do we need them in arguments?
             vat.filk(ilk, 'chop', ilkparams.chop);
             vat.filk(ilk, 'dust', ilkparams.dust);
             vat.filk(ilk, 'fee',  ilkparams.fee);  // 5%

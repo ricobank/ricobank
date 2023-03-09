@@ -152,6 +152,7 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
             WETH,
             factory,
             router,
+            self,
             RAY,
             100000 * RAD,
             20000, // ricodai

@@ -106,6 +106,7 @@ contract BallTest is Test, UniSetUp, Math {
 
     function setUp() public {
         address aweth = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+        me = address(this);
         gf = GemFabLike(address(new GemFab()));
         fb = new Feedbase();
 
@@ -135,6 +136,7 @@ contract BallTest is Test, UniSetUp, Math {
             aweth,
             factory,
             router,
+            me,
             INIT_SQRTPAR,
             100000 * RAD,
             20000, // ricodai
@@ -154,7 +156,7 @@ contract BallTest is Test, UniSetUp, Math {
         uint gas = gasleft();
         Ball ball = new Ball(bargs, ips);
         uint usedgas     = gas - gasleft();
-        uint expectedgas = 27171346;
+        uint expectedgas = 27171581;
         if (usedgas < expectedgas) {
             console.log("ball saved %s gas...currently %s", expectedgas - usedgas, usedgas);
         }
@@ -205,7 +207,6 @@ contract BallTest is Test, UniSetUp, Math {
 
         (,,,,,,,,,,address hook,) = vat.ilks(WILK);
         Gem(WETH).approve(address(hook), type(uint).max);
-        me   = address(this);
         WethLike(WETH).deposit{value: wethamt * 100}();
         // try to frob 1 weth for at least $1k...shouldn't work because no look
         vm.expectRevert(Vat.ErrNotSafe.selector);
