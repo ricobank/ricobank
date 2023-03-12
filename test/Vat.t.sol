@@ -73,14 +73,14 @@ contract VatTest is Test, RicoSetUp {
     function test_drip_gas() public {
         uint gas = gasleft();
         vat.drip(gilk);
-        check_gas(gas, 12041);
+        check_gas(gas, 12047);
 
         vat.filk(gilk, 'fee', 2 * RAY);
         skip(1);
         vat.frob(gilk, self, int(100 * WAD), int(50 * WAD));
         gas = gasleft();
         vat.drip(gilk);
-        check_gas(gas, 14789);
+        check_gas(gas, 14795);
     }
 
     function test_ilk_reset() public {
@@ -537,6 +537,83 @@ contract VatTest is Test, RicoSetUp {
         assertEq(debt1, debt0 + debt0 / 50);
     }
 
+    function test_rest_monotonic() public {
+        vat.filk(gilk, 'fee', RAY + 2);
+        vat.filk(gilk, 'dust', 0);
+        vat.frob(gilk, self, int(WAD + 1), int(WAD + 1));
+        skip(1);
+        vat.drip(gilk);
+        assertEq(vat.rest(), 2 * WAD + 2);
+        skip(1);
+        vat.drip(gilk);
+        assertGt(vat.rest(), 2 * WAD + 2);
+    }
+
+    function test_rest_drip_0() public {
+        vat.filk(gilk, 'fee', RAY + 1);
+        vat.frob(gilk, self, int(WAD), int(WAD));
+        skip(1);
+        vat.drip(gilk);
+        assertEq(vat.rest(), WAD);
+
+        skip(1);
+        vat.drip(gilk);
+        assertEq(vat.rest(), 2 * WAD);
+
+        vat.filk(gilk, 'fee', RAY);
+        skip(1);
+        vat.drip(gilk);
+        assertEq(vat.rest(), 2 * WAD);
+
+        vat.filk(gilk, 'fee', 3 * RAY);
+        skip(1);
+        vat.drip(gilk);
+        assertEq(vat.rest(), 6 * WAD);
+    }
+
+    function test_rest_drip_toggle_ones() public {
+        vat.filk(gilk, 'fee', RAY);
+        vat.filk(gilk, 'dust', 0);
+        rico_mint(1, true);
+        vat.frob(gilk, self, int(1), int(1));
+        vat.frob(gilk, self, -int(1), -int(1));
+        vat.drip(gilk);
+        assertEq(vat.rest(), RAY);
+        skip(1);
+        vat.drip(gilk);
+        assertEq(vat.rest(), 0);
+    }
+
+    function test_rest_drip_toggle_wads() public {
+        vat.filk(gilk, 'fee', RAY);
+        vat.drip(gilk);
+        vat.filk(gilk, 'fee', RAY + 1);
+        vat.filk(gilk, 'dust', 0);
+        rico_mint(WAD, true);
+        vat.frob(gilk, self, int(WAD), int(WAD));
+        skip(1);
+        vat.drip(gilk);
+
+        assertEq(vat.rest(), WAD);
+
+        (,uint art) = vat.urns(gilk, self);
+        vat.frob(gilk, self, 0, -int(art));
+        assertEq(vat.rest(), RAY);
+
+        skip(1);
+        vat.drip(gilk);
+        assertEq(vat.rest(), 0);
+    }
+
+    function test_drip_neg_fee() public {
+        vm.expectRevert(Vat.ErrFeeMin.selector);
+        vat.filk(gilk, 'fee', RAY / 2);
+        skip(1);
+        vm.expectRevert(Vat.ErrFeeRho.selector);
+        vat.filk(gilk, 'fee', RAY);
+        vat.drip(gilk);
+    }
+
     function test_feed_plot_safe() public {
         Vat.Spot safe0 = vat.safe(gilk, self);
         assertEq(uint(safe0), uint(Vat.Spot.Safe));
@@ -727,6 +804,161 @@ contract VatTest is Test, RicoSetUp {
         vat.grab(gilk, self, -int(WAD), -int(WAD));
         assertEq(gold.balanceOf(self), goldbefore);
     }
+
+    function test_frob_err_ordering() public {
+        vat.filk(gilk, 'fee', 2 * RAY);
+        vat.file('ceil', RAD - 1);
+        vat.filk(gilk, 'dust', RAD);
+        skip(1);
+        vow.drip(gilk);
+        // also not safe, wrong urn, dusty
+        feedpush(grtag, bytes32(0), type(uint).max);
+        vm.expectRevert(Vat.ErrDebtCeil.selector);
+        vat.frob(gilk, avox, int(WAD), int(WAD / 2));
+        vm.expectRevert(Vat.ErrNotSafe.selector);
+        vat.frob(gilk, avox, int(WAD), int(WAD / 2 - 1));
+        feedpush(grtag, bytes32(RAY * 99 / 100), type(uint).max);
+        vm.expectRevert(Vat.ErrNotSafe.selector);
+        vat.frob(gilk, avox, int(WAD), int(WAD / 2 - 1));
+        feedpush(grtag, bytes32(RAY), type(uint).max);
+        vm.expectRevert(Vat.ErrWrongUrn.selector);
+        vat.frob(gilk, avox, int(WAD), int(WAD / 2 - 1));
+        vm.expectRevert(Vat.ErrUrnDust.selector);
+        vat.frob(gilk, self, int(WAD), int(WAD / 2 - 1));
+
+        vm.expectRevert(Vat.ErrDebtCeil.selector);
+        vat.frob(gilk, self, int(WAD * 2), int(WAD / 2));
+        vat.file('ceil', RAD);
+        vat.frob(gilk, self, int(WAD * 2), int(WAD / 2));
+    }
+
+    function test_frob_err_ordering_darts() public {
+        vat.filk(gilk, 'fee', 2 * RAY);
+        vat.file('ceil', RAD);
+        vat.filk(gilk, 'dust', RAD);
+        skip(1);
+        vow.drip(gilk);
+        feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
+
+        address amdn = address(mdn);
+        gold.mint(amdn, 1000 * WAD);
+        vm.startPrank(amdn);
+        gold.approve(ahook, 1000 * WAD);
+        vat.frob(gilk, address(mdn), int(WAD * 2), int(WAD / 2));
+        vm.stopPrank();
+
+        // bypasses most checks when dart <= 0
+        feedpush(grtag, bytes32(0), type(uint).max);
+        vat.file('ceil', 0);
+        vm.expectRevert(Vat.ErrDebtCeil.selector);
+        vat.frob(gilk, amdn, int(WAD), int(1));
+        vat.frob(gilk, amdn, int(WAD), int(0));
+        vm.expectRevert(Vat.ErrUrnDust.selector);
+        vat.frob(gilk, amdn, int(WAD), -int(1));
+    }
+
+    function test_frob_err_ordering_dinks() public {
+        vat.filk(gilk, 'fee', 2 * RAY);
+        vat.file('ceil', RAD);
+        vat.filk(gilk, 'dust', RAD);
+        skip(1);
+        vow.drip(gilk);
+        feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
+
+        address amdn = address(mdn);
+        gold.mint(amdn, 1000 * WAD);
+        vm.startPrank(amdn);
+        gold.approve(ahook, 1000 * WAD);
+        vat.frob(gilk, address(mdn), int(WAD * 2), int(WAD / 2));
+        vm.stopPrank();
+
+        // bypasses most checks when dink >= 0
+        feedpush(grtag, bytes32(0), type(uint).max);
+        vat.file('ceil', 0);
+        vm.expectRevert(Vat.ErrNotSafe.selector);
+        vat.frob(gilk, amdn, -int(1), int(0));
+        feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
+        vm.expectRevert(Vat.ErrWrongUrn.selector);
+        vat.frob(gilk, amdn, -int(1), int(0));
+        feedpush(grtag, bytes32(0), type(uint).max);
+        // doesn't care when ink >= 0
+        vat.frob(gilk, amdn, int(0), int(0));
+        vat.frob(gilk, amdn, int(1), int(0));
+    }
+
+    function test_frob_err_ordering_dinks_darts() public {
+        vat.filk(gilk, 'fee', 2 * RAY);
+        vat.file('ceil', RAD * 10000);
+        vat.filk(gilk, 'dust', RAD);
+        skip(1);
+        vow.drip(gilk);
+        feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
+
+        address amdn = address(mdn);
+        gold.mint(amdn, 1000 * WAD);
+        vm.startPrank(amdn);
+        gold.approve(ahook, 1000 * WAD);
+        vat.frob(gilk, address(mdn), int(WAD * 2), int(WAD / 2));
+        // 2 for accumulated debt, 1 for rounding
+        rico.transfer(self, 3);
+        vm.stopPrank();
+
+        // bypasses most checks when dink >= 0
+        feedpush(grtag, bytes32(0), type(uint).max);
+        vat.file('ceil', RAD * 10000);
+
+        vm.expectRevert(Vat.ErrNotSafe.selector);
+        vat.frob(gilk, amdn, -int(1), int(1));
+        feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
+        vm.expectRevert(Vat.ErrWrongUrn.selector);
+        vat.frob(gilk, amdn, -int(1), int(1));
+        feedpush(grtag, bytes32(0), type(uint).max);
+        // doesn't care when ink >= 0
+        vat.frob(gilk, amdn, int(0), int(0));
+        vm.expectRevert(Vat.ErrUrnDust.selector);
+        vat.frob(gilk, amdn, int(1), int(-1));
+        vat.filk(gilk, 'dust', RAD / 2);
+        vat.frob(gilk, amdn, int(1), int(-1));
+    }
+
+    function test_frob_ilk_uninitialized() public {
+        feedpush(grtag, bytes32(0), type(uint).max);
+        vm.expectRevert(Vat.ErrIlkInit.selector);
+        vat.frob('hello', self, int(WAD), int(WAD));
+    }
+
+    function test_debt_not_normalized() public {
+        vow.drip(gilk);
+        vat.filk(gilk, 'fee', 2 * RAY);
+        vat.frob(gilk, self, int(WAD), int(WAD));
+        assertEq(vat.debt(), RAD);
+        skip(1);
+        vow.drip(gilk);
+        assertEq(vat.debt(), RAD * 2);
+    }
+
+    function test_dtab_not_normalized() public {
+        feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
+        vow.drip(gilk);
+        vat.filk(gilk, 'fee', 2 * RAY);
+        vat.frob(gilk, self, int(WAD), int(WAD));
+        assertEq(vat.debt(), RAD);
+        skip(1);
+        vow.drip(gilk);
+
+        // dtab > 0
+        uint ricobefore = rico.balanceOf(self);
+        vat.frob(gilk, self, int(WAD), int(WAD));
+        uint ricoafter = rico.balanceOf(self);
+        assertEq(ricoafter, ricobefore + WAD * 2);
+
+        // dtab < 0
+        ricobefore = rico.balanceOf(self);
+        vat.frob(gilk, self, 0, -int(WAD));
+        ricoafter = rico.balanceOf(self);
+        assertEq(ricoafter, ricobefore - (WAD * 2 + 1));
+    }
+
 }
 
 contract Hook {
