@@ -86,7 +86,7 @@ contract VatTest is Test, RicoSetUp {
 
     function test_ilk_reset() public {
         vm.expectRevert(Vat.ErrMultiIlk.selector);
-        vat.init(gilk, self, grtag);
+        vat.init(gilk, address(hook), self, grtag);
     }
 
     /* urn safety tests */
@@ -664,8 +664,7 @@ contract VatTest is Test, RicoSetUp {
         hgm.mint(self, amt * 5);
         hgm.approve(address(hook), type(uint).max);
         make_feed(htag);
-        vat.init(hilk, address(mdn), htag);
-        vat.filk(hilk, 'hook', uint(bytes32(bytes20(address(hook)))));
+        vat.init(hilk, address(hook), address(mdn), htag);
         vat.filk(hilk, 'line', 100000000 * RAD);
         vat.prod(RAY);
         feedpush(htag, bytes32(RAY), type(uint).max);
@@ -695,8 +694,7 @@ contract VatTest is Test, RicoSetUp {
         hgm.mint(self, dink * 1000);
         hgm.approve(address(hook), type(uint).max);
         make_feed(htag);
-        vat.init(hilk, address(mdn), htag);
-        vat.filk(hilk, 'hook', uint(bytes32(bytes20(address(hook)))));
+        vat.init(hilk, address(hook), address(mdn), htag);
         vat.filk(hilk, 'line', 100000000 * RAD);
         vat.prod(RAY);
         feedpush(htag, bytes32(RAY), type(uint).max);
@@ -740,8 +738,7 @@ contract VatTest is Test, RicoSetUp {
 
         ggm.mint(self, dink * 1000);
         ggm.approve(address(hook), type(uint).max);
-        vat.init(grabilk, address(mdn), grabtag);
-        vat.filk(grabilk, 'hook', uint(bytes32(bytes20(address(hook)))));
+        vat.init(grabilk, address(hook), address(mdn), grabtag);
         vat.filk(grabilk, 'line', 100000000 * RAD);
         vat.prod(RAY);
         make_feed(grabtag);

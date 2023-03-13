@@ -203,7 +203,7 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
         vm.prank(VAULT);
         dai.transfer(address(this), 10000 * WAD);
         dai.approve(address(hook), type(uint256).max);
-        vat.init(dilk, self, dutag);
+        vat.init(dilk, address(hook), self, dutag);
         hook.link(dilk, address(dai));
         hook.grant(address(dai));
         vat.filk(dilk, 'hook', uint(bytes32(bytes20(address(hook)))));
@@ -219,7 +219,7 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
         gold = Gem(address(gemfab.build(bytes32("Gold"), bytes32("GOLD"))));
         gold.mint(self, init_mint * WAD);
         gold.approve(address(hook), type(uint256).max);
-        vat.init(gilk, self, grtag);
+        vat.init(gilk, address(hook), self, grtag);
         hook.link(gilk, address(gold));
         hook.grant(address(gold));
         vat.filk(gilk, 'hook', uint(bytes32(bytes20(address(hook)))));
@@ -237,7 +237,7 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
         ruby = Gem(address(gemfab.build(bytes32("Ruby"), bytes32("RUBY"))));
         ruby.mint(self, init_mint * WAD);
         ruby.approve(address(hook), type(uint256).max);
-        vat.init(rilk, self, rtag);
+        vat.init(rilk, address(hook), self, rtag);
         hook.link(rilk, address(ruby));
         hook.grant(address(ruby));
         vat.filk(rilk, 'hook', uint(bytes32(bytes20(address(hook)))));

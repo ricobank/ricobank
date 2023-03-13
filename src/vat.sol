@@ -93,7 +93,7 @@ contract Vat is Lock, Math, Ward, Flog {
         par = RAY;
     }
 
-    function init(bytes32 ilk, address fsrc, bytes32 ftag)
+    function init(bytes32 ilk, address hook, address fsrc, bytes32 ftag)
       _ward_ _flog_ external
     {
         if (ilks[ilk].rack != 0) revert ErrMultiIlk();
@@ -101,7 +101,7 @@ contract Vat is Lock, Math, Ward, Flog {
             rack: RAY,
             fee : RAY,
             liqr: RAY,
-            hook: address(0),
+            hook: hook,
             rho : block.timestamp,
             tart: 0,
             fsrc: fsrc,

@@ -87,8 +87,7 @@ contract DssJsTest is Test, RicoSetUp {
         gold = Gem(address(gemfab.build(bytes32("Gold"), bytes32("GOLD"))));
         gold.mint(self, init_mint);
         gold.approve(address(hook), type(uint256).max);
-        vat.init(gilk, self, grtag);
-        vat.filk(gilk, 'hook', uint(bytes32(bytes20(address(hook)))));
+        vat.init(gilk, address(hook), self, grtag);
         hook.link(gilk, address(gold));
         hook.grant(address(gold));
         vat.filk(gilk, bytes32('chop'), RAY);
