@@ -34,6 +34,7 @@ contract BallTest is Test, UniSetUp, Math {
     bytes32 internal constant WETH_RICO_TAG = "wethrico";
     bytes32 internal constant RICO_DAI_TAG = "ricodai";
     bytes32 internal constant DAI_RICO_TAG = "dairico";
+    bytes32 internal constant USD_RICO_TAG = "usdrico";
     bytes32 internal constant XAU_USD_TAG = "xauusd";
     bytes32 internal constant XAU_DAI_TAG = "xauusd";
     bytes32 internal constant DAI_USD_TAG = "daiusd";
@@ -93,9 +94,10 @@ contract BallTest is Test, UniSetUp, Math {
         divider.poke(DAI_RICO_TAG);
         divider.poke(XAU_DAI_TAG);
         divider.poke(XAU_RICO_TAG);
+        divider.poke(USD_RICO_TAG);
 
         twap.poke(XAU_RICO_TAG);
-        twap.poke(DAI_RICO_TAG);
+        twap.poke(USD_RICO_TAG);
 
         progression.poke(REF_RICO_TAG);
 
@@ -156,7 +158,7 @@ contract BallTest is Test, UniSetUp, Math {
         uint gas = gasleft();
         Ball ball = new Ball(bargs, ips);
         uint usedgas     = gas - gasleft();
-        uint expectedgas = 27135125;
+        uint expectedgas = 27270550;
         if (usedgas < expectedgas) {
             console.log("ball saved %s gas...currently %s", expectedgas - usedgas, usedgas);
         }

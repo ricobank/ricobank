@@ -42,6 +42,7 @@ contract Ball is Math, Pool {
 
     bytes32 internal constant RICO_DAI_TAG = "ricodai";
     bytes32 internal constant DAI_RICO_TAG = "dairico";
+    bytes32 internal constant USD_RICO_TAG = "usdrico";
     bytes32 internal constant XAU_USD_TAG = "xauusd";
     bytes32 internal constant XAU_DAI_TAG = "xauusd";
     bytes32 internal constant DAI_USD_TAG = "daiusd";
@@ -268,12 +269,15 @@ contract Ball is Math, Pool {
         hook.give(roll);
 
         ricorisk = create_pool(args.factory, rico, risk, RISK_FEE, risk_price);
-
-        //                         rico/dai        dai/rico
-        // Rico/Dai AMM --------------|---->inv--->twap-------|
-        // XAU/USD CL -- divider---->divider------>twap---->prog-->inv-->RICO/REF
-        // DAI/USD CL ----|                   ^
-        //                                  xau/rico
+        // |------------------------->divider--------->twap------>| (usd/rico)
+        // |                              |                       |
+        // |                             inv                      |
+        // |                              |                       |
+        // |                         rico/dai                     |
+        // |   Rico/Dai AMM ------------->|                       |
+        // --- DAI/USD CL -- divider---->divider------>twap---->prog-->inv-->RICO/REF
+        //     XAU/USD CL ----|                   ^
+        //                                  (xau/rico)
         adapt.setConfig(
             RICO_DAI_TAG,
             UniswapV3Adapter.Config(address(ricodai), args.ricodairange, args.ricodaittl, DAI < rico)
@@ -298,13 +302,16 @@ contract Ball is Math, Pool {
         sources[0] = address(divider); tags[0] = XAU_DAI_TAG;
         sources[1] = address(adapt); tags[1] = RICO_DAI_TAG;
         divider.setConfig(XAU_RICO_TAG, Divider.Config(sources, tags));
+        sources[0] = address(divider); tags[0] = DAI_RICO_TAG;
+        sources[1] = address(cladapt); tags[1] = DAI_USD_TAG;
+        divider.setConfig(USD_RICO_TAG, Divider.Config(sources, tags));
 
         twap.setConfig(XAU_RICO_TAG, TWAP.Config(address(divider), args.twaprange, args.twapttl));
-        twap.setConfig(DAI_RICO_TAG, TWAP.Config(address(divider), args.twaprange, args.twapttl));
+        twap.setConfig(USD_RICO_TAG, TWAP.Config(address(divider), args.twaprange, args.twapttl));
         
         progression = new Progression(Feedbase(args.feedbase));
         progression.setConfig(REF_RICO_TAG, Progression.Config(
-            address(twap), DAI_RICO_TAG,
+            address(twap), USD_RICO_TAG,
             address(twap), XAU_RICO_TAG,
             // TODO discuss whether 10y is appropriate, decide on period
             args.progstart, args.progend, args.progperiod
