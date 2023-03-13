@@ -1,20 +1,23 @@
 
+## ricobank
+`ricobank` is an `autobank`.  Rico is an iteration on Rai with some important differences, including but not limited to:
+- Tick controller, see `vox`
+- Composable price feeds, see `feedbase`
+- Endgamed incentive structure, see `feedbase` and `vow`
+- Simpler implementation, see everything
+
 ## autobank
 
 `autobank` is a generic term for the synthetic asset system used in Dai, Rai, and Rico. The behavior of the synthetic depends on the type of controller used. See [bank.dev/vox](https://bank.dev/vox) for a description of how these controllers can be used to implement synthetics that behave like a variety of instruments, from "wrapped perps" to fiat-like synthetic assets.
 
 ### overview
 
-- `abi.sol` -- interfaces used throughout the project
 - `ball.sol` -- a single contract that deploys and wires up all contracts in the system
-- `flow.sol` -- the abstract auction interfaces, and version 1 `flower` which uses Balancer pools for the 'auctions'
-- `plot.sol` -- associates feedbase `src,tag` and variables in `vat`/`vow`, pulls from feedbase / pushes to system
-- `plug.sol` -- join/exit/flash for gems
-- `port.sol` -- join/exit/flash for rico
 - `vat.sol` -- the core CDP engine
 - `vow.sol` -- triggers liquidations and processes debt/surplus auctions
 - `vox.sol` -- adjusts `par` and `way`
-
+- `ERC20hook.sol` -- hook `vat` uses to handle ERC20 moves in `vat.frob` and `vat.grab`
+- `flow.sol` -- the abstract auction interfaces, and version 1 `flower` which uses UniswapV3 pools for the 'auctions'
 
 ### developing
 
@@ -26,6 +29,11 @@ This repo uses submodules for managing some dependencies.
     - `npm run download-submodules`
     - `npm run install-submodules`
     - `npm run build:all`
-- `npm run test`
+- `npm test -- <your_rpc_url> [forge test options]
+
+Run `npm test` with FOUNDRY_PROFILE=lite to build faster.  Lite mode won't pass gas tests.  Use default for those.
+
+To run js tests, with ipfs daemon running:
+- `npm run js-test`
 
 
