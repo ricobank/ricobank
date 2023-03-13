@@ -16,7 +16,7 @@ task('deploy-ricobank', '')
     }
     let deps
     if (args.dependencies) {
-      deps = args.dependencies
+      deps = JSON.parse(args.dependencies)
     } else if (args.mock) {
       deps = await hre.run('deploy-mock-dependencies')
     } else {
