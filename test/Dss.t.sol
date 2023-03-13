@@ -802,7 +802,7 @@ contract DssClipTest is DssJsTest {
         _slip(gold, me, 1000 * WAD);
         // no need to join
 
-        vat.filk(i0, 'liqr', RAY / 2); // dss mat (rico uses inverse)
+        vat.filk(i0, 'liqr', 2 * RAY); // dss mat
 
         feedpush(grtag, bytes32(goldprice), block.timestamp + 1000);
 

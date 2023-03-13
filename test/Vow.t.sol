@@ -101,7 +101,7 @@ contract VowTest is Test, RicoSetUp {
         gold.mint(avow, WAD);
         uint gas = gasleft();
         hook.flowback(aid, WAD);
-        check_gas(gas, 39525);
+        check_gas(gas, 39512);
     }
 
     function test_bail_gas() public {
@@ -110,7 +110,7 @@ contract VowTest is Test, RicoSetUp {
         feedpush(grtag, bytes32(0), block.timestamp + 1000);
         uint gas = gasleft();
         vow.bail(gilk, self);
-        check_gas(gas, 238916);
+        check_gas(gas, 238903);
     }
 
     // goldusd, par, and liqr all = 1 after set up.

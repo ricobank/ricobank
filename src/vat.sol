@@ -120,9 +120,8 @@ contract Vat is Lock, Math, Ward, Flog {
         if (block.timestamp > ttl) {
             return Spot.Iffy;
         }
-        uint256    liq = rmul(mark, ilk.liqr);
-        uint256    tab = urn.art * rmul(par, ilk.rack);
-        uint256    cut = urn.ink * liq;
+        uint256    tab = urn.art * rmul(rmul(par, ilk.rack), ilk.liqr);
+        uint256    cut = urn.ink * mark;
         if (tab <= cut) {
             return Spot.Safe;
         } else {
