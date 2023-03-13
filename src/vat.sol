@@ -56,9 +56,7 @@ contract Vat is Lock, Math, Ward, Flog {
         uint256 chop;  // [ray] Liquidation Penalty
         uint256 liqr;  // [ray] Liquidation Ratio
 
-        address hook;  // [obj] Frob hook
-
-        address gem;   // [gem] Collateral token
+        address hook;  // [obj] Frob/grab hook
     }
 
     struct Urn {
@@ -78,9 +76,7 @@ contract Vat is Lock, Math, Ward, Flog {
     error ErrNotSafe();
     error ErrUrnDust();
     error ErrDebtCeil();
-    error ErrLoanArgs();
     error ErrMultiIlk();
-    error ErrMintCeil();
     error ErrTransfer();
     error ErrWrongKey();
     error ErrWrongUrn();
@@ -97,7 +93,7 @@ contract Vat is Lock, Math, Ward, Flog {
         par = RAY;
     }
 
-    function init(bytes32 ilk, address gem, address fsrc, bytes32 ftag)
+    function init(bytes32 ilk, address fsrc, bytes32 ftag)
       _ward_ _flog_ external
     {
         if (ilks[ilk].rack != 0) revert ErrMultiIlk();
@@ -106,7 +102,6 @@ contract Vat is Lock, Math, Ward, Flog {
             fee : RAY,
             liqr: RAY,
             hook: address(0),
-            gem : gem,
             rho : block.timestamp,
             tart: 0,
             fsrc: fsrc,

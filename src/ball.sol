@@ -164,7 +164,7 @@ contract Ball is Math, Pool {
             bytes32 ilk = ilkparams.ilk;
             address gem = ilkparams.gem;
             address pool = ilkparams.pool;
-            vat.init(ilk, gem, address(mdn), concat(ilk, 'rico'));
+            vat.init(ilk, address(mdn), concat(ilk, 'rico'));
             vat.filk(ilk, 'hook', uint(bytes32(bytes20(address(hook)))));
             hook.link(ilk, gem);
             hook.grant(gem);

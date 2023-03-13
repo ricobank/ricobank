@@ -73,7 +73,7 @@ contract VowTest is Test, RicoSetUp {
         gilks[1] = gilk;
         uint gas = gasleft();
         uint aid = vow.keep(gilks);
-        check_gas(gas, 257408);
+        check_gas(gas, 257364);
         assertGt(aid, 0);
     }
 
@@ -88,7 +88,7 @@ contract VowTest is Test, RicoSetUp {
         gilks[1] = gilk;
         uint gas = gasleft();
         uint aid = vow.keep(gilks);
-        check_gas(gas, 316586);
+        check_gas(gas, 316542);
         assertGt(aid, 0);
     }
 
@@ -101,7 +101,7 @@ contract VowTest is Test, RicoSetUp {
         gold.mint(avow, WAD);
         uint gas = gasleft();
         hook.flowback(aid, WAD);
-        check_gas(gas, 39547);
+        check_gas(gas, 39525);
     }
 
     function test_bail_gas() public {
@@ -110,7 +110,7 @@ contract VowTest is Test, RicoSetUp {
         feedpush(grtag, bytes32(0), block.timestamp + 1000);
         uint gas = gasleft();
         vow.bail(gilk, self);
-        check_gas(gas, 239004);
+        check_gas(gas, 238916);
     }
 
     // goldusd, par, and liqr all = 1 after set up.
@@ -359,7 +359,7 @@ contract VowTest is Test, RicoSetUp {
     }
 
     function test_drip() public {
-        (,,,,,,,uint rho,,,,) = vat.ilks(gilk);
+        (,,,,,,,uint rho,,,) = vat.ilks(gilk);
         assertEq(rho, block.timestamp);
         assertEq(rico.balanceOf(self), 0);
 

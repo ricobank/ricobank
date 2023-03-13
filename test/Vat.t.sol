@@ -11,6 +11,7 @@ import { Vat } from '../src/vat.sol';
 import '../src/mixin/lock.sol';
 import '../src/mixin/math.sol';
 import { OverrideableGem } from './mixin/OverrideableGem.sol';
+import { ERC20Hook } from '../src/hook/ERC20hook.sol';
 
 contract VatTest is Test, RicoSetUp {
     uint256 public init_join = 1000;
@@ -45,10 +46,10 @@ contract VatTest is Test, RicoSetUp {
         assertGt(gold.balanceOf(address(hook)), 0);
         uint gas = gasleft();
         vat.frob(gilk, self, int(WAD), int(WAD));
-        check_gas(gas, 180232);
+        check_gas(gas, 180210);
         gas = gasleft();
         vat.frob(gilk, self, int(WAD), int(WAD));
-        check_gas(gas, 19626);
+        check_gas(gas, 19616);
     }
 
     function test_grab_gas() public {
@@ -56,7 +57,7 @@ contract VatTest is Test, RicoSetUp {
         vat.frob(gilk, self, int(WAD), int(WAD));
         uint gas = gasleft();
         vat.grab(gilk, self, -int(WAD), -int(WAD));
-        check_gas(gas, 272049);
+        check_gas(gas, 272027);
     }
 
     function test_heal_gas() public {
@@ -73,19 +74,19 @@ contract VatTest is Test, RicoSetUp {
     function test_drip_gas() public {
         uint gas = gasleft();
         vat.drip(gilk);
-        check_gas(gas, 12047);
+        check_gas(gas, 12025);
 
         vat.filk(gilk, 'fee', 2 * RAY);
         skip(1);
         vat.frob(gilk, self, int(100 * WAD), int(50 * WAD));
         gas = gasleft();
         vat.drip(gilk);
-        check_gas(gas, 14795);
+        check_gas(gas, 14773);
     }
 
     function test_ilk_reset() public {
         vm.expectRevert(Vat.ErrMultiIlk.selector);
-        vat.init(gilk, address(gold), self, grtag);
+        vat.init(gilk, self, grtag);
     }
 
     /* urn safety tests */
@@ -285,7 +286,7 @@ contract VatTest is Test, RicoSetUp {
         bytes memory data = abi.encodeWithSelector(chap.nop.selector);
         gems.push(arico);
         wads.push(2 ** 200);
-        vm.expectRevert(Vat.ErrMintCeil.selector);
+        vm.expectRevert(ERC20Hook.ErrMintCeil.selector);
         hook.flash(gems, wads, achap, data);
     }
 
@@ -300,7 +301,7 @@ contract VatTest is Test, RicoSetUp {
         // borrow max amount of rico, and then repeating rico in gems should fail
         gems.push(arico);
         wads.push(1);
-        vm.expectRevert(Vat.ErrMintCeil.selector);
+        vm.expectRevert(ERC20Hook.ErrMintCeil.selector);
         hook.flash(gems, wads, achap, data);
     }
 
@@ -517,7 +518,7 @@ contract VatTest is Test, RicoSetUp {
 
     function owed() internal returns (uint) {
         vat.drip(gilk);
-        (,uint rack,,,,,,,,,,) = vat.ilks(gilk);
+        (,uint rack,,,,,,,,,) = vat.ilks(gilk);
         (,uint art) = vat.urns(gilk, self);
         return rack * art;
     }
@@ -663,7 +664,7 @@ contract VatTest is Test, RicoSetUp {
         hgm.mint(self, amt * 5);
         hgm.approve(address(hook), type(uint).max);
         make_feed(htag);
-        vat.init(hilk, address(hgm), address(mdn), htag);
+        vat.init(hilk, address(mdn), htag);
         vat.filk(hilk, 'hook', uint(bytes32(bytes20(address(hook)))));
         vat.filk(hilk, 'line', 100000000 * RAD);
         vat.prod(RAY);
@@ -694,7 +695,7 @@ contract VatTest is Test, RicoSetUp {
         hgm.mint(self, dink * 1000);
         hgm.approve(address(hook), type(uint).max);
         make_feed(htag);
-        vat.init(hilk, address(hgm), address(mdn), htag);
+        vat.init(hilk, address(mdn), htag);
         vat.filk(hilk, 'hook', uint(bytes32(bytes20(address(hook)))));
         vat.filk(hilk, 'line', 100000000 * RAD);
         vat.prod(RAY);
@@ -739,7 +740,7 @@ contract VatTest is Test, RicoSetUp {
 
         ggm.mint(self, dink * 1000);
         ggm.approve(address(hook), type(uint).max);
-        vat.init(grabilk, address(ggm), address(mdn), grabtag);
+        vat.init(grabilk, address(mdn), grabtag);
         vat.filk(grabilk, 'hook', uint(bytes32(bytes20(address(hook)))));
         vat.filk(grabilk, 'line', 100000000 * RAD);
         vat.prod(RAY);

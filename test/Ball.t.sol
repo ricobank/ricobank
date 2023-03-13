@@ -156,7 +156,7 @@ contract BallTest is Test, UniSetUp, Math {
         uint gas = gasleft();
         Ball ball = new Ball(bargs, ips);
         uint usedgas     = gas - gasleft();
-        uint expectedgas = 27171581;
+        uint expectedgas = 27136525;
         if (usedgas < expectedgas) {
             console.log("ball saved %s gas...currently %s", expectedgas - usedgas, usedgas);
         }
@@ -170,7 +170,7 @@ contract BallTest is Test, UniSetUp, Math {
         divider = ball.divider();
         twap = ball.twap();
         progression = ball.progression();
-        (,,address _mdn,,,,,,,,,) = vat.ilks(WETH_ILK);
+        (,,address _mdn,,,,,,,,) = vat.ilks(WETH_ILK);
         mdn = Medianizer(_mdn);
 
         skip(40000);
@@ -205,7 +205,7 @@ contract BallTest is Test, UniSetUp, Math {
         // pool has no liquidity
         assert(swap.SWAP_ERR() == res);
 
-        (,,,,,,,,,,address hook,) = vat.ilks(WILK);
+        (,,,,,,,,,,address hook) = vat.ilks(WILK);
         Gem(WETH).approve(address(hook), type(uint).max);
         WethLike(WETH).deposit{value: wethamt * 100}();
         // try to frob 1 weth for at least $1k...shouldn't work because no look
