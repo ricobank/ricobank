@@ -2,7 +2,7 @@
 
 // Copyright (C) 2021 the bank
 
-pragma solidity 0.8.18;
+pragma solidity 0.8.19;
 
 import { Vat } from '../src/vat.sol';
 import { Gem } from '../lib/gemfab/src/gem.sol';
