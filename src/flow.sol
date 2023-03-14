@@ -6,12 +6,13 @@ import './mixin/math.sol';
 import { Gem } from '../lib/gemfab/src/gem.sol';
 import "./swap.sol";
 import { Lock } from './mixin/lock.sol';
+import { Flog } from './mixin/flog.sol';
 
 interface Flowback {
     function flowback(uint256 aid, uint refund) external;
 }
 
-contract UniFlower is Math, UniSwapper, Lock {
+contract UniFlower is Math, UniSwapper, Lock, Flog {
     struct Ramp {
         uint256 vel;  // [wad] Stream speed wei/sec
         uint256 rel;  // [wad] Speed relative to supply
@@ -46,7 +47,7 @@ contract UniFlower is Math, UniSwapper, Lock {
         uint    ham,
         address wag,
         uint    wam
-    ) external returns (uint256 aid) {
+    ) _flog_ external returns (uint256 aid) {
         address flo = msg.sender;
         if (ramps[flo][hag].del > ham) revert ErrTinyFlow();
         if (!Gem(hag).transferFrom(msg.sender, address(this), ham)) revert ErrTransfer();
@@ -59,7 +60,7 @@ contract UniFlower is Math, UniSwapper, Lock {
         auctions[aid].wam = wam;
     }
 
-    function glug(uint256 aid) external _lock_ {
+    function glug(uint256 aid) _lock_ _flog_ external {
         Auction storage auction = auctions[aid];
         address hag = auction.hag;
         address vow = auction.vow;
@@ -114,11 +115,11 @@ contract UniFlower is Math, UniSwapper, Lock {
         return (remainder == 0, lot, bel);
     }
 
-    function approve_gem(address gem) external {
+    function approve_gem(address gem) _flog_ external {
         Gem(gem).approve(address(router), type(uint256).max);
     }
 
-    function curb(address gem, bytes32 key, uint val) external {
+    function curb(address gem, bytes32 key, uint val) _flog_ external {
                if (key == "vel") { ramps[msg.sender][gem].vel = val;
         } else if (key == "rel") { ramps[msg.sender][gem].rel = val;
         } else if (key == "bel") { ramps[msg.sender][gem].bel = val;

@@ -23,9 +23,10 @@ import './mixin/ward.sol';
 
 import { Vat } from './vat.sol';
 import { Feedbase } from '../lib/feedbase/src/Feedbase.sol';
+import { Flog } from './mixin/flog.sol';
 
 // RicoLikeVox
-contract Vox is Math, Ward {
+contract Vox is Math, Ward, Flog {
     error ErrWrongKey();
 
     Vat      public vat;
@@ -46,7 +47,7 @@ contract Vox is Math, Ward {
         way = RAY;
     }
 
-    function poke() external {
+    function poke() _flog_ external {
         if (tau == block.timestamp) { return; }
         uint256 dt = block.timestamp - tau;
         tau = block.timestamp;
@@ -65,8 +66,7 @@ contract Vox is Math, Ward {
         }
     }
 
-    function link(bytes32 key, address val) external
-      _ward_
+    function link(bytes32 key, address val) _ward_ _flog_ external
     {
              if (key == "vat") { vat = Vat(val); }
         else if (key == "fb") { fb = Feedbase(val); }
@@ -74,8 +74,7 @@ contract Vox is Math, Ward {
         else revert ErrWrongKey();
     }
 
-    function file(bytes32 key, bytes32 val) external
-      _ward_
+    function file(bytes32 key, bytes32 val) _ward_ _flog_ external
     {
              if (key == "tag") { tag = val; }
         else if (key == "how") { how = uint256(val); }

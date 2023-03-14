@@ -10,8 +10,9 @@ import { Math } from './mixin/math.sol';
 import { Vat } from './vat.sol';
 import { Gem } from '../lib/gemfab/src/gem.sol';
 import { Ward } from './mixin/ward.sol';
+import { Flog } from './mixin/flog.sol';
 
-contract Vow is Math, Ward {
+contract Vow is Math, Ward, Flog {
     error ErrSafeBail();
     error ErrWrongKey();
 
@@ -23,7 +24,8 @@ contract Vow is Math, Ward {
     Gem  public RICO;
     Gem  public RISK;
 
-    function keep(bytes32[] calldata ilks) external returns (uint256 aid) {
+    function keep(bytes32[] calldata ilks) 
+      _flog_ external returns (uint256 aid) {
         for (uint256 i = 0; i < ilks.length; i++) {
             vat.drip(ilks[i]);
         }
@@ -45,32 +47,31 @@ contract Vow is Math, Ward {
         }
     }
 
-    function flowback(uint aid, uint refund) external _ward_ {}
+    function flowback(uint aid, uint refund) _ward_ _flog_ external {}
 
-    function bail(bytes32 ilk, address urn) external returns (uint256 aid) {
+    function bail(bytes32 ilk, address urn) _flog_ external returns (uint256 aid) {
         vat.drip(ilk);
         if (vat.safe(ilk, urn) != Vat.Spot.Sunk) revert ErrSafeBail();
         (uint ink, uint art) = vat.urns(ilk, urn);
         (,aid) = vat.grab(ilk, urn, -int(ink), -int(art));
     }
 
-    function drip(bytes32 i) external {
+    function drip(bytes32 i) _flog_ external {
         vat.drip(i);
     }
 
-    function grant(address gem) external {
+    function grant(address gem) _flog_ external {
         Gem(gem).approve(address(flow), type(uint256).max);
         Gem(gem).approve(address(vat), type(uint256).max);
         flow.approve_gem(gem);
     }
 
     function pair(address gem, bytes32 key, uint val)
-      _ward_ external {
+      _ward_ _flog_ external {
         flow.curb(gem, key, val);
     }
 
-    function link(bytes32 key, address val) external
-      _ward_ {
+    function link(bytes32 key, address val) _ward_ _flog_ external {
              if (key == "flow") { flow = UniFlower(val); }
         else if (key == "RISK") { RISK = Gem(val); }
         else if (key == "RICO") { RICO = Gem(val); }

@@ -41,7 +41,7 @@ contract ERC20Hook is Ward, Lock, Flog {
         address, // u
         int dink,
         int      // dart
-    ) external _ward_ {
+    ) _ward_ _flog_ external {
         address gem = gems[i];
         if (sender != address(this)) {
             if (dink > 0) {
@@ -63,17 +63,17 @@ contract ERC20Hook is Ward, Lock, Flog {
         int dink,
         int, // dart
         uint bill
-    ) external _ward_ returns (uint aid) {
+    ) _ward_ _flog_ external returns (uint aid) {
         address gem = gems[i];
         aid = flow.flow(address(vow), gem, uint(-dink), address(rico), bill);
         sales[aid] = Sale({ ilk: i, urn: u });
     }
 
-    function grant(address gem) external {
+    function grant(address gem) _flog_ external {
         Gem(gem).approve(address(flow), type(uint).max);
     }
 
-    function flowback(uint256 aid, uint refund) external _ward_ {
+    function flowback(uint256 aid, uint refund) _ward_ _flog_ external {
         if (refund == 0)  return;
         if (refund >= 2 ** 255) revert ErrBigFlowback();
         Sale storage sale = sales[aid];
@@ -83,12 +83,12 @@ contract ERC20Hook is Ward, Lock, Flog {
         vat.frob(ilk, urn, int(refund), 0);
     }
 
-    function link(bytes32 ilk, address gem) external _ward_ {
+    function link(bytes32 ilk, address gem) _ward_ _flog_ external {
         gems[ilk] = gem;
     }
 
     function flash(address[] calldata gs, uint[] calldata wads, address code, bytes calldata data)
-      _lock_ external returns (bytes memory result) {
+      _lock_ _flog_ external returns (bytes memory result) {
         if (gs.length != wads.length) revert ErrLoanArgs();
         bool[] memory tags = new bool[](gs.length);
         bool lent;
