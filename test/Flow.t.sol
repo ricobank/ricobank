@@ -241,6 +241,106 @@ contract FlowTest is Test, RicoSetUp {
         vm.expectRevert(Lock.ErrLock.selector);
         flow.glug(aid);
     }
+
+    modifier _clip_ {
+        init_gold();
+        flow.curb(agold, 'vel', WAD);
+        flow.curb(agold, 'rel', WAD);
+        flow.curb(agold, 'bel', block.timestamp);
+        flow.curb(agold, 'cel', 10);
+        flow.curb(agold, 'del', WAD / 100);
+        _;
+    }
+
+    function test_clip_zero_top_1() public _clip_ {
+        uint supply = 10000000000000 * WAD;
+        gold.mint(self, supply);
+        flow.curb(agold, 'bel', block.timestamp - 10);
+        (bool rem, uint lot, uint bel) = flow.clip(self, agold, azero, 0);
+        assertTrue(rem);
+        assertEq(lot, 0);
+        assertEq(bel, block.timestamp - 10);
+    }
+
+    function test_clip_zero_top_past_cel() public _clip_ {
+        uint supply = 10000000000000 * WAD;
+        gold.mint(self, supply);
+        flow.curb(agold, 'bel', block.timestamp - 11);
+        (bool rem, uint lot, uint bel) = flow.clip(self, agold, azero, 0);
+        assertTrue(rem);
+        assertEq(lot, 0);
+        assertEq(bel, block.timestamp - 10);
+
+
+        flow.curb(agold, 'bel', block.timestamp - 1000);
+        (rem, lot, bel) = flow.clip(self, agold, azero, 0);
+        assertTrue(rem);
+        assertEq(lot, 0);
+        assertEq(bel, block.timestamp - 10);
+    }
+
+    function test_clip_top_lt_del() public _clip_ {
+        uint supply = 10000000000000 * WAD;
+        gold.mint(self, supply);
+        flow.curb(agold, 'bel', block.timestamp);
+        // vel << del
+        flow.curb(agold, 'vel', WAD / 1000000);
+        (bool rem, uint lot, uint bel) = flow.clip(self, agold, azero, WAD / 100 - 1);
+        assertTrue(rem);
+        assertEq(lot, WAD / 100 - 1);
+        assertGt(bel, block.timestamp);
+
+        // partial advance, with lots of error
+        flow.curb(agold, 'bel', block.timestamp - 11);
+        flow.curb(agold, 'vel', WAD);
+        (rem, lot, bel) = flow.clip(self, agold, azero, WAD / 100 - 1);
+        assertTrue(rem);
+        assertEq(lot, WAD / 100 - 1);
+        assertEq(bel, block.timestamp - 9);
+    }
+
+    function test_clip_zero_rel_vel_supply() public _clip_ {
+        uint supply = 10000000000000 * WAD;
+        gold.mint(self, supply);
+
+        flow.curb(agold, 'bel', block.timestamp - 1000);
+        flow.curb(agold, 'vel', 0);
+        vm.expectRevert();
+        flow.clip(self, agold, azero, WAD);
+
+        flow.curb(agold, 'vel', WAD);
+        flow.curb(agold, 'rel', 0);
+        vm.expectRevert();
+        flow.clip(self, agold, azero, WAD);
+
+        flow.curb(agold, 'rel', WAD);
+        gold.burn(self, gold.totalSupply());
+        vm.expectRevert();
+        flow.clip(self, agold, azero, WAD);
+
+        // try using rico's ramp, should use gold's supply...
+        assertGt(rico.totalSupply(), 0);
+        vm.expectRevert();
+        flow.clip(self, arico, agold, WAD);
+    }
+
+    function test_clip_charge_lt_top_rem_gt_del() public _clip_ {
+        flow.curb(agold, 'bel', block.timestamp - 20);
+        flow.curb(agold, 'del', WAD / 2);
+        (bool rem, uint lot, uint bel) = flow.clip(self, agold, azero, WAD * 11);
+        assertFalse(rem);
+        assertEq(lot, 10 * WAD);
+        assertEq(bel, block.timestamp);
+    }
+
+    function test_clip_partial_advance() public _clip_ {
+        flow.curb(agold, 'bel', block.timestamp - 20);
+        (bool rem, uint lot, uint bel) = flow.clip(self, agold, azero, WAD * 5);
+        assertTrue(rem);
+        assertEq(lot, WAD * 5);
+        assertEq(bel, block.timestamp - 5);
+    }
+
 }
 
 contract FlowJsTest is Test, RicoSetUp, Flowback {
