@@ -341,6 +341,22 @@ contract FlowTest is Test, RicoSetUp {
         assertEq(bel, block.timestamp - 5);
     }
 
+    function test_vow_flowback_separate() public {
+        flow.curb(arico, 'vel', WAD);
+        flow.curb(arico, 'rel', WAD);
+        flow.curb(arico, 'bel', block.timestamp - 1);
+        flow.curb(arico, 'cel', 1);
+        flow.curb(arico, 'del', 0);
+
+        uint aid = flow.flow(avow, arico, WAD, arisk, WAD / 2);
+
+        uint ricobefore = rico.balanceOf(self);
+        assertEq(back_count, 0);
+        flow.glug(aid);
+        assertEq(back_count, 1);
+        assertGt(rico.balanceOf(self), ricobefore);
+    }
+
 }
 
 contract FlowJsTest is Test, RicoSetUp, Flowback {

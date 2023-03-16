@@ -250,11 +250,16 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
         vow.grant(aruby);
     }
 
-    function curb(address g, uint vel, uint rel, uint bel, uint cel, uint del) internal {
-        vow.pair(g, 'vel', vel);
-        vow.pair(g, 'rel', rel);
-        vow.pair(g, 'bel', bel);
-        vow.pair(g, 'cel', cel);
-        vow.pair(g, 'del', del);
+    function curb(address _curber, address g, uint vel, uint rel, uint bel, uint cel, uint del) internal {
+        Curber curber = Curber(_curber);
+        curber.pair(g, 'vel', vel);
+        curber.pair(g, 'rel', rel);
+        curber.pair(g, 'bel', bel);
+        curber.pair(g, 'cel', cel);
+        curber.pair(g, 'del', del);
     }
+}
+
+interface Curber {
+    function pair(address, bytes32, uint) external;
 }

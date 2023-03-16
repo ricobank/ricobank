@@ -192,7 +192,7 @@ contract DssJsTest is Test, RicoSetUp {
         b = address(bob);
         c = address(cat);
 
-        curb(azero, 1000 * WAD, WAD, block.timestamp - 1, 1, 1);
+        curb(avow, azero, 1000 * WAD, WAD, block.timestamp - 1, 1, 1);
     }
 
     function _slip(Gem g, address usr, uint amt) internal {
@@ -403,23 +403,23 @@ contract DssBiteTest is DssVatTest {
         gold.approve(address(hook), UINT256_MAX);
         // gov approve flap N/A not sure what to do with gov atm...
 
-        curb(address(gold), UINT256_MAX, WAD, block.timestamp, 1, 1);
-        curb(address(rico), UINT256_MAX, WAD, block.timestamp, 1, 1);
-        curb(address(risk), UINT256_MAX, WAD, block.timestamp, 1, 1);
+        curb(ahook, address(gold), UINT256_MAX, WAD, block.timestamp, 1, 1);
+        curb(avow, address(rico), UINT256_MAX, WAD, block.timestamp, 1, 1);
+        curb(avow, address(risk), UINT256_MAX, WAD, block.timestamp, 1, 1);
     }
 
     modifier _bite_ { _bite_setUp(); _; }
 
     function testdunk(uint rel, uint vel) internal {
-        vow.pair(address(gold), 'rel', rel);
-        vow.pair(address(gold), 'vel', vel);
+        hook.pair(address(gold), 'rel', rel);
+        hook.pair(address(gold), 'vel', vel);
         vow.pair(address(gov), 'rel', rel);
         vow.pair(address(gov), 'vel', vel);
         uint _rel; uint _vel; uint _bel; uint _cel; uint _del;
-        (_vel, _rel, _bel, _cel, _del) = flow.ramps(address(vow), address(gold));
+        (_vel, _rel, _bel, _cel, _del) = flow.ramps(ahook, address(gold));
         assertEq(_rel, rel);
         assertEq(_vel, vel);
-        (_vel, _rel, _bel, _cel, _del) = flow.ramps(address(vow), address(gov));
+        (_vel, _rel, _bel, _cel, _del) = flow.ramps(avow, address(gov));
         assertEq(_rel, rel);
         assertEq(_vel, vel);
     }
@@ -445,7 +445,7 @@ contract DssBiteTest is DssVatTest {
 
     function test_happy_bite() public _bite_ {
         // set ramps high so flip flips whole gem balance
-        curb(address(gold), 1000 * WAD, 1000 * WAD, 0, 1, 1);
+        curb(ahook, address(gold), 1000 * WAD, 1000 * WAD, 0, 1, 1);
         // dss: spot = tag / (par . mat), tag=5, mat=2
         // rico: mark = feed.val = 2.5
         // create urn (push, frob)
@@ -539,8 +539,8 @@ contract DssBiteTest is DssVatTest {
         // mimic dss auction rates...need to flop wad(1000) risk
         uint bailamt = 30 * WAD;
         uint riskamt = 10 * WAD;
-        curb(address(gold), bailamt, WAD, block.timestamp, 1, 1);
-        curb(address(risk), riskamt, WAD, block.timestamp, 1, 1);
+        curb(ahook, address(gold), bailamt, WAD, block.timestamp, 1, 1);
+        curb(avow, address(risk), riskamt, WAD, block.timestamp, 1, 1);
 
         assertEq(gov.balanceOf(address(flow)), 0);
         // dunk N/A bail always liquidates whole urn
@@ -583,7 +583,7 @@ contract DssBiteTest is DssVatTest {
         assertEq(rico.balanceOf(address(vow)), ricoamt);
         assertEq(gov.balanceOf(me), 100 * WAD);
 
-        curb(address(rico), ricoamt, WAD, block.timestamp, 1, 1);
+        curb(avow, address(rico), ricoamt, WAD, block.timestamp, 1, 1);
         assertEq(vow_Awe() / RAY, 0);
 
         uint256 aid = vow.keep(ilks);
@@ -668,7 +668,7 @@ contract DssFlipTest is DssJsTest {
         rico.mint(a, 200 * WAD);
         rico.mint(b, 200 * WAD);
 
-        curb(address(gem), UINT256_MAX, WAD, block.timestamp, 1, 1);
+        curb(ahook, address(gem), UINT256_MAX, WAD, block.timestamp, 1, 1);
         gal = cat;
     }
 
@@ -828,7 +828,7 @@ contract DssClipTest is DssJsTest {
         rico.mint(a, 1000 * WAD);
         rico.mint(b, 1000 * WAD);
 
-        curb(address(gold), UINT256_MAX, WAD, block.timestamp, 1, 1);
+        curb(ahook, address(gold), UINT256_MAX, WAD, block.timestamp, 1, 1);
     }
 
     modifier _clip_ { _clip_setup(); _; }
@@ -1013,7 +1013,7 @@ contract DssVowTest is DssJsTest {
     function _vow_setUp() internal {
         gem.mint(me, 10000 * WAD);
         gem.approve(address(hook), UINT256_MAX);
-        curb(azero, 100 * WAD, WAD, block.timestamp, 1, 1);
+        curb(avow, azero, 100 * WAD, WAD, block.timestamp, 1, 1);
     }
     modifier _vow_ { _vow_setUp(); _; }
 
@@ -1028,10 +1028,10 @@ contract DssVowTest is DssJsTest {
     //   N/A no vow.wait in rico
 
     function test_no_reflop() public _vow_ {
-        curb(arico, 100 * WAD, WAD, block.timestamp, 1, 1);
+        curb(avow, arico, 100 * WAD, WAD, block.timestamp, 1, 1);
         uint amt = WAD / 1000;
-        curb(arisk, amt * 2, WAD, block.timestamp, 1, amt);
-        curb(azero, amt * 2, WAD, block.timestamp, 1, amt);
+        curb(avow, arisk, amt * 2, WAD, block.timestamp, 1, amt);
+        curb(avow, azero, amt * 2, WAD, block.timestamp, 1, amt);
         skip(1);
         vat.frob(i0, me, int(amt), int(amt));
         feed.push(grtag, bytes32(0), UINT256_MAX);

@@ -29,10 +29,10 @@ contract VowTest is Test, RicoSetUp {
 
         vow.grant(address(gold));
 
-        curb(agold, 1e18, 1e12, 0, 600, 1);
-        curb(arico, 1e18, 1e12, 0, 600, 1);
-        curb(arisk, 1e18, 1e12, 0, 600, 1);
-        curb(azero, 1e18, 1e12, 0, 600, 1);
+        curb(ahook, agold, 1e18, 1e12, 0, 600, 1);
+        curb(avow, arico, 1e18, 1e12, 0, 600, 1);
+        curb(avow, arisk, 1e18, 1e12, 0, 600, 1);
+        curb(avow, azero, 1e18, 1e12, 0, 600, 1);
 
         // have 10k each of rico, risk and gold
         gold.approve(router, type(uint256).max);
@@ -120,8 +120,8 @@ contract VowTest is Test, RicoSetUp {
  
         // set rate of risk sales to near zero
         // set mint ramp higher to use risk ramp
-        curb(azero, WAD, WAD, block.timestamp - 1, 1, 1);
-        curb(arisk, 1, 1, block.timestamp - 1, 1, 1);
+        curb(avow, azero, WAD, WAD, block.timestamp - 1, 1, 1);
+        curb(avow, arisk, 1, 1, block.timestamp - 1, 1, 1);
         uint256 pool_risk_0 = risk.balanceOf(rico_risk_pool);
 
         // setup frobbed to edge, dropping gold price puts system way underwater
@@ -162,7 +162,7 @@ contract VowTest is Test, RicoSetUp {
     }
 
     function test_flowback() public {
-        curb(agold, 100000 * WAD, WAD, 0, 1, 1);
+        curb(ahook, agold, 100000 * WAD, WAD, 0, 1, 1);
         (uint ink, uint art) = vat.urns(gilk, self);
         feedpush(grtag, bytes32(1000000 * RAY), type(uint).max);
         vat.frob(gilk, self, int(WAD), int(WAD / 2));
@@ -189,7 +189,7 @@ contract VowTest is Test, RicoSetUp {
     // (exact out)
     uint del_test_endink = 498493239915892134;
     function test_tiny_flowback() public {
-        curb(agold, WAD * 3 / 4, WAD, 0, 1, WAD / 4 + 1); // high del
+        curb(ahook, agold, WAD * 3 / 4, WAD, 0, 1, WAD / 4 + 1); // high del
 
         feedpush(grtag, bytes32(1000000 * RAY), type(uint).max);
         vat.frob(gilk, self, int(WAD), int(WAD / 2));
@@ -216,7 +216,7 @@ contract VowTest is Test, RicoSetUp {
     // first glug covers the debt without remainder, flowback with low del
     // (exact out)
     function test_del_flowback() public {
-        curb(agold, WAD * 3 / 4, WAD, 0, 1, WAD / 8); // low del
+        curb(ahook, agold, WAD * 3 / 4, WAD, 0, 1, WAD / 8); // low del
 
         feedpush(grtag, bytes32(1000000 * RAY), type(uint).max);
         vat.frob(gilk, self, int(WAD), int(WAD / 2));
@@ -242,7 +242,7 @@ contract VowTest is Test, RicoSetUp {
 
     // first glug covers the debt with remainder, flowback with high del
     function test_del_nocover_then_flowback() public {
-        curb(agold, WAD * 2 / 3, WAD, 0, 1, WAD / 2); // high del
+        curb(ahook, agold, WAD * 2 / 3, WAD, 0, 1, WAD / 2); // high del
 
         feedpush(grtag, bytes32(1000000 * RAY), type(uint).max);
         vat.frob(gilk, self, int(WAD), int(WAD * 9 / 10));
@@ -270,7 +270,7 @@ contract VowTest is Test, RicoSetUp {
 
     // first glug could cover the debt with remainder, but del low
     function test_first_glug_could_cover_low_del() public {
-        curb(agold, WAD * 2 / 3, WAD, 0, 1, WAD / 100); // low del
+        curb(ahook, agold, WAD * 2 / 3, WAD, 0, 1, WAD / 100); // low del
 
         feedpush(grtag, bytes32(1000000 * RAY), type(uint).max);
         vat.frob(gilk, self, int(WAD), int(WAD * 9 / 10));
@@ -298,7 +298,7 @@ contract VowTest is Test, RicoSetUp {
     // can't bail 2**255, but can keep 2**255
     function test_flowback_negative_one() public {
         uint UINT_NEG_ONE = 2 ** 255;
-        curb(agold, WAD, WAD, 0, 1, 0);
+        curb(ahook, agold, WAD, WAD, 0, 1, 0);
         feedpush(grtag, bytes32(1000000 * RAY), type(uint).max);
         vat.frob(gilk, self, int(WAD), int(WAD));
         skip(BANKYEAR * 1000);
@@ -306,8 +306,8 @@ contract VowTest is Test, RicoSetUp {
         // with both mints, should end up with totalSupply
         // around UINT_NEG_ONE*3/4
         risk.mint(self, UINT_NEG_ONE / 2);
-        curb(azero, UINT_NEG_ONE, 3 * WAD, 0, 1, 0);
-        curb(arisk, UINT_NEG_ONE, WAD, 0, 1, 0);
+        curb(avow, azero, UINT_NEG_ONE, 3 * WAD, 0, 1, 0);
+        curb(avow, arisk, UINT_NEG_ONE, WAD, 0, 1, 0);
 
         // should fail to wmul(rel, totalSupply) in clip
         // making such high refunds impossible
@@ -339,7 +339,7 @@ contract VowTest is Test, RicoSetUp {
     }
 
     function test_reentrant_flowback() public {
-        curb(agold, WAD, WAD, 0, 1, 0);
+        curb(ahook, agold, WAD, WAD, 0, 1, 0);
         feedpush(grtag, bytes32(1000000 * RAY), type(uint).max);
         vat.frob(gilk, self, int(WAD), int(WAD));
         skip(BANKYEAR * 1000);
@@ -535,8 +535,8 @@ contract VowJsTest is Test, RicoSetUp {
         vat.filk(i0, 'line', 10000 * RAD);
         vat.filk(i0, 'chop', RAY * 11 / 10);
 
-        curb(arisk, WAD, WAD / 10000, 0, 60, 1);
-        curb(azero, WAD, WAD / 10000, 0, 60, 1);
+        curb(avow, arisk, WAD, WAD / 10000, 0, 60, 1);
+        curb(avow, azero, WAD, WAD / 10000, 0, 60, 1);
 
         feedpush(wrtag, bytes32(RAY), block.timestamp + 2 * BANKYEAR);
         uint fee = 1000000001546067052200000000; // == ray(1.05 ** (1/BANKYEAR))
@@ -566,8 +566,8 @@ contract VowJsTest is Test, RicoSetUp {
         join_pool(risk_rico_args);
         rico_risk_pool = getPoolAddr(arisk, arico, 3000);
 
-        curb(WETH, WAD, WAD / 10000, 0, 600, 1);
-        curb(arico, WAD, WAD / 10000, 0, 600, 1);
+        curb(ahook, WETH, WAD, WAD / 10000, 0, 600, 1);
+        curb(avow, arico, WAD, WAD / 10000, 0, 600, 1);
 
         flow.approve_gem(arico);
         flow.approve_gem(arisk);
@@ -575,7 +575,7 @@ contract VowJsTest is Test, RicoSetUp {
         flow.approve_gem(WETH);
         prevcount = flow.count();
 
-        curb(azero, 200 * WAD, WAD, block.timestamp, 1, 1);
+        curb(avow, azero, 200 * WAD, WAD, block.timestamp, 1, 1);
     }
 
     function test_bail_urns_1yr_unsafe() public {
@@ -654,8 +654,8 @@ contract VowJsTest is Test, RicoSetUp {
     function test_keep_rate_limiting_flop_absolute_rate() public {
         uint risksupply0 = risk.totalSupply();
         vat.filk(i0, 'fee', 1000000021964508878400000000);  // ray(2 ** (1/BANKYEAR)
-        curb(arisk, WAD, 1000000 * WAD, 0, 1000, 1);
-        curb(azero, WAD / 1000, 1000000 * WAD, 0, 1000, 1); // mint ramp < risk ramp
+        curb(avow, arisk, WAD, 1000000 * WAD, 0, 1000, 1);
+        curb(avow, azero, WAD / 1000, 1000000 * WAD, 0, 1000, 1); // mint ramp < risk ramp
         skip(BANKYEAR);
         uint256 aid = vow.bail(i0, c); flow.glug(aid);
         aid = vow.keep(ilks); flow.glug(aid);
@@ -677,8 +677,8 @@ contract VowJsTest is Test, RicoSetUp {
         uint risksupply0 = risk.totalSupply();
         vat.filk(i0, 'fee', 1000000021964508878400000000);
         // for same results as above the rel rate is set to 1 / risk supply * vel used above
-        curb(arisk, 1000000 * WAD, WAD / 1000000, 0, 1000, 1);
-        curb(azero, 1000000 * WAD, WAD / 10000000, 0, 1000, 1); // mint ramp < risk ramp
+        curb(avow, arisk, 1000000 * WAD, WAD / 1000000, 0, 1000, 1);
+        curb(avow, azero, 1000000 * WAD, WAD / 10000000, 0, 1000, 1); // mint ramp < risk ramp
         skip(BANKYEAR);
         uint256 aid = vow.bail(i0, c); flow.glug(aid);
         aid = vow.keep(ilks); flow.glug(aid);

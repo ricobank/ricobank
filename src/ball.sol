@@ -214,12 +214,11 @@ contract Ball is Math, Pool {
             }
 
             flow.setPath(gem, rico, f, r);
-            vow.pair(gem, "vel", ilkparams.ramp.vel);
-            vow.pair(gem, "rel", ilkparams.ramp.rel);
-            vow.pair(gem, "bel", ilkparams.ramp.bel);
-            vow.pair(gem, "cel", ilkparams.ramp.cel);
-            vow.pair(gem, "del", ilkparams.ramp.del);
-            vow.grant(gem);
+            hook.pair(gem, "vel", ilkparams.ramp.vel);
+            hook.pair(gem, "rel", ilkparams.ramp.rel);
+            hook.pair(gem, "bel", ilkparams.ramp.bel);
+            hook.pair(gem, "cel", ilkparams.ramp.cel);
+            hook.pair(gem, "del", ilkparams.ramp.del);
         }
 
         GemLike(rico).ward(address(vat), true);

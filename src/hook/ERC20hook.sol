@@ -65,7 +65,7 @@ contract ERC20Hook is Ward, Lock, Flog {
         uint bill
     ) _ward_ _flog_ external returns (uint aid) {
         address gem = gems[i];
-        aid = flow.flow(address(vow), gem, uint(-dink), address(rico), bill);
+        aid = flow.flow(vow, gem, uint(-dink), address(rico), bill);
         sales[aid] = Sale({ ilk: i, urn: u });
     }
 
@@ -115,6 +115,10 @@ contract ERC20Hook is Ward, Lock, Flog {
                 Gem(gs[i]).burn(code, wads[i]);
             }
         }
+    }
+
+    function pair(address gem, bytes32 key, uint val) _ward_ _flog_ external {
+        flow.curb(gem, key, val);
     }
 
     function list(address gem, bool bit)

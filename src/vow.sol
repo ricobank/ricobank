@@ -15,6 +15,7 @@ import { Flog } from './mixin/flog.sol';
 contract Vow is Math, Ward, Flog {
     error ErrSafeBail();
     error ErrWrongKey();
+    error ErrBadPair();
 
     address internal immutable yank = address(0);
     address internal immutable self = address(this);
@@ -68,6 +69,9 @@ contract Vow is Math, Ward, Flog {
 
     function pair(address gem, bytes32 key, uint val)
       _ward_ _flog_ external {
+        if (gem != yank && gem != address(RICO) && gem != address(RISK)) {
+            revert ErrBadPair();
+        }
         flow.curb(gem, key, val);
     }
 

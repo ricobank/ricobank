@@ -53,7 +53,7 @@ contract UniFlower is Math, UniSwapper, Lock, Flog {
         if (!Gem(hag).transferFrom(msg.sender, address(this), ham)) revert ErrTransfer();
         aid = ++count;
         auctions[aid].vow = vow;
-        auctions[aid].flo = msg.sender;
+        auctions[aid].flo = flo;
         auctions[aid].hag = hag;
         auctions[aid].ham = ham;
         auctions[aid].wag = wag;
@@ -65,8 +65,8 @@ contract UniFlower is Math, UniSwapper, Lock, Flog {
         address hag = auction.hag;
         address vow = auction.vow;
         if (hag == address(0)) revert ErrEmptyAid();
-        (bool last, uint hunk, uint bel) = clip(vow, hag, address(0), auction.ham);
-        ramps[vow][hag].bel = bel;
+        (bool last, uint hunk, uint bel) = clip(auction.flo, hag, address(0), auction.ham);
+        ramps[auction.flo][hag].bel = bel;
         uint cost = SWAP_ERR;
         uint gain;
 
@@ -85,7 +85,7 @@ contract UniFlower is Math, UniSwapper, Lock, Flog {
         uint rest = auction.ham - cost;
 
         if (last) {
-            if (!Gem(hag).transfer(vow, rest)) revert ErrTransfer();
+            if (!Gem(hag).transfer(auction.flo, rest)) revert ErrTransfer();
             Flowback(auction.flo).flowback(aid, rest);
             delete auctions[aid];
         } else {
