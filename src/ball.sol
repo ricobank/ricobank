@@ -116,7 +116,6 @@ contract Ball is Math, Pool {
         BallArgs    memory args,
         IlkParams[] memory ilks
     ) payable {
-        address roll = args.roll;
         flow = new UniFlower();
 
         rico = address(GemFabLike(args.gemfab).build(bytes32("Rico"), bytes32("RICO")));
@@ -136,7 +135,7 @@ contract Ball is Math, Pool {
         vow.link('RISK', risk);
 
         vox.link('fb',  args.feedbase);
-        vox.link('tip', roll);
+        vox.link('tip', args.roll);
         vox.link('vat', address(vat));
 
         vat.file('ceil',  args.ceil);
@@ -153,19 +152,25 @@ contract Ball is Math, Pool {
 
         mdn = new Medianizer(args.feedbase);
 
-        uint160 sqrtparx96 = uint160(args.sqrtpar * (2 ** 96) / RAY);
-        ricodai = create_pool(args.factory, rico, DAI, 500, sqrtparx96);
+        {
+            uint160 sqrtparx96 = uint160(args.sqrtpar * (2 ** 96) / RAY);
+            ricodai = create_pool(args.factory, rico, DAI, 500, sqrtparx96);
+        }
 
         adapt = new UniswapV3Adapter(Feedbase(args.feedbase));
         divider = new Divider(args.feedbase, RAY);
         twap = new TWAP(args.feedbase);
         flow.setSwapRouter(args.router);
+        Medianizer.Source[] memory mdn_sources = new Medianizer.Source[](1);
+        mdn_sources[0].src = address(divider);
         for (uint i = 0; i < ilks.length; i++) {
             IlkParams memory ilkparams = ilks[i];
             bytes32 ilk = ilkparams.ilk;
             address gem = ilkparams.gem;
             address pool = ilkparams.pool;
             vat.init(ilk, address(hook), address(mdn), concat(ilk, 'rico'));
+            mdn_sources[0].tag = concat(ilk, 'rico');
+            mdn.setSources(concat(ilk, 'rico'), mdn_sources);
             hook.link(ilk, gem);
             hook.grant(gem);
             vat.filk(ilk, 'chop', ilkparams.chop);
@@ -199,16 +204,17 @@ contract Ball is Math, Pool {
                     (f, r) = create_path(addr3, fees2);
                 }
 
+                bytes32 tag = concat(ilk, 'dai');
                 adapt.setConfig(
-                    concat(ilk, 'dai'),
+                    tag,
                     UniswapV3Adapter.Config(pool, ilkparams.ttl, ilkparams.range, gem > DAI)
                 );
 
                 // TODO: Check what to use for range, ttl
-                twap.setConfig(concat(ilk, 'dai'), TWAP.Config(address(adapt), args.twaprange, args.twapttl));
+                twap.setConfig(tag, TWAP.Config(address(adapt), tag, args.twaprange, args.twapttl));
                 address[] memory ss = new address[](2);
                 bytes32[] memory ts = new bytes32[](2);
-                ss[0] = address(twap); ts[0] = concat(ilk, 'dai');
+                ss[0] = address(twap); ts[0] = tag;
                 ss[1] = address(adapt); ts[1] = RICO_DAI_TAG;
                 divider.setConfig(concat(ilk, 'rico'), Divider.Config(ss, ts));
             }
@@ -225,6 +231,7 @@ contract Ball is Math, Pool {
         GemLike(risk).ward(address(vow), true);
 
         // gem doesn't have give right now
+        address roll = args.roll;
         GemLike(rico).ward(roll, true);
         GemLike(rico).ward(address(this), false);
         GemLike(risk).ward(roll, true);
@@ -305,8 +312,8 @@ contract Ball is Math, Pool {
         sources[1] = address(cladapt); tags[1] = DAI_USD_TAG;
         divider.setConfig(USD_RICO_TAG, Divider.Config(sources, tags));
 
-        twap.setConfig(XAU_RICO_TAG, TWAP.Config(address(divider), args.twaprange, args.twapttl));
-        twap.setConfig(USD_RICO_TAG, TWAP.Config(address(divider), args.twaprange, args.twapttl));
+        twap.setConfig(XAU_RICO_TAG, TWAP.Config(address(divider), XAU_RICO_TAG, args.twaprange, args.twapttl));
+        twap.setConfig(USD_RICO_TAG, TWAP.Config(address(divider), USD_RICO_TAG, args.twaprange, args.twapttl));
         
         progression = new Progression(Feedbase(args.feedbase));
         progression.setConfig(REF_RICO_TAG, Progression.Config(
@@ -319,15 +326,14 @@ contract Ball is Math, Pool {
         sources[0] = address(this); tags[0] = bytes32("ONE");
         sources[1] = address(progression); tags[1] = REF_RICO_TAG;
         divider.setConfig(RICO_REF_TAG, Divider.Config(sources, tags));
+        mdn_sources[0].tag = RICO_REF_TAG;
+        mdn.setSources(RICO_REF_TAG, mdn_sources);
 
         divider.ward(roll, true);
         divider.ward(address(this), false);
 
         // median([(ddai / dweth) / (ddai / drico)]) == drico / dweth
-        sources = new address[](1);
-        sources[0] = address(divider);
-        mdn.setSources(sources);
-        mdn.setOwner(roll);
+        mdn.ward(roll, true);
 
         // vox needs rico-dai
         vox.link('tip', address(mdn));

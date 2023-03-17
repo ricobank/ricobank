@@ -90,18 +90,11 @@ contract BallTest is Test, UniSetUp, Math {
 
         twap.poke(WETH_DAI_TAG);
 
-        divider.poke(WETH_RICO_TAG);
-        divider.poke(DAI_RICO_TAG);
-        divider.poke(XAU_DAI_TAG);
-        divider.poke(XAU_RICO_TAG);
-        divider.poke(USD_RICO_TAG);
-
         twap.poke(XAU_RICO_TAG);
         twap.poke(USD_RICO_TAG);
 
         progression.poke(REF_RICO_TAG);
 
-        divider.poke(RICO_REF_TAG);
         mdn.poke(WETH_RICO_TAG);
         mdn.poke(RICO_REF_TAG);
     }
@@ -158,7 +151,7 @@ contract BallTest is Test, UniSetUp, Math {
         uint gas = gasleft();
         Ball ball = new Ball(bargs, ips);
         uint usedgas     = gas - gasleft();
-        uint expectedgas = 27270550;
+        uint expectedgas = 28153119;
         if (usedgas < expectedgas) {
             console.log("ball saved %s gas...currently %s", expectedgas - usedgas, usedgas);
         }

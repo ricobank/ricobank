@@ -113,7 +113,6 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
 
     function feedpush(bytes32 tag, bytes32 val, uint ttl) internal {
         feed.push(tag, val, ttl);
-        divider.poke(tag);
         mdn.poke(tag);
     }
 
@@ -123,6 +122,9 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
         sources[0] = address(this); tags[0] = bytes32(tag);
         sources[1] = address(this); tags[1] = bytes32("ONE");
         divider.setConfig(tag, Divider.Config(sources, tags));
+        Medianizer.Source[] memory mdn_sources = new Medianizer.Source[](1);
+        mdn_sources[0] = Medianizer.Source(address(divider), tag);
+        mdn.setSources(tag, mdn_sources);
     }
 
     function make_bank() public {
