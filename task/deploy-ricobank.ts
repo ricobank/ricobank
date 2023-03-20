@@ -35,7 +35,6 @@ task('deploy-ricobank', '')
     const ballargs = {
         gemfab: deps.objects.gemfab.address,
         feedbase: deps.objects.feedbase.address,
-        weth: deps.objects.weth.address,
         factory: deps.objects.uniswapV3Factory.address,
         router: deps.objects.swapRouter.address,
         roll: ali.address,
@@ -47,9 +46,6 @@ task('deploy-ricobank', '')
         xauusdttl:    BANKYEAR,
         twaprange:    10000,
         twapttl:      BANKYEAR,
-        progstart:    timestamp,
-        progend:      timestamp + BANKYEAR * 10,
-        progperiod:   BANKYEAR / 12,
         ricoramp:     stdramp,
         riskramp:     stdramp,
         mintramp:     stdramp

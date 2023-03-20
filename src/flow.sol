@@ -62,11 +62,12 @@ contract UniFlower is Math, UniSwapper, Lock, Flog {
 
     function glug(uint256 aid) _lock_ _flog_ external {
         Auction storage auction = auctions[aid];
+        address flo = auction.flo;
         address hag = auction.hag;
         address vow = auction.vow;
         if (hag == address(0)) revert ErrEmptyAid();
-        (bool last, uint hunk, uint bel) = clip(auction.flo, hag, address(0), auction.ham);
-        ramps[auction.flo][hag].bel = bel;
+        (bool last, uint hunk, uint bel) = clip(flo, hag, address(0), auction.ham);
+        ramps[flo][hag].bel = bel;
         uint cost = SWAP_ERR;
         uint gain;
 
@@ -85,8 +86,8 @@ contract UniFlower is Math, UniSwapper, Lock, Flog {
         uint rest = auction.ham - cost;
 
         if (last) {
-            if (!Gem(hag).transfer(auction.flo, rest)) revert ErrTransfer();
-            Flowback(auction.flo).flowback(aid, rest);
+            if (!Gem(hag).transfer(flo, rest)) revert ErrTransfer();
+            Flowback(flo).flowback(aid, rest);
             delete auctions[aid];
         } else {
             auction.ham = rest;

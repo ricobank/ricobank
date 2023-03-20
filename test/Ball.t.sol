@@ -18,6 +18,7 @@ import {ChainlinkAdapter} from "../lib/feedbase/src/adapters/ChainlinkAdapter.so
 import {TWAP} from "../lib/feedbase/src/combinators/TWAP.sol";
 import {Progression} from "../lib/feedbase/src/combinators/Progression.sol";
 import { Vow } from "../src/vow.sol";
+import { Vox } from "../src/vox.sol";
 import {UniFlower} from '../src/flow.sol';
 
 contract BallTest is Test, UniSetUp, Math {
@@ -34,17 +35,14 @@ contract BallTest is Test, UniSetUp, Math {
     bytes32 internal constant WETH_RICO_TAG = "wethrico";
     bytes32 internal constant RICO_DAI_TAG = "ricodai";
     bytes32 internal constant DAI_RICO_TAG = "dairico";
-    bytes32 internal constant USD_RICO_TAG = "usdrico";
     bytes32 internal constant XAU_USD_TAG = "xauusd";
-    bytes32 internal constant XAU_DAI_TAG = "xauusd";
     bytes32 internal constant DAI_USD_TAG = "daiusd";
-    bytes32 internal constant XAU_RICO_TAG = "xaurico";
+    bytes32 internal constant RICO_XAU_TAG = "ricoxau";
     bytes32 internal constant REF_RICO_TAG = "refrico";
     bytes32 internal constant RICO_REF_TAG = "ricoref";
     ChainlinkAdapter cladapt;
     UniswapV3Adapter adapt;
     Divider divider;
-    Progression progression;
     TWAP twap;
     Medianizer mdn;
     Feedbase fb;
@@ -70,6 +68,7 @@ contract BallTest is Test, UniSetUp, Math {
 
     Vat vat;
     Vow vow;
+    Vox vox;
     UniFlower flow;
 
     function advance_chainlink() internal {
@@ -89,18 +88,13 @@ contract BallTest is Test, UniSetUp, Math {
         adapt.look(RICO_DAI_TAG);
 
         twap.poke(WETH_DAI_TAG);
-
-        twap.poke(XAU_RICO_TAG);
-        twap.poke(USD_RICO_TAG);
-
-        progression.poke(REF_RICO_TAG);
+        twap.poke(RICO_XAU_TAG);
 
         mdn.poke(WETH_RICO_TAG);
         mdn.poke(RICO_REF_TAG);
     }
 
     function setUp() public {
-        address aweth = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
         me = address(this);
         gf = GemFabLike(address(new GemFab()));
         fb = new Feedbase();
@@ -128,7 +122,6 @@ contract BallTest is Test, UniSetUp, Math {
         Ball.BallArgs memory bargs = Ball.BallArgs(
             address(gf),
             address(fb),
-            aweth,
             factory,
             router,
             me,
@@ -140,9 +133,6 @@ contract BallTest is Test, UniSetUp, Math {
             BANKYEAR, // xauusd
             10000, // twap
             BANKYEAR,
-            block.timestamp, // prog
-            block.timestamp + BANKYEAR * 10,
-            BANKYEAR / 12,
             stdramp,
             stdramp,
             stdramp
@@ -151,7 +141,7 @@ contract BallTest is Test, UniSetUp, Math {
         uint gas = gasleft();
         Ball ball = new Ball(bargs, ips);
         uint usedgas     = gas - gasleft();
-        uint expectedgas = 28153119;
+        uint expectedgas = 26810476;
         if (usedgas < expectedgas) {
             console.log("ball saved %s gas...currently %s", expectedgas - usedgas, usedgas);
         }
@@ -164,7 +154,6 @@ contract BallTest is Test, UniSetUp, Math {
         adapt = ball.adapt();
         divider = ball.divider();
         twap = ball.twap();
-        progression = ball.progression();
         (,,address _mdn,,,,,,,,) = vat.ilks(WETH_ILK);
         mdn = Medianizer(_mdn);
 
@@ -220,6 +209,7 @@ contract BallTest is Test, UniSetUp, Math {
         look_poke();
 
         vow = ball.vow();
+        vox = ball.vox();
 
         uint daiamt = 10000 * WAD;
         vm.prank(COMPOUND_CDAI);
@@ -284,8 +274,9 @@ contract BallTest is Test, UniSetUp, Math {
 
     function test_basic() public {
         (bytes32 price, uint ttl) = fb.pull(address(mdn), RICO_REF_TAG);
-        assertGt(uint(price), INIT_PAR * 99 / 100);
-        assertLt(uint(price), INIT_PAR * 100 / 99);
+        uint vox_price = rmul(uint(price), vox.amp());
+        assertGt(uint(vox_price), INIT_PAR * 99 / 100);
+        assertLt(uint(vox_price), INIT_PAR * 100 / 99);
         (price, ttl) = fb.pull(address(mdn), WETH_RICO_TAG);
         // ether price about 1600 rn
         assertGt(uint(price) / RAY, 1000 * RAY / INIT_PAR);

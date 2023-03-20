@@ -151,7 +151,6 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
         Ball.BallArgs memory bargs = Ball.BallArgs(
             address(gemfab),
             address(feed),
-            WETH,
             factory,
             router,
             self,
@@ -163,9 +162,6 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
             BANKYEAR, // xauusd
             10000, // twap
             BANKYEAR,
-            block.timestamp, // prog
-            block.timestamp + BANKYEAR * 10,
-            BANKYEAR / 12,
             stdramp,
             stdramp,
             stdramp

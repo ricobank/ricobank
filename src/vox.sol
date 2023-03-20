@@ -29,6 +29,8 @@ import { Flog } from './mixin/flog.sol';
 contract Vox is Math, Ward, Flog {
     error ErrWrongKey();
 
+    uint256 public immutable amp;
+
     Vat      public vat;
     Feedbase public fb;
 
@@ -40,7 +42,8 @@ contract Vox is Math, Ward, Flog {
     uint256 public tau;  // [sec] last poke
     uint256 public cap;  // [ray] `way` bound
 
-    constructor() {
+    constructor(uint256 _amp) {
+        amp = _amp;
         how = 1000000115170000000000000000;
         cap = 1000000022000000000000000000;
         tau = block.timestamp;
@@ -56,7 +59,7 @@ contract Vox is Math, Ward, Flog {
         vat.prod(par);
 
         (bytes32 mar_, uint256 ttl) = fb.pull(tip, tag);
-        uint256 mar = uint256(mar_);
+        uint256 mar = rmul(uint256(mar_), amp);
         if (block.timestamp > ttl) { return; }
 
         if (mar < par) {

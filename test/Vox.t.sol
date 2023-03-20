@@ -45,7 +45,7 @@ contract VoxTest is Test, RicoSetUp {
     function test_poke_lowmar_gas() public {
         skip(1);
         uint way = vox.way();
-        feedpush(rtag, bytes32(1 * WAD), block.timestamp + 1000);
+        feedpush(rtag, bytes32(1 * WAD / (vox.amp() / RAY)), block.timestamp + 1000);
         uint gas = gasleft();
         vox.poke();
         check_gas(gas, 34363);
@@ -56,7 +56,7 @@ contract VoxTest is Test, RicoSetUp {
         vox.poke(); // how > 1 but mar == par, par stuck at 7
         uint how = RAY + (RAY * 12 / 10) / (10 ** 16);
         vox.file(bytes32('how'), bytes32(how));
-        feedpush(rtag, bytes32(1 * WAD), 10 ** 12);
+        feedpush(rtag, bytes32(vox.amp() / RAY), 10 ** 12);
 
         vox.poke(); // no time has passed
         assertEq(vat.par(), 7 * WAD);
@@ -125,7 +125,8 @@ contract VoxTest is Test, RicoSetUp {
         vox.poke();
         skip(100000000);
         vm.startPrank(vox.tip());
-        vox.fb().push(vox.tag(), bytes32(type(uint).max), block.timestamp + 1 );
+        uint256 high = 2 ** 128;
+        vox.fb().push(vox.tag(), bytes32(high), block.timestamp + 1 );
         vm.stopPrank();
         vox.poke();
         assertEq(vox.way(), rinv(vox.cap()));

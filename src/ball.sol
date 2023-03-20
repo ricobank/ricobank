@@ -16,7 +16,6 @@ import {Divider} from "../lib/feedbase/src/combinators/Divider.sol";
 import {UniswapV3Adapter} from "../lib/feedbase/src/adapters/UniswapV3Adapter.sol";
 import {Medianizer} from "../lib/feedbase/src/Medianizer.sol";
 import {TWAP} from "../lib/feedbase/src/combinators/TWAP.sol";
-import {Progression} from "../lib/feedbase/src/combinators/Progression.sol";
 import {ChainlinkAdapter} from "../lib/feedbase/src/adapters/ChainlinkAdapter.sol";
 import {Math} from '../src/mixin/math.sol';
 import {Pool} from '../src/mixin/pool.sol';
@@ -42,15 +41,10 @@ contract Ball is Math, Pool {
 
     bytes32 internal constant RICO_DAI_TAG = "ricodai";
     bytes32 internal constant DAI_RICO_TAG = "dairico";
-    bytes32 internal constant USD_RICO_TAG = "usdrico";
     bytes32 internal constant XAU_USD_TAG = "xauusd";
-    bytes32 internal constant XAU_DAI_TAG = "xauusd";
     bytes32 internal constant DAI_USD_TAG = "daiusd";
-    bytes32 internal constant XAU_RICO_TAG = "xaurico";
-    bytes32 internal constant REF_RICO_TAG = "refrico";
+    bytes32 internal constant RICO_XAU_TAG = "ricoxau";
     bytes32 internal constant RICO_REF_TAG = "ricoref";
-    bytes32 internal constant RTAG = "ricousd";
-    uint256 internal constant BANKYEAR = ((365 * 24) + 6) * 3600;
     uint160 internal constant risk_price = 2 ** 96;
     uint24  internal constant RICO_FEE = 500;
     uint24  internal constant RISK_FEE = 3000;
@@ -70,7 +64,6 @@ contract Ball is Math, Pool {
     UniswapV3Adapter public adapt;
     Divider public divider;
     ChainlinkAdapter public cladapt;
-    Progression public progression;
     TWAP public twap;
    
     address constant DAI_USD_AGG = 0xAed0c38402a5d19df6E4c03F4E2DceD6e29c1ee9;
@@ -92,7 +85,6 @@ contract Ball is Math, Pool {
     struct BallArgs {
         address gemfab;
         address feedbase;
-        address weth;
         address factory;
         address router;
         address roll;
@@ -104,9 +96,6 @@ contract Ball is Math, Pool {
         uint    xauusdttl;
         uint    twaprange;
         uint    twapttl;
-        uint    progstart;
-        uint    progend;
-        uint    progperiod;
         UniFlower.Ramp ricoramp;
         UniFlower.Ramp riskramp;
         UniFlower.Ramp mintramp;
@@ -122,7 +111,6 @@ contract Ball is Math, Pool {
         risk = address(GemFabLike(args.gemfab).build(bytes32("Rico Riskshare"), bytes32("RISK")));
 
         vow = new Vow();
-        vox = new Vox();
         vat = new Vat();
 
         hook = new ERC20Hook(address(vat), address(flow), rico);
@@ -134,19 +122,12 @@ contract Ball is Math, Pool {
         vow.link('RICO', rico);
         vow.link('RISK', risk);
 
-        vox.link('fb',  args.feedbase);
-        vox.link('tip', args.roll);
-        vox.link('vat', address(vat));
-
         vat.file('ceil',  args.ceil);
         vat.link('feeds', args.feedbase);
         vat.link('rico',  address(rico));
 
         vow.ward(address(flow), true);
-
-        vat.ward(address(vow),  true);
-        vat.ward(address(vox),  true);
-
+        vat.ward(address(vow), true);
         hook.ward(address(flow), true); // flowback
         hook.ward(address(vat), true);  // grabhook, frobhook
 
@@ -271,9 +252,7 @@ contract Ball is Math, Pool {
 
         flow.give(roll);
         vow.give(roll);
-        vat.give(roll);
         hook.give(roll);
-
         ricorisk = create_pool(args.factory, rico, risk, RISK_FEE, risk_price);
         // |------------------------->divider--------->twap------>| (usd/rico)
         // |                              |                       |
@@ -292,52 +271,45 @@ contract Ball is Math, Pool {
         adapt.ward(address(this), false);
 
         // dai/rico = 1 / (rico/dai)
-        address[] memory sources = new address[](2);
-        bytes32[] memory tags    = new bytes32[](2);
-        Feedbase(args.feedbase).push(bytes32("ONE"), bytes32(RAY), type(uint).max);
-        sources[0] = address(this); tags[0] = bytes32("ONE");
-        sources[1] = address(adapt); tags[1] = RICO_DAI_TAG;
-        divider.setConfig(DAI_RICO_TAG, Divider.Config(sources, tags));
+        {
+            address[] memory sources = new address[](2);
+            bytes32[] memory tags    = new bytes32[](2);
+            Feedbase(args.feedbase).push(bytes32("ONE"), bytes32(RAY), type(uint).max);
+            sources[0] = address(this); tags[0] = bytes32("ONE");
+            sources[1] = address(adapt); tags[1] = RICO_DAI_TAG;
+            divider.setConfig(DAI_RICO_TAG, Divider.Config(sources, tags));
+        }
 
         cladapt = new ChainlinkAdapter(args.feedbase);
         cladapt.setConfig(XAU_USD_TAG, ChainlinkAdapter.Config(XAU_USD_AGG, args.xauusdttl, RAY));
         cladapt.setConfig(DAI_USD_TAG, ChainlinkAdapter.Config(DAI_USD_AGG, args.daiusdttl, RAY));
-        sources[0] = address(cladapt); tags[0] = XAU_USD_TAG;
-        sources[1] = address(cladapt); tags[1] = DAI_USD_TAG;
-        divider.setConfig(XAU_DAI_TAG, Divider.Config(sources, tags));
-        sources[0] = address(divider); tags[0] = XAU_DAI_TAG;
-        sources[1] = address(adapt); tags[1] = RICO_DAI_TAG;
-        divider.setConfig(XAU_RICO_TAG, Divider.Config(sources, tags));
-        sources[0] = address(divider); tags[0] = DAI_RICO_TAG;
-        sources[1] = address(cladapt); tags[1] = DAI_USD_TAG;
-        divider.setConfig(USD_RICO_TAG, Divider.Config(sources, tags));
-
-        twap.setConfig(XAU_RICO_TAG, TWAP.Config(address(divider), XAU_RICO_TAG, args.twaprange, args.twapttl));
-        twap.setConfig(USD_RICO_TAG, TWAP.Config(address(divider), USD_RICO_TAG, args.twaprange, args.twapttl));
-        
-        progression = new Progression(Feedbase(args.feedbase));
-        progression.setConfig(REF_RICO_TAG, Progression.Config(
-            address(twap), USD_RICO_TAG,
-            address(twap), XAU_RICO_TAG,
-            // TODO discuss whether 10y is appropriate, decide on period
-            args.progstart, args.progend, args.progperiod
-        ));
-
-        sources[0] = address(this); tags[0] = bytes32("ONE");
-        sources[1] = address(progression); tags[1] = REF_RICO_TAG;
-        divider.setConfig(RICO_REF_TAG, Divider.Config(sources, tags));
-        mdn_sources[0].tag = RICO_REF_TAG;
+        {
+            address[] memory src3 = new address[](3);
+            bytes32[] memory tag3 = new bytes32[](3);
+            src3[0] = address(cladapt); tag3[0] = DAI_USD_TAG;
+            src3[1] = address(divider); tag3[1] = DAI_RICO_TAG;
+            src3[2] = address(cladapt); tag3[2] = XAU_USD_TAG;
+            divider.setConfig(RICO_XAU_TAG, Divider.Config(src3, tag3));
+        }
+        twap.setConfig(RICO_XAU_TAG, TWAP.Config(address(divider), RICO_XAU_TAG, args.twaprange, args.twapttl));
+        mdn_sources[0] = Medianizer.Source(address(twap), RICO_XAU_TAG);
         mdn.setSources(RICO_REF_TAG, mdn_sources);
 
         divider.ward(roll, true);
         divider.ward(address(this), false);
 
-        // median([(ddai / dweth) / (ddai / drico)]) == drico / dweth
         mdn.ward(roll, true);
 
-        // vox needs rico-dai
+        cladapt.look(XAU_USD_TAG);
+        (bytes32 ref,) = Feedbase(args.feedbase).pull(address(cladapt), XAU_USD_TAG);
+        vox = new Vox(uint256(ref));
+        vox.link('fb',  args.feedbase);
+        vox.link('tip', args.roll);
+        vox.link('vat', address(vat));
         vox.link('tip', address(mdn));
         vox.file('tag', RICO_REF_TAG);
+        vat.ward(address(vox), true);
+        vat.give(roll);
         vox.give(roll);
     }
 
