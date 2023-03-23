@@ -993,11 +993,10 @@ contract DssClipTest is DssJsTest {
     //   also no clipper-like callback
 
     function test_gas_bark_kick() public _clip_ {
-        uint pregas = gasleft();
+        uint gas = gasleft();
         vm.expectCall(address(flow), bytes(''));
         vow.bail(i0, me);
-        uint diffgas = pregas - gasleft();
-        console.log("bark with kick gas %s", diffgas);
+        check_gas(gas, 296958);
     }
 }
 
