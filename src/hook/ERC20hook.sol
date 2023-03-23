@@ -60,12 +60,12 @@ contract ERC20Hook is Ward, Lock, Flog {
         address vow,
         bytes32 i,
         address u,
-        int dink,
-        int, // dart
-        uint bill
+        uint256 ink,
+        uint256, // art
+        uint256 bill
     ) _ward_ _flog_ external returns (uint aid) {
         address gem = gems[i];
-        aid = flow.flow(vow, gem, uint(-dink), address(rico), bill);
+        aid = flow.flow(vow, gem, ink, address(rico), bill);
         sales[aid] = Sale({ ilk: i, urn: u });
     }
 

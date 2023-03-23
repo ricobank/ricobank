@@ -35,7 +35,7 @@ interface Hook {
         address urn, bytes32 i, address u, int dink, int dart
     ) external;
     function grabhook(
-        address urn, bytes32 i, address u, int dink, int dart, uint bill
+        address urn, bytes32 i, address u, uint ink, uint art, uint bill
     ) external returns (uint);
 }
 
@@ -138,8 +138,8 @@ contract Vat is Lock, Math, Ward, Flog {
         // ilk has been initialised
         if (ilk.rack == 0) revert ErrIlkInit();
 
-        urn.ink = add(urn.ink, dink);
-        urn.art = add(urn.art, dart);
+        urn.ink  = add(urn.ink,  dink);
+        urn.art  = add(urn.art,  dart);
         ilk.tart = add(ilk.tart, dart);
 
         int dtab = mul(ilk.rack, dart);
@@ -167,25 +167,24 @@ contract Vat is Lock, Math, Ward, Flog {
         Hook(ilk.hook).frobhook(msg.sender, i, u, dink, dart);
     }
 
-    function grab(bytes32 i, address u, int dink, int dart)
-        _ward_ _flog_ external returns (uint bill, uint aid)
+    function grab(bytes32 i, address u)
+        _ward_ _flog_ external returns (uint aid)
     {
         Urn storage urn = urns[i][u];
         Ilk storage ilk = ilks[i];
+        uint art = urn.art;
+        uint ink = urn.ink;
 
-        uint tab  = rmul(urn.art, ilk.rack);
-        bill = rmul(ilk.chop, tab);
+        uint tab  = rmul(art, ilk.rack);
+        uint bill = rmul(ilk.chop, tab);
 
-        urn.ink  = add(urn.ink, dink);
-        urn.art  = add(urn.art, dart);
-        ilk.tart = add(ilk.tart, dart);
+        urn.ink = urn.art = 0;
+        ilk.tart -= art;
 
-        int dtab = mul(ilk.rack, dart);
+        uint dtab = art * ilk.rack;
+        sin[msg.sender] += dtab;
 
-        address vow = msg.sender;
-        sin[vow]    = sub(sin[vow],    dtab);
-
-        aid = Hook(ilk.hook).grabhook(msg.sender, i, u, dink, dart, bill);
+        aid = Hook(ilk.hook).grabhook(msg.sender, i, u, ink, art, bill);
     }
 
     function prod(uint256 jam)

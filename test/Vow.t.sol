@@ -457,7 +457,7 @@ contract VowTest is Test, RicoSetUp {
         vat.filk(gilk, 'hook', uint(bytes32(bytes20(address(hook)))));
         bytes memory hookdata = abi.encodeCall(
             hook.grabhook,
-            (avow, gilk, self, -int(WAD), -int(WAD), WAD)
+            (avow, gilk, self, WAD, WAD, WAD)
         );
 
         feedpush(grtag, bytes32(RAY * 1000000), type(uint).max);
@@ -477,7 +477,7 @@ contract Hook {
         address urn, bytes32 i, address u, int dink, int dart
     ) external {}
     function grabhook(
-        address urn, bytes32 i, address u, int dink, int dart, uint bill
+        address urn, bytes32 i, address u, uint ink, uint art, uint bill
     ) external returns (uint) {}
 }
 

@@ -53,8 +53,7 @@ contract Vow is Math, Ward, Flog {
     function bail(bytes32 ilk, address urn) _flog_ external returns (uint256 aid) {
         vat.drip(ilk);
         if (vat.safe(ilk, urn) != Vat.Spot.Sunk) revert ErrSafeBail();
-        (uint ink, uint art) = vat.urns(ilk, urn);
-        (,aid) = vat.grab(ilk, urn, -int(ink), -int(art));
+        aid = vat.grab(ilk, urn);
     }
 
     function drip(bytes32 i) _flog_ external {

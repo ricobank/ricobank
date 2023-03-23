@@ -56,7 +56,7 @@ contract VatTest is Test, RicoSetUp {
         feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
         vat.frob(gilk, self, int(WAD), int(WAD));
         uint gas = gasleft();
-        vat.grab(gilk, self, -int(WAD), -int(WAD));
+        vat.grab(gilk, self);
         check_gas(gas, 279099);
     }
 
@@ -64,7 +64,7 @@ contract VatTest is Test, RicoSetUp {
         feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
         vat.frob(gilk, self, int(WAD), int(WAD));
         feedpush(grtag, bytes32(0), type(uint).max);
-        vat.grab(gilk, self, -int(WAD), -int(WAD));
+        vat.grab(gilk, self);
 
         uint gas = gasleft();
         vat.heal(WAD - 1);
@@ -735,7 +735,6 @@ contract VatTest is Test, RicoSetUp {
         hook.link(grabilk, address(ggm));
         hook.grant(address(ggm));
 
-
         ggm.mint(self, dink * 1000);
         ggm.approve(address(hook), type(uint).max);
         vat.init(grabilk, address(hook), address(mdn), grabtag);
@@ -747,14 +746,13 @@ contract VatTest is Test, RicoSetUp {
 
         vat.frob(grabilk, self, int(dink * 2), int(dart));
         GrabbyGem(address(ggm)).setdepth(1);
-        // sin should underflow
-        // todo update when we have better math errors...
-        vm.expectRevert();
-        vat.grab(grabilk, self, -int(dink), int(dart));
+        // additional grab will not impact vat
+        vat.grab(grabilk, self);
+        assertEq(vat.sin(self), WAD * RAY);
     }
 
-    function dograb(bytes32 i, address u, int dink, int dart) public {
-        vat.grab(i, u, dink, dart);
+    function dograb(bytes32 i, address u) public {
+        vat.grab(i, u);
     }
 
     function test_frob_hook() public {
@@ -791,7 +789,7 @@ contract VatTest is Test, RicoSetUp {
         vat.filk(gilk, 'hook', uint(bytes32(bytes20(address(hook)))));
         bytes memory hookdata = abi.encodeCall(
             hook.grabhook,
-            (self, gilk, self, -int(WAD), -int(WAD), WAD)
+            (self, gilk, self, WAD, WAD, WAD)
         );
 
         feedpush(grtag, bytes32(RAY * 1000000), type(uint).max);
@@ -799,7 +797,7 @@ contract VatTest is Test, RicoSetUp {
         feedpush(grtag, bytes32(0), type(uint).max);
         uint goldbefore = gold.balanceOf(self);
         vm.expectCall(address(hook), hookdata);
-        vat.grab(gilk, self, -int(WAD), -int(WAD));
+        vat.grab(gilk, self);
         assertEq(gold.balanceOf(self), goldbefore);
     }
 
@@ -964,7 +962,7 @@ contract Hook {
         address urn, bytes32 i, address u, int dink, int dart
     ) external {}
     function grabhook(
-        address urn, bytes32 i, address u, int dink, int dart, uint bill
+        address urn, bytes32 i, address u, uint ink, uint art, uint bill
     ) external returns (uint) {}
 }
 
@@ -1028,7 +1026,7 @@ contract HackyGem is OverrideableGem {
 }
 
 interface Grabber {
-    function dograb(bytes32 i, address u, int dink, int dart) external;
+    function dograb(bytes32 i, address u) external;
 }
 
 contract GrabbyGem is OverrideableGem {
@@ -1061,7 +1059,7 @@ contract GrabbyGem is OverrideableGem {
     {
         if (depth > 0) {
             depth--;
-            grabber.dograb(i, u, dink, dart);
+            grabber.dograb(i, u);
         }
 
         unchecked {
