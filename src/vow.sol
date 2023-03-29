@@ -5,7 +5,7 @@
 
 pragma solidity 0.8.19;
 
-import { UniFlower, Flowback } from './flow.sol';
+import { DutchFlower, Flowback } from './flow.sol';
 import { Math } from './mixin/math.sol';
 import { Vat } from './vat.sol';
 import { Gem } from '../lib/gemfab/src/gem.sol';
@@ -15,12 +15,21 @@ import { Flog } from './mixin/flog.sol';
 contract Vow is Math, Ward, Flog {
     error ErrSafeBail();
     error ErrWrongKey();
-    error ErrBadPair();
+    error ErrReflop();
+
+    struct Ramp {
+        uint vel;
+        uint rel;
+        uint bel;
+        uint cel;
+    }
+
+    Ramp public ramp;
 
     address internal immutable yank = address(0);
     address internal immutable self = address(this);
 
-    UniFlower public flow;
+    DutchFlower public flow;
     Vat  public vat;
     Gem  public RICO;
     Gem  public RISK;
@@ -37,14 +46,22 @@ contract Vow is Math, Ward, Flog {
         uint sin = vat.sin(self) / RAY;
         if (rico > sin) {
             if (sin > 1) vat.heal(sin - 1);
-            uint over = (rico - sin);
-            aid = flow.flow(address(this), address(RICO), over, address(RISK), type(uint256).max);
+            uint flap = rico - sin;
+            aid = flow.flow(
+                address(this), address(RICO), flap, address(RISK),
+                type(uint256).max, payable(msg.sender)
+            );
         } else if (sin > rico) {
             if (rico > 1) vat.heal(rico - 1);
-            (, uint flop, uint bel) = flow.clip(self, yank, address(RISK), type(uint256).max);
-            flow.curb(yank, "bel", bel);
+            uint slope = min(ramp.vel, wmul(ramp.rel, RISK.totalSupply()));
+            uint flop  = slope * min(block.timestamp - ramp.bel, ramp.cel);
+            if (0 == flop) revert ErrReflop();
+            ramp.bel = block.timestamp;
             RISK.mint(self, flop);
-            aid = flow.flow(address(this), address(RISK), flop, address(RICO), type(uint256).max);
+            aid = flow.flow(
+                address(this), address(RISK), flop, address(RICO), 
+                type(uint256).max, payable(msg.sender)
+            );
         }
     }
 
@@ -53,7 +70,7 @@ contract Vow is Math, Ward, Flog {
     function bail(bytes32 ilk, address urn) _flog_ external returns (uint256 aid) {
         vat.drip(ilk);
         if (vat.safe(ilk, urn) != Vat.Spot.Sunk) revert ErrSafeBail();
-        aid = vat.grab(ilk, urn);
+        aid = vat.grab(ilk, urn, msg.sender);
     }
 
     function drip(bytes32 i) _flog_ external {
@@ -63,22 +80,26 @@ contract Vow is Math, Ward, Flog {
     function grant(address gem) _flog_ external {
         Gem(gem).approve(address(flow), type(uint256).max);
         Gem(gem).approve(address(vat), type(uint256).max);
-        flow.approve_gem(gem);
     }
 
     function pair(address gem, bytes32 key, uint val)
       _ward_ _flog_ external {
-        if (gem != yank && gem != address(RICO) && gem != address(RISK)) {
-            revert ErrBadPair();
-        }
         flow.curb(gem, key, val);
     }
 
     function link(bytes32 key, address val) _ward_ _flog_ external {
-             if (key == "flow") { flow = UniFlower(val); }
+             if (key == "flow") { flow = DutchFlower(val); }
         else if (key == "RISK") { RISK = Gem(val); }
         else if (key == "RICO") { RICO = Gem(val); }
         else if (key == "vat")  { vat  = Vat(val); }
+        else revert ErrWrongKey();
+    }
+
+    function file(bytes32 key, uint val) _ward_ _flog_ external {
+             if (key == "vel") { ramp.vel = val; }
+        else if (key == "rel") { ramp.rel = val; }
+        else if (key == "bel") { ramp.bel = val; }
+        else if (key == "cel") { ramp.cel = val; }
         else revert ErrWrongKey();
     }
 }

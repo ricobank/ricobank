@@ -4,21 +4,22 @@ pragma solidity 0.8.19;
 
 import './mixin/math.sol';
 import { Gem } from '../lib/gemfab/src/gem.sol';
-import "./swap.sol";
 import { Lock } from './mixin/lock.sol';
 import { Flog } from './mixin/flog.sol';
+import { Feedbase } from '../lib/feedbase/src/Feedbase.sol';
 
 interface Flowback {
     function flowback(uint256 aid, uint refund) external;
 }
 
-contract UniFlower is Math, UniSwapper, Lock, Flog {
+contract DutchFlower is Math, Lock, Flog {
     struct Ramp {
-        uint256 vel;  // [wad] Stream speed wei/sec
-        uint256 rel;  // [wad] Speed relative to supply
-        uint256 bel;  // [sec] Started charging
-        uint256 cel;  // [sec] Sec to recharge
-        uint256 del;  // [wad] Dust threshold
+        uint256 fel;  // [ray] rate of change in asking price/second
+        uint256 del;  // min ham
+        uint256 gel;  // [ray] multiply by basefee for creator reward
+        address feed;
+        address fsrc;
+        bytes32 ftag;
     }
 
     struct Auction {
@@ -28,104 +29,121 @@ contract UniFlower is Math, UniSwapper, Lock, Flog {
         uint256 ham;  // have amount
         address wag;  // want gem
         uint256 wam;  // want amount
+        uint256 gun;  // starting timestamp
+        address payable gir;  // keeper
+        uint256 gim;  // keeper eth reward
+        uint256 valid; // 2 good, 1 bad
     }
 
-    mapping (address usr => mapping (address gem => Ramp)) public ramps;  // client -> gem -> ramp
+    enum Valid { UNINITIALIZED, INVALID, VALID }
+
+    mapping (address usr => mapping (address hag => Ramp)) ramps;
     mapping (uint256 aid => Auction) public auctions;
 
     error ErrCurbKey();
     error ErrEmptyAid();
-    error ErrSwapFail();
-    error ErrTinyFlow();
     error ErrTransfer();
+    error ErrHighStep();
+    error ErrTinyFlow();
+    error ErrStale();
 
     uint256 public count;
+    uint256[] public aids;
 
     function flow(
         address vow,
         address hag, 
         uint    ham,
         address wag,
-        uint    wam
-    ) _flog_ external returns (uint256 aid) {
+        uint    wam,
+        address payable gir
+    ) _lock_ _flog_ external returns (uint256 aid) {
         address flo = msg.sender;
-        if (ramps[flo][hag].del > ham) revert ErrTinyFlow();
+        Ramp storage ramp = ramps[flo][hag];
+        if (ham < ramp.del) revert ErrTinyFlow();
         if (!Gem(hag).transferFrom(msg.sender, address(this), ham)) revert ErrTransfer();
-        aid = ++count;
+        if (aids.length > 0) {
+            aid = aids[aids.length - 1];
+            aids.pop();
+        } else {
+            aid = ++count;
+        }
         auctions[aid].vow = vow;
         auctions[aid].flo = flo;
         auctions[aid].hag = hag;
         auctions[aid].ham = ham;
         auctions[aid].wag = wag;
         auctions[aid].wam = wam;
+        auctions[aid].gun = block.timestamp;
+        auctions[aid].gir = gir;
+        auctions[aid].gim = rmul(block.basefee, ramp.gel);
+        auctions[aid].valid = uint(Valid.VALID);
     }
 
-    function glug(uint256 aid) _lock_ _flog_ external {
+    // reverse dutch auction where price (not amount) is lowered with time
+    // if guy already bid higher, auction will go to guy, at guy's price
+    // flowback what's unused
+    function glug(uint256 aid) _lock_ _flog_ payable external {
         Auction storage auction = auctions[aid];
-        address flo = auction.flo;
-        address hag = auction.hag;
+
+        if (uint(Valid.VALID) != auction.valid) revert ErrEmptyAid();
+
+        uint price = curp(aid, block.timestamp);
+
+        (uint makers, uint takers) = clip(auction.ham, auction.wam, price);
+        uint rest  = auction.ham - takers;
+
         address vow = auction.vow;
-        if (hag == address(0)) revert ErrEmptyAid();
-        (bool last, uint hunk, uint bel) = clip(flo, hag, address(0), auction.ham);
-        ramps[flo][hag].bel = bel;
-        uint cost = SWAP_ERR;
-        uint gain;
+        if (!Gem(auction.wag).transferFrom(msg.sender, vow, makers)) revert ErrTransfer();
+        if (!Gem(auction.hag).transfer(msg.sender, takers)) revert ErrTransfer();
 
-        if (auction.wam != type(uint256).max) {
-            cost = _swap(hag, auction.wag, vow, SwapKind.EXACT_OUT, auction.wam, hunk);
-        }
+        address flo = auction.flo;
+        if (!Gem(auction.hag).transfer(flo, rest)) revert ErrTransfer();
+        Flowback(flo).flowback(aid, rest);
 
-        if (cost != SWAP_ERR) {
-            gain = auction.wam;
-            last = true;
-        } else {
-            gain = _swap(hag, auction.wag, vow, SwapKind.EXACT_IN, hunk, 0);
-            if (gain == SWAP_ERR) revert ErrSwapFail();
-            cost = hunk;
-        }
-        uint rest = auction.ham - cost;
+        if (msg.value < auction.gim) revert ErrTransfer();
+        auction.gir.send(auction.gim);
+        auctions[aid].valid = uint(Valid.INVALID);
+        aids.push(aid);
+    }
 
-        if (last) {
-            if (!Gem(hag).transfer(flo, rest)) revert ErrTransfer();
-            Flowback(flo).flowback(aid, rest);
-            delete auctions[aid];
-        } else {
-            auction.ham = rest;
-            if (auction.wam != type(uint256).max){
-                auction.wam -= gain;
-            }
+    // makers -- amount bidder gives to system
+    // takers -- amount system gives to bidder
+    // if ham at price is worth more than wam, lower makers to buy roughly ham
+    function clip(uint ham, uint wam, uint price) public pure returns (uint makers, uint takers) {
+        takers = ham;
+        makers = rmul(takers, price);
+        if (wam < makers) {
+            takers = rmul(takers, rdiv(wam, makers));
+            makers = wam;
         }
     }
 
-    function clip(address back, address gem, address alt, uint top) public view returns (bool, uint, uint) {
-        Ramp storage ramp = ramps[back][gem];
-        if (alt != address(0)) gem = alt;
-        uint supply = Gem(gem).totalSupply();
-        uint slope = min(ramp.vel, wmul(ramp.rel, supply));
-        uint charge = slope * min(ramp.cel, block.timestamp - ramp.bel);
-        uint lot = min(charge, top);
-        uint remainder = top - lot;
-        uint bel;
-        if (0 < remainder && remainder < ramp.del) {
-            bel = block.timestamp + remainder / slope;
-            lot += remainder;
-            remainder = 0;
-        } else {
-            bel = block.timestamp - (charge - lot) / slope;
-        }
-        return (remainder == 0, lot, bel);
-    }
-
-    function approve_gem(address gem) _flog_ external {
-        Gem(gem).approve(address(router), type(uint256).max);
+    function curp(uint aid, uint time) public view returns (uint) {
+        Auction storage auction = auctions[aid];
+        Ramp storage ramp = ramps[auction.flo][auction.hag];
+        (bytes32 ask, uint ttl) = Feedbase(ramp.feed).pull(ramp.fsrc, ramp.ftag);
+        if (ttl < time) revert ErrStale();
+        uint fel = ramps[auction.flo][auction.hag].fel;
+        return grow(uint(ask), fel, time - auction.gun);
     }
 
     function curb(address gem, bytes32 key, uint val) _flog_ external {
-               if (key == "vel") { ramps[msg.sender][gem].vel = val;
-        } else if (key == "rel") { ramps[msg.sender][gem].rel = val;
-        } else if (key == "bel") { ramps[msg.sender][gem].bel = val;
-        } else if (key == "cel") { ramps[msg.sender][gem].cel = val;
-        } else if (key == "del") { ramps[msg.sender][gem].del = val;
+        Ramp storage ramp = ramps[msg.sender][gem];
+        if (key == 'feed') {
+            ramp.feed = address(uint160(val));
+        } else if (key == 'fsrc') {
+            ramp.fsrc = address(uint160(val));
+        } else if (key == 'ftag') {
+            ramp.ftag = bytes32(val);
+        } else if (key == 'fel') {
+            if (val > RAY) revert ErrHighStep();
+            ramp.fel = val;
+        } else if (key == 'del') {
+            ramp.del = val;
+        } else if (key == 'gel') {
+            ramp.gel = val;
         } else { revert ErrCurbKey(); }
     }
+
 }

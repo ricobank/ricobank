@@ -10,7 +10,7 @@ import '../flow.sol';
 import '../../lib/gemfab/src/gem.sol';
 
 contract ERC20Hook is Ward, Lock, Flog {
-    UniFlower public flow;
+    DutchFlower public flow;
     Vat public vat;
     Gem public rico;
     mapping(bytes32=>address) public gems;
@@ -28,10 +28,11 @@ contract ERC20Hook is Ward, Lock, Flog {
     error ErrMintCeil();
     error ErrLoanArgs();
     error ErrTransfer();
+    error ErrWrongKey();
 
     constructor(address _vat, address _flow, address _rico) {
         vat = Vat(_vat);
-        flow = UniFlower(_flow);
+        flow = DutchFlower(_flow);
         rico = Gem(_rico);
     }
 
@@ -62,10 +63,10 @@ contract ERC20Hook is Ward, Lock, Flog {
         address u,
         uint256 ink,
         uint256, // art
-        uint256 bill
+        uint256 bill,
+        address payable keeper
     ) _ward_ _flog_ external returns (uint aid) {
-        address gem = gems[i];
-        aid = flow.flow(vow, gem, ink, address(rico), bill);
+        aid = flow.flow(vow, gems[i], ink, address(rico), bill, keeper);
         sales[aid] = Sale({ ilk: i, urn: u });
     }
 

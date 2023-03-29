@@ -28,10 +28,6 @@ task('deploy-ricobank', '')
     const ball_artifact = require('../artifacts/src/ball.sol/Ball.json')
     const ball_type = hre.ethers.ContractFactory.fromSolidity(ball_artifact, ali)
     const timestamp = (await hre.ethers.provider.getBlock('latest')).timestamp
-    const stdramp = {
-        vel: wad(1), rel: wad(1), bel: timestamp,
-        cel: 1, del: wad(0.01)
-    }
     const ballargs = {
         gemfab: deps.objects.gemfab.address,
         feedbase: deps.objects.feedbase.address,
@@ -40,15 +36,25 @@ task('deploy-ricobank', '')
         roll: ali.address,
         sqrtpar: ray(1),
         ceil: rad(100000),
-        ricodairange: 20000,
-        ricodaittl:   BANKYEAR / 4,
+        adaptrange:   20000,
+        adaptttl:     BANKYEAR / 4,
         daiusdttl:    BANKYEAR,
         xauusdttl:    BANKYEAR,
         twaprange:    10000,
         twapttl:      BANKYEAR,
-        ricoramp:     stdramp,
-        riskramp:     stdramp,
-        mintramp:     stdramp
+        ricoramp: {
+            fel : ray(0.999), del: wad(100), gel: ray(1000),
+            feed: deps.objects.feedbase.address,
+            fsrc: hre.ethers.constants.AddressZero,
+            ftag: hre.ethers.constants.HashZero
+        },
+        riskramp: {
+            fel : ray(0.999), del: wad(100), gel: ray(1000),
+            feed: deps.objects.feedbase.address,
+            fsrc: hre.ethers.constants.AddressZero,
+            ftag: hre.ethers.constants.HashZero
+        },
+        mintramp:   { vel: wad(1), rel: wad(1), bel: timestamp, cel: 1 }
     }
 
     const ilk = {
@@ -61,8 +67,10 @@ task('deploy-ricobank', '')
         line: rad(100000),
         liqr: ray(1),
         ramp: {
-            vel: wad(0.001), rel: wad(1), bel: timestamp,
-            cel: 1, del: wad(0.01)
+            fel : ray(0.999), del: wad(0), gel: ray(1000),
+            feed: deps.objects.feedbase.address,
+            fsrc: hre.ethers.constants.AddressZero,
+            ftag: hre.ethers.constants.HashZero
         },
         ttl: 20000,
         range: BANKYEAR / 4
@@ -74,7 +82,7 @@ task('deploy-ricobank', '')
     const mdn_artifact = await dpack.getIpfsJson(deps.types.Medianizer.artifact['/'])
     const div_artifact = await dpack.getIpfsJson(deps.types.Divider.artifact['/'])
 
-    const contracts = [['flow', 'UniFlower', require('../artifacts/src/flow.sol/UniFlower.json')],
+    const contracts = [['flow', 'DutchFlower', require('../artifacts/src/flow.sol/DutchFlower.json')],
                        ['vat', 'Vat', require('../artifacts/src/vat.sol/Vat.json')],
                        ['vow', 'Vow', require('../artifacts/src/vow.sol/Vow.json')],
                        ['vox', 'Vox', require('../artifacts/src/vox.sol/Vox.json')],

@@ -10,7 +10,7 @@ contract RevertingGrabHook {
     }
 
     function grabhook(
-        address, bytes32, address, uint, uint, uint
+        address, bytes32, address, uint, uint, uint, address payable
     ) public pure returns (uint) {
         revert('grab revert');
     }
@@ -26,7 +26,7 @@ contract CorrectlyMisbehavingGrabHook {
     }
 
     function grabhook(
-        address, bytes32, address, uint, uint, uint
+        address, bytes32, address, uint, uint, uint, address payable
     ) public pure returns (bytes32 oneword) {
         return bytes32(bytes4("bad2")); // one word
     }
@@ -41,7 +41,7 @@ contract IncorrectlyMisbehavingGrabHook {
     }
 
     function grabhook(
-        address, bytes32, address, uint, uint, uint
+        address, bytes32, address, uint, uint, uint, address payable
     ) public pure returns (bytes memory long) {
         long = new bytes(64);
         long[0] = 'r';

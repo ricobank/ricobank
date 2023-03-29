@@ -33,6 +33,7 @@ describe('Vox', () => {
     fb = dapp.feedbase
 
     await send(vox.file, b32("tag"), TAG)
+    await send(vox.link, b32("tip"), ALI)
 
     await send(vox.file, b32("cap"), bn2b32(ray(3)))
 

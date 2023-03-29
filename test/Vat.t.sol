@@ -57,7 +57,7 @@ contract VatTest is Test, RicoSetUp {
         feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
         vat.frob(gilk, self, int(WAD), int(WAD));
         uint gas = gasleft();
-        vat.grab(gilk, self);
+        vat.grab(gilk, self, self);
         check_gas(gas, 279099);
     }
 
@@ -65,7 +65,7 @@ contract VatTest is Test, RicoSetUp {
         feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
         vat.frob(gilk, self, int(WAD), int(WAD));
         feedpush(grtag, bytes32(0), type(uint).max);
-        vat.grab(gilk, self);
+        vat.grab(gilk, self, self);
 
         uint gas = gasleft();
         vat.heal(WAD - 1);
@@ -748,7 +748,7 @@ contract VatTest is Test, RicoSetUp {
         vat.frob(grabilk, self, int(dink * 2), int(dart));
         GrabbyGem(address(ggm)).setdepth(1);
         // additional grab will not impact vat
-        vat.grab(grabilk, self);
+        vat.grab(grabilk, self, self);
         assertEq(vat.sin(self), WAD * RAY);
     }
 
@@ -758,7 +758,7 @@ contract VatTest is Test, RicoSetUp {
         vat.filk(gilk, 'line', type(uint256).max);
         bytes memory hookdata = abi.encodeCall(
             hook.grabhook,
-            (self, gilk, self, WAD, WAD, WAD)
+            (self, gilk, self, WAD, WAD, WAD, self)
         );
         (,,,,uint256 line_before,,,,,,) = vat.ilks(gilk);
         feedpush(grtag, bytes32(RAY * 1000000), type(uint).max);
@@ -766,7 +766,7 @@ contract VatTest is Test, RicoSetUp {
         feedpush(grtag, bytes32(0), type(uint).max);
         uint goldbefore = gold.balanceOf(self);
         vm.expectCall(address(hook), hookdata);
-        uint aid = vat.grab(gilk, self);
+        uint aid = vat.grab(gilk, self, self);
         assertEq(aid, 0);
         (,,,,uint256 line_after,,,,,,) = vat.ilks(gilk);
         assertEq(line_after, 0);
@@ -782,13 +782,13 @@ contract VatTest is Test, RicoSetUp {
         vat.filk(gilk, 'line', type(uint256).max);
         bytes memory hookdata = abi.encodeCall(
             hook.grabhook,
-            (self, gilk, self, WAD, WAD, WAD)
+            (self, gilk, self, WAD, WAD, WAD, self)
         );
         feedpush(grtag, bytes32(RAY * 1000000), type(uint).max);
         vat.frob(gilk, self, int(WAD), int(WAD));
         feedpush(grtag, bytes32(0), type(uint).max);
         vm.expectCall(address(hook), hookdata);
-        uint aid = vat.grab(gilk, self);
+        uint aid = vat.grab(gilk, self, self);
         assertFalse(aid == 0); // expected actual decode of uint256
         (,,,,uint256 line_after,,,,,,) = vat.ilks(gilk);
         assertFalse(line_after == 0); // line should not have been set to 0
@@ -801,7 +801,7 @@ contract VatTest is Test, RicoSetUp {
         vat.filk(gilk, 'line', type(uint256).max);
         bytes memory hookdata = abi.encodeCall(
             hook.grabhook,
-            (self, gilk, self, WAD, WAD, WAD)
+            (self, gilk, self, WAD, WAD, WAD, self)
         );
         (,,,,uint256 line_before,,,,,,) = vat.ilks(gilk);
         feedpush(grtag, bytes32(RAY * 1000000), type(uint).max);
@@ -809,7 +809,7 @@ contract VatTest is Test, RicoSetUp {
         feedpush(grtag, bytes32(0), type(uint).max);
         uint goldbefore = gold.balanceOf(self);
         vm.expectCall(address(hook), hookdata);
-        uint aid = vat.grab(gilk, self);
+        uint aid = vat.grab(gilk, self, self);
         assertEq(aid, 0);
         (,,,,uint256 line_after,,,,,,) = vat.ilks(gilk);
         assertEq(line_after, 0);
@@ -819,7 +819,7 @@ contract VatTest is Test, RicoSetUp {
     }
 
     function dograb(bytes32 i, address u) public {
-        vat.grab(i, u);
+        vat.grab(i, u, self);
     }
 
     function test_frob_hook() public {
@@ -851,12 +851,12 @@ contract VatTest is Test, RicoSetUp {
         assertEq(gold.balanceOf(self), goldbefore);
     }
 
-    function test_grab_hook() public {
+    function test_grab_hook_1() public {
         Hook hook = new Hook();
         vat.filk(gilk, 'hook', uint(bytes32(bytes20(address(hook)))));
         bytes memory hookdata = abi.encodeCall(
             hook.grabhook,
-            (self, gilk, self, WAD, WAD, WAD)
+            (self, gilk, self, WAD, WAD, WAD, self)
         );
 
         feedpush(grtag, bytes32(RAY * 1000000), type(uint).max);
@@ -864,7 +864,7 @@ contract VatTest is Test, RicoSetUp {
         feedpush(grtag, bytes32(0), type(uint).max);
         uint goldbefore = gold.balanceOf(self);
         vm.expectCall(address(hook), hookdata);
-        vat.grab(gilk, self);
+        vat.grab(gilk, self, self);
         assertEq(gold.balanceOf(self), goldbefore);
     }
 
@@ -1029,7 +1029,8 @@ contract Hook {
         address urn, bytes32 i, address u, int dink, int dart
     ) external {}
     function grabhook(
-        address urn, bytes32 i, address u, uint ink, uint art, uint bill
+        address urn, bytes32 i, address u, uint ink, 
+        uint art, uint bill, address payable keeper
     ) external returns (uint) {}
 }
 

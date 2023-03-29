@@ -10,7 +10,7 @@ pragma solidity 0.8.19;
 import {Vat} from './vat.sol';
 import {Vow} from './vow.sol';
 import {Vox} from './vox.sol';
-import {UniFlower} from './flow.sol';
+import {DutchFlower} from './flow.sol';
 import {Feedbase} from "../lib/feedbase/src/Feedbase.sol";
 import {Divider} from "../lib/feedbase/src/combinators/Divider.sol";
 import {UniswapV3Adapter} from "../lib/feedbase/src/adapters/UniswapV3Adapter.sol";
@@ -45,13 +45,16 @@ contract Ball is Math, Pool {
     bytes32 internal constant DAI_USD_TAG = "daiusd";
     bytes32 internal constant RICO_XAU_TAG = "ricoxau";
     bytes32 internal constant RICO_REF_TAG = "ricoref";
+    bytes32 internal constant RICO_RISK_TAG  = "ricorisk";
+    bytes32 internal constant RISK_RICO_TAG  = "riskrico";
+
     uint160 internal constant risk_price = 2 ** 96;
     uint24  internal constant RICO_FEE = 500;
     uint24  internal constant RISK_FEE = 3000;
     address internal constant DAI = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
     address public rico;
     address public risk;
-    UniFlower public flow;
+    DutchFlower public flow;
     Vat public vat;
     Vow public vow;
     Vox public vox;
@@ -77,7 +80,7 @@ contract Ball is Math, Pool {
         uint    fee;
         uint    line;
         uint    liqr;
-        UniFlower.Ramp ramp;
+        DutchFlower.Ramp ramp;
         uint    ttl;
         uint    range;
     }
@@ -90,22 +93,22 @@ contract Ball is Math, Pool {
         address roll;
         uint    sqrtpar;
         uint    ceil;
-        uint    ricodairange;
-        uint    ricodaittl;
+        uint    adaptrange;
+        uint    adaptttl;
         uint    daiusdttl;
         uint    xauusdttl;
         uint    twaprange;
         uint    twapttl;
-        UniFlower.Ramp ricoramp;
-        UniFlower.Ramp riskramp;
-        UniFlower.Ramp mintramp;
+        DutchFlower.Ramp ricoramp;
+        DutchFlower.Ramp riskramp;
+        Vow.Ramp         mintramp;
     }
 
     constructor(
         BallArgs    memory args,
         IlkParams[] memory ilks
     ) payable {
-        flow = new UniFlower();
+        flow = new DutchFlower();
 
         rico = address(GemFabLike(args.gemfab).build(bytes32("Rico"), bytes32("RICO")));
         risk = address(GemFabLike(args.gemfab).build(bytes32("Rico Riskshare"), bytes32("RISK")));
@@ -141,7 +144,6 @@ contract Ball is Math, Pool {
         adapt = new UniswapV3Adapter(Feedbase(args.feedbase));
         divider = new Divider(args.feedbase, RAY);
         twap = new TWAP(args.feedbase);
-        flow.setSwapRouter(args.router);
         Medianizer.Source[] memory mdn_sources = new Medianizer.Source[](1);
         mdn_sources[0].src = address(divider);
         for (uint i = 0; i < ilks.length; i++) {
@@ -160,31 +162,8 @@ contract Ball is Math, Pool {
             vat.filk(ilk, 'line', ilkparams.line);
             vat.filk(ilk, 'liqr', ilkparams.liqr);
             hook.list(gem, true);
-            vow.grant(gem);
 
-            bytes memory f;
-            bytes memory r;
-            if (gem == DAI) {
-                address [] memory a2 = new address[](2);
-                uint24  [] memory f1 = new uint24 [](1);
-                a2[0] = DAI;
-                a2[1] = rico;
-                f1[0] = RICO_FEE;
-                (f, r) = create_path(a2, f1);
-                // dai/rico feed created later
-            } else {
-                // To avoid STD
-                {
-                    address [] memory addr3 = new address[](3);
-                    uint24  [] memory fees2 = new uint24 [](2);
-                    addr3[0] = gem;
-                    addr3[1] = DAI;
-                    addr3[2] = rico;
-                    fees2[0] = IUniswapV3Pool(pool).fee();
-                    fees2[1] = RICO_FEE;
-                    (f, r) = create_path(addr3, fees2);
-                }
-
+            if (gem != DAI) {
                 bytes32 tag = concat(ilk, 'dai');
                 adapt.setConfig(
                     tag,
@@ -200,12 +179,12 @@ contract Ball is Math, Pool {
                 divider.setConfig(concat(ilk, 'rico'), Divider.Config(ss, ts));
             }
 
-            flow.setPath(gem, rico, f, r);
-            hook.pair(gem, "vel", ilkparams.ramp.vel);
-            hook.pair(gem, "rel", ilkparams.ramp.rel);
-            hook.pair(gem, "bel", ilkparams.ramp.bel);
-            hook.pair(gem, "cel", ilkparams.ramp.cel);
+            hook.pair(gem, "fel", ilkparams.ramp.fel);
             hook.pair(gem, "del", ilkparams.ramp.del);
+            hook.pair(gem, "gel", ilkparams.ramp.gel);
+            hook.pair(gem, "feed", uint(uint160(ilkparams.ramp.feed)));
+            hook.pair(gem, "fsrc", uint(uint160(address(mdn))));
+            hook.pair(gem, "ftag", uint(ilkparams.ramp.ftag));
         }
 
         GemLike(rico).ward(address(vat), true);
@@ -218,42 +197,30 @@ contract Ball is Math, Pool {
         GemLike(risk).ward(roll, true);
         // don't unward for risk yet...need to create pool
 
-        // todo move out of ball for gas, either calc gemfab create address or split ball into parts if too big
-        address [] memory addr2 = new address[](2);
-        uint24  [] memory fees1 = new uint24 [](1);
-        bytes memory fore;
-        bytes memory rear;
-        addr2[0] = risk;
-        addr2[1] = rico;
-        fees1[0] = RISK_FEE;
-        (fore, rear) = create_path(addr2, fees1);
-        flow.setPath(risk, rico, fore, rear);
         // todo ramp config
-        vow.pair(risk, "vel", args.riskramp.vel);
-        vow.pair(risk, "rel", args.riskramp.rel);
-        vow.pair(risk, "bel", args.riskramp.bel);
-        vow.pair(risk, "cel", args.riskramp.cel);
+        vow.pair(risk, "fel", args.riskramp.fel);
         vow.pair(risk, "del", args.riskramp.del);
-        vow.pair(address(0), "vel", args.mintramp.vel);
-        vow.pair(address(0), "rel", args.mintramp.rel);
-        vow.pair(address(0), "bel", args.mintramp.bel);
-        vow.pair(address(0), "cel", args.mintramp.cel);
-        vow.pair(address(0), "del", args.mintramp.del);
+        vow.pair(risk, "gel", args.riskramp.gel);
+        vow.pair(risk, "feed", uint(uint160(args.feedbase)));
+        vow.pair(risk, "fsrc", uint(uint160(bytes20(address(mdn)))));
+        vow.pair(risk, "ftag", uint(RISK_RICO_TAG));
+        vow.file("vel", args.mintramp.vel);
+        vow.file("rel", args.mintramp.vel);
+        vow.file("bel", args.mintramp.bel);
+        vow.file("cel", args.mintramp.cel);
 
-        flow.setPath(rico, risk, rear, fore);
-        vow.pair(rico, "vel", args.ricoramp.vel);
-        vow.pair(rico, "rel", args.ricoramp.rel);
-        vow.pair(rico, "bel", args.ricoramp.bel);
-        vow.pair(rico, "cel", args.ricoramp.cel);
+        vow.pair(rico, "fel", args.ricoramp.fel);
         vow.pair(rico, "del", args.ricoramp.del);
+        vow.pair(rico, "gel", args.ricoramp.gel);
+        vow.pair(rico, "feed", uint(uint160(args.feedbase)));
+        vow.pair(rico, "fsrc", uint(uint160(address(mdn))));
+        vow.pair(rico, "ftag", uint(RICO_RISK_TAG));
 
         vow.grant(rico);
         vow.grant(risk);
 
-        flow.give(roll);
         vow.give(roll);
         hook.give(roll);
-        ricorisk = create_pool(args.factory, rico, risk, RISK_FEE, risk_price);
         // |------------------------->divider--------->twap------>| (usd/rico)
         // |                              |                       |
         // |                             inv                      |
@@ -265,10 +232,8 @@ contract Ball is Math, Pool {
         //                                  (xau/rico)
         adapt.setConfig(
             RICO_DAI_TAG,
-            UniswapV3Adapter.Config(address(ricodai), args.ricodairange, args.ricodaittl, DAI < rico)
+            UniswapV3Adapter.Config(address(ricodai), args.adaptrange, args.adaptttl, DAI < rico)
         );
-        adapt.ward(roll, true);
-        adapt.ward(address(this), false);
 
         // dai/rico = 1 / (rico/dai)
         {
@@ -295,10 +260,32 @@ contract Ball is Math, Pool {
         mdn_sources[0] = Medianizer.Source(address(twap), RICO_XAU_TAG);
         mdn.setSources(RICO_REF_TAG, mdn_sources);
 
-        divider.ward(roll, true);
-        divider.ward(address(this), false);
+        ricorisk = create_pool(args.factory, rico, risk, RISK_FEE, risk_price);
+        adapt.setConfig(
+            RICO_RISK_TAG,
+            UniswapV3Adapter.Config(address(ricorisk), args.adaptrange, args.adaptttl, rico < risk)
+        );
+        twap.setConfig(RICO_RISK_TAG, TWAP.Config(address(adapt), RICO_RISK_TAG, args.twaprange, args.twapttl));
+        {
+            address[] memory src2 = new address[](2);
+            bytes32[] memory tag2 = new bytes32[](2);
+            src2[0] = address(this); tag2[0] = bytes32("ONE");
+            src2[1] = address(adapt); tag2[1] = RICO_RISK_TAG;
+            divider.setConfig(RISK_RICO_TAG, Divider.Config(src2, tag2));
+        }
+        mdn_sources[0] = Medianizer.Source(address(twap), RICO_RISK_TAG);
+        mdn.setSources(RICO_RISK_TAG, mdn_sources);
+        mdn_sources[0] = Medianizer.Source(address(divider), RISK_RICO_TAG);
+        mdn.setSources(RISK_RICO_TAG, mdn_sources);
 
         mdn.ward(roll, true);
+
+        divider.ward(roll, true);
+        divider.ward(address(this), false);
+        adapt.ward(roll, true);
+        adapt.ward(address(this), false);
+        twap.ward(roll, true);
+        twap.ward(address(this), false);
 
         cladapt.look(XAU_USD_TAG);
         (bytes32 ref,) = Feedbase(args.feedbase).pull(address(cladapt), XAU_USD_TAG);

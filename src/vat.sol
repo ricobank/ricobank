@@ -35,7 +35,8 @@ interface Hook {
         address urn, bytes32 i, address u, int dink, int dart
     ) external;
     function grabhook(
-        address urn, bytes32 i, address u, uint ink, uint art, uint bill
+        address urn, bytes32 i, address u, uint ink,
+        uint art,    uint bill, address keeper
     ) external returns (uint);
 }
 
@@ -167,7 +168,7 @@ contract Vat is Lock, Math, Ward, Flog {
         Hook(ilk.hook).frobhook(msg.sender, i, u, dink, dart);
     }
 
-    function grab(bytes32 i, address u)
+    function grab(bytes32 i, address u, address k)
         _ward_ _flog_ external returns (uint aid)
     {
         Urn storage urn = urns[i][u];
@@ -175,8 +176,7 @@ contract Vat is Lock, Math, Ward, Flog {
         uint art = urn.art;
         uint ink = urn.ink;
 
-        uint tab  = rmul(art, ilk.rack);
-        uint bill = rmul(ilk.chop, tab);
+        uint bill = rmul(ilk.chop, rmul(art, ilk.rack));
 
         urn.ink = urn.art = 0;
         ilk.tart -= art;
@@ -184,7 +184,11 @@ contract Vat is Lock, Math, Ward, Flog {
         uint dtab = art * ilk.rack;
         sin[msg.sender] += dtab;
 
-        (bool success, bytes memory ret) = ilk.hook.call(abi.encodeWithSelector(Hook.grabhook.selector, msg.sender, i, u, ink, art, bill));
+        bytes memory data = abi.encodeWithSelector(
+            Hook.grabhook.selector, msg.sender, i, u, ink, art, bill, k
+        );
+
+        (bool success, bytes memory ret) = ilk.hook.call(data);
         if (!success || ret.length != 32) {
             ilk.line = 0;
         } else {
