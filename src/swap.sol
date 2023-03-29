@@ -3,7 +3,7 @@
 pragma solidity 0.8.19;
 
 import { ISwapRouter } from './TEMPinterface.sol';
-import './mixin/ward.sol';
+import { Ward } from '../lib/feedbase/src/mixin/ward.sol';
 
 abstract contract UniSwapper is Ward {
     struct Path {

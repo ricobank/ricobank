@@ -277,15 +277,10 @@ contract Ball is Math, Pool {
         mdn.setSources(RICO_RISK_TAG, mdn_sources);
         mdn_sources[0] = Medianizer.Source(address(divider), RISK_RICO_TAG);
         mdn.setSources(RISK_RICO_TAG, mdn_sources);
-
-        mdn.ward(roll, true);
-
-        divider.ward(roll, true);
-        divider.ward(address(this), false);
-        adapt.ward(roll, true);
-        adapt.ward(address(this), false);
-        twap.ward(roll, true);
-        twap.ward(address(this), false);
+        mdn.give(roll);
+        divider.give(roll);
+        adapt.give(roll);
+        twap.give(roll);
 
         cladapt.look(XAU_USD_TAG);
         (bytes32 ref,) = Feedbase(args.feedbase).pull(address(cladapt), XAU_USD_TAG);

@@ -2,12 +2,12 @@
 
 pragma solidity 0.8.19;
 
-import '../mixin/ward.sol';
+import '../../lib/feedbase/src/mixin/ward.sol';
+import '../../lib/gemfab/src/gem.sol';
 import '../mixin/lock.sol';
 import '../mixin/flog.sol';
 import '../vat.sol';
 import '../flow.sol';
-import '../../lib/gemfab/src/gem.sol';
 
 contract ERC20Hook is Ward, Lock, Flog {
     DutchFlower public flow;

@@ -9,7 +9,7 @@ import { DutchFlower, Flowback } from './flow.sol';
 import { Math } from './mixin/math.sol';
 import { Vat } from './vat.sol';
 import { Gem } from '../lib/gemfab/src/gem.sol';
-import { Ward } from './mixin/ward.sol';
+import { Ward } from '../lib/feedbase/src/mixin/ward.sol';
 import { Flog } from './mixin/flog.sol';
 
 contract Vow is Math, Ward, Flog {

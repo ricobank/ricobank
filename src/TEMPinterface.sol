@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.19;
 
-import './mixin/ward.sol';
+import { Ward } from '../lib/feedbase/src/mixin/ward.sol';
 
 // temp file to hold all required univ3 interfaces, clean up excess and delete later
 

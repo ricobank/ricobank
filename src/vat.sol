@@ -24,10 +24,10 @@ pragma solidity 0.8.19;
 
 import './mixin/lock.sol';
 import './mixin/math.sol';
-import './mixin/ward.sol';
 import './mixin/flog.sol';
 
 import { Feedbase } from '../lib/feedbase/src/Feedbase.sol';
+import { Ward }     from '../lib/feedbase/src/mixin/ward.sol';
 import { Gem }      from '../lib/gemfab/src/gem.sol';
 
 interface Hook {

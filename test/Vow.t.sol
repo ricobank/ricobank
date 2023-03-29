@@ -3,14 +3,14 @@ pragma solidity 0.8.19;
 
 import "forge-std/Test.sol";
 
-import { Ball } from '../src/ball.sol';
 import { Gem } from '../lib/gemfab/src/gem.sol';
+import { Ward } from '../lib/feedbase/src/mixin/ward.sol';
+import { Ball } from '../src/ball.sol';
 import { Vat } from '../src/vat.sol';
 import { Vow } from '../src/vow.sol';
 import { RicoSetUp, WethLike, Guy } from "./RicoHelper.sol";
 import { Asset, PoolArgs } from "./UniHelper.sol";
 import { DutchFlower } from '../src/flow.sol';
-import { Ward } from '../src/mixin/ward.sol';
 import { Math } from '../src/mixin/math.sol';
 import { ERC20Hook } from '../src/hook/ERC20hook.sol';
 
@@ -67,7 +67,7 @@ contract VowTest is Test, RicoSetUp {
         gilks[1] = gilk;
         uint gas = gasleft();
         uint aid = vow.keep(gilks);
-        check_gas(gas, 266842);
+        check_gas(gas, 353109);
         assertGt(aid, 0);
     }
 
@@ -82,7 +82,7 @@ contract VowTest is Test, RicoSetUp {
         gilks[1] = gilk;
         uint gas = gasleft();
         uint aid = vow.keep(gilks);
-        check_gas(gas, 326020);
+        check_gas(gas, 416265);
         assertGt(aid, 0);
     }
 
@@ -95,7 +95,7 @@ contract VowTest is Test, RicoSetUp {
         gold.mint(avow, WAD);
         uint gas = gasleft();
         hook.flowback(aid, WAD);
-        check_gas(gas, 45569);
+        check_gas(gas, 45557);
     }
 
     function test_bail_gas() public {
@@ -104,7 +104,7 @@ contract VowTest is Test, RicoSetUp {
         feedpush(grtag, bytes32(0), block.timestamp + 1000);
         uint gas = gasleft();
         vow.bail(gilk, self);
-        check_gas(gas, 248694);
+        check_gas(gas, 345955);
     }
 
     // goldusd, par, and liqr all = 1 after setup
