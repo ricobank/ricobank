@@ -1,16 +1,15 @@
 pragma solidity 0.8.19;
 
 import "forge-std/Test.sol";
-import { Swapper, UniSetUp, PoolArgs, Asset } from "../test/UniHelper.sol";
+import { UniSetUp, PoolArgs, Asset } from "../test/UniHelper.sol";
 
-import { Ball, GemFabLike } from '../src/ball.sol';
-import { INonfungiblePositionManager, IUniswapV3Pool } from '../src/TEMPinterface.sol';
+import { Ball } from '../src/ball.sol';
+import { INonfungiblePositionManager } from './Univ3Interface.sol';
 import { Gem, GemFab } from '../lib/gemfab/src/gem.sol';
 import { Feedbase } from '../lib/feedbase/src/Feedbase.sol';
 import { Divider } from '../lib/feedbase/src/combinators/Divider.sol';
 import { Medianizer } from '../lib/feedbase/src/Medianizer.sol';
 import { UniswapV3Adapter } from "../lib/feedbase/src/adapters/UniswapV3Adapter.sol";
-import { UniSwapper } from '../src/swap.sol';
 import { Vat } from '../src/vat.sol';
 import { Math } from '../src/mixin/math.sol';
 import { WethLike } from '../test/RicoHelper.sol';
@@ -49,24 +48,27 @@ contract BallTest is Test, UniSetUp, Math {
     TWAP twap;
     Medianizer mdn;
     Feedbase fb;
-    GemFabLike gf;
+    GemFab gf;
     address me;
     INonfungiblePositionManager npfm = INonfungiblePositionManager(
         0xC36442b4a4522E871399CD717aBDD847Ab11FE88
     );
     address COMPOUND_CDAI = 0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643;
 
-    Swapper swap;
     uint256 constant public BANKYEAR = (365 * 24 + 6) * 3600;
     address rico;
     address risk;
-    uint constant INIT_SQRTPAR = RAY * 2;
-    uint constant INIT_PAR = (INIT_SQRTPAR ** 2) / RAY;
-    uint constant wethricoprice = 1500 * RAY * RAY / INIT_PAR;
-    uint constant wethamt = WAD;
-    int constant dart = int(wethamt * wethricoprice / INIT_PAR);
+    address ricodai;
+    address ricorisk;
+    uint24  constant public RICO_FEE = 500;
+    uint24  constant public RISK_FEE = 3000;
+    uint160 constant public risk_price = 2 ** 96;
+    uint256 constant INIT_SQRTPAR = RAY * 2;
+    uint256 constant INIT_PAR = (INIT_SQRTPAR ** 2) / RAY;
+    uint256 constant wethricoprice = 1500 * RAY * RAY / INIT_PAR;
+    uint256 constant wethamt = WAD;
+    int256  constant dart = int(wethamt * wethricoprice / INIT_PAR);
     bytes32[] ilks;
-    IUniswapV3Pool public ricorisk;
     uint DEV_FUND_RISK = 1000000 * WAD;
     uint GEL = 1000 * RAY;
     uint FEL = RAY * 999 / 1000;
@@ -107,8 +109,13 @@ contract BallTest is Test, UniSetUp, Math {
 
     function setUp() public {
         me = address(this);
-        gf = GemFabLike(address(new GemFab()));
+        gf = new GemFab();
         fb = new Feedbase();
+        rico = address(gf.build(bytes32("Rico"), bytes32("RICO")));
+        risk = address(gf.build(bytes32("Rico Riskshare"), bytes32("RISK")));
+        uint160 sqrtparx96 = uint160(INIT_SQRTPAR * (2 ** 96) / RAY);
+        ricodai = create_pool(rico, DAI, 500, sqrtparx96);
+        ricorisk = create_pool(rico, risk, RISK_FEE, risk_price);
 
         Ball.IlkParams[] memory ips = new Ball.IlkParams[](1);
         ilks = new bytes32[](1);
@@ -130,12 +137,14 @@ contract BallTest is Test, UniSetUp, Math {
             1 // range
         );
         Ball.BallArgs memory bargs = Ball.BallArgs(
-            address(gf),
             address(fb),
-            factory,
+            rico,
+            risk,
+            ricodai,
+            ricorisk,
             router,
             me,
-            INIT_SQRTPAR,
+            INIT_PAR,
             100000 * RAD,
             20000, // ricodai
             BANKYEAR / 4,
@@ -155,13 +164,16 @@ contract BallTest is Test, UniSetUp, Math {
         uint gas = gasleft();
         Ball ball = new Ball(bargs, ips);
         uint usedgas     = gas - gasleft();
-        uint expectedgas = 26369410;
+        uint expectedgas = 15163025;
         if (usedgas < expectedgas) {
             console.log("ball saved %s gas...currently %s", expectedgas - usedgas, usedgas);
         }
         if (usedgas > expectedgas) {
             console.log("ball gas increase by %s...currently %s", usedgas - expectedgas, usedgas);
         }
+
+        Gem(rico).ward(address(ball.vat()), true);
+        Gem(risk).ward(address(ball.vow()), true);
 
         vat = ball.vat();
         cladapt = ball.cladapt();
@@ -182,30 +194,8 @@ contract BallTest is Test, UniSetUp, Math {
         look_poke();
         skip(BANKYEAR / 2);
 
-        swap = new Swapper();
-        rico = ball.rico();
-        risk = ball.risk();
-        swap.approveGem(DAI, router);
-        swap.approveGem(rico, router);
-        swap.setSwapRouter(router);
-        // Create a path to swap UNI for WETH in a single hop
-        address [] memory addr2 = new address[](2);
-        uint24  [] memory fees1 = new uint24 [](1);
-        addr2[0] = DAI;
-        addr2[1] = ball.rico();
-        fees1[0] = 500;
-        bytes memory fore;
-        bytes memory rear;
-        (fore, rear) = create_path(addr2, fees1);
-        swap.setPath(DAI, rico, fore, rear);
-
         vm.prank(VAULT);
         Gem(DAI).transfer(address(this), 500 * WAD);
-
-        Gem(DAI).transfer(address(swap), 300 * WAD);
-        uint res = swap.swap(DAI, rico, address(swap), EXACT_IN, 300 * WAD, 1);
-        // pool has no liquidity
-        assert(swap.SWAP_ERR() == res);
 
         (,,,,,,,,,,address hook) = vat.ilks(WILK);
         Gem(WETH).approve(address(hook), type(uint).max);
@@ -228,18 +218,6 @@ contract BallTest is Test, UniSetUp, Math {
 
         vow = ball.vow();
         vox = ball.vox();
-
-        uint daiamt = 10000 * WAD;
-        vm.prank(COMPOUND_CDAI);
-        Gem(DAI).transfer(address(this), daiamt * 10);
-        Gem(rico).mint(address(this), daiamt * RAY / INIT_SQRTPAR);
-        join_pool(PoolArgs(
-            Asset(rico, daiamt * RAY / INIT_SQRTPAR), Asset(DAI, daiamt),
-            500,
-            uint160(INIT_SQRTPAR * X96 / RAY),
-            uint160(INIT_SQRTPAR * X96 / RAY) * 99 / 100,
-            uint160(INIT_SQRTPAR * X96 / RAY) * 100 / 99, 10
-        ));
 
         flow = ball.flow();
 
@@ -320,6 +298,7 @@ contract BallTest is Test, UniSetUp, Math {
         Gem(rico).approve(address(flow), type(uint).max);
         uint meweth = WethLike(WETH).balanceOf(me);
         skip(200);
+        Gem(rico).mint(me, RAY);
         flow.glug{value: rmul(GEL, block.basefee)}(aid);
         assertGt(WethLike(WETH).balanceOf(me), meweth);
     }

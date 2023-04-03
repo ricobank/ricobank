@@ -2,7 +2,7 @@ import { task } from 'hardhat/config'
 
 const debug = require('debug')('ricobank:task')
 const dpack = require('@etherpacks/dpack')
-import { b32, ray, rad, wad, BANKYEAR } from 'minihat'
+import { b32, ray, rad, send, wad, BANKYEAR } from 'minihat'
 
 task('deploy-ricobank', '')
   .addOptionalParam('mock', 'Ignore dependency args and deploy new mock dependencies')
@@ -29,12 +29,14 @@ task('deploy-ricobank', '')
     const ball_type = hre.ethers.ContractFactory.fromSolidity(ball_artifact, ali)
     const timestamp = (await hre.ethers.provider.getBlock('latest')).timestamp
     const ballargs = {
-        gemfab: deps.objects.gemfab.address,
         feedbase: deps.objects.feedbase.address,
-        factory: deps.objects.uniswapV3Factory.address,
+        rico: deps.objects.rico.address,
+        risk: deps.objects.risk.address,
+        ricodai: deps.objects.ricodai.address,
+        ricorisk: deps.objects.ricorisk.address,
         router: deps.objects.swapRouter.address,
         roll: ali.address,
-        sqrtpar: ray(1),
+        par: ray(1),
         ceil: rad(100000),
         adaptrange:   20000,
         adaptttl:     BANKYEAR / 4,
@@ -75,10 +77,14 @@ task('deploy-ricobank', '')
         ttl: 20000,
         range: BANKYEAR / 4
     }
-    const ball = await ball_type.deploy(
-        ballargs, [ilk], { gasLimit: 50000000 }
-    )
-    const gem_artifact = await dpack.getIpfsJson(deps.types.Gem.artifact['/'])
+
+    const ball = await ball_type.deploy(ballargs, [ilk], { gasLimit: 50000000 })
+    const vat_addr = await ball.vat()
+    const vow_addr = await ball.vow()
+    const deps_dapp = await dpack.load(deps, hre.ethers, ali)
+    await send(deps_dapp.rico.ward, vat_addr, 1)
+    await send(deps_dapp.risk.ward, vow_addr, 1)
+
     const mdn_artifact = await dpack.getIpfsJson(deps.types.Medianizer.artifact['/'])
     const div_artifact = await dpack.getIpfsJson(deps.types.Divider.artifact['/'])
 
@@ -86,9 +92,6 @@ task('deploy-ricobank', '')
                        ['vat', 'Vat', require('../artifacts/src/vat.sol/Vat.json')],
                        ['vow', 'Vow', require('../artifacts/src/vow.sol/Vow.json')],
                        ['vox', 'Vox', require('../artifacts/src/vox.sol/Vox.json')],
-                       ['ricodai', 'IUniswapV3Pool', require('../artifacts/src/TEMPinterface.sol/IUniswapV3Pool.json')],
-                       ['rico', 'Gem', gem_artifact],
-                       ['risk', 'Gem', gem_artifact],
                        ['mdn', 'Medianizer', mdn_artifact],
                        ['divider', 'Divider', div_artifact]]
 

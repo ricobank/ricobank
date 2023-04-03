@@ -18,27 +18,9 @@ import {Medianizer} from "../lib/feedbase/src/Medianizer.sol";
 import {TWAP} from "../lib/feedbase/src/combinators/TWAP.sol";
 import {ChainlinkAdapter} from "../lib/feedbase/src/adapters/ChainlinkAdapter.sol";
 import {Math} from '../src/mixin/math.sol';
-import {Pool} from '../src/mixin/pool.sol';
-import { IUniswapV3Pool } from "../src/TEMPinterface.sol";
 import {ERC20Hook} from './hook/ERC20hook.sol';
 
-interface GemFabLike {
-    function build(
-        bytes32 name,
-        bytes32 symbol
-    ) payable external returns (GemLike);
-}
-
-interface GemLike {
-    function ward(address usr,
-        bool authed
-    ) payable external;
-}
-
-contract Ball is Math, Pool {
-    error ErrGFHash();
-    error ErrFBHash();
-
+contract Ball is Math {
     bytes32 internal constant RICO_DAI_TAG = "ricodai";
     bytes32 internal constant DAI_RICO_TAG = "dairico";
     bytes32 internal constant XAU_USD_TAG = "xauusd";
@@ -48,20 +30,12 @@ contract Ball is Math, Pool {
     bytes32 internal constant RICO_RISK_TAG  = "ricorisk";
     bytes32 internal constant RISK_RICO_TAG  = "riskrico";
 
-    uint160 internal constant risk_price = 2 ** 96;
-    uint24  internal constant RICO_FEE = 500;
-    uint24  internal constant RISK_FEE = 3000;
     address internal constant DAI = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
-    address public rico;
-    address public risk;
     DutchFlower public flow;
     Vat public vat;
     Vow public vow;
     Vox public vox;
     ERC20Hook public hook;
-
-    IUniswapV3Pool public ricodai;
-    IUniswapV3Pool public ricorisk;
 
     Medianizer public mdn;
     UniswapV3Adapter public adapt;
@@ -86,12 +60,14 @@ contract Ball is Math, Pool {
     }
 
     struct BallArgs {
-        address gemfab;
         address feedbase;
-        address factory;
+        address rico;
+        address risk;
+        address ricodai;
+        address ricorisk;
         address router;
         address roll;
-        uint    sqrtpar;
+        uint    par;
         uint    ceil;
         uint    adaptrange;
         uint    adaptttl;
@@ -108,17 +84,15 @@ contract Ball is Math, Pool {
         BallArgs    memory args,
         IlkParams[] memory ilks
     ) payable {
+        address rico = args.rico;
+        address risk = args.risk;
+
         flow = new DutchFlower();
-
-        rico = address(GemFabLike(args.gemfab).build(bytes32("Rico"), bytes32("RICO")));
-        risk = address(GemFabLike(args.gemfab).build(bytes32("Rico Riskshare"), bytes32("RISK")));
-
-        vow = new Vow();
-        vat = new Vat();
-
+        vat  = new Vat();
+        vow  = new Vow();
         hook = new ERC20Hook(address(vat), address(flow), rico);
 
-        vat.prod(args.sqrtpar ** 2 / RAY);
+        vat.prod(args.par);
 
         vow.link('flow', address(flow));
         vow.link('vat',  address(vat));
@@ -127,20 +101,13 @@ contract Ball is Math, Pool {
 
         vat.file('ceil',  args.ceil);
         vat.link('feeds', args.feedbase);
-        vat.link('rico',  address(rico));
-
+        vat.link('rico',  rico);
         vow.ward(address(flow), true);
         vat.ward(address(vow), true);
         hook.ward(address(flow), true); // flowback
         hook.ward(address(vat), true);  // grabhook, frobhook
 
         mdn = new Medianizer(args.feedbase);
-
-        {
-            uint160 sqrtparx96 = uint160(args.sqrtpar * (2 ** 96) / RAY);
-            ricodai = create_pool(args.factory, rico, DAI, 500, sqrtparx96);
-        }
-
         adapt = new UniswapV3Adapter(Feedbase(args.feedbase));
         divider = new Divider(args.feedbase, RAY);
         twap = new TWAP(args.feedbase);
@@ -187,16 +154,6 @@ contract Ball is Math, Pool {
             hook.pair(gem, "ftag", uint(ilkparams.ramp.ftag));
         }
 
-        GemLike(rico).ward(address(vat), true);
-        GemLike(risk).ward(address(vow), true);
-
-        // gem doesn't have give right now
-        address roll = args.roll;
-        GemLike(rico).ward(roll, true);
-        GemLike(rico).ward(address(this), false);
-        GemLike(risk).ward(roll, true);
-        // don't unward for risk yet...need to create pool
-
         // todo ramp config
         vow.pair(risk, "fel", args.riskramp.fel);
         vow.pair(risk, "del", args.riskramp.del);
@@ -219,6 +176,7 @@ contract Ball is Math, Pool {
         vow.grant(rico);
         vow.grant(risk);
 
+        address roll = args.roll;
         vow.give(roll);
         hook.give(roll);
         // |------------------------->divider--------->twap------>| (usd/rico)
@@ -232,7 +190,7 @@ contract Ball is Math, Pool {
         //                                  (xau/rico)
         adapt.setConfig(
             RICO_DAI_TAG,
-            UniswapV3Adapter.Config(address(ricodai), args.adaptrange, args.adaptttl, DAI < rico)
+            UniswapV3Adapter.Config(args.ricodai, args.adaptrange, args.adaptttl, DAI < rico)
         );
 
         // dai/rico = 1 / (rico/dai)
@@ -260,10 +218,9 @@ contract Ball is Math, Pool {
         mdn_sources[0] = Medianizer.Source(address(twap), RICO_XAU_TAG);
         mdn.setSources(RICO_REF_TAG, mdn_sources);
 
-        ricorisk = create_pool(args.factory, rico, risk, RISK_FEE, risk_price);
         adapt.setConfig(
             RICO_RISK_TAG,
-            UniswapV3Adapter.Config(address(ricorisk), args.adaptrange, args.adaptttl, rico < risk)
+            UniswapV3Adapter.Config(args.ricorisk, args.adaptrange, args.adaptttl, rico < risk)
         );
         twap.setConfig(RICO_RISK_TAG, TWAP.Config(address(adapt), RICO_RISK_TAG, args.twaprange, args.twapttl));
         {

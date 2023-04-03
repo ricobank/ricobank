@@ -65,8 +65,6 @@ contract DssJsTest is Test, RicoSetUp {
     uint256 public init_join = 1000;
     uint stack = WAD * 10;
     bytes32[] ilks;
-    address rico_risk_pool;
-    address gold_rico_pool;
     address me;
     Usr ali;
     Usr bob;
@@ -130,33 +128,9 @@ contract DssJsTest is Test, RicoSetUp {
         rico.approve(address(flow), UINT256_MAX);
         risk.approve(address(flow), UINT256_MAX);
 
-        // RICO_mint
-        rico.mint(me, total_pool_rico);
-        risk.mint(me, total_pool_risk);
-
-        // create pool
-        PoolArgs memory gold_rico_args = getArgs(agold, gembal, arico, rico_gemrico, 3000, market_price);
-        gold_rico_pool = address(create_and_join_pool(gold_rico_args));
-
-        PoolArgs memory rico_risk_args = getArgs(arico, rico_riskrico, arisk, total_pool_risk, 3000, x96(1));
-        join_pool(rico_risk_args);
-        rico_risk_pool = getPoolAddr(arico, arisk, 3000);
-
-        address [] memory addr2 = new address[](2);
-        uint24  [] memory fees1 = new uint24 [](1);
-        bytes memory fore;
-        bytes memory rear;
-        addr2[0] = agold;
-        addr2[1] = arico;
-        fees1[0] = 3000;
-        (fore, rear) = create_path(addr2, fees1);
-
-        // price when entering gold rico isn't perfect, remove gem balance
+        // mint some RISK so rates relative to total supply aren't zero
+        risk.mint(address(0), total_pool_risk);
         gem.burn(me, gem.balanceOf(me));
-
-        assertEq(gem.balanceOf(me), 0);
-        assertEq(rico.balanceOf(me), 0);
-        assertEq(risk.balanceOf(me), 0);
 
         // link vat to vow
         vow.link('vat', address(vat));

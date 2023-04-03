@@ -9,13 +9,11 @@ import { Feedbase } from '../lib/feedbase/src/Feedbase.sol';
 import { Divider } from '../lib/feedbase/src/combinators/Divider.sol';
 import { Medianizer } from '../lib/feedbase/src/Medianizer.sol';
 import { GemFab, Gem } from '../lib/gemfab/src/gem.sol';
-import { GemFabLike } from '../src/ball.sol';
 import { Ball } from '../src/ball.sol';
 import { Vat } from '../src/vat.sol';
 import { Vow } from '../src/vow.sol';
 import { Vox } from '../src/vox.sol';
 import {ERC20Hook} from '../src/hook/ERC20hook.sol';
-
 import { UniSetUp } from "./UniHelper.sol";
 
 interface WethLike {
@@ -48,42 +46,49 @@ contract Guy {
 }
 
 abstract contract RicoSetUp is UniSetUp, Math, Test {
-    address constant public DAI   = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
-    address constant public WETH  = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
-    address constant public WETH_DAI_POOL  = 0xC2e9F25Be6257c210d7Adf0D4Cd6E3E881ba25f8;
-    bytes32 constant public WETH_RICO_TAG  = "wethrico";
-    bytes32 constant public RICO_RISK_TAG  = "ricorisk";
-    bytes32 constant public RISK_RICO_TAG  = "riskrico";
+    address constant public DAI  = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
+    address constant public WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+    address constant public WETH_DAI_POOL = 0xC2e9F25Be6257c210d7Adf0D4Cd6E3E881ba25f8;
+    bytes32 constant public WETH_RICO_TAG = "wethrico";
+    bytes32 constant public RICO_RISK_TAG = "ricorisk";
+    bytes32 constant public RISK_RICO_TAG = "riskrico";
 
 
     address constant public VAULT = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;
-    bytes32 constant public dilk = "dai";
-    bytes32 constant public gilk = "gold";
-    bytes32 constant public wilk = "weth";
-    bytes32 constant public rilk = "ruby";
+    bytes32 constant public dilk  = "dai";
+    bytes32 constant public gilk  = "gold";
+    bytes32 constant public wilk  = "weth";
+    bytes32 constant public rilk  = "ruby";
     bytes32 constant public dutag = "daiusd";
     bytes32 constant public grtag = "goldrico";
     bytes32 constant public wrtag = "wethrico";
 
-    bytes32 constant public rtag = "ricousd";
-    uint256 constant public init_mint = 10000;
-    uint256 constant public BANKYEAR = (365 * 24 + 6) * 3600;
-    address public immutable azero = address(0);
+    bytes32 constant public rtag       = "ricousd";
+    uint160 constant public risk_price = 2 ** 96;
+    uint24  constant public RICO_FEE   = 500;
+    uint24  constant public RISK_FEE   = 3000;
+    uint256 constant public init_mint  = 10000;
+    uint256 constant public BANKYEAR   = (365 * 24 + 6) * 3600;
+    address public immutable azero     = address(0);
     address payable public immutable self = payable(address(this));
 
     DutchFlower public flow;
-    GemFabLike public gemfab;
+    ERC20Hook   public hook;
+    Medianizer  public mdn;
     Ball     public ball;
+    Divider  public divider;
     Feedbase public feed;
     Gem      public dai;
     Gem      public gold;
     Gem      public ruby;
     Gem      public rico;
     Gem      public risk;
+    GemFab   public gemfab;
     Vat      public vat;
     Vow      public vow;
     Vox      public vox;
-    ERC20Hook public hook;
+    address  public ricodai;
+    address  public ricorisk;
     address  public arico;
     address  public arisk;
     address  public agold;
@@ -93,8 +98,6 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
     address  public avox;
     address  public ahook;
     address  public aflow;
-    Medianizer mdn;
-    Divider divider;
 
     Guy guy;
 
@@ -148,8 +151,15 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
     }
 
     function make_bank() public {
-        feed = new Feedbase();
-        gemfab = GemFabLike(address(new GemFab()));
+        feed   = new Feedbase();
+        gemfab = new GemFab();
+        rico  = gemfab.build(bytes32("Rico"), bytes32("RICO"));
+        risk  = gemfab.build(bytes32("Rico Riskshare"), bytes32("RISK"));
+        arico = address(rico);
+        arisk = address(risk);
+        uint160 sqrtparx96 = uint160(2 ** 96);
+        ricodai  = create_pool(arico, DAI, 500, sqrtparx96);
+        ricorisk = create_pool(arico, arisk, RISK_FEE, risk_price);
 
         Ball.IlkParams[] memory ips = new Ball.IlkParams[](1);
         ips[0] = Ball.IlkParams(
@@ -168,9 +178,11 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
             BANKYEAR / 4 // range
         );
         Ball.BallArgs memory bargs = Ball.BallArgs(
-            address(gemfab),
             address(feed),
-            factory,
+            arico,
+            arisk,
+            ricodai,
+            ricorisk,
             router,
             self,
             RAY,
@@ -190,9 +202,9 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
             Vow.Ramp(WAD, WAD, block.timestamp, 1)
         );
         ball = new Ball(bargs, ips);
+        Gem(rico).ward(address(ball.vat()), true);
+        Gem(risk).ward(address(ball.vow()), true);
 
-        rico = Gem(ball.rico());
-        risk = Gem(ball.risk());
         vat  = Vat(address(ball.vat()));
         vow  = Vow(address(ball.vow()));
         vox  = Vox(address(ball.vox()));
@@ -202,8 +214,6 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
         avat  = address(vat);
         avow  = address(vow);
         avox  = address(vox);
-        arico = address(rico);
-        arisk = address(risk);
         ahook = address(hook);
         aflow = address(flow);
 

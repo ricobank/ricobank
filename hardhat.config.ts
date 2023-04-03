@@ -7,6 +7,7 @@ import './lib/uniswapv3/task/deploy-uniswapv3'
 
 import './task/deploy-mock-gemfab'
 import './task/deploy-mock-feedbase'
+import './task/deploy-mock-tokens'
 
 import './task/deploy-mock-dependencies'
 import './task/deploy-ricobank'

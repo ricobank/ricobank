@@ -3,9 +3,7 @@ pragma solidity 0.8.19;
 
 import { Gem } from '../lib/gemfab/src/gem.sol';
 import { Ball } from '../src/ball.sol';
-import { UniSwapper } from '../src/swap.sol';
-import { INonfungiblePositionManager, IUniswapV3Factory, IUniswapV3Pool } from '../src/TEMPinterface.sol';
-import { Pool } from '../src/mixin/pool.sol';
+import { INonfungiblePositionManager, IUniswapV3Factory, IUniswapV3Pool } from './Univ3Interface.sol';
 
 struct Asset {
     address token;
@@ -22,18 +20,7 @@ struct PoolArgs {
     int24 tickSpacing;
 }
 
-contract Swapper is UniSwapper {
-    function swap(address tokIn, address tokOut, address receiver, uint8 kind, uint amt, uint limit)
-            public returns (uint256 result) {
-        result = _swap(tokIn, tokOut, receiver, SwapKind(kind), amt, limit);
-    }
-
-    function approveGem(address gem, address target) external {
-        Gem(gem).approve(target, type(uint256).max);
-    }
-}
-
-abstract contract UniSetUp is Pool {
+abstract contract UniSetUp{
     INonfungiblePositionManager constant nfpm =
         INonfungiblePositionManager(0xC36442b4a4522E871399CD717aBDD847Ab11FE88);
     // copied from:
@@ -43,6 +30,7 @@ abstract contract UniSetUp is Pool {
     uint160 internal constant MAX_SQRT_RATIO = 1461446703485210103287273052203988822378723970342;
     int24   internal constant MIN_TICK       = -887272;
     int24   internal constant MAX_TICK       = -MIN_TICK;
+    uint160 internal constant X96            = 2 ** 96;
     //////////////////////////////////
 
     address factory = 0x1F98431c8aD98523631AE4a59f267346ea31F984;
@@ -63,8 +51,31 @@ abstract contract UniSetUp is Pool {
         args = PoolArgs(a1, a2, fee, sqrtPriceX96, low, high, spacing);
     }
 
-    function create_and_join_pool(PoolArgs memory args) internal returns (IUniswapV3Pool pool)  {
-        pool = create_pool(factory, args.a1.token, args.a2.token, args.fee, args.sqrtPriceX96);
+    function create_pool(
+        address token0,
+        address token1,
+        uint24  fee,
+        uint160 sqrtPriceX96
+    ) internal returns (address pool) {
+        if (token0 > token1) {
+            (token0, token1) = (token1, token0);
+            sqrtPriceX96 = x96inv(sqrtPriceX96);
+        }
+        pool = IUniswapV3Factory(factory).getPool(token0, token1, fee);
+
+        if (pool == address(0)) {
+            pool = IUniswapV3Factory(factory).createPool(token0, token1, fee);
+            IUniswapV3Pool(pool).initialize(sqrtPriceX96);
+        } else {
+            (uint160 sqrtPriceX96Existing, , , , , ,) = IUniswapV3Pool(pool).slot0();
+            if (sqrtPriceX96Existing == 0) {
+                IUniswapV3Pool(pool).initialize(sqrtPriceX96);
+            }
+        }
+    }
+
+    function create_and_join_pool(PoolArgs memory args) internal {
+        create_pool(args.a1.token, args.a2.token, args.fee, args.sqrtPriceX96);
         join_pool(args);
     }
 
@@ -114,6 +125,14 @@ abstract contract UniSetUp is Pool {
 
     function x96mul(uint160 x, uint160 y) internal pure returns (uint160) {
         return uint160(uint(x) * uint(y) / uint(X96));
+    }
+
+    function x96inv(uint160 x) internal pure returns (uint160) {
+        return x96div(X96, x);
+    }
+
+    function x96div(uint160 x, uint160 y) internal pure returns (uint160) {
+        return uint160(uint(x) * uint(X96) / uint(y));
     }
 
     // copied from:
