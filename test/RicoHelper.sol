@@ -186,7 +186,7 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
             router,
             self,
             RAY,
-            100000 * RAD,
+            100000 * WAD,
             20000, // ricodai
             BANKYEAR / 4,
             BANKYEAR, // daiusd

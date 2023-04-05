@@ -372,7 +372,7 @@ contract DssFrobTest is DssVatTest {
     }
 
     function test_dust() public _frob_ {
-        rico.mint(me, 1); // +1 for rounding in system's favour
+        rico_mint(1, true); // +1 for rounding in system's favour
         vat.frob(i0, me, int(9 * WAD), int(WAD));
         vat.filk(i0, 'dust', 5 * RAD);
         vm.expectRevert(Vat.ErrUrnDust.selector);

@@ -38,7 +38,12 @@ contract VatTest is Test, RicoSetUp {
         rico.ward(achap, true);
 
         gold.mint(address(hook), init_join * WAD);
-        rico.mint(achap, 1);  // needs an extra for rounding
+    }
+
+    modifier _chap_ {
+        rico_mint(1, true); // needs an extra for rounding
+        rico.transfer(achap, 1);
+        _;
     }
 
     function test_frob_gas() public {
@@ -47,10 +52,10 @@ contract VatTest is Test, RicoSetUp {
         assertGt(gold.balanceOf(address(hook)), 0);
         uint gas = gasleft();
         vat.frob(gilk, self, int(WAD), int(WAD));
-        check_gas(gas, 183621);
+        check_gas(gas, 200655);
         gas = gasleft();
         vat.frob(gilk, self, int(WAD), int(WAD));
-        check_gas(gas, 23015);
+        check_gas(gas, 22949);
     }
 
     function test_grab_gas() public {
@@ -82,7 +87,7 @@ contract VatTest is Test, RicoSetUp {
         vat.frob(gilk, self, int(100 * WAD), int(50 * WAD));
         gas = gasleft();
         vat.drip(gilk);
-        check_gas(gas, 14795);
+        check_gas(gas, 14852);
     }
 
     function test_ilk_reset() public {
@@ -224,7 +229,7 @@ contract VatTest is Test, RicoSetUp {
 
     /* join/exit/flash tests */
 
-    function test_rico_join_exit() public {
+    function test_rico_join_exit() public _chap_ {
         // give vat extra rico and gold to make sure it won't get withdrawn
         rico.mint(avat, 10000 * WAD);
         gold.mint(avat, 10000 * WAD);
@@ -260,7 +265,7 @@ contract VatTest is Test, RicoSetUp {
         assertEq(self_rico_bal0, self_rico_bal2);
     }
 
-    function test_simple_rico_flash_mint() public {
+    function test_simple_rico_flash_mint() public _chap_ {
         uint initial_rico_supply = rico.totalSupply();
 
         bytes memory data = abi.encodeWithSelector(chap.nop.selector);
@@ -274,7 +279,7 @@ contract VatTest is Test, RicoSetUp {
         assertEq(rico.balanceOf(ahook), 0);
     }
 
-    function test_rico_reentry() public {
+    function test_rico_reentry() public _chap_ {
         bytes memory data = abi.encodeWithSelector(chap.reenter.selector, arico, flash_size * WAD);
         rico.ward(ahook, true);
         gems.push(arico);
@@ -283,7 +288,7 @@ contract VatTest is Test, RicoSetUp {
         hook.flash(gems, wads, achap, data);
     }
 
-    function test_revert_rico_exceed_max() public {
+    function test_revert_rico_exceed_max() public _chap_ {
         bytes memory data = abi.encodeWithSelector(chap.nop.selector);
         gems.push(arico);
         wads.push(2 ** 200);
@@ -291,7 +296,7 @@ contract VatTest is Test, RicoSetUp {
         hook.flash(gems, wads, achap, data);
     }
 
-    function test_repeat_rico_ceil() public {
+    function test_repeat_rico_ceil() public _chap_ {
         bytes memory data = abi.encodeWithSelector(chap.nop.selector);
         // borrowing max amount of rico should succeed
         rico.ward(ahook, true);
@@ -306,7 +311,7 @@ contract VatTest is Test, RicoSetUp {
         hook.flash(gems, wads, achap, data);
     }
 
-    function test_multi_borrow() public {
+    function test_multi_borrow() public _chap_ {
         vat.frob(gilk, address(this), int(stack), 0);
 
         uint flash_gold1 = gold.balanceOf(achap);
@@ -328,7 +333,7 @@ contract VatTest is Test, RicoSetUp {
         assertEq(hook_rico1,  rico.balanceOf(ahook));
     }
 
-    function test_rico_flash_over_max_supply_reverts() public {
+    function test_rico_flash_over_max_supply_reverts() public _chap_ {
         rico.mint(self, type(uint256).max - stack - rico.totalSupply());
         bytes memory data = abi.encodeWithSelector(chap.nop.selector);
         rico.ward(ahook, true);
@@ -338,7 +343,7 @@ contract VatTest is Test, RicoSetUp {
         hook.flash(gems, wads, achap, data);
     }
 
-    function test_repayment_failure() public {
+    function test_repayment_failure() public _chap_ {
         // remove any initial balance from chap
         uint chap_gold = gold.balanceOf(achap);
         uint chap_rico = rico.balanceOf(achap);
@@ -377,7 +382,7 @@ contract VatTest is Test, RicoSetUp {
         hook.flash(gems, wads, achap, data1);
     }
 
-    function test_revert_wrong_joy() public {
+    function test_revert_wrong_joy() public _chap_ {
         bytes memory data = abi.encodeWithSelector(chap.nop.selector);
         gems.push(arisk);
         wads.push(stack);
@@ -385,7 +390,7 @@ contract VatTest is Test, RicoSetUp {
         hook.flash(gems, wads, achap, data);
     }
 
-    function test_handler_error() public {
+    function test_handler_error() public _chap_ {
         bytes memory data = abi.encodeWithSelector(chap.failure.selector);
         rico.ward(address(hook), true);
         gems.push(arico);
@@ -394,7 +399,7 @@ contract VatTest is Test, RicoSetUp {
         hook.flash(gems, wads, achap, data);
     }
 
-    function test_rico_wind_up_and_release() public {
+    function test_rico_wind_up_and_release() public _chap_ {
         rico.ward(address(hook), true);
         uint lock = 300 * WAD;
         uint draw = 200 * WAD;
@@ -422,7 +427,7 @@ contract VatTest is Test, RicoSetUp {
         assertEq(hook_rico1,  rico.balanceOf(address(hook)));
     }
 
-    function test_gem_simple_flash() public {
+    function test_gem_simple_flash() public _chap_ {
         uint chap_gold1 = gold.balanceOf(achap);
         uint vat_gold1 = gold.balanceOf(avat);
 
@@ -435,7 +440,7 @@ contract VatTest is Test, RicoSetUp {
         assertEq(gold.balanceOf(avat), vat_gold1);
     }
 
-    function test_gem_flash_insufficient_approval() public {
+    function test_gem_flash_insufficient_approval() public _chap_ {
         bytes memory data = abi.encodeWithSelector(chap.approve_hook.selector, agold, flash_size * WAD - 1);
         gems.push(agold);
         wads.push(flash_size * WAD);
@@ -443,7 +448,7 @@ contract VatTest is Test, RicoSetUp {
         hook.flash(gems, wads, achap, data);
     }
 
-    function test_gem_flash_insufficient_assets() public {
+    function test_gem_flash_insufficient_assets() public _chap_ {
         bytes memory data = abi.encodeWithSelector(chap.approve_hook.selector, agold, type(uint256).max);
         gems.push(agold);
         wads.push(init_join * WAD);
@@ -454,7 +459,7 @@ contract VatTest is Test, RicoSetUp {
         hook.flash(gems, wads, achap, data);
     }
 
-    function test_gem_flash_unsupported_gem() public {
+    function test_gem_flash_unsupported_gem() public _chap_ {
         bytes memory data = abi.encodeWithSelector(chap.approve_hook.selector, agold, type(uint256).max);
         gems.push(agold);
         wads.push(init_join * WAD);
@@ -464,7 +469,7 @@ contract VatTest is Test, RicoSetUp {
         hook.flash(gems, wads, achap, data);
     }
 
-    function test_gem_flasher_failure() public {
+    function test_gem_flasher_failure() public _chap_ {
         bytes memory data = abi.encodeWithSelector(chap.failure.selector);
         gems.push(agold);
         wads.push(init_join * WAD);
@@ -472,7 +477,7 @@ contract VatTest is Test, RicoSetUp {
         hook.flash(gems, wads, achap, data);
     }
 
-    function test_gem_flash_reentry() public {
+    function test_gem_flash_reentry() public _chap_ {
         bytes memory data = abi.encodeWithSelector(chap.reenter.selector, agold, flash_size * WAD);
         gems.push(agold);
         wads.push(init_join * WAD);
@@ -480,7 +485,7 @@ contract VatTest is Test, RicoSetUp {
         hook.flash(gems, wads, achap, data);
     }
 
-    function test_gem_jump_wind_up_and_release() public {
+    function test_gem_jump_wind_up_and_release() public _chap_ {
         uint lock = 1000 * WAD;
         uint draw = 500 * WAD;
         uint chap_gold1 = gold.balanceOf(achap);
@@ -868,9 +873,9 @@ contract VatTest is Test, RicoSetUp {
         assertEq(gold.balanceOf(self), goldbefore);
     }
 
-    function test_frob_err_ordering() public {
+    function test_frob_err_ordering_1() public {
         vat.filk(gilk, 'fee', 2 * RAY);
-        vat.file('ceil', RAD - 1);
+        vat.file('ceil', WAD - 1);
         vat.filk(gilk, 'dust', RAD);
         skip(1);
         vow.drip(gilk);
@@ -891,13 +896,13 @@ contract VatTest is Test, RicoSetUp {
 
         vm.expectRevert(Vat.ErrDebtCeil.selector);
         vat.frob(gilk, self, int(WAD * 2), int(WAD / 2));
-        vat.file('ceil', RAD);
+        vat.file('ceil', WAD);
         vat.frob(gilk, self, int(WAD * 2), int(WAD / 2));
     }
 
     function test_frob_err_ordering_darts() public {
         vat.filk(gilk, 'fee', 2 * RAY);
-        vat.file('ceil', RAD);
+        vat.file('ceil', WAD);
         vat.filk(gilk, 'dust', RAD);
         skip(1);
         vow.drip(gilk);
@@ -908,6 +913,7 @@ contract VatTest is Test, RicoSetUp {
         vm.startPrank(amdn);
         gold.approve(ahook, 1000 * WAD);
         vat.frob(gilk, address(mdn), int(WAD * 2), int(WAD / 2));
+        rico.transfer(self, 100);
         vm.stopPrank();
 
         // bypasses most checks when dart <= 0
@@ -922,7 +928,7 @@ contract VatTest is Test, RicoSetUp {
 
     function test_frob_err_ordering_dinks() public {
         vat.filk(gilk, 'fee', 2 * RAY);
-        vat.file('ceil', RAD);
+        vat.file('ceil', WAD);
         vat.filk(gilk, 'dust', RAD);
         skip(1);
         vow.drip(gilk);
@@ -951,7 +957,7 @@ contract VatTest is Test, RicoSetUp {
 
     function test_frob_err_ordering_dinks_darts() public {
         vat.filk(gilk, 'fee', 2 * RAY);
-        vat.file('ceil', RAD * 10000);
+        vat.file('ceil', WAD * 10000);
         vat.filk(gilk, 'dust', RAD);
         skip(1);
         vow.drip(gilk);
@@ -968,7 +974,7 @@ contract VatTest is Test, RicoSetUp {
 
         // bypasses most checks when dink >= 0
         feedpush(grtag, bytes32(0), type(uint).max);
-        vat.file('ceil', RAD * 10000);
+        vat.file('ceil', WAD * 10000);
 
         vm.expectRevert(Vat.ErrNotSafe.selector);
         vat.frob(gilk, amdn, -int(1), int(1));
@@ -994,10 +1000,10 @@ contract VatTest is Test, RicoSetUp {
         vow.drip(gilk);
         vat.filk(gilk, 'fee', 2 * RAY);
         vat.frob(gilk, self, int(WAD), int(WAD));
-        assertEq(vat.debt(), RAD);
+        assertEq(vat.debt(), WAD);
         skip(1);
         vow.drip(gilk);
-        assertEq(vat.debt(), RAD * 2);
+        assertEq(vat.debt(), WAD * 2);
     }
 
     function test_dtab_not_normalized() public {
@@ -1005,7 +1011,7 @@ contract VatTest is Test, RicoSetUp {
         vow.drip(gilk);
         vat.filk(gilk, 'fee', 2 * RAY);
         vat.frob(gilk, self, int(WAD), int(WAD));
-        assertEq(vat.debt(), RAD);
+        assertEq(vat.debt(), WAD);
         skip(1);
         vow.drip(gilk);
 
@@ -1021,6 +1027,37 @@ contract VatTest is Test, RicoSetUp {
         ricoafter = rico.balanceOf(self);
         assertEq(ricoafter, ricobefore - (WAD * 2 + 1));
     }
+
+    function test_drip_all_rest_1() public {
+        feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
+        vat.filk(gilk, 'fee', RAY * 3 / 2);
+        // raise rack to 1.5
+        skip(1);
+        // now frob 1, so debt is 1 * RAY
+        // and rest is 0.5 * RAY
+        vat.drip(gilk);
+        vat.frob(gilk, self, int(1), int(1));
+        assertEq(vat.rest(), RAY / 2);
+        assertEq(vat.debt(), 1);
+        // need to wait for drip to do anything...
+        vow.drip(gilk);
+        assertEq(vat.debt(), 1);
+        assertEq(vat.rest(), RAY / 2);
+
+        // frob again so rest reaches RAY
+        vat.frob(gilk, self, int(1), int(1));
+        assertEq(vat.debt(), 2);
+        assertEq(vat.rest(), RAY);
+
+        // so regardless of fee next drip should drip 1
+        vat.filk(gilk, 'fee', RAY);
+        skip(1);
+        vat.drip(gilk);
+        assertEq(vat.debt(), 3);
+        assertEq(vat.rest(), 0);
+        assertEq(rico.totalSupply(), 3);
+    }
+
 
 }
 

@@ -82,7 +82,7 @@ contract VowTest is Test, RicoSetUp {
         gilks[1] = gilk;
         uint gas = gasleft();
         uint aid = vow.keep(gilks);
-        check_gas(gas, 416232);
+        check_gas(gas, 416289);
         assertGt(aid, 0);
     }
 
@@ -95,7 +95,7 @@ contract VowTest is Test, RicoSetUp {
         gold.mint(avow, WAD);
         uint gas = gasleft();
         hook.flowback(aid, WAD);
-        check_gas(gas, 45557);
+        check_gas(gas, 45210);
     }
 
     function test_bail_gas() public {

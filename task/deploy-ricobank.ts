@@ -37,7 +37,7 @@ task('deploy-ricobank', '')
         router: deps.objects.swapRouter.address,
         roll: ali.address,
         par: ray(1),
-        ceil: rad(100000),
+        ceil: wad(100000),
         adaptrange:   20000,
         adaptttl:     BANKYEAR / 4,
         daiusdttl:    BANKYEAR,

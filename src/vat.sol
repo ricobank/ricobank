@@ -83,8 +83,8 @@ contract Vat is Lock, Math, Ward, Flog {
     error ErrWrongUrn();
 
     uint256 public rest;  // [rad] Remainder from
-    uint256 public debt;  // [rad] Total Rico Issued
-    uint256 public ceil;  // [rad] Total Debt Ceiling
+    uint256 public debt;  // [wad] Total Rico Issued
+    uint256 public ceil;  // [wad] Total Debt Ceiling
     uint256 public par;   // [ray] System Price (rico/ref)
 
     Feedbase public feeds;
@@ -145,7 +145,18 @@ contract Vat is Lock, Math, Ward, Flog {
 
         int dtab = mul(ilk.rack, dart);
         uint tab = ilk.rack * urn.art;
-        debt     = add(debt, dtab);
+
+        if (dtab > 0) {
+            uint wad = uint(dtab) / RAY;
+            debt += wad;
+            rest += uint(dtab) % RAY;
+            rico.mint(msg.sender, wad);
+        } else if (dtab < 0) {
+            uint wad = uint(-dtab) / RAY + 1;
+            rest += add(wad * RAY, dtab);
+            debt -= wad;
+            rico.burn(msg.sender, wad);
+        }
 
         // either debt has decreased, or debt ceilings are not exceeded
         if (both(dart > 0, either(ilk.tart * ilk.rack > ilk.line, debt > ceil))) revert ErrDebtCeil();
@@ -155,15 +166,6 @@ contract Vat is Lock, Math, Ward, Flog {
         if (both(either(dart > 0, dink < 0), u != msg.sender)) revert ErrWrongUrn();
         // urn has no debt, or a non-dusty amount
         if (both(urn.art != 0, tab < ilk.dust)) revert ErrUrnDust();
-
-        if (dtab > 0) {
-            rico.mint(msg.sender, uint(dtab) / RAY);
-            rest += uint(dtab) % RAY;
-        } else if (dtab < 0) {
-            uint wad = uint(-dtab) / RAY + 1;
-            rest += add(wad * RAY, dtab);
-            rico.burn(msg.sender, wad);
-        }
 
         Hook(ilk.hook).frobhook(msg.sender, i, u, dink, dart);
     }
@@ -212,10 +214,10 @@ contract Vat is Lock, Math, Ward, Flog {
         uint256 delt = rack - prev;
         uint256 rad  = ilks[i].tart * delt;
         uint256 all  = rest + rad;
-        rest         = all % RAY;
         ilks[i].rho  = block.timestamp;
         ilks[i].rack = rack;
-        debt         = debt + rad;
+        debt         = debt + all / RAY;
+        rest         = all % RAY;
         rico.mint(vow, all / RAY);
     }
 
@@ -223,7 +225,7 @@ contract Vat is Lock, Math, Ward, Flog {
         uint256 rad = wad * RAY;
         address u = msg.sender;
         sin[u] = sin[u] - rad;
-        debt   = debt   - rad;
+        debt   = debt   - wad;
         rico.burn(u, wad);
     }
 

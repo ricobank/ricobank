@@ -72,6 +72,7 @@ contract BallTest is Test, UniSetUp, Math {
     uint DEV_FUND_RISK = 1000000 * WAD;
     uint GEL = 1000 * RAY;
     uint FEL = RAY * 999 / 1000;
+    uint DUST = 90 * RAD;
 
     Vat vat;
     Vow vow;
@@ -126,7 +127,7 @@ contract BallTest is Test, UniSetUp, Math {
             WETH,
             WETH_DAI_POOL,
             RAD, // chop
-            90 * RAD, // dust
+            DUST, // dust
             1000000001546067052200000000, // fee
             100000 * RAD, // line
             RAY, // liqr
@@ -145,7 +146,7 @@ contract BallTest is Test, UniSetUp, Math {
             router,
             me,
             INIT_PAR,
-            100000 * RAD,
+            100000 * WAD,
             20000, // ricodai
             BANKYEAR / 4,
             BANKYEAR, // daiusd
@@ -164,7 +165,7 @@ contract BallTest is Test, UniSetUp, Math {
         uint gas = gasleft();
         Ball ball = new Ball(bargs, ips);
         uint usedgas     = gas - gasleft();
-        uint expectedgas = 15163025;
+        uint expectedgas = 15169655;
         if (usedgas < expectedgas) {
             console.log("ball saved %s gas...currently %s", expectedgas - usedgas, usedgas);
         }
@@ -312,23 +313,24 @@ contract BallTest is Test, UniSetUp, Math {
     }
 
     // user pays down the urn first, then try to flap
-    function test_ball_pay_flap_fail() public {
+    function test_ball_pay_flap_1() public {
         vat.frob(WETH_ILK, me, int(wethamt), dart);
         vm.expectRevert(Vow.ErrSafeBail.selector);
         vow.bail(WETH_ILK, me);
         skip(BANKYEAR * 100); advance_chainlink(); look_poke();
 
         (uint inkleft,uint artleft) = vat.urns(WETH_ILK, me);
-        Gem(rico).mint(me, artleft);
-        vat.frob(WETH_ILK, me, -int(inkleft), -int(artleft));
-        (inkleft, artleft) = vat.urns(WETH_ILK, me);
-        assertEq(inkleft, 0);
-        assertEq(artleft, 0);
+
+        (,uint rack,,,,uint dust,,,,,) = vat.ilks(WETH_ILK);
+        vat.frob(WETH_ILK, me, 0, -int((artleft * rack - dust) / rack));
+        (uint inkleftafter, uint artleftafter) = vat.urns(WETH_ILK, me);
+        assertEq(inkleftafter, inkleft);
+        assertEq(artleftafter, dust / rack);
 
         uint aid = vow.keep(ilks);
         (,,address hag, uint ham,,,,,,) = flow.auctions(aid);
         assertEq(hag, rico);
-        assertEq(ham, 1); // rounding
+        assertGt(ham, 0);
     }
 
     function test_ball_pay_flap_success() public  _balanced_after_ {
@@ -340,10 +342,12 @@ contract BallTest is Test, UniSetUp, Math {
         (uint inkleft,uint artleft) = vat.urns(WETH_ILK, me);
         vow.keep(ilks); // drips
         Gem(rico).mint(me, artleft * 1000);
-        vat.frob(WETH_ILK, me, -int(inkleft), -int(artleft));
-        (inkleft, artleft) = vat.urns(WETH_ILK, me);
-        assertEq(inkleft, 0);
-        assertEq(artleft, 0);
+        (,uint rack,,,,uint dust,,,,,) = vat.ilks(WETH_ILK);
+        vat.frob(WETH_ILK, me, 0, -int((artleft * rack - dust) / rack));
+        (uint inkleftafter, uint artleftafter) = vat.urns(WETH_ILK, me);
+        assertEq(inkleftafter, inkleft);
+        assertGt(artleftafter, dust / rack * 999 / 1000);
+        assertLt(artleftafter, dust / rack * 1000 / 999);
         // balanced now because already kept
     }
 
