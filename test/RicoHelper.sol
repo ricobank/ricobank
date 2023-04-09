@@ -210,6 +210,8 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
         vox  = Vox(address(ball.vox()));
         flow = ball.flow();
         hook = ball.hook();
+        mdn  = ball.mdn();
+        divider = ball.divider();
 
         avat  = address(vat);
         avow  = address(vow);
@@ -218,10 +220,6 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
         aflow = address(flow);
 
         rico.approve(avat, type(uint256).max);
-
-        (,,address fsrc,,,,,,,,) = vat.ilks(wilk);
-        mdn = Medianizer(fsrc);
-        divider = ball.divider();
         
         feed.push(bytes32("ONE"), bytes32(RAY), type(uint).max);
         make_feed(rtag);
@@ -242,8 +240,8 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
         vm.prank(VAULT);
         dai.transfer(address(this), 10000 * WAD);
         dai.approve(address(hook), type(uint256).max);
-        vat.init(dilk, address(hook), self, dutag);
-        hook.link(dilk, address(dai));
+        vat.init(dilk, address(hook));
+        hook.wire(dilk, address(dai), self, dutag);
         hook.grant(address(dai));
         vat.filk(dilk, 'hook', uint(bytes32(bytes20(address(hook)))));
         vat.filk(dilk, bytes32('chop'), RAD);
@@ -257,8 +255,8 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
         gold = Gem(address(gemfab.build(bytes32("Gold"), bytes32("GOLD"))));
         gold.mint(self, init_mint * WAD);
         gold.approve(address(hook), type(uint256).max);
-        vat.init(gilk, address(hook), self, grtag);
-        hook.link(gilk, address(gold));
+        vat.init(gilk, address(hook));
+        hook.wire(gilk, address(gold), self, grtag);
         hook.grant(address(gold));
         vat.filk(gilk, 'hook', uint(bytes32(bytes20(address(hook)))));
         // todo fix other chops, should be rays
@@ -278,8 +276,8 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
         ruby = Gem(address(gemfab.build(bytes32("Ruby"), bytes32("RUBY"))));
         ruby.mint(self, init_mint * WAD);
         ruby.approve(address(hook), type(uint256).max);
-        vat.init(rilk, address(hook), self, rtag);
-        hook.link(rilk, address(ruby));
+        vat.init(rilk, address(hook));
+        hook.wire(rilk, address(ruby), self, rtag);
         hook.grant(address(ruby));
         vat.filk(rilk, 'hook', uint(bytes32(bytes20(address(hook)))));
         vat.filk(rilk, bytes32('chop'), RAD);

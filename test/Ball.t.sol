@@ -165,7 +165,7 @@ contract BallTest is Test, UniSetUp, Math {
         uint gas = gasleft();
         Ball ball = new Ball(bargs, ips);
         uint usedgas     = gas - gasleft();
-        uint expectedgas = 15169655;
+        uint expectedgas = 15216132;
         if (usedgas < expectedgas) {
             console.log("ball saved %s gas...currently %s", expectedgas - usedgas, usedgas);
         }
@@ -180,9 +180,8 @@ contract BallTest is Test, UniSetUp, Math {
         cladapt = ball.cladapt();
         adapt = ball.adapt();
         divider = ball.divider();
+        mdn = ball.mdn();
         twap = ball.twap();
-        (,,address _mdn,,,,,,,,) = vat.ilks(WETH_ILK);
-        mdn = Medianizer(_mdn);
 
         advance_twap(RICO_RISK_TAG);
         advance_twap(WETH_RICO_TAG);
@@ -198,7 +197,7 @@ contract BallTest is Test, UniSetUp, Math {
         vm.prank(VAULT);
         Gem(DAI).transfer(address(this), 500 * WAD);
 
-        (,,,,,,,,,,address hook) = vat.ilks(WILK);
+        (,,,,,,,,address hook) = vat.ilks(WILK);
         Gem(WETH).approve(address(hook), type(uint).max);
         WethLike(WETH).deposit{value: wethamt * 100}();
         // try to frob 1 weth for at least $1k...shouldn't work because no look
@@ -321,7 +320,7 @@ contract BallTest is Test, UniSetUp, Math {
 
         (uint inkleft,uint artleft) = vat.urns(WETH_ILK, me);
 
-        (,uint rack,,,,uint dust,,,,,) = vat.ilks(WETH_ILK);
+        (,uint rack,,uint dust,,,,,) = vat.ilks(WETH_ILK);
         vat.frob(WETH_ILK, me, 0, -int((artleft * rack - dust) / rack));
         (uint inkleftafter, uint artleftafter) = vat.urns(WETH_ILK, me);
         assertEq(inkleftafter, inkleft);
@@ -342,7 +341,7 @@ contract BallTest is Test, UniSetUp, Math {
         (uint inkleft,uint artleft) = vat.urns(WETH_ILK, me);
         vow.keep(ilks); // drips
         Gem(rico).mint(me, artleft * 1000);
-        (,uint rack,,,,uint dust,,,,,) = vat.ilks(WETH_ILK);
+        (,uint rack,,uint dust,,,,,) = vat.ilks(WETH_ILK);
         vat.frob(WETH_ILK, me, 0, -int((artleft * rack - dust) / rack));
         (uint inkleftafter, uint artleftafter) = vat.urns(WETH_ILK, me);
         assertEq(inkleftafter, inkleft);

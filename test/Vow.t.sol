@@ -95,7 +95,7 @@ contract VowTest is Test, RicoSetUp {
         gold.mint(avow, WAD);
         uint gas = gasleft();
         hook.flowback(aid, WAD);
-        check_gas(gas, 45210);
+        check_gas(gas, 46294);
     }
 
     function test_bail_gas() public {
@@ -104,7 +104,7 @@ contract VowTest is Test, RicoSetUp {
         feedpush(grtag, bytes32(0), block.timestamp + 1000);
         uint gas = gasleft();
         vow.bail(gilk, self);
-        check_gas(gas, 345955);
+        check_gas(gas, 346907);
     }
 
     // goldusd, par, and liqr all = 1 after setup
@@ -297,7 +297,7 @@ contract VowTest is Test, RicoSetUp {
     }
 
     function test_drip() public {
-        (,,,,,,,uint rho,,,) = vat.ilks(gilk);
+        (,,,,,uint rho,,,) = vat.ilks(gilk);
         assertEq(rho, block.timestamp);
         assertEq(rico.balanceOf(self), 0);
 
@@ -413,16 +413,17 @@ contract VowTest is Test, RicoSetUp {
     function test_bail_hook() public {
         Hook hook = new Hook();
         vat.filk(gilk, 'hook', uint(bytes32(bytes20(address(hook)))));
+        vat.frob(gilk, self, int(WAD), int(WAD));
+        uint vowgoldbefore = gold.balanceOf(avow);
+
+        ZeroHook zhook = new ZeroHook();
+        vat.filk(gilk, 'hook', uint(bytes32(bytes20(address(zhook)))));
         bytes memory hookdata = abi.encodeCall(
-            hook.grabhook,
+            zhook.grabhook,
             (avow, gilk, self, WAD, WAD, WAD, self)
         );
+        vm.expectCall(address(zhook), hookdata);
 
-        feedpush(grtag, bytes32(RAY * 1000000), type(uint).max);
-        vat.frob(gilk, self, int(WAD), int(WAD));
-        feedpush(grtag, bytes32(0), type(uint).max);
-        uint vowgoldbefore = gold.balanceOf(avow);
-        vm.expectCall(address(hook), hookdata);
         uint aid = vow.bail(gilk, self);
         assertEq(gold.balanceOf(avow), vowgoldbefore);
         assertEq(aid, 0);
@@ -437,6 +438,20 @@ contract Hook {
     function grabhook(
         address urn, bytes32 i, address u, uint ink, uint art, uint bill, address keeper
     ) external returns (uint) {}
+    function safehook(
+        bytes32, address
+    ) pure external returns (bytes32, uint){return(bytes32(uint(1000 * 10 ** 27)), type(uint256).max);}
+}
+contract ZeroHook {
+    function frobhook(
+        address urn, bytes32 i, address u, int dink, int dart
+    ) external {}
+    function grabhook(
+        address urn, bytes32 i, address u, uint ink, uint art, uint bill, address keeper
+    ) external returns (uint) {}
+    function safehook(
+        bytes32, address
+    ) pure external returns (bytes32, uint){return(bytes32(uint(0)), type(uint256).max);}
 }
 
 contract Usr {

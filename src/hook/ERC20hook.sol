@@ -2,39 +2,49 @@
 
 pragma solidity 0.8.19;
 
+import '../../lib/feedbase/src/Feedbase.sol';
 import '../../lib/feedbase/src/mixin/ward.sol';
 import '../../lib/gemfab/src/gem.sol';
 import '../mixin/lock.sol';
 import '../mixin/flog.sol';
 import '../vat.sol';
 import '../flow.sol';
+import './hook.sol';
 
-contract ERC20Hook is Ward, Lock, Flog {
-    DutchFlower public flow;
-    Vat public vat;
-    Gem public rico;
-    mapping(bytes32=>address) public gems;
-    mapping (address gem => bool) public pass;
-    uint256 public constant MINT = 2**140;
-
+contract ERC20Hook is Hook, Ward, Lock, Flog {
     struct Sale {
         bytes32 ilk;
         address urn;
     }
 
-    mapping(uint256 aid => Sale) public sales;
+    struct Item {
+        address gem;
+        address fsrc;  // [obj] feedbase `src` address
+        bytes32 ftag;  // [tag] feedbase `tag` bytes32
+    }
+
+    mapping (address gem => bool) public pass;
+    mapping (bytes32 ilk => Item) public items;
+    mapping (uint256 aid => Sale) public sales;
+
+    uint256 public constant MINT = 2**140;
+
+    Feedbase    public feed;
+    DutchFlower public flow;
+    Gem         public rico;
+    Vat         public vat;
 
     error ErrBigFlowback();
     error ErrMintCeil();
     error ErrLoanArgs();
     error ErrTransfer();
-    error ErrWrongKey();
 
-    constructor(address _vat, address _flow, address _rico) {
-        vat = Vat(_vat);
+    constructor(address _feed, address _vat, address _flow, address _rico) {
+        feed = Feedbase(_feed);
         flow = DutchFlower(_flow);
         rico = Gem(_rico);
-    }
+        vat  = Vat(_vat);
+}
 
     function frobhook(
         address sender,
@@ -43,7 +53,7 @@ contract ERC20Hook is Ward, Lock, Flog {
         int dink,
         int      // dart
     ) _ward_ _flog_ external {
-        address gem = gems[i];
+        address gem = items[i].gem;
         if (sender != address(this)) {
             if (dink > 0) {
                 if (!Gem(gem).transferFrom(sender, address(this), uint(dink))) {
@@ -66,8 +76,13 @@ contract ERC20Hook is Ward, Lock, Flog {
         uint256 bill,
         address payable keeper
     ) _ward_ _flog_ external returns (uint aid) {
-        aid = flow.flow(vow, gems[i], ink, address(rico), bill, keeper);
+        aid = flow.flow(vow, items[i].gem, ink, address(rico), bill, keeper);
         sales[aid] = Sale({ ilk: i, urn: u });
+    }
+
+    function safehook(bytes32 i, address) view public returns (bytes32, uint) {
+        Item storage item = items[i];
+        return feed.pull(item.fsrc, item.ftag);
     }
 
     function grant(address gem) _flog_ external {
@@ -84,8 +99,12 @@ contract ERC20Hook is Ward, Lock, Flog {
         vat.frob(ilk, urn, int(refund), 0);
     }
 
-    function link(bytes32 ilk, address gem) _ward_ _flog_ external {
-        gems[ilk] = gem;
+    function wire(bytes32 ilk, address gem, address fsrc, bytes32 ftag) _ward_ _flog_ external {
+        items[ilk] = Item({
+            gem : gem,
+            fsrc: fsrc,
+            ftag: ftag
+        });
     }
 
     function flash(address[] calldata gs, uint[] calldata wads, address code, bytes calldata data)

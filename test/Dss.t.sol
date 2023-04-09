@@ -88,8 +88,8 @@ contract DssJsTest is Test, RicoSetUp {
         gold = Gem(address(gemfab.build(bytes32("Gold"), bytes32("GOLD"))));
         gold.mint(self, init_mint);
         gold.approve(address(hook), type(uint256).max);
-        vat.init(gilk, address(hook), self, grtag);
-        hook.link(gilk, address(gold));
+        vat.init(gilk, address(hook));
+        hook.wire(gilk, address(gold), self, grtag);
         hook.grant(address(gold));
         vat.filk(gilk, bytes32('chop'), RAY);
         vat.filk(gilk, bytes32("line"), init_mint * 10 * RAY);
@@ -595,12 +595,12 @@ contract DssFoldTest is DssVatTest {
 
     function tab(bytes32 ilk, address _urn) internal view returns (uint) {
         uint art = _art(ilk, _urn);
-        (,uint rack,,,,,,,,,) = vat.ilks(ilk);
+        (,uint rack,,,,,,,) = vat.ilks(ilk);
         return art * rack;
     }
 
     function test_fold() public _fold_ {
-        (,,,,,,uint fee,,,,) = vat.ilks(i0);
+        (,,,,uint fee,,,,) = vat.ilks(i0);
         assertEq(fee, RAY);
         draw(i0, 1);
         vat.filk(i0, 'fee', RAY * 21 / 20);
@@ -974,7 +974,7 @@ contract DssClipTest is DssJsTest {
         uint gas = gasleft();
         vm.expectCall(address(flow), bytes(''));
         vow.bail(i0, me);
-        check_gas(gas, 396225);
+        check_gas(gas, 397177);
     }
 }
 

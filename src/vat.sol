@@ -26,27 +26,14 @@ import './mixin/lock.sol';
 import './mixin/math.sol';
 import './mixin/flog.sol';
 
-import { Feedbase } from '../lib/feedbase/src/Feedbase.sol';
-import { Ward }     from '../lib/feedbase/src/mixin/ward.sol';
-import { Gem }      from '../lib/gemfab/src/gem.sol';
-
-interface Hook {
-    function frobhook(
-        address urn, bytes32 i, address u, int dink, int dart
-    ) external;
-    function grabhook(
-        address urn, bytes32 i, address u, uint ink,
-        uint art,    uint bill, address keeper
-    ) external returns (uint);
-}
+import { Ward } from '../lib/feedbase/src/mixin/ward.sol';
+import { Gem }  from '../lib/gemfab/src/gem.sol';
+import { Hook } from './hook/hook.sol';
 
 contract Vat is Lock, Math, Ward, Flog {
     struct Ilk {
         uint256 tart;  // [wad] Total Normalised Debt
         uint256 rack;  // [ray] Accumulated Rate
-
-        address fsrc;  // [obj] feedbase `src` address
-        bytes32 ftag;  // [tag] feedbase `tag` bytes32
 
         uint256 line;  // [rad] Debt Ceiling
         uint256 dust;  // [rad] Urn Debt Floor
@@ -87,14 +74,13 @@ contract Vat is Lock, Math, Ward, Flog {
     uint256 public ceil;  // [wad] Total Debt Ceiling
     uint256 public par;   // [ray] System Price (rico/ref)
 
-    Feedbase public feeds;
     Gem      public rico;
 
     constructor() {
         par = RAY;
     }
 
-    function init(bytes32 ilk, address hook, address fsrc, bytes32 ftag)
+    function init(bytes32 ilk, address hook)
       _ward_ _flog_ external
     {
         if (ilks[ilk].rack != 0) revert ErrMultiIlk();
@@ -105,8 +91,6 @@ contract Vat is Lock, Math, Ward, Flog {
             hook: hook,
             rho : block.timestamp,
             tart: 0,
-            fsrc: fsrc,
-            ftag: ftag,
             chop: 0, line: 0, dust: 0
         });
     }
@@ -116,7 +100,7 @@ contract Vat is Lock, Math, Ward, Flog {
     {
         Urn storage urn = urns[i][u];
         Ilk storage ilk = ilks[i];
-        (bytes32 mark_, uint ttl) = feeds.pull(ilk.fsrc, ilk.ftag);
+        (bytes32 mark_, uint ttl) = Hook(ilk.hook).safehook(i, u);
         uint mark = uint(mark_);
         if (block.timestamp > ttl) {
             return Spot.Iffy;
@@ -238,9 +222,8 @@ contract Vat is Lock, Math, Ward, Flog {
     function link(bytes32 key, address val)
       _ward_ _flog_ external
     {
-               if (key == "feeds") { feeds = Feedbase(val);
-        } else if (key == "rico" ) { rico  = Gem(val);
-        } else { revert ErrWrongKey(); }
+        if (key == "rico") rico = Gem(val);
+        else revert ErrWrongKey();
     }
     function filk(bytes32 ilk, bytes32 key, uint val)
       _ward_ _flog_ external

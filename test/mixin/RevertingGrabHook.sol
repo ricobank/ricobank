@@ -15,6 +15,9 @@ contract RevertingGrabHook {
         revert('grab revert');
     }
 
+    function safehook(
+        bytes32, address
+    ) pure external returns (bytes32, uint){return(bytes32(uint(1000 * 10 ** 27)), type(uint256).max);}
 }
 
 contract CorrectlyMisbehavingGrabHook {
@@ -30,6 +33,10 @@ contract CorrectlyMisbehavingGrabHook {
     ) public pure returns (bytes32 oneword) {
         return bytes32(bytes4("bad2")); // one word
     }
+
+    function safehook(
+        bytes32, address
+    ) pure external returns (bytes32, uint){return(bytes32(uint(1000 * 10 ** 27)), type(uint256).max);}
 
 }
 
@@ -54,4 +61,7 @@ contract IncorrectlyMisbehavingGrabHook {
         long[60] = 'k';
     }
 
+    function safehook(
+        bytes32, address
+    ) pure external returns (bytes32, uint){return(bytes32(uint(1000 * 10 ** 27)), type(uint256).max);}
 }

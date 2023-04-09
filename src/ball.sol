@@ -90,7 +90,7 @@ contract Ball is Math {
         flow = new DutchFlower();
         vat  = new Vat();
         vow  = new Vow();
-        hook = new ERC20Hook(address(vat), address(flow), rico);
+        hook = new ERC20Hook(args.feedbase, address(vat), address(flow), rico);
 
         vat.prod(args.par);
 
@@ -100,7 +100,6 @@ contract Ball is Math {
         vow.link('RISK', risk);
 
         vat.file('ceil',  args.ceil);
-        vat.link('feeds', args.feedbase);
         vat.link('rico',  rico);
         vow.ward(address(flow), true);
         vat.ward(address(vow), true);
@@ -118,10 +117,10 @@ contract Ball is Math {
             bytes32 ilk = ilkparams.ilk;
             address gem = ilkparams.gem;
             address pool = ilkparams.pool;
-            vat.init(ilk, address(hook), address(mdn), concat(ilk, 'rico'));
+            vat.init(ilk, address(hook));
             mdn_sources[0].tag = concat(ilk, 'rico');
             mdn.setSources(concat(ilk, 'rico'), mdn_sources);
-            hook.link(ilk, gem);
+            hook.wire(ilk, gem, address(mdn), concat(ilk, 'rico'));
             hook.grant(gem);
             vat.filk(ilk, 'chop', ilkparams.chop);
             vat.filk(ilk, 'dust', ilkparams.dust);
