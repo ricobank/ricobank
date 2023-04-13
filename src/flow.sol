@@ -17,6 +17,7 @@ contract DutchFlower is Math, Lock, Flog {
         uint256 fel;  // [ray] rate of change in asking price/second
         uint256 del;  // min ham
         uint256 gel;  // [ray] multiply by basefee for creator reward
+        bool    prld;
         address feed;
         address fsrc;
         bytes32 ftag;
@@ -61,7 +62,11 @@ contract DutchFlower is Math, Lock, Flog {
         address flo = msg.sender;
         Ramp storage ramp = ramps[flo][hag];
         if (ham < ramp.del) revert ErrTinyFlow();
-        if (!Gem(hag).transferFrom(msg.sender, address(this), ham)) revert ErrTransfer();
+        if (ramp.prld) {
+            if (!Gem(hag).transferFrom(msg.sender, address(this), ham)) {
+                revert ErrTransfer();
+            }
+        }
         if (aids.length > 0) {
             aid = aids[aids.length - 1];
             aids.pop();
@@ -94,13 +99,16 @@ contract DutchFlower is Math, Lock, Flog {
         uint rest  = auction.ham - takers;
 
         address vow = auction.vow;
-        if (!Gem(auction.wag).transferFrom(msg.sender, vow, makers)) revert ErrTransfer();
-        if (!Gem(auction.hag).transfer(msg.sender, takers)) revert ErrTransfer();
-
         address flo = auction.flo;
-        if (!Gem(auction.hag).transfer(flo, rest)) revert ErrTransfer();
-        Flowback(flo).flowback(aid, rest);
+        if (!Gem(auction.wag).transferFrom(msg.sender, vow, makers)) revert ErrTransfer();
+        if (ramps[flo][auction.hag].prld) {
+            if (!Gem(auction.hag).transfer(msg.sender, takers)) revert ErrTransfer();
+            if (!Gem(auction.hag).transfer(flo, rest)) revert ErrTransfer();
+        } else {
+            if (!Gem(auction.hag).transferFrom(flo, msg.sender, takers)) revert ErrTransfer();
+        }
 
+        Flowback(flo).flowback(aid, rest);
         if (msg.value < auction.gim) revert ErrTransfer();
         auction.gir.send(auction.gim);
         auctions[aid].valid = uint(Valid.INVALID);
@@ -143,6 +151,8 @@ contract DutchFlower is Math, Lock, Flog {
             ramp.del = val;
         } else if (key == 'gel') {
             ramp.gel = val;
+        } else if (key == 'prld') {
+            ramp.prld = val == 0 ? false : true;
         } else { revert ErrCurbKey(); }
     }
 

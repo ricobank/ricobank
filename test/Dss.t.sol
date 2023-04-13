@@ -196,6 +196,9 @@ contract DssJsTest is Test, RicoSetUp {
         hook.pair(agold, 'feed', uint(uint160(address(feed))));
         hook.pair(agold, 'fsrc', uint(uint160(address(mdn))));
         hook.pair(agold, 'ftag', uint(grtag));
+
+        flow.curb(arico, 'prld', 1);
+        flow.curb(arisk, 'prld', 1);
     }
 
     function _slip(Gem g, address usr, uint amt) internal {
@@ -974,7 +977,7 @@ contract DssClipTest is DssJsTest {
         uint gas = gasleft();
         vm.expectCall(address(flow), bytes(''));
         vow.bail(i0, me);
-        check_gas(gas, 397177);
+        check_gas(gas, 371838);
     }
 }
 

@@ -132,7 +132,7 @@ contract BallTest is Test, UniSetUp, Math {
             100000 * RAD, // line
             RAY, // liqr
             DutchFlower.Ramp(
-                FEL, 0, GEL, address(fb), address(mdn), WETH_RICO_TAG
+                FEL, 0, GEL, false, address(fb), address(mdn), WETH_RICO_TAG
             ),
             20000, // ttl
             1 // range
@@ -154,10 +154,10 @@ contract BallTest is Test, UniSetUp, Math {
             10000, // twap
             BANKYEAR,
             DutchFlower.Ramp(
-                FEL, 0, GEL, address(fb), address(mdn), RICO_RISK_TAG
+                FEL, 0, GEL, true, address(fb), address(mdn), RICO_RISK_TAG
             ),
             DutchFlower.Ramp(
-                FEL, 0, GEL, address(fb), address(mdn), RISK_RICO_TAG
+                FEL, 0, GEL, true, address(fb), address(mdn), RISK_RICO_TAG
             ),
             Vow.Ramp(WAD, WAD, block.timestamp, 1)
         );
@@ -165,7 +165,7 @@ contract BallTest is Test, UniSetUp, Math {
         uint gas = gasleft();
         Ball ball = new Ball(bargs, ips);
         uint usedgas     = gas - gasleft();
-        uint expectedgas = 15216132;
+        uint expectedgas = 15326746;
         if (usedgas < expectedgas) {
             console.log("ball saved %s gas...currently %s", expectedgas - usedgas, usedgas);
         }

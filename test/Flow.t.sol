@@ -65,6 +65,7 @@ contract FlowTest is Test, Math {
         flow.curb(arico, 'fel', RAY / 2);
         flow.curb(arico, 'gel', 1000 * RAY);
         flow.curb(arico, 'del', 0);
+        flow.curb(arico, 'prld', 1);
         flow.curb(arico, 'feed', uint(uint160(address(feed))));
         flow.curb(arico, 'fsrc', uint(uint160(address(self))));
         flow.curb(arico, 'ftag', uint(RICO_RISK_TAG));
@@ -140,6 +141,31 @@ contract FlowTest is Test, Math {
         rico.approve(address(flow), 0);
         vm.expectRevert(Gem.ErrUnderflow.selector);
         flow.flow(self, arico, WAD * 1000000, address(risk), type(uint256).max, self);
+    }
+
+    // similar to test_refund, but prld false
+    function test_nongem() public {
+        flow.curb(arico, 'prld', 0);
+        // create sale of 1k rico for 200 risk
+        uint ricoself = rico.balanceOf(self);
+        feed.push(RICO_RISK_TAG, bytes32(RAY / 5 * 4), UINT256_MAX);
+        uint256 aid = flow.flow(
+            avow, address(rico), WAD * 1000, address(risk), WAD * 200, self
+        );
+        // doesn't change, kept in flo
+        assertEq(rico.balanceOf(self), ricoself);
+
+        // complete sale and test flowback gets called exactly once
+        skip(1);
+        risk.transfer(address(guy), WAD * 1000);
+        guy.approve(arisk, aflow, UINT256_MAX);
+        uint ricoguy = rico.balanceOf(address(guy));
+        uint riskvow = risk.balanceOf(avow);
+        guy.glug{value: rmul(1000 * RAY, block.basefee)}(aid);
+        assertEq(rico.balanceOf(self), ricoself - 500 * WAD);
+        assertEq(back_count, 1);
+        assertEq(rico.balanceOf(address(guy)), ricoguy + 500 * WAD);
+        assertEq(risk.balanceOf(address(avow)), riskvow + 200 * WAD);
     }
 
 }

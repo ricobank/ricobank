@@ -63,7 +63,7 @@ contract VatTest is Test, RicoSetUp {
         vat.frob(gilk, self, int(WAD), int(WAD));
         uint gas = gasleft();
         vat.grab(gilk, self, self);
-        check_gas(gas, 377629);
+        check_gas(gas, 352290);
     }
 
     function test_heal_gas() public {
@@ -451,10 +451,10 @@ contract VatTest is Test, RicoSetUp {
     function test_gem_flash_insufficient_assets() public _chap_ {
         bytes memory data = abi.encodeWithSelector(chap.approve_hook.selector, agold, type(uint256).max);
         gems.push(agold);
-        wads.push(init_join * WAD);
+        wads.push(init_join * WAD + 1); // +1 bc rico_mint bail hasn't been glugged
         hook.flash(gems, wads, achap, data);
         wads.pop();
-        wads.push(init_join * WAD + 1);
+        wads.push(init_join * WAD + 2);
         vm.expectRevert(Gem.ErrUnderflow.selector);
         hook.flash(gems, wads, achap, data);
     }
