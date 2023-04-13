@@ -170,16 +170,7 @@ contract Vat is Lock, Math, Ward, Flog {
         uint dtab = art * ilk.rack;
         sin[msg.sender] += dtab;
 
-        bytes memory data = abi.encodeWithSelector(
-            Hook.grabhook.selector, msg.sender, i, u, ink, art, bill, k
-        );
-
-        (bool success, bytes memory ret) = ilk.hook.call(data);
-        if (!success || ret.length != 32) {
-            ilk.line = 0;
-        } else {
-            aid = abi.decode(ret, (uint));
-        }
+        aid = Hook(ilk.hook).grabhook(msg.sender, i, u, ink, art, bill, payable(k));
     }
 
     function prod(uint256 jam)

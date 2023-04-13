@@ -11,7 +11,6 @@ import { Vat } from '../src/vat.sol';
 import '../src/mixin/lock.sol';
 import '../src/mixin/math.sol';
 import { OverrideableGem } from './mixin/OverrideableGem.sol';
-import { RevertingGrabHook, CorrectlyMisbehavingGrabHook, IncorrectlyMisbehavingGrabHook } from './mixin/RevertingGrabHook.sol';
 import { ERC20Hook } from '../src/hook/ERC20hook.sol';
 
 contract VatTest is Test, RicoSetUp {
@@ -63,7 +62,7 @@ contract VatTest is Test, RicoSetUp {
         vat.frob(gilk, self, int(WAD), int(WAD));
         uint gas = gasleft();
         vat.grab(gilk, self, self);
-        check_gas(gas, 352290);
+        check_gas(gas, 351338);
     }
 
     function test_heal_gas() public {
@@ -755,72 +754,6 @@ contract VatTest is Test, RicoSetUp {
         // additional grab will not impact vat
         vat.grab(grabilk, self, self);
         assertEq(vat.sin(self), WAD * RAY);
-    }
-
-    function test_grab_hook_revert() public {
-        RevertingGrabHook hook = new RevertingGrabHook();
-        vat.filk(gilk, 'hook', uint(bytes32(bytes20(address(hook)))));
-        vat.filk(gilk, 'line', type(uint256).max);
-        bytes memory hookdata = abi.encodeCall(
-            hook.grabhook,
-            (self, gilk, self, WAD, WAD, WAD, self)
-        );
-        (,,uint256 line_before,,,,,,) = vat.ilks(gilk);
-        feedpush(grtag, bytes32(RAY * 1000000), type(uint).max);
-        vat.frob(gilk, self, int(WAD), int(WAD));
-        feedpush(grtag, bytes32(0), type(uint).max);
-        uint goldbefore = gold.balanceOf(self);
-        vm.expectCall(address(hook), hookdata);
-        uint aid = vat.grab(gilk, self, self);
-        assertEq(aid, 0);
-        (,,uint256 line_after,,,,,,) = vat.ilks(gilk);
-        assertEq(line_after, 0);
-        assertFalse(line_before == line_after); // sanity check, before_line not 0
-        assertEq(gold.balanceOf(self), goldbefore);
-
-    }
-
-    function test_grab_hook_correct_misbehave() public {
-        // returns not uint256, but single word
-        CorrectlyMisbehavingGrabHook hook = new CorrectlyMisbehavingGrabHook();
-        vat.filk(gilk, 'hook', uint(bytes32(bytes20(address(hook)))));
-        vat.filk(gilk, 'line', type(uint256).max);
-        bytes memory hookdata = abi.encodeCall(
-            hook.grabhook,
-            (self, gilk, self, WAD, WAD, WAD, self)
-        );
-        feedpush(grtag, bytes32(RAY * 1000000), type(uint).max);
-        vat.frob(gilk, self, int(WAD), int(WAD));
-        feedpush(grtag, bytes32(0), type(uint).max);
-        vm.expectCall(address(hook), hookdata);
-        uint aid = vat.grab(gilk, self, self);
-        assertFalse(aid == 0); // expected actual decode of uint256
-        (,,uint256 line_after,,,,,,) = vat.ilks(gilk);
-        assertFalse(line_after == 0); // line should not have been set to 0
-    }
-
-    function test_grab_hook_incorrect_misbehave() public {
-        // returns not uint256, and longer than 32 btyes
-        IncorrectlyMisbehavingGrabHook hook = new IncorrectlyMisbehavingGrabHook();
-        vat.filk(gilk, 'hook', uint(bytes32(bytes20(address(hook)))));
-        vat.filk(gilk, 'line', type(uint256).max);
-        bytes memory hookdata = abi.encodeCall(
-            hook.grabhook,
-            (self, gilk, self, WAD, WAD, WAD, self)
-        );
-        (,,uint256 line_before,,,,,,) = vat.ilks(gilk);
-        feedpush(grtag, bytes32(RAY * 1000000), type(uint).max);
-        vat.frob(gilk, self, int(WAD), int(WAD));
-        feedpush(grtag, bytes32(0), type(uint).max);
-        uint goldbefore = gold.balanceOf(self);
-        vm.expectCall(address(hook), hookdata);
-        uint aid = vat.grab(gilk, self, self);
-        assertEq(aid, 0);
-        (,,uint256 line_after,,,,,,) = vat.ilks(gilk);
-        assertEq(line_after, 0);
-        assertFalse(line_before == line_after); // line should have been reduced
-        assertEq(gold.balanceOf(self), goldbefore);
-
     }
 
     function dograb(bytes32 i, address u) public {

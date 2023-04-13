@@ -104,7 +104,7 @@ contract VowTest is Test, RicoSetUp {
         feedpush(grtag, bytes32(0), block.timestamp + 1000);
         uint gas = gasleft();
         vow.bail(gilk, self);
-        check_gas(gas, 338668);
+        check_gas(gas, 337716);
     }
 
     // goldusd, par, and liqr all = 1 after setup

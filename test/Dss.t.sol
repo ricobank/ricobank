@@ -977,7 +977,7 @@ contract DssClipTest is DssJsTest {
         uint gas = gasleft();
         vm.expectCall(address(flow), bytes(''));
         vow.bail(i0, me);
-        check_gas(gas, 371838);
+        check_gas(gas, 370886);
     }
 }
 
