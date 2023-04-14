@@ -104,6 +104,7 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
     uint constant public FEL = RAY / 2;
     uint constant public BAR = type(uint).max / RAY;
     uint constant public GEL = RAY * 1000;
+    uint constant public FLIP_GEL = RAY * 900;
 
     receive () external payable {}
 
@@ -172,7 +173,7 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
             100000 * RAD, // line
             RAY, // liqr
             DutchFlower.Ramp(
-                RAY * 999 / 1000, 0, GEL, false, address(feed), address(mdn), WETH_RICO_TAG
+                RAY * 999 / 1000, 0, FLIP_GEL, false, address(feed), address(mdn), WETH_RICO_TAG
             ),
             20000, // ttl
             BANKYEAR / 4 // range
@@ -202,8 +203,14 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
             Vow.Ramp(WAD, WAD, block.timestamp, 1)
         );
         ball = new Ball(bargs, ips);
+
+        ////////// these are outside ball, but must be part of real deploy process, unless warding ball first w create2
         Gem(rico).ward(address(ball.vat()), true);
+        Gem(rico).ward(address(ball.hook()), true);
         Gem(risk).ward(address(ball.vow()), true);
+        // Gem(rico).ward(address(self), false);
+        // Gem(risk).ward(address(self), false);
+        //////////
 
         vat  = Vat(address(ball.vat()));
         vow  = Vow(address(ball.vow()));

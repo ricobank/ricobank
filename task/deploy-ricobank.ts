@@ -71,7 +71,7 @@ task('deploy-ricobank', '')
         line: rad(100000),
         liqr: ray(1),
         ramp: {
-            fel : ray(0.999), del: wad(0), gel: ray(1000),
+            fel : ray(0.999), del: wad(0), gel: ray(900),
             prld: false,
             feed: deps.objects.feedbase.address,
             fsrc: hre.ethers.constants.AddressZero,
@@ -84,9 +84,11 @@ task('deploy-ricobank', '')
     const ball = await ball_type.deploy(ballargs, [ilk], { gasLimit: 50000000 })
     const vat_addr = await ball.vat()
     const vow_addr = await ball.vow()
+    const hook_addr = await ball.hook()
     const deps_dapp = await dpack.load(deps, hre.ethers, ali)
     await send(deps_dapp.rico.ward, vat_addr, 1)
     await send(deps_dapp.risk.ward, vow_addr, 1)
+    await send(deps_dapp.rico.ward, hook_addr, 1)
 
     const mdn_artifact = await dpack.getIpfsJson(deps.types.Medianizer.artifact['/'])
     const div_artifact = await dpack.getIpfsJson(deps.types.Divider.artifact['/'])

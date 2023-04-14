@@ -268,7 +268,6 @@ contract VatTest is Test, RicoSetUp {
         uint initial_rico_supply = rico.totalSupply();
 
         bytes memory data = abi.encodeWithSelector(chap.nop.selector);
-        rico.ward(ahook, true);
         gems.push(arico);
         wads.push(stack);
         hook.flash(gems, wads, achap, data);
@@ -280,7 +279,6 @@ contract VatTest is Test, RicoSetUp {
 
     function test_rico_reentry() public _chap_ {
         bytes memory data = abi.encodeWithSelector(chap.reenter.selector, arico, flash_size * WAD);
-        rico.ward(ahook, true);
         gems.push(arico);
         wads.push(stack);
         vm.expectRevert(Lock.ErrLock.selector);
@@ -298,7 +296,6 @@ contract VatTest is Test, RicoSetUp {
     function test_repeat_rico_ceil() public _chap_ {
         bytes memory data = abi.encodeWithSelector(chap.nop.selector);
         // borrowing max amount of rico should succeed
-        rico.ward(ahook, true);
         gems.push(arico);
         wads.push(hook.MINT());
         hook.flash(gems, wads, achap, data);
@@ -319,7 +316,6 @@ contract VatTest is Test, RicoSetUp {
         uint hook_rico1  = rico.balanceOf(ahook);
 
         bytes memory data = abi.encodeWithSelector(chap.multi_borrow.selector, arico, 2 ** 100, agold, stack);
-        rico.ward(ahook, true);
         gems.push(arico);
         wads.push(2 ** 100);
         gems.push(agold);
@@ -335,7 +331,6 @@ contract VatTest is Test, RicoSetUp {
     function test_rico_flash_over_max_supply_reverts() public _chap_ {
         rico.mint(self, type(uint256).max - stack - rico.totalSupply());
         bytes memory data = abi.encodeWithSelector(chap.nop.selector);
-        rico.ward(ahook, true);
         gems.push(arico);
         wads.push(2 * stack);
         vm.expectRevert(Gem.ErrOverflow.selector);
@@ -352,7 +347,6 @@ contract VatTest is Test, RicoSetUp {
         rico.transferFrom(achap, self, chap_rico);
 
         // add rico then gold and ensure they both fail if welching
-        rico.ward(ahook, true);
         gems.push(arico);
         wads.push(stack);
         gems.push(agold);
@@ -391,7 +385,6 @@ contract VatTest is Test, RicoSetUp {
 
     function test_handler_error() public _chap_ {
         bytes memory data = abi.encodeWithSelector(chap.failure.selector);
-        rico.ward(address(hook), true);
         gems.push(arico);
         wads.push(stack);
         vm.expectRevert(bytes4(keccak256(bytes('ErrBroken()'))));
@@ -399,7 +392,6 @@ contract VatTest is Test, RicoSetUp {
     }
 
     function test_rico_wind_up_and_release() public _chap_ {
-        rico.ward(address(hook), true);
         uint lock = 300 * WAD;
         uint draw = 200 * WAD;
 
