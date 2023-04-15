@@ -5,6 +5,6 @@ contract BlankHook {
         address urn, bytes32 i, address u, int dink, int dart
     ) external {}
     function grabhook(
-        address urn, bytes32 i, address u, int dink, int dart, uint bill
+        address urn, bytes32 i, address u, uint ink, uint art, uint bill, address payable keeper
     ) external returns (uint) { return 0; }
 }

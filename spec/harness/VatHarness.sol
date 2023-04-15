@@ -25,6 +25,10 @@ contract VatHarness is Vat {
         return ilks[i].hook;
     }
 
+    function rho(bytes32 i) external returns (uint) {
+        return ilks[i].rho;
+    }
+
 }
 
 contract BlankHook {
