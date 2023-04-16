@@ -21,7 +21,8 @@
     "test": "forge test --fork-block-number 16445606 -vv -f $RPC_URL",
     "testlite": "FOUNDRY_PROFILE=lite npm test",
     "script-test-deploy": "forge script script/TestSetup.s.sol:SetupScript --rpc-url http://127.0.0.1:8545 --broadcast --verify -vvvv",
-    "fmt": "ts-standard --fix task test"
+    "fmt": "ts-standard --fix task test",
+    "verify-vox": "certoraRun src/vox.sol:Vox src/vat.sol:Vat  --verify  Vox:spec/Vox.spec  --link Vox:vat=Vat  --solc /usr/bin/solc --msg 'vat verification' --optimistic_loop"
   },
   "devDependencies": {
     "@etherpacks/dpack": "^0.0.31",
