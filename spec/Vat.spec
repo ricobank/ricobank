@@ -24,11 +24,13 @@ methods {
     rico.totalSupply() returns (uint) envfree
     rico.balanceOf(address) returns (uint) envfree
     rico.wards(address) returns (bool) envfree
+    rico.mint(address,uint)
 
     wards(address) returns (bool) envfree
     self() returns (address) envfree
 
     frobhook(address,bytes32,address,int,int) => DISPATCHER(true)
+    safehook(bytes32 i,address u) returns (uint) => DISPATCHER(true)
     grabhook(address,bytes32,address,uint,uint,uint,address payable) returns (uint) => DISPATCHER(true)
 }
 
@@ -95,4 +97,45 @@ hook Sstore sin[KEY address vow] uint newval (uint oldval) STORAGE {
 
 invariant fundie()
     sum_of_tartracks + sum_of_sins == to_mathint(debt()) * (10 ^ 27) + to_mathint(rest())
+
+rule urnStaysSafeWithoutFeedOrRackChange {
+    env e; method f; bytes32 i; address u; calldataarg args; uint sel;
+
+    // safehook is dispatched to return (RAY, UINT_MAX)
+    uint    rackbefore = rack(i);
+
+    require safe(e, i, u) == 2;
+
+    // need to do this because cant figure out how to summarize
+    // a function that returns a tuple
+    if (sel == 0) {
+        drip(e, i);
+    } else if (sel == 1) {
+        address k;
+        grab(e, i, u, k);
+    } else if (sel == 2) {
+        address h;
+        init(e, i, h);
+    } else if (sel == 3) {
+        uint wad;
+        heal(e, wad);
+    }
+
+    require rack(i) == rackbefore;
+    assert safe(e, i, u) == 2;
+}
+
+rule noStealingInkOrAddingArtToOtherAddr {
+    env ali; env bob; bytes32 i; method f; calldataarg args;
+
+    uint inkali = ink(i, ali.msg.sender);
+    uint artali = art(i, ali.msg.sender);
+    require ali.msg.sender != bob.msg.sender;
+    require f.selector != grab(bytes32,address,address).selector;
+
+    f(bob, args);
+
+    assert ink(i, ali.msg.sender) >= inkali;
+    assert art(i, ali.msg.sender) <= artali;
+}
 

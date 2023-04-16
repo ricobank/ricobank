@@ -1,5 +1,6 @@
 pragma solidity 0.8.19;
 import { Vat } from '../../src/vat.sol';
+import { Hook } from '../../src/hook/hook.sol';
 
 contract VatHarness is Vat {
     function rack(bytes32 i) external returns (uint) {
