@@ -51,10 +51,10 @@ contract VatTest is Test, RicoSetUp {
         assertGt(gold.balanceOf(address(hook)), 0);
         uint gas = gasleft();
         vat.frob(gilk, self, int(WAD), int(WAD));
-        check_gas(gas, 201726);
+        check_gas(gas, 201738);
         gas = gasleft();
         vat.frob(gilk, self, int(WAD), int(WAD));
-        check_gas(gas, 24020);
+        check_gas(gas, 24032);
     }
 
     function test_grab_gas() public {

@@ -67,7 +67,7 @@ contract VowTest is Test, RicoSetUp {
         gilks[1] = gilk;
         uint gas = gasleft();
         uint aid = vow.keep(gilks);
-        check_gas(gas, 355207);
+        check_gas(gas, 355219);
         assertGt(aid, 0);
     }
 
@@ -82,7 +82,7 @@ contract VowTest is Test, RicoSetUp {
         gilks[1] = gilk;
         uint gas = gasleft();
         uint aid = vow.keep(gilks);
-        check_gas(gas, 418420);
+        check_gas(gas, 418432);
         assertGt(aid, 0);
     }
 

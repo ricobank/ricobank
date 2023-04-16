@@ -110,16 +110,17 @@ contract Ball is Math {
         adapt = new UniswapV3Adapter(Feedbase(args.feedbase));
         divider = new Divider(args.feedbase, RAY);
         twap = new TWAP(args.feedbase);
-        Medianizer.Source[] memory mdn_sources = new Medianizer.Source[](1);
-        mdn_sources[0].src = address(divider);
+        Medianizer.Config memory mdnconf =
+            Medianizer.Config(new address[](1), new bytes32[](1), 0);
+        mdnconf.srcs[0] = address(divider);
         for (uint i = 0; i < ilks.length; i++) {
             IlkParams memory ilkparams = ilks[i];
             bytes32 ilk = ilkparams.ilk;
             address gem = ilkparams.gem;
             address pool = ilkparams.pool;
             vat.init(ilk, address(hook));
-            mdn_sources[0].tag = concat(ilk, 'rico');
-            mdn.setSources(concat(ilk, 'rico'), mdn_sources);
+            mdnconf.tags[0] = concat(ilk, 'rico');
+            mdn.setConfig(concat(ilk, 'rico'), mdnconf);
             hook.wire(ilk, gem, address(mdn), concat(ilk, 'rico'));
             hook.grant(gem);
             vat.filk(ilk, 'chop', ilkparams.chop);
@@ -217,8 +218,9 @@ contract Ball is Math {
             divider.setConfig(RICO_XAU_TAG, Divider.Config(src3, tag3));
         }
         twap.setConfig(RICO_XAU_TAG, TWAP.Config(address(divider), RICO_XAU_TAG, args.twaprange, args.twapttl));
-        mdn_sources[0] = Medianizer.Source(address(twap), RICO_XAU_TAG);
-        mdn.setSources(RICO_REF_TAG, mdn_sources);
+        mdnconf.srcs[0] = address(twap);
+        mdnconf.tags[0] = RICO_XAU_TAG;
+        mdn.setConfig(RICO_REF_TAG, mdnconf);
 
         adapt.setConfig(
             RICO_RISK_TAG,
@@ -232,10 +234,14 @@ contract Ball is Math {
             src2[1] = address(adapt); tag2[1] = RICO_RISK_TAG;
             divider.setConfig(RISK_RICO_TAG, Divider.Config(src2, tag2));
         }
-        mdn_sources[0] = Medianizer.Source(address(twap), RICO_RISK_TAG);
-        mdn.setSources(RICO_RISK_TAG, mdn_sources);
-        mdn_sources[0] = Medianizer.Source(address(divider), RISK_RICO_TAG);
-        mdn.setSources(RISK_RICO_TAG, mdn_sources);
+        // todo quorum
+        mdnconf.srcs[0] = address(twap);
+        mdnconf.tags[0] = RICO_RISK_TAG;
+        mdn.setConfig(RICO_RISK_TAG, mdnconf);
+        mdnconf.srcs[0] = address(divider);
+        mdnconf.tags[0] = RISK_RICO_TAG;
+        mdn.setConfig(RISK_RICO_TAG, mdnconf);
+
         mdn.give(roll);
         divider.give(roll);
         adapt.give(roll);

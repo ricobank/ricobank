@@ -146,9 +146,12 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
         sources[0] = address(this); tags[0] = bytes32(tag);
         sources[1] = address(this); tags[1] = bytes32("ONE");
         divider.setConfig(tag, Divider.Config(sources, tags));
-        Medianizer.Source[] memory mdn_sources = new Medianizer.Source[](1);
-        mdn_sources[0] = Medianizer.Source(address(divider), tag);
-        mdn.setSources(tag, mdn_sources);
+        // todo quorum?
+        Medianizer.Config memory mdnconf =
+            Medianizer.Config(new address[](1), new bytes32[](1), 0);
+        mdnconf.srcs[0] = address(divider);
+        mdnconf.tags[0] = tag;
+        mdn.setConfig(tag, mdnconf);
     }
 
     function make_bank() public {
