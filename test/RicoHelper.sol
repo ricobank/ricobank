@@ -209,7 +209,6 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
 
         ////////// these are outside ball, but must be part of real deploy process, unless warding ball first w create2
         Gem(rico).ward(address(ball.vat()), true);
-        Gem(rico).ward(address(ball.hook()), true);
         Gem(risk).ward(address(ball.vow()), true);
         // Gem(rico).ward(address(self), false);
         // Gem(risk).ward(address(self), false);

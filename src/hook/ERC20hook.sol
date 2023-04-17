@@ -27,8 +27,6 @@ contract ERC20Hook is Hook, Ward, Lock, Flog {
     mapping (bytes32 ilk => Item) public items;
     mapping (uint256 aid => Sale) public sales;
 
-    uint256 public constant MINT = 2**140;
-
     Feedbase    public feed;
     DutchFlower public flow;
     Gem         public rico;
@@ -107,33 +105,21 @@ contract ERC20Hook is Hook, Ward, Lock, Flog {
         });
     }
 
-    function flash(address[] calldata gs, uint[] calldata wads, address code, bytes calldata data)
+    function flash(address[] calldata gems, uint[] calldata wads, address code, bytes calldata data)
       _lock_ _flog_ external returns (bytes memory result) {
-        if (gs.length != wads.length) revert ErrLoanArgs();
-        bool[] memory tags = new bool[](gs.length);
-        bool lent;
-        bool ok;
+        if (gems.length != wads.length) revert ErrLoanArgs();
 
-        for(uint i = 0; i < gs.length; i++) {
-            if (pass[gs[i]]) {
-                tags[i] = true;
-                if (!Gem(gs[i]).transfer(code, wads[i])) revert ErrTransfer();
-            } else {
-                if (wads[i] > MINT || lent) revert ErrMintCeil();
-                lent = true;
-                Gem(gs[i]).mint(code, wads[i]);
-            }
+        for(uint i = 0; i < gems.length; i++) {
+            if (!pass[gems[i]]) revert ErrLoanArgs();
+            if (!Gem(gems[i]).transfer(code, wads[i])) revert ErrTransfer();
         }
 
+        bool ok;
         (ok, result) = code.call(data);
         require(ok, string(result));
 
-        for(uint i = 0; i < gs.length; i++) {
-            if (tags[i]) {
-                if (!Gem(gs[i]).transferFrom(code, address(this), wads[i])) revert ErrTransfer();
-            } else {
-                Gem(gs[i]).burn(code, wads[i]);
-            }
+        for(uint i = 0; i < gems.length; i++) {
+            if (!Gem(gems[i]).transferFrom(code, address(this), wads[i])) revert ErrTransfer();
         }
     }
 

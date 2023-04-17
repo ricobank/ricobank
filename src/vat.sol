@@ -69,12 +69,14 @@ contract Vat is Lock, Math, Ward, Flog {
     error ErrWrongKey();
     error ErrWrongUrn();
 
+    uint256 public constant MINT = 2**128;
+
     uint256 public rest;  // [rad] Remainder from
     uint256 public debt;  // [wad] Total Rico Issued
     uint256 public ceil;  // [wad] Total Debt Ceiling
     uint256 public par;   // [ray] System Price (rico/ref)
 
-    Gem      public rico;
+    Gem public rico;
 
     constructor() {
         par = RAY;
@@ -202,6 +204,15 @@ contract Vat is Lock, Math, Ward, Flog {
         sin[u] = sin[u] - rad;
         debt   = debt   - wad;
         rico.burn(u, wad);
+    }
+
+    function flash(address code, bytes calldata data)
+      _lock_ external returns (bytes memory result) {
+        bool ok;
+        rico.mint(code, MINT);
+        (ok, result) = code.call(data);
+        require(ok, string(result));
+        rico.burn(code, MINT);
     }
 
     function file(bytes32 key, uint256 val)

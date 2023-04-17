@@ -8,6 +8,7 @@ methods {
     grab(bytes32,address,address)
     heal(uint)
     drip(bytes32)
+    flash(address code, bytes data)
     urns(bytes32, address) returns (uint, uint) envfree
     ilks(bytes32) returns (uint,uint,uint,uint,uint,uint,uint,uint,address)
     rack(bytes32) returns (uint) envfree
@@ -41,6 +42,17 @@ ghost mapping(bytes32=>mathint) sum_of_arts {
 }
 hook Sstore urns[KEY bytes32 i][KEY address u].art uint newval (uint oldval) STORAGE {
     sum_of_arts[i] = sum_of_arts[i] + (to_mathint(newval) - to_mathint(oldval));
+}
+
+// Prevent large rico balances > total supply
+ghost mathint ghostRicoSupply {
+    init_state axiom (ghostRicoSupply == 0);
+}
+hook Sstore rico.balanceOf[KEY address a] uint256 balance (uint256 old_balance) STORAGE {
+    ghostRicoSupply = ghostRicoSupply + (balance - old_balance);
+}
+hook Sload uint v rico.totalSupply STORAGE {
+    require v == ghostRicoSupply;
 }
 
 ghost mathint sum_of_tartracks {

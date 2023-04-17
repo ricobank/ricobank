@@ -53,10 +53,20 @@ contract Flasher {
         uint256[] memory wads = new uint256[](1);
         gems[0] = gem;
         wads[0] = wad;
-        hook.flash(gems, wads, address(this), data);
+        if (gem == address(rico)) vat.flash(address(this), data);
+        else hook.flash(gems, wads, address(this), data);
         approve_hook(gem, wad);
     }
 
+    function borrow_gem_after_rico(address gem, uint256 wad) public {
+        bytes memory data = abi.encodeCall(this.approve_hook, (gem, wad));
+        require(rico.balanceOf(address(this)) >= vat.MINT(), "missing borrowed rico");
+        address[] memory gems = new address[](1);
+        uint256[] memory wads = new uint256[](1);
+        gems[0] = gem;
+        wads[0] = wad;
+        hook.flash(gems, wads, address(this), data);
+    }
     function multi_borrow(address gem1, uint256 bal1, address gem2, uint256 bal2) public {
         require(Gem(gem1).balanceOf(address(this)) >= bal1, 'missing borrowed tokens 1');
         require(Gem(gem2).balanceOf(address(this)) >= bal2, 'missing borrowed tokens 2');
