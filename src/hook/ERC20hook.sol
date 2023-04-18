@@ -26,7 +26,7 @@ contract ERC20Hook is Hook, Ward, Lock, Flog, Math {
     mapping (address gem => bool) public pass;
     mapping (bytes32 ilk => Item) public items;
     mapping (uint256 aid => Sale) public sales;
-    mapping(bytes32 ilk => mapping(address usr => uint)) public inks;
+    mapping (bytes32 ilk => mapping(address usr => uint)) public inks;
 
     Feedbase    public feed;
     DutchFlower public flow;
@@ -55,7 +55,7 @@ contract ERC20Hook is Hook, Ward, Lock, Flog, Math {
     ) _ward_ _flog_ external returns (bool safer) {
         address gem = items[i].gem;
         if (_dink.length != 32) revert ErrDinkLength();
-        int dink = int(uint(bytes32(_dink[:32])));
+        int dink = int(uint(bytes32(_dink)));
         inks[i][u] = add(inks[i][u], dink);
         if (sender != address(this)) {
             if (dink > 0) {

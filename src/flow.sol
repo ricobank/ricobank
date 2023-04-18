@@ -98,9 +98,8 @@ contract DutchFlower is Math, Lock, Flog {
         (uint makers, uint takers) = clip(auction.ham, auction.wam, price);
         uint rest  = auction.ham - takers;
 
-        address vow = auction.vow;
         address flo = auction.flo;
-        if (!Gem(auction.wag).transferFrom(msg.sender, vow, makers)) revert ErrTransfer();
+        if (!Gem(auction.wag).transferFrom(msg.sender, auction.vow, makers)) revert ErrTransfer();
         if (ramps[flo][auction.hag].prld) {
             if (!Gem(auction.hag).transfer(msg.sender, takers)) revert ErrTransfer();
             if (!Gem(auction.hag).transfer(flo, rest)) revert ErrTransfer();

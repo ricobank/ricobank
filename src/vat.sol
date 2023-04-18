@@ -47,13 +47,9 @@ contract Vat is Lock, Math, Ward, Flog {
         address hook;  // [obj] Frob/grab hook
     }
 
-    struct Urn {
-        uint256 art;   // [wad] Normalised Debt
-    }
-
-    mapping (bytes32 ilk => Ilk)                           public ilks;
-    mapping (bytes32 ilk => mapping (address usr => Urn )) public urns;
-    mapping (address usr => uint256)                       public sin;  // [rad]
+    mapping (bytes32 ilk => Ilk)                                   public ilks;
+    mapping (bytes32 ilk => mapping (address usr => uint256 art )) public urns;
+    mapping (address usr => uint256)                               public sin;  // [rad]
 
     enum Spot {Sunk, Iffy, Safe}
 
@@ -99,14 +95,13 @@ contract Vat is Lock, Math, Ward, Flog {
     function safe(bytes32 i, address u)
       public view returns (Spot)
     {
-        Urn storage urn = urns[i][u];
         Ilk storage ilk = ilks[i];
         (bytes32 cut_, uint ttl) = Hook(ilk.hook).safehook(i, u);
         uint cut = uint(cut_);
         if (block.timestamp > ttl) {
             return Spot.Iffy;
         }
-        uint256    tab = urn.art * rmul(rmul(par, ilk.rack), ilk.liqr);
+        uint256 tab = urns[i][u] * rmul(rmul(par, ilk.rack), ilk.liqr);
         if (tab <= cut) {
             return Spot.Safe;
         } else {
@@ -117,17 +112,17 @@ contract Vat is Lock, Math, Ward, Flog {
     function frob(bytes32 i, address u, bytes calldata dink, int dart)
       _flog_ public
     {
-        Urn storage urn = urns[i][u];
         Ilk storage ilk = ilks[i];
 
         // ilk has been initialised
         if (ilk.rack == 0) revert ErrIlkInit();
 
-        urn.art  = add(urn.art,  dart);
-        ilk.tart = add(ilk.tart, dart);
+        urns[i][u] = add(urns[i][u], dart);
+        uint art   = urns[i][u];
+        ilk.tart   = add(ilk.tart, dart);
 
         int dtab = mul(ilk.rack, dart);
-        uint tab = ilk.rack * urn.art;
+        uint tab = ilk.rack * art;
 
         if (dtab > 0) {
             uint wad = uint(dtab) / RAY;
@@ -144,30 +139,26 @@ contract Vat is Lock, Math, Ward, Flog {
         // either debt has decreased, or debt ceilings are not exceeded
         if (both(dart > 0, either(ilk.tart * ilk.rack > ilk.line, debt > ceil))) revert ErrDebtCeil();
         // urn has no debt, or a non-dusty amount
-        if (both(urn.art != 0, tab < ilk.dust)) revert ErrUrnDust();
+        if (both(art != 0, tab < ilk.dust)) revert ErrUrnDust();
 
-        bool inksafer = true;
-        if (dink.length != 0) {
-            // manage ink
-            inksafer = Hook(ilk.hook).frobhook(msg.sender, i, u, dink, dart);
-        }
-        bool safer = both(dart <= 0, inksafer);
+        bool safer = dart <= 0;
+        if (dink.length != 0) safer = Hook(ilk.hook).frobhook(msg.sender, i, u, dink, dart);
+
         // urn is safer, or is safe
-        if (both(!safer, safe(i, u) != Spot.Safe)) revert ErrNotSafe();
+        if (!either(safer, safe(i, u) == Spot.Safe)) revert ErrNotSafe();
         // urn is safer, or urn is caller
-        if (both(!safer, u != msg.sender)) revert ErrWrongUrn();
+        if (!either(safer, u == msg.sender)) revert ErrWrongUrn();
     }
 
     function grab(bytes32 i, address u, address k)
         _ward_ _flog_ external returns (uint aid)
     {
-        Urn storage urn = urns[i][u];
         Ilk storage ilk = ilks[i];
-        uint art = urn.art;
+        uint art = urns[i][u];
+        urns[i][u] = 0;
 
         uint bill = rmul(ilk.chop, rmul(art, ilk.rack));
 
-        urn.art = 0;
         ilk.tart -= art;
 
         uint dtab = art * ilk.rack;
