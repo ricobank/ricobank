@@ -7,9 +7,6 @@ contract VatHarness is Vat {
         return ilks[i].rack;
     }
 
-    function ink(bytes32 i, address u) external returns (uint) {
-        return urns[i][u].ink;
-    }
     function art(bytes32 i, address u) external returns (uint) {
         return urns[i][u].art;
     }
@@ -30,13 +27,4 @@ contract VatHarness is Vat {
         return ilks[i].rho;
     }
 
-}
-
-contract BlankHook {
-    function frobhook(
-        address urn, bytes32 i, address u, int dink, int dart
-    ) external {}
-    function grabhook(
-        address urn, bytes32 i, address u, int dink, int dart, uint bill
-    ) external returns (uint) { return 0; }
 }

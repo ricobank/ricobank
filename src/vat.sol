@@ -48,7 +48,6 @@ contract Vat is Lock, Math, Ward, Flog {
     }
 
     struct Urn {
-        uint256 ink;   // [wad] Locked Collateral
         uint256 art;   // [wad] Normalised Debt
     }
 
@@ -102,13 +101,12 @@ contract Vat is Lock, Math, Ward, Flog {
     {
         Urn storage urn = urns[i][u];
         Ilk storage ilk = ilks[i];
-        (bytes32 mark_, uint ttl) = Hook(ilk.hook).safehook(i, u);
-        uint mark = uint(mark_);
+        (bytes32 cut_, uint ttl) = Hook(ilk.hook).safehook(i, u);
+        uint cut = uint(cut_);
         if (block.timestamp > ttl) {
             return Spot.Iffy;
         }
         uint256    tab = urn.art * rmul(rmul(par, ilk.rack), ilk.liqr);
-        uint256    cut = urn.ink * mark;
         if (tab <= cut) {
             return Spot.Safe;
         } else {
@@ -116,7 +114,7 @@ contract Vat is Lock, Math, Ward, Flog {
         }
     }
 
-    function frob(bytes32 i, address u, int dink, int dart)
+    function frob(bytes32 i, address u, bytes calldata dink, int dart)
       _flog_ public
     {
         Urn storage urn = urns[i][u];
@@ -125,7 +123,6 @@ contract Vat is Lock, Math, Ward, Flog {
         // ilk has been initialised
         if (ilk.rack == 0) revert ErrIlkInit();
 
-        urn.ink  = add(urn.ink,  dink);
         urn.art  = add(urn.art,  dart);
         ilk.tart = add(ilk.tart, dart);
 
@@ -146,14 +143,19 @@ contract Vat is Lock, Math, Ward, Flog {
 
         // either debt has decreased, or debt ceilings are not exceeded
         if (both(dart > 0, either(ilk.tart * ilk.rack > ilk.line, debt > ceil))) revert ErrDebtCeil();
-        // urn is either less risky than before, or it is safe
-        if (both(either(dart > 0, dink < 0), safe(i, u) != Spot.Safe)) revert ErrNotSafe();
-        // either urn is more safe, or urn is caller
-        if (both(either(dart > 0, dink < 0), u != msg.sender)) revert ErrWrongUrn();
         // urn has no debt, or a non-dusty amount
         if (both(urn.art != 0, tab < ilk.dust)) revert ErrUrnDust();
 
-        Hook(ilk.hook).frobhook(msg.sender, i, u, dink, dart);
+        bool inksafer = true;
+        if (dink.length != 0) {
+            // manage ink
+            inksafer = Hook(ilk.hook).frobhook(msg.sender, i, u, dink, dart);
+        }
+        bool safer = both(dart <= 0, inksafer);
+        // urn is safer, or is safe
+        if (both(!safer, safe(i, u) != Spot.Safe)) revert ErrNotSafe();
+        // urn is safer, or urn is caller
+        if (both(!safer, u != msg.sender)) revert ErrWrongUrn();
     }
 
     function grab(bytes32 i, address u, address k)
@@ -162,17 +164,16 @@ contract Vat is Lock, Math, Ward, Flog {
         Urn storage urn = urns[i][u];
         Ilk storage ilk = ilks[i];
         uint art = urn.art;
-        uint ink = urn.ink;
 
         uint bill = rmul(ilk.chop, rmul(art, ilk.rack));
 
-        urn.ink = urn.art = 0;
+        urn.art = 0;
         ilk.tart -= art;
 
         uint dtab = art * ilk.rack;
         sin[msg.sender] += dtab;
 
-        aid = Hook(ilk.hook).grabhook(msg.sender, i, u, ink, art, bill, payable(k));
+        aid = Hook(ilk.hook).grabhook(msg.sender, i, u, art, bill, payable(k));
     }
 
     function prod(uint256 jam)

@@ -33,7 +33,7 @@ contract Guy {
     function approve(address gem, address dst, uint amt) public {
         Gem(gem).approve(dst, amt);
     }
-    function frob(bytes32 ilk, address usr, int dink, int dart) public {
+    function frob(bytes32 ilk, address usr, bytes calldata dink, int dart) public {
         vat.frob(ilk, usr, dink, dart);
     }
     function transfer(address gem, address dst, uint amt) public {
@@ -114,11 +114,20 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
         feedpush(grtag, bytes32(RAY * 10000), type(uint).max);
         gold.mint(address(bob), amt);
         bob.approve(agold, address(hook), amt);
-        bob.frob(gilk, address(bob), int(amt), int(amt));
+        bob.frob(gilk, address(bob), abi.encodePacked(amt), int(amt));
         feedpush(grtag, bytes32(0), type(uint).max);
         if (bail) vow.bail(gilk, address(bob));
         bob.transfer(arico, self, amt);
         feedpush(grtag, v, t);
+    }
+
+    function _ink(bytes32 ilk, address usr) internal view returns (uint) {
+        (,,,,,,,,address h) = vat.ilks(ilk);
+        return ERC20Hook(h).inks(ilk, usr);
+    }
+
+    function _art(bytes32 ilk, address usr) internal view returns (uint art) {
+        art = vat.urns(ilk, usr);
     }
 
     function check_gas(uint gas, uint expectedgas) internal view {

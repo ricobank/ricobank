@@ -77,24 +77,24 @@ contract Flasher {
     function rico_lever(address gem, uint256 lock_amt, uint256 draw_amt) public {
         _buy_gem(gem, draw_amt);
         approve_hook(gem, lock_amt);
-        vat.frob(ilk0, address(this), int(lock_amt), int(draw_amt));
+        vat.frob(ilk0, address(this), abi.encodePacked(lock_amt), int(draw_amt));
     }
 
     function rico_release(address gem, uint256 free_amt, uint256 wipe_amt) public {
-        vat.frob(ilk0, address(this), -int(free_amt), -int(wipe_amt));
+        vat.frob(ilk0, address(this), abi.encodePacked(-int(free_amt)), -int(wipe_amt));
         _sell_gem(gem, wipe_amt);
     }
 
     function gem_lever(address gem, uint256 lock_amt, uint256 draw_amt) public {
         approve_hook(gem, lock_amt);
-        vat.frob(ilk0, address(this), int(lock_amt), int(draw_amt));
+        vat.frob(ilk0, address(this), abi.encodePacked(lock_amt), int(draw_amt));
         _buy_gem(gem, draw_amt);
         approve_hook(gem, lock_amt);
     }
 
     function gem_release(address gem, uint256 free_amt, uint256 wipe_amt) public {
         _sell_gem(gem, wipe_amt);
-        vat.frob(ilk0, address(this), -int(free_amt), -int(wipe_amt));
+        vat.frob(ilk0, address(this), abi.encodePacked(-int(free_amt)), -int(wipe_amt));
         approve_hook(gem, wipe_amt);
     }
 

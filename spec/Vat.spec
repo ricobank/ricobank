@@ -4,16 +4,15 @@ using Gem as rico
 using BlankHook as blankhook
 methods {
     hookie(bytes32) returns (address) envfree
-    frob(bytes32,address,int,int)
+    frob(bytes32,address,bytes,int)
     grab(bytes32,address,address)
     heal(uint)
     drip(bytes32)
+    urns(bytes32, address) returns (uint) envfree
     flash(address code, bytes data)
-    urns(bytes32, address) returns (uint, uint) envfree
     ilks(bytes32) returns (uint,uint,uint,uint,uint,uint,uint,uint,address)
     rack(bytes32) returns (uint) envfree
     rho(bytes32) returns (uint) envfree
-    ink(bytes32, address) returns (uint) envfree
     art(bytes32, address) returns (uint) envfree
     tart(bytes32) returns (uint) envfree
     rico() returns (address) envfree
@@ -30,13 +29,12 @@ methods {
     wards(address) returns (bool) envfree
     self() returns (address) envfree
 
-    frobhook(address,bytes32,address,int,int) => DISPATCHER(true)
-    safehook(bytes32 i,address u) returns (uint) => DISPATCHER(true)
-    grabhook(address,bytes32,address,uint,uint,uint,address payable) returns (uint) => DISPATCHER(true)
+    frobhook(address,bytes32,address,bytes,int) => DISPATCHER(true)
+    grabhook(address,bytes32,address,uint,uint,address payable) returns (uint) => DISPATCHER(true)
+    safehook(bytes32,address) returns (uint) => DISPATCHER(true)
 }
 
 // frob increases debt and art by dart * rack
-// frob increases ink by dink
 ghost mapping(bytes32=>mathint) sum_of_arts {
     init_state axiom (forall bytes32 i . sum_of_arts[i] == 0);
 }
@@ -137,17 +135,15 @@ rule urnStaysSafeWithoutFeedOrRackChange {
     assert safe(e, i, u) == 2;
 }
 
-rule noStealingInkOrAddingArtToOtherAddr {
+// todo hook steal ink test
+rule noAddingArtToOtherAddr {
     env ali; env bob; bytes32 i; method f; calldataarg args;
 
-    uint inkali = ink(i, ali.msg.sender);
     uint artali = art(i, ali.msg.sender);
     require ali.msg.sender != bob.msg.sender;
     require f.selector != grab(bytes32,address,address).selector;
 
     f(bob, args);
 
-    assert ink(i, ali.msg.sender) >= inkali;
     assert art(i, ali.msg.sender) <= artali;
 }
-

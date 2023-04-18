@@ -92,6 +92,11 @@ contract BallTest is Test, UniSetUp, Math {
         fb.push(DAI_USD_TAG, v, type(uint).max);
     }
 
+    function _ink(bytes32 i, address u) view internal returns (uint) {
+        (,,,,,,,,address hook) = vat.ilks(i);
+        return ERC20Hook(hook).inks(i, u);
+    }
+
     function look_poke() internal {
         advance_chainlink();
         adapt.look(WETH_DAI_TAG);
@@ -165,7 +170,7 @@ contract BallTest is Test, UniSetUp, Math {
         uint gas = gasleft();
         Ball ball = new Ball(bargs, ips);
         uint usedgas     = gas - gasleft();
-        uint expectedgas = 15238724;
+        uint expectedgas = 15469881;
         if (usedgas < expectedgas) {
             console.log("ball saved %s gas...currently %s", expectedgas - usedgas, usedgas);
         }
@@ -202,7 +207,7 @@ contract BallTest is Test, UniSetUp, Math {
         WethLike(WETH).deposit{value: wethamt * 100}();
         // try to frob 1 weth for at least $1k...shouldn't work because no look
         vm.expectRevert(Vat.ErrNotSafe.selector);
-        vat.frob(WETH_ILK, me, int(wethamt), dart);
+        vat.frob(WETH_ILK, me, abi.encodePacked(wethamt), dart);
 
         cladapt.look(XAU_USD_TAG);
         cladapt.look(DAI_USD_TAG);
@@ -279,13 +284,13 @@ contract BallTest is Test, UniSetUp, Math {
     }
 
     function test_ball() public {
-        vat.frob(WETH_ILK, me, int(wethamt), dart);
+        vat.frob(WETH_ILK, me, abi.encodePacked(wethamt), dart);
         vm.expectRevert(Vat.ErrNotSafe.selector);
-        vat.frob(WETH_ILK, me, 0, dart);
+        vat.frob(WETH_ILK, me, abi.encodePacked(int(0)), dart);
     }
 
     function test_fee_bail_flop() public _flop_after_ {
-        vat.frob(WETH_ILK, me, int(wethamt), dart);
+        vat.frob(WETH_ILK, me, abi.encodePacked(wethamt), dart);
         vm.expectRevert(Vow.ErrSafeBail.selector);
         vow.bail(WETH_ILK, me);
         skip(BANKYEAR * 100);
@@ -305,7 +310,7 @@ contract BallTest is Test, UniSetUp, Math {
 
 
     function test_ball_flap() public _flap_after_ {
-        vat.frob(WETH_ILK, me, int(wethamt), dart);
+        vat.frob(WETH_ILK, me, abi.encodePacked(wethamt), dart);
         vm.expectRevert(Vow.ErrSafeBail.selector);
         vow.bail(WETH_ILK, me);
         skip(BANKYEAR * 100);
@@ -313,16 +318,18 @@ contract BallTest is Test, UniSetUp, Math {
 
     // user pays down the urn first, then try to flap
     function test_ball_pay_flap_1() public {
-        vat.frob(WETH_ILK, me, int(wethamt), dart);
+        vat.frob(WETH_ILK, me, abi.encodePacked(wethamt), dart);
         vm.expectRevert(Vow.ErrSafeBail.selector);
         vow.bail(WETH_ILK, me);
         skip(BANKYEAR * 100); advance_chainlink(); look_poke();
 
-        (uint inkleft,uint artleft) = vat.urns(WETH_ILK, me);
+        uint artleft = vat.urns(WETH_ILK, me);
+        uint inkleft = _ink(WETH_ILK, me);
 
         (,uint rack,,uint dust,,,,,) = vat.ilks(WETH_ILK);
-        vat.frob(WETH_ILK, me, 0, -int((artleft * rack - dust) / rack));
-        (uint inkleftafter, uint artleftafter) = vat.urns(WETH_ILK, me);
+        vat.frob(WETH_ILK, me, abi.encodePacked(int(0)), -int((artleft * rack - dust) / rack));
+        uint artleftafter = vat.urns(WETH_ILK, me);
+        uint inkleftafter = _ink(WETH_ILK, me);
         assertEq(inkleftafter, inkleft);
         assertEq(artleftafter, dust / rack);
 
@@ -333,17 +340,19 @@ contract BallTest is Test, UniSetUp, Math {
     }
 
     function test_ball_pay_flap_success() public  _balanced_after_ {
-        vat.frob(WETH_ILK, me, int(wethamt), dart);
+        vat.frob(WETH_ILK, me, abi.encodePacked(wethamt), dart);
         vm.expectRevert(Vow.ErrSafeBail.selector);
         vow.bail(WETH_ILK, me);
         skip(BANKYEAR * 100); look_poke();
 
-        (uint inkleft,uint artleft) = vat.urns(WETH_ILK, me);
+        uint artleft = vat.urns(WETH_ILK, me);
+        uint inkleft = _ink(WETH_ILK, me);
         vow.keep(ilks); // drips
         Gem(rico).mint(me, artleft * 1000);
         (,uint rack,,uint dust,,,,,) = vat.ilks(WETH_ILK);
-        vat.frob(WETH_ILK, me, 0, -int((artleft * rack - dust) / rack));
-        (uint inkleftafter, uint artleftafter) = vat.urns(WETH_ILK, me);
+        vat.frob(WETH_ILK, me, abi.encodePacked(int(0)), -int((artleft * rack - dust) / rack));
+        uint artleftafter = vat.urns(WETH_ILK, me);
+        uint inkleftafter = _ink(WETH_ILK, me);
         assertEq(inkleftafter, inkleft);
         assertGt(artleftafter, dust / rack * 999 / 1000);
         assertLt(artleftafter, dust / rack * 1000 / 999);
