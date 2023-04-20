@@ -142,7 +142,9 @@ contract Vat is Lock, Math, Ward, Flog {
         if (both(art != 0, tab < ilk.dust)) revert ErrUrnDust();
 
         bool safer = dart <= 0;
-        if (dink.length != 0) safer = Hook(ilk.hook).frobhook(msg.sender, i, u, dink, dart);
+        if (dink.length != 0) {
+            safer = both(safer, Hook(ilk.hook).frobhook(msg.sender, i, u, dink, dart));
+        }
 
         // urn is safer, or is safe
         if (!either(safer, safe(i, u) == Spot.Safe)) revert ErrNotSafe();

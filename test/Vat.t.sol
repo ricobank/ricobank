@@ -5,7 +5,7 @@ import "forge-std/Test.sol";
 
 import { Ball } from '../src/ball.sol';
 import { Flasher } from "./Flasher.sol";
-import { RicoSetUp } from "./RicoHelper.sol";
+import { RicoSetUp, Guy } from "./RicoHelper.sol";
 import { Gem } from '../lib/gemfab/src/gem.sol';
 import { Vat } from '../src/vat.sol';
 import '../src/mixin/lock.sol';
@@ -959,7 +959,31 @@ contract VatTest is Test, RicoSetUp {
         assertEq(rico.totalSupply(), 3);
     }
 
+    function test_frobhook_only_checks_dink() public {
+        Guy guy = new Guy(vat, flow);
+        OnlyInkHook inkhook = new OnlyInkHook();
+        vat.filk(gilk, 'hook', uint(bytes32(bytes20(address(inkhook)))));
 
+        feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
+        gold.mint(address(guy), 1000 * WAD);
+        vm.expectRevert(Vat.ErrWrongUrn.selector);
+        guy.frob(gilk, self, abi.encodePacked(int(0)), int(WAD));
+    }
+
+}
+
+contract OnlyInkHook {
+    function frobhook(
+        address, bytes32, address, bytes calldata dink, int
+    ) pure external returns (bool safer) {
+        return int(uint(bytes32(dink[:32]))) >= 0; 
+    }
+    function grabhook(
+        address urn, bytes32 i, address u, uint art, uint bill, address keeper
+    ) external returns (uint) {}
+    function safehook(
+        bytes32, address
+    ) pure external returns (bytes32, uint){return(bytes32(uint(10 ** 18 * 10 ** 27)), type(uint256).max);}
 }
 
 contract Hook {
