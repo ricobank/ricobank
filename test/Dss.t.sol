@@ -166,7 +166,7 @@ contract DssJsTest is Test, RicoSetUp {
         vow.file('vel', 1000 * WAD);
         vow.file('bel', block.timestamp - 1);
         vow.file('cel', 1);
-        guy = new Guy(vat, flow);
+        guy = new Guy(avat, aflow);
 
         vow.pair(arisk, 'fel', RAY / 10);
         vow.pair(arisk, 'gel', GEL);

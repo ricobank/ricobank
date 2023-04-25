@@ -142,6 +142,7 @@ contract BallTest is Test, UniSetUp, Math {
             20000, // ttl
             1 // range
         );
+
         Ball.BallArgs memory bargs = Ball.BallArgs(
             address(fb),
             rico,
@@ -164,13 +165,23 @@ contract BallTest is Test, UniSetUp, Math {
             DutchFlower.Ramp(
                 FEL, 0, GEL, true, address(fb), address(mdn), RISK_RICO_TAG
             ),
-            Vow.Ramp(WAD, WAD, block.timestamp, 1)
+            Vow.Ramp(WAD, WAD, block.timestamp, 1),
+            Ball.UniParams(
+                0xC36442b4a4522E871399CD717aBDD847Ab11FE88,
+                ':uninft',
+                1000000001546067052200000000,
+                2 * RAY,
+                1000 * RAY,
+                RAY * 999 / 1000,
+                RAY,
+                8
+            )
         );
 
         uint gas = gasleft();
         Ball ball = new Ball(bargs, ips);
         uint usedgas     = gas - gasleft();
-        uint expectedgas = 15469291;
+        uint expectedgas = 18986369;
         if (usedgas < expectedgas) {
             console.log("ball saved %s gas...currently %s", expectedgas - usedgas, usedgas);
         }

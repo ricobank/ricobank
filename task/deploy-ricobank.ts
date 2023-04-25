@@ -58,7 +58,17 @@ task('deploy-ricobank', '')
             fsrc: hre.ethers.constants.AddressZero,
             ftag: hre.ethers.constants.HashZero
         },
-        mintramp:   { vel: wad(1), rel: wad(1), bel: timestamp, cel: 1 }
+        mintramp:   { vel: wad(1), rel: wad(1), bel: timestamp, cel: 1 },
+        ups: {
+            nfpm: "0xC36442b4a4522E871399CD717aBDD847Ab11FE88",
+            ilk: b32(':uninft'),
+            fee: hre.ethers.BigNumber.from("1000000001546067052200000000"),
+            uel: ray(2),
+            gel: ray(1000),
+            fel: ray(0.999),
+            chop: ray(1),
+            room: 8
+        }
     }
 
     const ilk = {

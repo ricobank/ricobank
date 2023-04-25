@@ -51,10 +51,10 @@ contract VatTest is Test, RicoSetUp {
         assertGt(gold.balanceOf(address(hook)), 0);
         uint gas = gasleft();
         vat.frob(gilk, self, abi.encodePacked(WAD), int(WAD));
-        check_gas(gas, 204487);
+        check_gas(gas, 204505);
         gas = gasleft();
         vat.frob(gilk, self, abi.encodePacked(WAD), int(WAD));
-        check_gas(gas, 26772);
+        check_gas(gas, 26790);
     }
 
     function test_grab_gas() public {
@@ -960,7 +960,7 @@ contract VatTest is Test, RicoSetUp {
     }
 
     function test_frobhook_only_checks_dink() public {
-        Guy guy = new Guy(vat, flow);
+        Guy guy = new Guy(avat, aflow);
         OnlyInkHook inkhook = new OnlyInkHook();
         vat.filk(gilk, 'hook', uint(bytes32(bytes20(address(inkhook)))));
 

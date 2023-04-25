@@ -3,7 +3,7 @@ pragma solidity 0.8.19;
 
 import { Gem } from '../lib/gemfab/src/gem.sol';
 import { Ball } from '../src/ball.sol';
-import { INonfungiblePositionManager, IUniswapV3Factory, IUniswapV3Pool } from './Univ3Interface.sol';
+import { IUniswapV3Factory, IUniswapV3Pool, INonfungiblePositionManager } from './Univ3Interface.sol';
 
 struct Asset {
     address token;
@@ -74,9 +74,14 @@ abstract contract UniSetUp{
         }
     }
 
-    function create_and_join_pool(PoolArgs memory args) internal {
+    function create_and_join_pool(PoolArgs memory args) internal returns (
+        uint256 tokenId,
+        uint128 liquidity,
+        uint256 amount0,
+        uint256 amount1
+    ) {
         create_pool(args.a1.token, args.a2.token, args.fee, args.sqrtPriceX96);
-        join_pool(args);
+        return join_pool(args);
     }
 
     function join_pool(PoolArgs memory args) internal returns (
@@ -367,6 +372,5 @@ abstract contract UniSetUp{
         sqrtPriceX96 = uint160((ratio >> 32) + (ratio % (1 << 32) == 0 ? 0 : 1));
     }
     //////////////////////////////////////////
-
 
 }

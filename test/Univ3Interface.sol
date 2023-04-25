@@ -216,7 +216,13 @@ interface IUniswapV3PoolState {
         );
 }
 
-interface INonfungiblePositionManager {
+interface IERC721 {
+    function transferFrom(address from, address to, uint256 tokenId) external;
+    function approve(address to, uint256 tokenId) external;
+    function ownerOf(uint256 tokenId) external view returns (address owner);
+}
+
+interface INonfungiblePositionManager is IERC721 {
     struct MintParams {
         address token0;
         address token1;
@@ -238,6 +244,16 @@ interface INonfungiblePositionManager {
             uint256 amount0,
             uint256 amount1
         );
+
+    function positions(uint256 tokenId)
+        external view returns (
+            uint96 nonce, address operator, address token0, address token1,
+            uint24 fee, int24 tickLower, int24 tickUpper, uint128 liquidity,
+            uint256 feeGrowthInside0LastX128, uint256 feeGrowthInside1LastX128,
+            uint128 tokensOwed0, uint128 tokensOwed1
+        );
+
+    function factory() external view returns (address);
 }
 
 interface IUniswapV3Pool is
@@ -344,3 +360,4 @@ interface IUniswapV3Factory {
     /// @param tickSpacing The spacing between ticks to be enforced for all pools created with the given fee amount
     function enableFeeAmount(uint24 fee, int24 tickSpacing) external;
 }
+// todo these should have ORIGINAL CODE: etc blocks

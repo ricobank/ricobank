@@ -19,6 +19,10 @@ export default {
   solidity: {
     version: "0.8.19",
     settings: {
+      optimizer: {
+        enabled: true,
+        runs: 2000
+      },
       outputSelection: {
         "*": {
           "*": ["storageLayout"]
@@ -35,7 +39,9 @@ export default {
           forking: {
               url: process.env["RPC_URL"],
               blockNumber: 16445606
-          }
+          },
+          // temporary until break up ball
+          allowUnlimitedContractSize: true
       }
   }
 };

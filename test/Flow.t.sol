@@ -51,7 +51,7 @@ contract FlowTest is Test, Math {
 
         vow = new KindaVow();
         flow = new DutchFlower();
-        guy = new Guy(new Vat(), flow);
+        guy = new Guy(address(new Vat()), address(flow));
 
         aflow = address(flow);
         avow = address(vow);

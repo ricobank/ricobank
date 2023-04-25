@@ -14,6 +14,7 @@ import { Vat } from '../src/vat.sol';
 import { Vow } from '../src/vow.sol';
 import { Vox } from '../src/vox.sol';
 import {ERC20Hook} from '../src/hook/ERC20hook.sol';
+import {UniNFTHook, DutchNFTFlower} from '../src/hook/nfpm/UniV3NFTHook.sol';
 import { UniSetUp } from "./UniHelper.sol";
 
 interface WethLike {
@@ -23,12 +24,17 @@ interface WethLike {
     function balanceOf(address) external returns (uint);
 }
 
+interface Gluggable {
+    function glug(uint256 aid) payable external;
+}
+
+
 contract Guy {
     Vat vat;
-    DutchFlower flow;
-    constructor(Vat _vat, DutchFlower _flow) {
-        vat  = _vat;
-        flow = _flow;
+    Gluggable flow;
+    constructor(address _vat, address _flow) {
+        vat  = Vat(_vat);
+        flow = Gluggable(_flow);
     }
     function approve(address gem, address dst, uint amt) public {
         Gem(gem).approve(dst, amt);
@@ -52,6 +58,7 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
     bytes32 constant public WETH_RICO_TAG = "wethrico";
     bytes32 constant public RICO_RISK_TAG = "ricorisk";
     bytes32 constant public RISK_RICO_TAG = "riskrico";
+    bytes32 constant public UNI_NFT_TAG = ":uninft";
 
 
     address constant public VAULT = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;
@@ -59,14 +66,17 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
     bytes32 constant public gilk  = "gold";
     bytes32 constant public wilk  = "weth";
     bytes32 constant public rilk  = "ruby";
+    bytes32 constant public uilk  = ":uninft";
     bytes32 constant public dutag = "daiusd";
     bytes32 constant public grtag = "goldrico";
     bytes32 constant public wrtag = "wethrico";
+    bytes32 constant public drtag = "dairico";
 
     bytes32 constant public rtag       = "ricousd";
     uint160 constant public risk_price = 2 ** 96;
     uint24  constant public RICO_FEE   = 500;
     uint24  constant public RISK_FEE   = 3000;
+    uint256 constant public HOOK_ROOM  = 8;
     uint256 constant public init_mint  = 10000;
     uint256 constant public BANKYEAR   = (365 * 24 + 6) * 3600;
     address public immutable azero     = address(0);
@@ -74,6 +84,8 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
 
     DutchFlower public flow;
     ERC20Hook   public hook;
+    UniNFTHook  public nfthook;
+    DutchNFTFlower public nftflow;
     Medianizer  public mdn;
     Ball     public ball;
     Divider  public divider;
@@ -109,7 +121,7 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
     receive () external payable {}
 
     function rico_mint(uint amt, bool bail) internal {
-        Guy bob = new Guy(vat, flow);
+        Guy bob = new Guy(avat, aflow);
         (bytes32 v, uint t) = feedpull(grtag);
         feedpush(grtag, bytes32(RAY * 10000), type(uint).max);
         gold.mint(address(bob), amt);
@@ -212,8 +224,19 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
             DutchFlower.Ramp(
                 RAY * 999 / 1000, 0, GEL, true, azero, azero, bytes32(0)
             ),
-            Vow.Ramp(WAD, WAD, block.timestamp, 1)
+            Vow.Ramp(WAD, WAD, block.timestamp, 1),
+            Ball.UniParams(
+                0xC36442b4a4522E871399CD717aBDD847Ab11FE88,
+                ':uninft',
+                1000000001546067052200000000,
+                2 * RAY,
+                1000 * RAY,
+                RAY * 999 / 1000,
+                RAY,
+                HOOK_ROOM
+            )
         );
+
         ball = new Ball(bargs, ips);
 
         ////////// these are outside ball, but must be part of real deploy process, unless warding ball first w create2
@@ -227,7 +250,9 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
         vow  = Vow(address(ball.vow()));
         vox  = Vox(address(ball.vox()));
         flow = ball.flow();
+        nftflow = ball.nftflow();
         hook = ball.hook();
+        nfthook = ball.nfthook();
         mdn  = ball.mdn();
         divider = ball.divider();
 
@@ -267,6 +292,7 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
         vat.filk(dilk, bytes32('fee'),  1000000001546067052200000000);  // 5%
         // feedpush(dutag, bytes32(RAY), block.timestamp + 1000);
         hook.list(DAI, true);
+        make_feed(drtag);
     }
 
     function init_gold() public {

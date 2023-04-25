@@ -51,7 +51,7 @@ contract ERC20Hook is Hook, Ward, Lock, Flog, Math {
         bytes32 i,
         address u,
         bytes calldata _dink,
-        int dart // dart
+        int  // dart
     ) _ward_ _flog_ external returns (bool safer) {
         address gem = items[i].gem;
         if (_dink.length != 32) revert ErrDinkLength();
@@ -68,7 +68,7 @@ contract ERC20Hook is Hook, Ward, Lock, Flog, Math {
                 }
             }
         }
-        return dink >= 0 && dart <= 0;
+        return dink >= 0;
     }
 
     function grabhook(

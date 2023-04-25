@@ -19,6 +19,7 @@ import {TWAP} from "../lib/feedbase/src/combinators/TWAP.sol";
 import {ChainlinkAdapter} from "../lib/feedbase/src/adapters/ChainlinkAdapter.sol";
 import {Math} from '../src/mixin/math.sol';
 import {ERC20Hook} from './hook/ERC20hook.sol';
+import {UniNFTHook, DutchNFTFlower} from './hook/nfpm/UniV3NFTHook.sol';
 
 contract Ball is Math {
     bytes32 internal constant RICO_DAI_TAG = "ricodai";
@@ -36,6 +37,8 @@ contract Ball is Math {
     Vow public vow;
     Vox public vox;
     ERC20Hook public hook;
+    UniNFTHook public nfthook;
+    DutchNFTFlower public nftflow;
 
     Medianizer public mdn;
     UniswapV3Adapter public adapt;
@@ -59,6 +62,17 @@ contract Ball is Math {
         uint    range;
     }
 
+    struct UniParams {
+        address nfpm;
+        bytes32 ilk;
+        uint fee;
+        uint uel;
+        uint gel;
+        uint fel;
+        uint chop;
+        uint room;
+    }
+
     struct BallArgs {
         address feedbase;
         address rico;
@@ -78,6 +92,7 @@ contract Ball is Math {
         DutchFlower.Ramp ricoramp;
         DutchFlower.Ramp riskramp;
         Vow.Ramp         mintramp;
+        UniParams ups;
     }
 
     constructor(
@@ -256,6 +271,21 @@ contract Ball is Math {
         vox.link('tip', address(mdn));
         vox.file('tag', RICO_REF_TAG);
         vat.ward(address(vox), true);
+
+        // initialize uni ilk
+        nftflow = new DutchNFTFlower(args.ups.nfpm, rico);
+        nfthook = new UniNFTHook(args.feedbase, address(vat), address(nftflow), rico, args.ups.nfpm, args.ups.room);
+        vat.init(':uninft', address(nfthook));
+        vat.filk(':uninft', 'fee', args.ups.fee);
+        vat.filk(':uninft', 'chop', args.ups.chop);
+        nfthook.pair('uel', args.ups.uel);
+        nfthook.pair('gel', args.ups.gel);
+        nfthook.pair('fel', args.ups.fel);
+
+        nfthook.ward(address(nftflow), true);
+        nfthook.ward(address(vat), true);
+        nfthook.give(roll);
+
         vat.give(roll);
         vox.give(roll);
     }

@@ -53,7 +53,7 @@ contract VowTest is Test, RicoSetUp {
         PoolArgs memory gold_rico_args = getArgs(agold, 1000 * WAD, arico, 1000 * WAD, 3000, x96(1));
         create_and_join_pool(gold_rico_args);
 
-        guy = new Guy(vat, flow);
+        guy = new Guy(avat, aflow);
     }
 
     function test_keep_deficit_gas() public {
@@ -95,7 +95,7 @@ contract VowTest is Test, RicoSetUp {
         gold.mint(avow, WAD);
         uint gas = gasleft();
         hook.flowback(aid, WAD);
-        check_gas(gas, 48988);
+        check_gas(gas, 49006);
     }
 
     function test_bail_gas() public {
@@ -555,7 +555,7 @@ contract VowJsTest is Test, RicoSetUp {
         vow.file('rel', WAD);
         vow.file('bel', block.timestamp);
         vow.file('cel', 1);
-        guy = new Guy(vat, flow);
+        guy = new Guy(avat, aflow);
 
         vow.pair(arisk, 'fel', RAY / 10);
         vow.pair(arico, 'fel', RAY / 10);
