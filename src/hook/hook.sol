@@ -11,5 +11,5 @@ interface Hook {
     ) external returns (uint);
     function safehook(
         bytes32 i, address u
-    ) view external returns (bytes32, uint);
+    ) view external returns (uint, uint);
 }

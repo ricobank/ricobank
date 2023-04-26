@@ -96,8 +96,7 @@ contract Vat is Lock, Math, Ward, Flog {
       public view returns (Spot)
     {
         Ilk storage ilk = ilks[i];
-        (bytes32 cut_, uint ttl) = Hook(ilk.hook).safehook(i, u);
-        uint cut = uint(cut_);
+        (uint cut, uint ttl) = Hook(ilk.hook).safehook(i, u);
         if (block.timestamp > ttl) {
             return Spot.Iffy;
         }

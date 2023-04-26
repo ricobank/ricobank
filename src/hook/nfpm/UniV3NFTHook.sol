@@ -144,10 +144,9 @@ contract UniNFTHook is Hook, Ward, Lock, Flog, Math {
         a0 += amt0; a1 += amt1;
     }
 
-    function safehook(bytes32 ilk, address urn) public view returns (bytes32, uint) {
+    function safehook(bytes32 ilk, address urn) public view returns (uint tot, uint minttl) {
         uint[] storage ink = inks[ilk][urn];
-        uint tot;
-        uint minttl = type(uint).max;
+        minttl = type(uint).max;
         for (uint i = 0; i < ink.length; i++) {
             uint tokenId = ink[i];
             // get amounts of token0 and token1
@@ -181,7 +180,6 @@ contract UniNFTHook is Hook, Ward, Lock, Flog, Math {
                 tot += amount1 * uint(val);
             }
         }
-        return (bytes32(tot), minttl);
     }
 
     function grant(uint tokenId) _flog_ external {

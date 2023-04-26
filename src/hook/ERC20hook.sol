@@ -85,10 +85,10 @@ contract ERC20Hook is Hook, Ward, Lock, Flog, Math {
         sales[aid] = Sale({ ilk: i, urn: u });
     }
 
-    function safehook(bytes32 i, address u) view public returns (bytes32, uint) {
+    function safehook(bytes32 i, address u) view public returns (uint, uint) {
         Item storage item = items[i];
         (bytes32 val, uint ttl) = feed.pull(item.fsrc, item.ftag);
-        return (bytes32(uint(val) * inks[i][u]), ttl);
+        return (uint(val) * inks[i][u], ttl);
     }
 
     function grant(address gem) _flog_ external {
