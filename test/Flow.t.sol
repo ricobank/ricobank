@@ -37,6 +37,7 @@ contract FlowTest is Test, Math {
     Feedbase feed;
     bool sendreverts;
     bool rxdone;
+    uint UEL = 2 * RAY;
 
     receive () payable external {
         if (sendreverts) revert('uh oh');
@@ -65,6 +66,7 @@ contract FlowTest is Test, Math {
         flow.curb(arico, 'fel', RAY / 2);
         flow.curb(arico, 'gel', 1000 * RAY);
         flow.curb(arico, 'del', 0);
+        flow.curb(arico, 'uel', UEL);
         flow.curb(arico, 'prld', 1);
         flow.curb(arico, 'feed', uint(uint160(address(feed))));
         flow.curb(arico, 'fsrc', uint(uint160(address(self))));
@@ -78,6 +80,8 @@ contract FlowTest is Test, Math {
     function test_refund() public {
         // create sale of 1k rico for 200 risk
         uint ricoself = rico.balanceOf(self);
+        // raise uel a little bit to test `fel`
+        flow.curb(arico, 'uel', 4 * RAY);
         feed.push(RICO_RISK_TAG, bytes32(RAY / 5 * 4), UINT256_MAX);
         uint256 aid = flow.flow(
             avow, address(rico), WAD * 1000, address(risk), WAD * 200, self
@@ -113,7 +117,7 @@ contract FlowTest is Test, Math {
         sendreverts = true;
         guy.glug{value: rmul(1000 * RAY, block.basefee)}(aid);
 
-        (,,,,,,,,,uint valid) = flow.auctions(aid);
+        (,,,,,,,,,,uint valid) = flow.auctions(aid);
         assertEq(valid, uint(DutchFlower.Valid.INVALID));
     }
 
@@ -131,7 +135,7 @@ contract FlowTest is Test, Math {
         guy.glug{value: rmul(1000 * RAY, block.basefee)}(aid);
         assertEq(rxdone, false);
 
-        (,,,,,,,,,uint valid) = flow.auctions(aid);
+        (,,,,,,,,,,uint valid) = flow.auctions(aid);
         assertEq(valid, uint(DutchFlower.Valid.INVALID));
     }
  
@@ -146,6 +150,8 @@ contract FlowTest is Test, Math {
     // similar to test_refund, but prld false
     function test_nongem() public {
         flow.curb(arico, 'prld', 0);
+        // raise uel a little bit to test `fel`
+        flow.curb(arico, 'uel', 4 * RAY);
         // create sale of 1k rico for 200 risk
         uint ricoself = rico.balanceOf(self);
         feed.push(RICO_RISK_TAG, bytes32(RAY / 5 * 4), UINT256_MAX);

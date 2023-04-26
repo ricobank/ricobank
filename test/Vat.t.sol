@@ -54,7 +54,7 @@ contract VatTest is Test, RicoSetUp {
         check_gas(gas, 204497);
         gas = gasleft();
         vat.frob(gilk, self, abi.encodePacked(WAD), int(WAD));
-        check_gas(gas, 26804);
+        check_gas(gas, 26782);
     }
 
     function test_grab_gas() public {
@@ -62,7 +62,7 @@ contract VatTest is Test, RicoSetUp {
         vat.frob(gilk, self, abi.encodePacked(WAD), int(WAD));
         uint gas = gasleft();
         vat.grab(gilk, self, self);
-        check_gas(gas, 351223);
+        check_gas(gas, 375935);
     }
 
     function test_heal_gas() public {

@@ -16,9 +16,10 @@ contract DutchFlower is Math, Lock, Flog {
     struct Ramp {
         uint256 fel;  // [ray] rate of change in asking price/second
         uint256 del;  // min ham
-        uint256 gel;  // [ray] multiply by basefee for creator reward
-        bool    prld;
-        address feed;
+        uint256 gel;  // [ray] mul by basefee for creator reward
+        uint    uel;  // [ray] mul by feed price or wam/ham for starting ask
+        bool    prld; // [bool] "preload" - true if transfer hags on flow()
+        address feed; // Feedbase for price if applicable
         address fsrc;
         bytes32 ftag;
     }
@@ -30,6 +31,7 @@ contract DutchFlower is Math, Lock, Flog {
         uint256 ham;  // have amount
         address wag;  // want gem
         uint256 wam;  // want amount
+        uint256 ask;  // ask price
         uint256 gun;  // starting timestamp
         address payable gir;  // keeper
         uint256 gim;  // keeper eth reward
@@ -73,12 +75,25 @@ contract DutchFlower is Math, Lock, Flog {
         } else {
             aid = ++count;
         }
-        auctions[aid].vow = vow;
-        auctions[aid].flo = flo;
-        auctions[aid].hag = hag;
-        auctions[aid].ham = ham;
-        auctions[aid].wag = wag;
-        auctions[aid].wam = wam;
+        Auction storage auction = auctions[aid];
+        auction.vow = vow;
+        auction.flo = flo;
+        auction.hag = hag;
+        auction.ham = ham;
+        auction.wag = wag;
+        auction.wam = wam;
+
+        // feed pull for keep (flop+flap), wam/ham for bail (flip)
+        uint p;
+        if (auctions[aid].wam == type(uint).max) {
+            (bytes32 _p, uint ttl) = Feedbase(ramp.feed).pull(ramp.fsrc, ramp.ftag);
+            if (ttl < block.timestamp) revert ErrStale();
+            p = uint(_p);
+        } else {
+            p = rdiv(wam, ham);
+        }
+        auction.ask = rmul(p, ramp.uel);
+
         auctions[aid].gun = block.timestamp;
         auctions[aid].gir = gir;
         auctions[aid].gim = rmul(block.basefee, ramp.gel);
@@ -126,13 +141,12 @@ contract DutchFlower is Math, Lock, Flog {
         }
     }
 
+    // get auction's asking price at `time`
     function curp(uint aid, uint time) public view returns (uint) {
         Auction storage auction = auctions[aid];
-        Ramp storage ramp = ramps[auction.flo][auction.hag];
-        (bytes32 ask, uint ttl) = Feedbase(ramp.feed).pull(ramp.fsrc, ramp.ftag);
-        if (ttl < time) revert ErrStale();
         uint fel = ramps[auction.flo][auction.hag].fel;
-        return grow(uint(ask), fel, time - auction.gun);
+        // fel < RAY, so price decreases with time
+        return grow(auction.ask, fel, time - auction.gun);
     }
 
     function curb(address gem, bytes32 key, uint val) _flog_ external {
@@ -150,6 +164,8 @@ contract DutchFlower is Math, Lock, Flog {
             ramp.del = val;
         } else if (key == 'gel') {
             ramp.gel = val;
+        } else if (key == 'uel') {
+            ramp.uel = val;
         } else if (key == 'prld') {
             ramp.prld = val == 0 ? false : true;
         } else { revert ErrCurbKey(); }

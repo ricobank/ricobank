@@ -117,6 +117,7 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
     uint constant public BAR = type(uint).max / RAY;
     uint constant public GEL = RAY * 1000;
     uint constant public FLIP_GEL = RAY * 900;
+    uint constant public UEL = 2 * RAY;
 
     receive () external payable {}
 
@@ -191,13 +192,13 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
             'weth',
             WETH,
             WETH_DAI_POOL,
-            RAD, // chop
+            RAY, // chop
             90 * RAD, // dust
             1000000001546067052200000000, // fee
             100000 * RAD, // line
             RAY, // liqr
             DutchFlower.Ramp(
-                RAY * 999 / 1000, 0, FLIP_GEL, false, address(feed), address(mdn), WETH_RICO_TAG
+                RAY * 999 / 1000, 0, FLIP_GEL, UEL, false, address(feed), address(mdn), WETH_RICO_TAG
             ),
             20000, // ttl
             BANKYEAR / 4 // range
@@ -219,10 +220,10 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
             10000, // twap
             BANKYEAR,
             DutchFlower.Ramp(
-                RAY * 999 / 1000, 0, GEL, true, azero, azero, bytes32(0)
+                RAY * 999 / 1000, 0, GEL, UEL, true, azero, azero, bytes32(0)
             ),
             DutchFlower.Ramp(
-                RAY * 999 / 1000, 0, GEL, true, azero, azero, bytes32(0)
+                RAY * 999 / 1000, 0, GEL, UEL, true, azero, azero, bytes32(0)
             ),
             Vow.Ramp(WAD, WAD, block.timestamp, 1),
             Ball.UniParams(
@@ -314,6 +315,7 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
         hook.pair(agold, 'fsrc', uint(uint160(address(mdn))));
         hook.pair(agold, 'ftag', uint(grtag));
         hook.pair(agold, 'gel', GEL);
+        hook.pair(agold, 'uel', UEL);
     }
 
     function init_ruby() public {

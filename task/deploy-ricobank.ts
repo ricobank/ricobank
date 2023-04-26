@@ -45,14 +45,14 @@ task('deploy-ricobank', '')
         twaprange:    10000,
         twapttl:      BANKYEAR,
         ricoramp: {
-            fel : ray(0.999), del: wad(100), gel: ray(1000),
+            fel : ray(0.999), del: wad(100), gel: ray(1000), uel: ray(2),
             prld: true,
             feed: deps.objects.feedbase.address,
             fsrc: hre.ethers.constants.AddressZero,
             ftag: hre.ethers.constants.HashZero
         },
         riskramp: {
-            fel : ray(0.999), del: wad(100), gel: ray(1000),
+            fel : ray(0.999), del: wad(100), gel: ray(1000), uel: ray(2),
             prld: true,
             feed: deps.objects.feedbase.address,
             fsrc: hre.ethers.constants.AddressZero,
@@ -81,7 +81,7 @@ task('deploy-ricobank', '')
         line: rad(100000),
         liqr: ray(1),
         ramp: {
-            fel : ray(0.999), del: wad(0), gel: ray(900),
+            fel : ray(0.999), del: wad(0), gel: ray(900), uel: ray(2),
             prld: false,
             feed: deps.objects.feedbase.address,
             fsrc: hre.ethers.constants.AddressZero,

@@ -67,7 +67,7 @@ contract VowTest is Test, RicoSetUp {
         gilks[1] = gilk;
         uint gas = gasleft();
         uint aid = vow.keep(gilks);
-        check_gas(gas, 355310);
+        check_gas(gas, 389368);
         assertGt(aid, 0);
     }
 
@@ -82,7 +82,7 @@ contract VowTest is Test, RicoSetUp {
         gilks[1] = gilk;
         uint gas = gasleft();
         uint aid = vow.keep(gilks);
-        check_gas(gas, 418573);
+        check_gas(gas, 452631);
         assertGt(aid, 0);
     }
 
@@ -104,13 +104,14 @@ contract VowTest is Test, RicoSetUp {
         feedpush(grtag, bytes32(0), block.timestamp + 1000);
         uint gas = gasleft();
         vow.bail(gilk, self);
-        check_gas(gas, 337798);
+        check_gas(gas, 362510);
     }
 
     // goldusd, par, and liqr all = 1 after setup
     function test_risk_ramp_is_used() public {
+        // art == 10 * ink
         feedpush(grtag, bytes32(RAY * 1000), block.timestamp + 1000);
-        vat.frob(gilk, address(this), abi.encodePacked(init_join * WAD), int(stack) * 1000);
+        vat.frob(gilk, address(this), abi.encodePacked(1000 * WAD), int(10000 * WAD));
  
         // set rate of risk sales to near zero
         // set mint ramp higher to use risk ramp
@@ -119,6 +120,9 @@ contract VowTest is Test, RicoSetUp {
         vow.file('bel', block.timestamp - 1);
         vow.file('cel', 1);
         hook.pair(agold, 'fel', RAY / 10);
+        // note that gold and risk uel are different
+        hook.pair(agold, 'uel', 1000 * RAY);
+        vow.pair(arisk, 'uel', RAY);
 
         vow.pair(arisk, 'fel', RAY / 10);
 
@@ -134,6 +138,7 @@ contract VowTest is Test, RicoSetUp {
         vm.expectCall(aflow, abi.encodeWithSelector(
             DutchFlower.flow.selector, avow, arisk, WAD, arico, type(uint).max, self
         ));
+        feedpush(RISK_RICO_TAG, bytes32(10000 * RAY), block.timestamp + 1000);
         uint kaid = vow.keep(ilks);
         assertEq(risk.totalSupply(), supply + WAD);
         assertFalse(baid == kaid);
@@ -142,9 +147,9 @@ contract VowTest is Test, RicoSetUp {
         rico.transfer(address(guy), 10000 * WAD);
         guy.approve(arico, aflow, UINT256_MAX);
 
-        // start at ~10000 * RAY...need to go down to 100 * RAY
+        // start at gold ask ~10000 * RAY...need to go down to 100 * RAY
         // so that 1/10 of the ink covers the debt at that price
-        feedpush(grtag, bytes32(10000 * RAY), block.timestamp + 1000);
+        // when uel == RAY, ask == 10 * RAY, that's why uel was raised earlier
         skip(2);
         uint hookgold = gold.balanceOf(ahook);
         guy.glug{value: rmul(block.basefee, GEL)}(baid);
@@ -153,7 +158,6 @@ contract VowTest is Test, RicoSetUp {
 
         rico_mint(10000 * WAD, true);
         rico.transfer(address(guy), 10000 * WAD);
-        feedpush(RISK_RICO_TAG, bytes32(10000 * RAY), block.timestamp + 1000);
         uint guyrico = rico.balanceOf(address(guy));
         uint vowrisk = risk.balanceOf(avow);
         guy.glug{value: rmul(block.basefee, GEL)}(kaid);
@@ -205,7 +209,11 @@ contract VowTest is Test, RicoSetUp {
         rico.transfer(address(guy), WAD / 2);
         guy.approve(arico, aflow, UINT256_MAX);
 
+        // create an urn where art/ink is 1/2
+        // uel is 4, so bail price will be 4x what's needed
+        // to cover debt
         hook.pair(agold, 'fel', RAY / 2);
+        hook.pair(agold, 'uel', 4 * RAY);
         uint ink = _ink(gilk, self); uint art = _art(gilk, self);
         feedpush(grtag, bytes32(1000000 * RAY), type(uint).max);
         vat.frob(gilk, self, abi.encodePacked(WAD), int(WAD / 2));
@@ -216,12 +224,11 @@ contract VowTest is Test, RicoSetUp {
         ink = _ink(gilk, self);
         assertEq(ink, 0);
 
-        feedpush(grtag, bytes32(4 * RAY), block.timestamp + 1000);
-        skip(1);
         guy.glug{value: rmul(block.basefee, GEL)}(aid);
 
         ink = _ink(gilk, self); art = _art(gilk, self);
         assertEq(art, 0);
+        // should have only used 1/4 the ink
         assertEq(ink, WAD * 3 / 4);
 
         // sale gone
@@ -348,12 +355,13 @@ contract VowTest is Test, RicoSetUp {
 
         feedpush(grtag, bytes32(0), block.timestamp + 10000);
 
+        feedpush(RICO_RISK_TAG, bytes32(1000 * RAY), UINT256_MAX);
         assertEq(rico.balanceOf(avow), 0);
         uint256 aid = vow.keep(ilks);
         assertEq(rico.balanceOf(avow), 1);
         (
             address vow, address flo, address hag, uint ham, address wag, uint wam,
-            uint gun, address gir, uint gim, uint valid
+            uint ask, uint gun, address gir, uint gim, uint valid
         ) = flow.auctions(aid);
         assertEq(hag, arico);
         assertEq(ham, 1);
@@ -365,6 +373,7 @@ contract VowTest is Test, RicoSetUp {
         assertEq(wag, arisk);
         assertEq(wam, type(uint).max);
 
+        assertEq(ask, rmul(1000 * RAY, UEL));
         assertEq(gun, block.timestamp);
         assertEq(gir, self);
         // TODO set feed to 1000 * RAY
@@ -385,6 +394,7 @@ contract VowTest is Test, RicoSetUp {
         assertEq(rico.balanceOf(avow), 0);
         (uint vel, uint rel, uint bel, uint cel) = vow.ramp();
         uint flop = min(wmul(rel, risk.totalSupply()), vel) * min(block.timestamp - bel, cel);
+        feedpush(RISK_RICO_TAG, bytes32(RAY), block.timestamp + 1000);
         uint256 aid = vow.keep(ilks);
         assertEq(rico.balanceOf(avow), 1);
         assertEq(vat.sin(avow), 2 * RAY);
@@ -392,7 +402,7 @@ contract VowTest is Test, RicoSetUp {
 
         (
             address vow, address flo, address hag, uint ham, address wag, uint wam,
-            uint gun, address gir, uint gim, uint valid
+            uint ask, uint gun, address gir, uint gim, uint valid
         ) = flow.auctions(aid);
 
         assertEq(hag, arisk);
@@ -403,9 +413,9 @@ contract VowTest is Test, RicoSetUp {
         assertEq(wag, arico);
         assertEq(wam, type(uint).max);
 
+        assertEq(ask, rmul(RAY, UEL));
         assertEq(gun, block.timestamp);
         assertEq(gir, address(self));
-        // todo set feeds
         assertEq(gim, rmul(GEL, block.basefee));
         assertEq(valid, uint(DutchFlower.Valid.VALID));
     }
@@ -564,11 +574,14 @@ contract VowJsTest is Test, RicoSetUp {
     }
 
     function test_bail_urns_1yr_unsafe() public {
+        // wait a year, flap the surplus
         skip(BANKYEAR);
+        feedpush(RICO_RISK_TAG, bytes32(RAY), UINT256_MAX);
         vow.keep(ilks);
 
         assertEq(uint(vat.safe(i0, me)), uint(Vat.Spot.Sunk));
 
+        // should be balanced
         uint sin0 = vat.sin(avow);
         uint gembal0 = weth.balanceOf(address(flow));
         uint vow_rico0 = rico.balanceOf(avow);
@@ -576,21 +589,21 @@ contract VowJsTest is Test, RicoSetUp {
         assertEq(gembal0, 0);
         assertEq(vow_rico0, 0);
 
+        // bail the urn frobbed in setup
         vm.expectCall(address(flow), abi.encodePacked(flow.flow.selector));
         uint256 aid = vow.bail(i0, me);
-        // after bail the ink should have been grabbed
+        // urn should be grabbed
         uint ink = _ink(i0, me); uint art = _art(i0, me);
         assertEq(ink, 0);
         assertEq(art, 0);
 
+        // glug the flip auction
         rico_mint(1000 * WAD, false);
         rico.transfer(address(guy), 1000 * WAD);
         guy.approve(arico, aflow, UINT256_MAX);
-        feedpush(wrtag, bytes32(100000 * RAY), UINT256_MAX);
-        skip(3);
         guy.glug{value: rmul(block.basefee, GEL)}(aid);
         ink = _ink(i0, me); art = _art(i0, me);
-        // weth-dai market price is much higher than 1 in fork block, expect a refund
+        // uel > RAY and didn't wait to glug, so should have some ink left over
         assertGt(ink, 0);
 
         uint sin1 = vat.sin(avow);
@@ -622,6 +635,7 @@ contract VowJsTest is Test, RicoSetUp {
     function test_keep_vow_1yr_drip_flap() public {
         uint initial_total = rico.totalSupply();
         skip(BANKYEAR);
+        feedpush(RICO_RISK_TAG, bytes32(RAY), UINT256_MAX);
         vm.expectCall(address(flow), abi.encodePacked(flow.flow.selector));
         vow.keep(ilks);
         uint final_total = rico.totalSupply();
@@ -632,10 +646,15 @@ contract VowJsTest is Test, RicoSetUp {
     }
 
     function test_keep_vow_1yr_drip_flop() public {
+        // wait a year, bail the existing urns
+        // bails should leave more sin than rico dripped
         skip(BANKYEAR);
         vm.expectCall(address(flow), abi.encodePacked(flow.flow.selector));
         vow.bail(i0, me);
+        vow.bail(i0, address(cat));
 
+        // more sin than rico, should flop
+        feedpush(RISK_RICO_TAG, bytes32(RAY), UINT256_MAX);
         vm.expectCall(avat, abi.encodePacked(Vat.heal.selector));
         vm.expectCall(address(flow), abi.encodePacked(flow.flow.selector));
         vow.keep(ilks);
@@ -654,7 +673,7 @@ contract VowJsTest is Test, RicoSetUp {
         prepguyrico(10000 * WAD, true);
         uint aid = vow.keep(ilks);
         assertGt(aid, 0);
-        (,,address hag, uint ham, address wag, uint wam,,,,uint valid) = flow.auctions(aid);
+        (,,address hag, uint ham, address wag, uint wam,,,,,uint valid) = flow.auctions(aid);
         assertEq(hag, arisk);
         assertEq(ham, WAD);
         assertEq(wag, arico);
@@ -676,7 +695,7 @@ contract VowJsTest is Test, RicoSetUp {
         prepguyrico(10000 * WAD, true);
         uint aid = vow.keep(ilks);
         assertGt(aid, 0);
-        (,,address hag, uint ham, address wag, uint wam,,,,uint valid) = flow.auctions(aid);
+        (,,address hag, uint ham, address wag, uint wam,,,,,uint valid) = flow.auctions(aid);
         assertEq(hag, arisk);
         assertEq(ham, risksupply);
         assertEq(wag, arico);
@@ -689,19 +708,19 @@ contract VowJsTest is Test, RicoSetUp {
         // run a flap and ensure risk is burnt
         uint risk_initial_supply = risk.totalSupply();
         skip(BANKYEAR);
+        feedpush(RICO_RISK_TAG, bytes32(1000 * RAY), UINT256_MAX);
         uint256 aid = vow.keep(ilks);
 
         risk.mint(address(guy), 1000 * WAD);
         guy.approve(arisk, aflow, UINT256_MAX);
-        feedpush(RICO_RISK_TAG, bytes32(1000 * RAY), UINT256_MAX);
         skip(3);
         guy.glug{value: rmul(block.basefee, GEL)}(aid);
 
         skip(60);
         vm.expectCall(address(flow), abi.encodePacked(flow.flow.selector));
+        feedpush(RICO_RISK_TAG, bytes32(10000 * RAY), UINT256_MAX);
         aid = vow.keep(ilks); // call again to burn risk given to vow the first time
 
-        feedpush(RISK_RICO_TAG, bytes32(10000 * RAY), UINT256_MAX);
         risk.mint(address(guy), 1000 * WAD);
         skip(4);
         guy.glug{value: rmul(block.basefee, GEL)}(aid);
@@ -717,9 +736,9 @@ contract VowJsTest is Test, RicoSetUp {
         // collateral has been grabbed but not sold, so we flop
         vm.expectCall(address(flow), abi.encodePacked(flow.flow.selector));
         uint vow_pre_flop_rico = rico.balanceOf(avow);
+        feedpush(RISK_RICO_TAG, bytes32(100 * RAY), UINT256_MAX);
         aid = vow.keep(ilks);
 
-        feedpush(RISK_RICO_TAG, bytes32(100 * RAY), UINT256_MAX);
         skip(2);
         prepguyrico(1000 * WAD, false);
         guy.glug{value: rmul(block.basefee, GEL)}(aid);
@@ -737,9 +756,11 @@ contract VowJsTest is Test, RicoSetUp {
         assertLt(vat_weth_1, vat_weth_0);
     }
 
-    function test_flops_bounded() public {
+    function test_flaps_bounded() public {
+        // should only be able to flap once per debt
         uint count0 = flow.count();
         skip(BANKYEAR);
+        feedpush(RICO_RISK_TAG, bytes32(RAY), UINT256_MAX);
         vow.keep(ilks);
         vow.keep(ilks);
         uint count1 = flow.count();

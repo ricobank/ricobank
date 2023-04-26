@@ -72,6 +72,7 @@ contract BallTest is Test, UniSetUp, Math {
     uint DEV_FUND_RISK = 1000000 * WAD;
     uint GEL = 1000 * RAY;
     uint FEL = RAY * 999 / 1000;
+    uint UEL = 2 * RAY;
     uint DUST = 90 * RAD;
 
     Vat vat;
@@ -131,13 +132,13 @@ contract BallTest is Test, UniSetUp, Math {
             'weth',
             WETH,
             WETH_DAI_POOL,
-            RAD, // chop
+            RAY, // chop
             DUST, // dust
             1000000001546067052200000000, // fee
             100000 * RAD, // line
             RAY, // liqr
             DutchFlower.Ramp(
-                FEL, 0, GEL, false, address(fb), address(mdn), WETH_RICO_TAG
+                FEL, 0, GEL, UEL, false, address(fb), address(mdn), WETH_RICO_TAG
             ),
             20000, // ttl
             1 // range
@@ -160,10 +161,10 @@ contract BallTest is Test, UniSetUp, Math {
             10000, // twap
             BANKYEAR,
             DutchFlower.Ramp(
-                FEL, 0, GEL, true, address(fb), address(mdn), RICO_RISK_TAG
+                FEL, 0, GEL, UEL, true, address(fb), address(mdn), RICO_RISK_TAG
             ),
             DutchFlower.Ramp(
-                FEL, 0, GEL, true, address(fb), address(mdn), RISK_RICO_TAG
+                FEL, 0, GEL, UEL, true, address(fb), address(mdn), RISK_RICO_TAG
             ),
             Vow.Ramp(WAD, WAD, block.timestamp, 1),
             Ball.UniParams(
@@ -181,7 +182,7 @@ contract BallTest is Test, UniSetUp, Math {
         uint gas = gasleft();
         Ball ball = new Ball(bargs, ips);
         uint usedgas     = gas - gasleft();
-        uint expectedgas = 18959221;
+        uint expectedgas = 19071862;
         if (usedgas < expectedgas) {
             console.log("ball saved %s gas...currently %s", expectedgas - usedgas, usedgas);
         }
@@ -313,8 +314,9 @@ contract BallTest is Test, UniSetUp, Math {
         uint aid = vow.bail(WETH_ILK, me);
         Gem(rico).approve(address(flow), type(uint).max);
         uint meweth = WethLike(WETH).balanceOf(me);
-        skip(200);
-        Gem(rico).mint(me, RAY);
+        skip(700); // enough to bring `makers` below `wam`
+        Gem(rico).mint(me, 1000000 * WAD);
+        Gem(rico).approve(address(flow), UINT256_MAX);
         flow.glug{value: rmul(GEL, block.basefee)}(aid);
         assertGt(WethLike(WETH).balanceOf(me), meweth);
     }
@@ -345,7 +347,7 @@ contract BallTest is Test, UniSetUp, Math {
         assertEq(artleftafter, dust / rack);
 
         uint aid = vow.keep(ilks);
-        (,,address hag, uint ham,,,,,,) = flow.auctions(aid);
+        (,,address hag, uint ham,,,,,,,) = flow.auctions(aid);
         assertEq(hag, rico);
         assertGt(ham, 0);
     }
