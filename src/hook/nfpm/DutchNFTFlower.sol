@@ -51,6 +51,8 @@ contract DutchNFTFlower is Math, Lock, Flog {
     error ErrHighStep();
     error ErrTinyFlow();
 
+    uint256 internal constant delay = 5;
+
     IERC721 internal immutable nfpm;
     Gem     internal immutable rico;
 
@@ -82,7 +84,7 @@ contract DutchNFTFlower is Math, Lock, Flog {
         auction.hat = hat;
         auction.wam = wam;
         auction.ask = rmul(wam, ramp.uel);
-        auction.gun = block.timestamp;
+        auction.gun = block.timestamp + delay;
         auction.gir = gir;
         auction.gim = rmul(block.basefee, ramp.gel);
         auction.valid = uint(Valid.VALID);

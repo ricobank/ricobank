@@ -33,6 +33,7 @@ contract FlowTest is Test, Math {
     address aflow;
     uint constant public STEP = RAY / 2;
     uint constant public BAR  = type(uint).max / RAY;
+    uint constant public glug_delay = 5;
     bytes32 constant RICO_RISK_TAG = 'ricorisk';
     Feedbase feed;
     bool sendreverts;
@@ -90,7 +91,7 @@ contract FlowTest is Test, Math {
         assertEq(rico.balanceOf(self), ricoself - 1000 * WAD);
 
         // complete sale and test flowback gets called exactly once
-        skip(1);
+        skip(1 + glug_delay);
         risk.transfer(address(guy), WAD * 1000);
         guy.approve(arisk, aflow, UINT256_MAX);
         uint ricoguy = rico.balanceOf(address(guy));
@@ -103,6 +104,26 @@ contract FlowTest is Test, Math {
         assertEq(risk.balanceOf(address(avow)), riskvow + 200 * WAD);
     }
 
+    function test_glug_delay() public {
+        // create sale of 1k rico for 200 risk
+        feed.push(RICO_RISK_TAG, bytes32(RAY / 5 * 4), UINT256_MAX);
+        uint256 aid = flow.flow(
+            avow, address(rico), WAD * 1000, address(risk), WAD * 200, self
+        );
+
+        // complete sale and test flowback gets called exactly once
+        risk.transfer(address(guy), WAD * 1000);
+        guy.approve(arisk, aflow, UINT256_MAX);
+        sendreverts = true;
+
+        skip(glug_delay - 1);
+        vm.expectRevert(stdError.arithmeticError);
+        guy.glug{value: rmul(1000 * RAY, block.basefee)}(aid);
+
+        skip(1);
+        guy.glug{value: rmul(1000 * RAY, block.basefee)}(aid);
+    }
+
     function test_reward_revert() public {
         // create sale of 1k rico for 200 risk
         feed.push(RICO_RISK_TAG, bytes32(RAY / 5 * 4), UINT256_MAX);
@@ -111,7 +132,7 @@ contract FlowTest is Test, Math {
         );
 
         // complete sale and test flowback gets called exactly once
-        skip(1);
+        skip(1 + glug_delay);
         risk.transfer(address(guy), WAD * 1000);
         guy.approve(arisk, aflow, UINT256_MAX);
         sendreverts = true;
@@ -129,7 +150,7 @@ contract FlowTest is Test, Math {
         );
 
         // complete sale and test flowback gets called exactly once
-        skip(1);
+        skip(1 + glug_delay);
         risk.transfer(address(guy), WAD * 1000);
         guy.approve(arisk, aflow, UINT256_MAX);
         guy.glug{value: rmul(1000 * RAY, block.basefee)}(aid);
@@ -162,7 +183,7 @@ contract FlowTest is Test, Math {
         assertEq(rico.balanceOf(self), ricoself);
 
         // complete sale and test flowback gets called exactly once
-        skip(1);
+        skip(1 + glug_delay);
         risk.transfer(address(guy), WAD * 1000);
         guy.approve(arisk, aflow, UINT256_MAX);
         uint ricoguy = rico.balanceOf(address(guy));

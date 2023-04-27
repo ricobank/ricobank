@@ -79,6 +79,7 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
     uint256 constant public HOOK_ROOM  = 8;
     uint256 constant public init_mint  = 10000;
     uint256 constant public BANKYEAR   = (365 * 24 + 6) * 3600;
+    uint256 constant public glug_delay = 5;
     address public immutable azero     = address(0);
     address payable public immutable self = payable(address(this));
 

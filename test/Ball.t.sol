@@ -67,6 +67,7 @@ contract BallTest is Test, UniSetUp, Math {
     uint256 constant INIT_PAR = (INIT_SQRTPAR ** 2) / RAY;
     uint256 constant wethricoprice = 1500 * RAY * RAY / INIT_PAR;
     uint256 constant wethamt = WAD;
+    uint256 constant glug_delay = 5;
     int256  constant dart = int(wethamt * wethricoprice / INIT_PAR);
     bytes32[] ilks;
     uint DEV_FUND_RISK = 1000000 * WAD;
@@ -182,7 +183,7 @@ contract BallTest is Test, UniSetUp, Math {
         uint gas = gasleft();
         Ball ball = new Ball(bargs, ips);
         uint usedgas     = gas - gasleft();
-        uint expectedgas = 19071862;
+        uint expectedgas = 19084517;
         if (usedgas < expectedgas) {
             console.log("ball saved %s gas...currently %s", expectedgas - usedgas, usedgas);
         }
@@ -259,6 +260,7 @@ contract BallTest is Test, UniSetUp, Math {
         uint gas = gasleft();
         Gem(risk).mint(me, 1000 * WAD);
         Gem(risk).approve(address(flow), type(uint).max);
+        skip(glug_delay);
         flow.glug{value: rmul(GEL, block.basefee)}(aid);
         rico_after = Gem(rico).balanceOf(address(flow));
         assertLt(rico_after, rico_before);
@@ -273,6 +275,7 @@ contract BallTest is Test, UniSetUp, Math {
 
         risk_before = Gem(risk).balanceOf(address(flow));
         Gem(rico).approve(address(flow), type(uint).max);
+        skip(glug_delay);
         flow.glug{value: rmul(GEL, block.basefee)}(aid);
         risk_after = Gem(risk).balanceOf(address(flow));
         assertLt(risk_after, risk_before);
@@ -317,6 +320,7 @@ contract BallTest is Test, UniSetUp, Math {
         skip(700); // enough to bring `makers` below `wam`
         Gem(rico).mint(me, 1000000 * WAD);
         Gem(rico).approve(address(flow), UINT256_MAX);
+        skip(glug_delay);
         flow.glug{value: rmul(GEL, block.basefee)}(aid);
         assertGt(WethLike(WETH).balanceOf(me), meweth);
     }

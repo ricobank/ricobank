@@ -450,13 +450,14 @@ contract DssBiteTest is DssVatTest {
         // cat.litter N/A vow always bails urn immediately
         uint256 aid = vow.bail(i0, me);
         prepguyrico(1000 * WAD, true);
+        skip(glug_delay);
         guy.glug{value: rmul(GEL, block.basefee)}(aid);
         // excess frobbed back into urn
         assertGt(_ink(i0, me), 0);
 
         skip(1);
         aid = vow.keep(ilks);
-        skip(2);
+        skip(2 + glug_delay);
         uint vowrico = rico.balanceOf(avow);
         guy.glug{value: rmul(GEL, block.basefee)}(aid);
         skip(7);
@@ -525,6 +526,7 @@ contract DssBiteTest is DssVatTest {
         assertEq(vat.sin(address(vow)) / RAY, 0);
         assertEq(rico.balanceOf(address(vow)), 0);
         uint256 aid = vow.bail(i0, me);
+        skip(glug_delay);
         flow.glug{value: rmul(GEL, block.basefee)}(aid);
         assertEq(vat.sin(address(vow)) / RAY, ricoamt);
         assertEq(rico.balanceOf(address(vow)), ricoamt);
@@ -548,7 +550,7 @@ contract DssBiteTest is DssVatTest {
 
         uint256 aid = vow.keep(ilks);
         feedpush(RICO_RISK_TAG, bytes32(RAY), UINT256_MAX);
-        skip(27);
+        skip(27 + glug_delay);
         gov.mint(address(guy), 1000 * WAD);
         guy.approve(address(gov), aflow, UINT256_MAX);
         guy.glug{value: rmul(GEL, block.basefee)}(aid);
@@ -735,7 +737,7 @@ contract DssFlopTest is DssJsTest {
         assertEq(wag, address(rico));
         assertEq(wam, haveamt * 2);
         assertEq(ask, 2 * UEL);
-        assertEq(gun, block.timestamp);
+        assertEq(gun, block.timestamp + glug_delay);
         assertEq(gir, self);
         assertEq(gim, 0);
         assertEq(valid, uint(DutchFlower.Valid.VALID));
@@ -832,7 +834,7 @@ contract DssClipTest is DssJsTest {
 
         hook.pair(WETH, 'fel', RAY / 10);
         feedpush(wrtag, bytes32(RAY * 100), UINT256_MAX);
-        skip(2);
+        skip(2 + glug_delay);
         prepguyrico(1000 * WAD, true);
         guy.glug{value: rmul(GEL, block.basefee)}(aid);
 
@@ -866,7 +868,7 @@ contract DssClipTest is DssJsTest {
         ink = _ink(i0, me);
         bob.bail(i0, me);
         // wait till price goes to 0
-        skip(77);
+        skip(77 + glug_delay);
         guy.glug{value: rmul(GEL, block.basefee)}(flow.count());
         // clip.kicks() N/A rico flow doesn't count flips
         // clip.sales() N/A rico flow doesn't store sale information
@@ -982,7 +984,7 @@ contract DssClipTest is DssJsTest {
         uint gas = gasleft();
         vm.expectCall(address(flow), bytes(''));
         vow.bail(i0, me);
-        check_gas(gas, 395677);
+        check_gas(gas, 395764);
     }
 }
 
@@ -1042,6 +1044,7 @@ contract DssVowTest is DssJsTest {
         // glug to create a surplus (uel > RAY), then keep
         feedpush(RISK_RICO_TAG, bytes32(1000 * RAY), UINT256_MAX);
         prepguyrico(1000 * WAD, false);
+        skip(glug_delay);
         guy.glug{value: rmul(GEL, block.basefee)}(aid);
 
         // should be a flap this time

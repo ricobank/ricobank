@@ -17,7 +17,7 @@ contract DutchFlower is Math, Lock, Flog {
         uint256 fel;  // [ray] rate of change in asking price/second
         uint256 del;  // min ham
         uint256 gel;  // [ray] mul by basefee for creator reward
-        uint    uel;  // [ray] mul by feed price or wam/ham for starting ask
+        uint256 uel;  // [ray] mul by feed price or wam/ham for starting ask
         bool    prld; // [bool] "preload" - true if transfer hags on flow()
         address feed; // Feedbase for price if applicable
         address fsrc;
@@ -49,6 +49,8 @@ contract DutchFlower is Math, Lock, Flog {
     error ErrHighStep();
     error ErrTinyFlow();
     error ErrStale();
+
+    uint256 internal constant delay = 5;
 
     uint256 public count;
     uint256[] public aids;
@@ -94,7 +96,7 @@ contract DutchFlower is Math, Lock, Flog {
         }
         auction.ask = rmul(p, ramp.uel);
 
-        auctions[aid].gun = block.timestamp;
+        auctions[aid].gun = block.timestamp + delay;
         auctions[aid].gir = gir;
         auctions[aid].gim = rmul(block.basefee, ramp.gel);
         auctions[aid].valid = uint(Valid.VALID);

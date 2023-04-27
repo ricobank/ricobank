@@ -142,8 +142,13 @@ contract NFTHookTest is Test, RicoSetUp {
 
         rico.approve(address(nftflow), type(uint).max);
 
+        // can't glug at same time as bail
+        vm.expectRevert(stdError.arithmeticError);
+        nftflow.glug{value: rmul(block.basefee, GEL)}(aid);
+
         // not enough rico
         vm.expectRevert(Gem.ErrUnderflow.selector);
+        skip(glug_delay);
         nftflow.glug{value: rmul(block.basefee, GEL)}(aid);
         rico_mint(1000 * WAD, true);
 
@@ -177,7 +182,7 @@ contract NFTHookTest is Test, RicoSetUp {
         feedpush(drtag, bytes32(0 * RAY), type(uint).max);
         uint gas = gasleft();
         uint aid = vow.bail(':uninft', self);
-        check_gas(gas, 393157);
+        check_gas(gas, 393229);
 
         skip(30);
         uint price = nftflow.curp(aid, block.timestamp);
@@ -189,7 +194,7 @@ contract NFTHookTest is Test, RicoSetUp {
         uint ricobefore = rico.balanceOf(self);
         gas = gasleft();
         guy.glug{value: gim}(aid);
-        check_gas(gas, 265650);
+        check_gas(gas, 265434);
         assertGt(rico.balanceOf(self), ricobefore);
         assertEq(nfpm.ownerOf(goldwethtokid), address(guy));
         assertEq(nfpm.ownerOf(golddaitokid), address(guy));
