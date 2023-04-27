@@ -22,9 +22,9 @@
 
 pragma solidity 0.8.19;
 
-import './mixin/lock.sol';
-import './mixin/math.sol';
-import './mixin/flog.sol';
+import { Lock } from './mixin/lock.sol';
+import { Math } from './mixin/math.sol';
+import { Flog } from './mixin/flog.sol';
 
 import { Ward } from '../lib/feedbase/src/mixin/ward.sol';
 import { Gem }  from '../lib/gemfab/src/gem.sol';

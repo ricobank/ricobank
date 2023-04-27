@@ -277,7 +277,7 @@ contract Ball is Math {
 
         // initialize uni ilk
         nftflow = new DutchNFTFlower(args.ups.nfpm, rico);
-        nfthook = new UniNFTHook(args.feedbase, address(vat), address(nftflow), rico, args.ups.nfpm, args.ups.room);
+        nfthook = new UniNFTHook(args.feedbase, address(nftflow), rico, args.ups.nfpm, args.ups.room);
         vat.init(':uninft', address(nfthook));
         vat.filk(':uninft', 'fee', args.ups.fee);
         vat.filk(':uninft', 'chop', args.ups.chop);

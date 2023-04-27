@@ -2,14 +2,17 @@
 
 pragma solidity 0.8.19;
 
-import '../../lib/feedbase/src/Feedbase.sol';
-import '../../lib/feedbase/src/mixin/ward.sol';
-import '../../lib/gemfab/src/gem.sol';
-import '../mixin/lock.sol';
-import '../mixin/flog.sol';
-import '../vat.sol';
-import '../flow.sol';
-import './hook.sol';
+import { Math } from '../mixin/math.sol';
+import { Flog } from '../mixin/flog.sol';
+import { Lock } from '../mixin/lock.sol';
+import { Ward } from '../../lib/feedbase/src/mixin/ward.sol';
+import { Gem } from '../../lib/gemfab/src/gem.sol';
+import { Feedbase } from '../../lib/feedbase/src/Feedbase.sol';
+
+import { Vat } from '../vat.sol';
+import { DutchFlower } from '../flow.sol';
+
+import { Hook } from './hook.sol';
 
 contract ERC20Hook is Hook, Ward, Lock, Flog, Math {
     // per-auction urn identifier

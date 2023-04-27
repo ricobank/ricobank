@@ -18,12 +18,13 @@
 
 pragma solidity 0.8.19;
 
-import './mixin/math.sol';
+import { Math } from './mixin/math.sol';
+import { Flog } from './mixin/flog.sol';
 
-import { Vat } from './vat.sol';
 import { Feedbase } from '../lib/feedbase/src/Feedbase.sol';
 import { Ward } from '../lib/feedbase/src/mixin/ward.sol';
-import { Flog } from './mixin/flog.sol';
+
+import { Vat } from './vat.sol';
 
 // price rate controller
 // ensures that market price (mar) roughly tracks par

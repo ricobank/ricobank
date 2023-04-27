@@ -2,17 +2,18 @@
 // copyright (c) 2023 the bank
 pragma solidity 0.8.19;
 
-import '../../../lib/feedbase/src/Feedbase.sol';
-import '../../../lib/feedbase/src/mixin/ward.sol';
-import '../../../lib/gemfab/src/gem.sol';
-import '../../mixin/lock.sol';
-import '../../mixin/flog.sol';
-import '../../vat.sol';
-import '../hook.sol';
+import { Math } from '../../mixin/math.sol';
+import { Flog } from '../../mixin/flog.sol';
+import { Ward } from '../../../lib/feedbase/src/mixin/ward.sol';
+import { Gem } from '../../../lib/gemfab/src/gem.sol';
+import { Feedbase } from '../../../lib/feedbase/src/Feedbase.sol';
+
+import { Hook } from '../hook.sol';
+import { DutchNFTFlower } from './DutchNFTFlower.sol';
+
 import { LiquidityAmounts } from './lib/LiquidityAmounts.sol';
 import { TickMath } from './lib/TickMath.sol';
-import './lib/PoolAddress.sol';
-import { DutchNFTFlower } from './DutchNFTFlower.sol';
+import { PoolAddress } from './lib/PoolAddress.sol';
 
 interface IUniswapV3Pool {
     function slot0() external view returns (
@@ -35,7 +36,7 @@ interface INonfungiblePositionManager is IERC721 {
 }
 
 // hook for uni NonfungiblePositionManager
-contract UniNFTHook is Hook, Ward, Lock, Flog, Math {
+contract UniNFTHook is Hook, Ward, Flog, Math {
     struct Source {
         address fsrc;  // [obj] feedbase `src` address
         bytes32 ftag;  // [tag] feedbase `tag` bytes32
@@ -53,7 +54,6 @@ contract UniNFTHook is Hook, Ward, Lock, Flog, Math {
     Feedbase       public feed;
     DutchNFTFlower public flow;
     Gem            public rico;
-    Vat            public vat;
     INonfungiblePositionManager public immutable nfpm;
 
     error ErrBigFlowback();
@@ -61,11 +61,10 @@ contract UniNFTHook is Hook, Ward, Lock, Flog, Math {
     error ErrDir();
     error ErrFull();
 
-    constructor(address _feed, address _vat, address _flow, address _rico, address _nfpm, uint _ROOM) {
+    constructor(address _feed, address _flow, address _rico, address _nfpm, uint _ROOM) {
         feed = Feedbase(_feed);
         flow = DutchNFTFlower(_flow);
         rico = Gem(_rico);
-        vat  = Vat(_vat);
         ROOM = _ROOM;
         nfpm = INonfungiblePositionManager(_nfpm);
     }

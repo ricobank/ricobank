@@ -5,16 +5,18 @@
 
 pragma solidity 0.8.19;
 
-import { DutchFlower, Flowback } from './flow.sol';
 import { Math } from './mixin/math.sol';
-import { Vat } from './vat.sol';
-import { Gem } from '../lib/gemfab/src/gem.sol';
-import { Ward } from '../lib/feedbase/src/mixin/ward.sol';
 import { Flog } from './mixin/flog.sol';
+
+import { Ward } from '../lib/feedbase/src/mixin/ward.sol';
+import { Gem } from '../lib/gemfab/src/gem.sol';
+
+import { DutchFlower, Flowback } from './flow.sol';
+import { Vat } from './vat.sol';
 
 // accounting mechanism
 // triggers collateral (flip), surplus (flap), and deficit (flop) auctions
-contract Vow is Math, Ward, Flog {
+contract Vow is Math, Ward, Flog, Flowback {
     error ErrSafeBail();
     error ErrWrongKey();
     error ErrReflop();
@@ -25,7 +27,7 @@ contract Vow is Math, Ward, Flog {
         uint vel; // [wad] RISK/s
         uint rel; // [wad] fraction of RISK supply/s
         uint bel; // [sec] last flop timestamp
-        uint cel; // [sec] seconds till flop at capacity
+        uint cel; // [sec] max seconds flop can ramp up
     }
 
     Ramp public ramp;

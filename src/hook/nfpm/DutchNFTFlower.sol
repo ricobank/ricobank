@@ -2,11 +2,10 @@
 // copyright (c) 2023 the bank
 pragma solidity 0.8.19;
 
-import '../../../lib/feedbase/src/Feedbase.sol';
-import '../../../lib/gemfab/src/gem.sol';
-import '../../mixin/lock.sol';
-import '../../mixin/flog.sol';
-import '../../mixin/math.sol';
+import { Math } from '../../mixin/math.sol';
+import { Flog } from '../../mixin/flog.sol';
+import { Lock } from '../../mixin/lock.sol';
+import { Gem } from '../../../lib/gemfab/src/gem.sol';
 
 interface IERC721 {
     function transferFrom(address from, address to, uint256 tokenId) external;
