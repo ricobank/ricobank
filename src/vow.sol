@@ -12,16 +12,20 @@ import { Gem } from '../lib/gemfab/src/gem.sol';
 import { Ward } from '../lib/feedbase/src/mixin/ward.sol';
 import { Flog } from './mixin/flog.sol';
 
+// accounting mechanism
+// triggers collateral (flip), surplus (flap), and deficit (flop) auctions
 contract Vow is Math, Ward, Flog {
     error ErrSafeBail();
     error ErrWrongKey();
     error ErrReflop();
 
+    // RISK mint rate
+    // flop uses min(vel rate, rel rate)
     struct Ramp {
-        uint vel;
-        uint rel;
-        uint bel;
-        uint cel;
+        uint vel; // [wad] RISK/s
+        uint rel; // [wad] fraction of RISK supply/s
+        uint bel; // [sec] last flop timestamp
+        uint cel; // [sec] seconds till flop at capacity
     }
 
     Ramp public ramp;
@@ -43,20 +47,25 @@ contract Vow is Math, Ward, Flog {
         uint risk = RISK.balanceOf(self);
         RISK.burn(self, risk);
 
+        // rico is a wad, sin is a rad
         uint sin = vat.sin(self) / RAY;
         if (rico > sin) {
+            // pay down sin, then auction off surplus RICO for RISK
             if (sin > 1) vat.heal(sin - 1);
+            // buy-and-burn risk with remaining rico
             uint flap = rico - sin;
             aid = flow.flow(
                 address(this), address(RICO), flap, address(RISK),
                 type(uint256).max, payable(msg.sender)
             );
         } else if (sin > rico) {
+            // pay down as much sin as possible
             if (rico > 1) vat.heal(rico - 1);
             uint slope = min(ramp.vel, wmul(ramp.rel, RISK.totalSupply()));
             uint flop  = slope * min(block.timestamp - ramp.bel, ramp.cel);
             if (0 == flop) revert ErrReflop();
             ramp.bel = block.timestamp;
+            // mint-and-sell risk to cover remaining sin
             RISK.mint(self, flop);
             aid = flow.flow(
                 address(this), address(RISK), flop, address(RICO), 
@@ -65,14 +74,16 @@ contract Vow is Math, Ward, Flog {
         }
     }
 
-    function flowback(uint aid, uint refund) _ward_ _flog_ external {}
-
-    function bail(bytes32 ilk, address urn) _flog_ external returns (uint256 aid) {
-        vat.drip(ilk);
-        if (vat.safe(ilk, urn) != Vat.Spot.Sunk) revert ErrSafeBail();
-        aid = vat.grab(ilk, urn, msg.sender);
+    function bail(bytes32 i, address u) _flog_ external returns (uint256 aid) {
+        vat.drip(i);
+        if (vat.safe(i, u) != Vat.Spot.Sunk) revert ErrSafeBail();
+        aid = vat.grab(i, u, msg.sender);
     }
 
+    function flowback(uint aid, uint refund) _ward_ _flog_ external {}
+
+    // drip to mint accumulated fees
+    // minted rico will later heal sin or be auctioned as surplus
     function drip(bytes32 i) _flog_ external {
         vat.drip(i);
     }

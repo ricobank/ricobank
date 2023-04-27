@@ -25,7 +25,12 @@ import { Feedbase } from '../lib/feedbase/src/Feedbase.sol';
 import { Ward } from '../lib/feedbase/src/mixin/ward.sol';
 import { Flog } from './mixin/flog.sol';
 
-// RicoLikeVox
+// price rate controller
+// ensures that market price (mar) roughly tracks par
+// note that price rate (way) can be less than 1
+// this is how the system achieves negative effective borrowing rates
+// if quantity rate is 1%/yr (fee > RAY) but price rate is -2%/yr (way < RAY)
+// borrowers are rewarded about 1%/yr for borrowing and shorting rico
 contract Vox is Math, Ward, Flog {
     error ErrWrongKey();
 
@@ -55,6 +60,7 @@ contract Vox is Math, Ward, Flog {
         uint256 dt = block.timestamp - tau;
         tau = block.timestamp;
 
+        // use previous `way` to grow `par` to keep par updates predictable
         uint256 par = grow(vat.par(), way, dt);
         vat.prod(par);
 
@@ -62,6 +68,8 @@ contract Vox is Math, Ward, Flog {
         uint256 mar = rmul(uint256(mar_), amp);
         if (block.timestamp > ttl) { return; }
 
+        // raise the price rate (way) when mar < par, lower when mar > par
+        // this is how mar tracks par
         if (mar < par) {
             way = min(cap, grow(way, how, dt));
         } else if (mar > par) {

@@ -34,12 +34,14 @@ interface INonfungiblePositionManager is IERC721 {
     function factory() external view returns (address);
 }
 
+// hook for uni NonfungiblePositionManager
 contract UniNFTHook is Hook, Ward, Lock, Flog, Math {
     struct Source {
         address fsrc;  // [obj] feedbase `src` address
         bytes32 ftag;  // [tag] feedbase `tag` bytes32
     }
 
+    // unlike ERC20 hook, flowback sends rico to sender; no need to identify urn
     mapping (uint256 aid => address urn) public sales;
     mapping (bytes32 ilk => mapping(address gem => Source source))   public sources;
     mapping (bytes32 ilk => mapping(address usr => uint[] tokenIds)) public inks;

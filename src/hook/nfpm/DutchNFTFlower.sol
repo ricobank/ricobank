@@ -21,6 +21,7 @@ interface NFTHook {
     function grant(uint tokenId) external;
 }
 
+// similar to gem dutch flower, but for NFTs
 contract DutchNFTFlower is Math, Lock, Flog {
     struct Ramp {
         uint256 fel;  // [ray] rate of change in asking price/second
@@ -53,14 +54,14 @@ contract DutchNFTFlower is Math, Lock, Flog {
 
     uint256 internal constant delay = 5;
 
-    IERC721 internal immutable nfpm;
+    IERC721 internal immutable nft;
     Gem     internal immutable rico;
 
     uint256   public count;
     uint256[] public aids;
 
-    constructor(address _nfpm, address _rico) {
-        nfpm = IERC721(_nfpm);
+    constructor(address _nft, address _rico) {
+        nft = IERC721(_nft);
         rico = Gem(_rico);
     }
 
@@ -112,12 +113,14 @@ contract DutchNFTFlower is Math, Lock, Flog {
         while (true) {
             uint id = auction.hat[i];
             NFTHook(flo).grant(id);
-            nfpm.transferFrom(flo, msg.sender, id);
+            nft.transferFrom(flo, msg.sender, id);
             unchecked{ i++; }
             if (i >= ntoks) break;
         }
 
         Flowback(flo).flowback(aid, rest);
+
+        // pay whomever paid the gas to create the auction
         uint256 gim = auction.gim;
         if (msg.value < gim) revert ErrTransfer();
         auction.gir.send(gim);
@@ -125,10 +128,12 @@ contract DutchNFTFlower is Math, Lock, Flog {
         aids.push(aid);
     }
 
+    // auction's asking price at `time`
     function curp(uint aid, uint time) public view returns (uint) {
         Auction storage auction = auctions[aid];
         Ramp storage ramp = ramps[auction.flo];
         uint fel = ramp.fel;
+        // fel < RAY, so price decreases with time
         return grow(auction.ask, fel, time - auction.gun);
     }
 

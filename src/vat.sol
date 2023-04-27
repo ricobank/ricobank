@@ -100,6 +100,9 @@ contract Vat is Lock, Math, Ward, Flog {
         if (block.timestamp > ttl) {
             return Spot.Iffy;
         }
+        // par acts as a multiplier for collateral requirements
+        // par increase has same effect on cut as fee accumulation through rack
+        // par decrease acts like a negative fee
         uint256 tab = urns[i][u] * rmul(rmul(par, ilk.rack), ilk.liqr);
         if (tab <= cut) {
             return Spot.Safe;
@@ -113,13 +116,13 @@ contract Vat is Lock, Math, Ward, Flog {
     {
         Ilk storage ilk = ilks[i];
 
-        // ilk has been initialised
         if (ilk.rack == 0) revert ErrIlkInit();
 
         urns[i][u] = add(urns[i][u], dart);
         uint art   = urns[i][u];
         ilk.tart   = add(ilk.tart, dart);
 
+        // rico mint/burn amount increases with rack
         int dtab = mul(ilk.rack, dart);
         uint tab = ilk.rack * art;
 
@@ -129,6 +132,7 @@ contract Vat is Lock, Math, Ward, Flog {
             rest += uint(dtab) % RAY;
             rico.mint(msg.sender, wad);
         } else if (dtab < 0) {
+            // dtab is a rad, so burn one extra to round in system's favor
             uint wad = uint(-dtab) / RAY + 1;
             rest += add(wad * RAY, dtab);
             debt -= wad;
@@ -140,6 +144,7 @@ contract Vat is Lock, Math, Ward, Flog {
         // urn has no debt, or a non-dusty amount
         if (both(art != 0, tab < ilk.dust)) revert ErrUrnDust();
 
+        // safer if less/same art and more/same ink
         bool safer = dart <= 0;
         if (dink.length != 0) {
             safer = both(safer, Hook(ilk.hook).frobhook(msg.sender, i, u, dink, dart));
@@ -154,17 +159,22 @@ contract Vat is Lock, Math, Ward, Flog {
     function grab(bytes32 i, address u, address k)
         _ward_ _flog_ external returns (uint aid)
     {
+        // liquidate the urn
         Ilk storage ilk = ilks[i];
         uint art = urns[i][u];
         urns[i][u] = 0;
 
+        // bill is the debt hook will attempt to cover when auctioning ink
+        // todo maybe make this +1?
         uint bill = rmul(ilk.chop, rmul(art, ilk.rack));
 
         ilk.tart -= art;
 
+        // record the bad debt for vow to heal
         uint dtab = art * ilk.rack;
         sin[msg.sender] += dtab;
 
+        // ink auction
         aid = Hook(ilk.hook).grabhook(msg.sender, i, u, art, bill, payable(k));
     }
 
@@ -177,21 +187,26 @@ contract Vat is Lock, Math, Ward, Flog {
     function drip(bytes32 i)
       _ward_ _flog_ external
     {
+        // multiply rack by fee every second
         if (block.timestamp == ilks[i].rho) return;
         address vow  = msg.sender;
         uint256 prev = ilks[i].rack;
         uint256 rack = grow(prev, ilks[i].fee, block.timestamp - ilks[i].rho);
+        // difference between current and previous rack determines interest
         uint256 delt = rack - prev;
         uint256 rad  = ilks[i].tart * delt;
         uint256 all  = rest + rad;
         ilks[i].rho  = block.timestamp;
         ilks[i].rack = rack;
         debt         = debt + all / RAY;
+        // tart * rack is a rad, interest is a wad, rest is the change
         rest         = all % RAY;
+        // optimistically mint the interest to the vow
         rico.mint(vow, all / RAY);
     }
 
     function heal(uint wad) _flog_ external {
+        // burn rico to pay down sin
         uint256 rad = wad * RAY;
         address u = msg.sender;
         sin[u] = sin[u] - rad;
@@ -214,12 +229,14 @@ contract Vat is Lock, Math, Ward, Flog {
         if (key == "ceil") { ceil = val;
         } else { revert ErrWrongKey(); }
     }
+
     function link(bytes32 key, address val)
       _ward_ _flog_ external
     {
         if (key == "rico") rico = Gem(val);
         else revert ErrWrongKey();
     }
+
     function filk(bytes32 ilk, bytes32 key, uint val)
       _ward_ _flog_ external
     {

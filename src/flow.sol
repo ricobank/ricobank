@@ -18,7 +18,7 @@ contract DutchFlower is Math, Lock, Flog {
         uint256 del;  // min ham
         uint256 gel;  // [ray] mul by basefee for creator reward
         uint256 uel;  // [ray] mul by feed price or wam/ham for starting ask
-        bool    prld; // [bool] "preload" - true if transfer hags on flow()
+        bool    prld; // [bool] true if load hag in flow(), false if in glug()
         address feed; // Feedbase for price if applicable
         address fsrc;
         bytes32 ftag;
@@ -67,16 +67,20 @@ contract DutchFlower is Math, Lock, Flog {
         Ramp storage ramp = ramps[flo][hag];
         if (ham < ramp.del) revert ErrTinyFlow();
         if (ramp.prld) {
+            // preload the hags instead of doing transferFrom in glug
             if (!Gem(hag).transferFrom(msg.sender, address(this), ham)) {
                 revert ErrTransfer();
             }
         }
+
+        // avoid cold sstores when possible
         if (aids.length > 0) {
             aid = aids[aids.length - 1];
             aids.pop();
         } else {
             aid = ++count;
         }
+
         Auction storage auction = auctions[aid];
         auction.vow = vow;
         auction.flo = flo;
@@ -102,9 +106,6 @@ contract DutchFlower is Math, Lock, Flog {
         auctions[aid].valid = uint(Valid.VALID);
     }
 
-    // reverse dutch auction where price (not amount) is lowered with time
-    // if guy already bid higher, auction will go to guy, at guy's price
-    // flowback what's unused
     function glug(uint256 aid) _lock_ _flog_ payable external {
         Auction storage auction = auctions[aid];
 
@@ -118,32 +119,37 @@ contract DutchFlower is Math, Lock, Flog {
         address flo = auction.flo;
         if (!Gem(auction.wag).transferFrom(msg.sender, auction.vow, makers)) revert ErrTransfer();
         if (ramps[flo][auction.hag].prld) {
+            // hag preloaded, use transfer and send back what's left
             if (!Gem(auction.hag).transfer(msg.sender, takers)) revert ErrTransfer();
             if (!Gem(auction.hag).transfer(flo, rest)) revert ErrTransfer();
         } else {
+            // hag still in flo, use transferFrom, may need to hook.grant(hag) for this to work
             if (!Gem(auction.hag).transferFrom(flo, msg.sender, takers)) revert ErrTransfer();
         }
 
         Flowback(flo).flowback(aid, rest);
+
+        // pay whomever paid the gas to create the auction
         if (msg.value < auction.gim) revert ErrTransfer();
         auction.gir.send(auction.gim);
+
         auctions[aid].valid = uint(Valid.INVALID);
         aids.push(aid);
     }
 
     // makers -- amount bidder gives to system
     // takers -- amount system gives to bidder
-    // if ham at price is worth more than wam, lower makers to buy roughly ham
     function clip(uint ham, uint wam, uint price) public pure returns (uint makers, uint takers) {
         takers = ham;
         makers = rmul(takers, price);
         if (wam < makers) {
+            // ham at price is worth more than wam, lower makers so taker buys ~ham
             takers = rmul(takers, rdiv(wam, makers));
             makers = wam;
         }
     }
 
-    // get auction's asking price at `time`
+    // auction's asking price at `time`
     function curp(uint aid, uint time) public view returns (uint) {
         Auction storage auction = auctions[aid];
         uint fel = ramps[auction.flo][auction.hag].fel;

@@ -12,20 +12,23 @@ import '../flow.sol';
 import './hook.sol';
 
 contract ERC20Hook is Hook, Ward, Lock, Flog, Math {
+    // per-auction urn identifier
     struct Sale {
         bytes32 ilk;
         address urn;
     }
 
+    // per-ilk gem and price feed
     struct Item {
-        address gem;
+        address gem;   // this ilk's gem
         address fsrc;  // [obj] feedbase `src` address
         bytes32 ftag;  // [tag] feedbase `tag` bytes32
     }
 
-    mapping (address gem => bool) public pass;
+    mapping (address gem => bool flashable) public pass;
     mapping (bytes32 ilk => Item) public items;
     mapping (uint256 aid => Sale) public sales;
+    // collateral amounts
     mapping (bytes32 ilk => mapping(address usr => uint)) public inks;
 
     Feedbase    public feed;
@@ -44,7 +47,7 @@ contract ERC20Hook is Hook, Ward, Lock, Flog, Math {
         flow = DutchFlower(_flow);
         rico = Gem(_rico);
         vat  = Vat(_vat);
-}
+    }
 
     function frobhook(
         address sender,
@@ -53,6 +56,7 @@ contract ERC20Hook is Hook, Ward, Lock, Flog, Math {
         bytes calldata _dink,
         int  // dart
     ) _ward_ _flog_ external returns (bool safer) {
+        // read dink as a single uint
         address gem = items[i].gem;
         if (_dink.length != 32) revert ErrDinkLength();
         int dink = int(uint(bytes32(_dink)));
@@ -81,11 +85,13 @@ contract ERC20Hook is Hook, Ward, Lock, Flog, Math {
     ) _ward_ _flog_ external returns (uint aid) {
         uint ham = inks[i][u];
         inks[i][u] = 0;
+        // flip the ink, try to get bill back
         aid = flow.flow(vow, items[i].gem, ham, address(rico), bill, keeper);
         sales[aid] = Sale({ ilk: i, urn: u });
     }
 
     function safehook(bytes32 i, address u) view public returns (uint, uint) {
+        // total value of collateral = ink * price feed val
         Item storage item = items[i];
         (bytes32 val, uint ttl) = feed.pull(item.fsrc, item.ftag);
         return (uint(val) * inks[i][u], ttl);
@@ -96,6 +102,7 @@ contract ERC20Hook is Hook, Ward, Lock, Flog, Math {
     }
 
     function flowback(uint256 aid, uint refund) _ward_ _flog_ external {
+        // frob refunded ink back into the urn
         if (refund == 0)  return;
         if (refund >= 2 ** 255) revert ErrBigFlowback();
         Sale storage sale = sales[aid];
