@@ -1,11 +1,19 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
+// UniswapV3 LiquidityAmounts library
 // copied from:
 // https://github.com/Uniswap/v3-periphery/blob/main/contracts/libraries/LiquidityAmounts.sol
 // modified to compile with solc 0.8.x
+// ORIGINAL CODE:
+// pragma solidity >=0.5.0;
+//
+// import '@uniswap/v3-core/contracts/libraries/FullMath.sol';
+// import '@uniswap/v3-core/contracts/libraries/FixedPoint96.sol';
+// REPLACED WITH:
 pragma solidity 0.8.19;
 
 import './FullMath.sol';
-import './FixedPoint96.sol';
+import '@uniswap/v3-core/contracts/libraries/FixedPoint96.sol';
+// END CODE REPLACEMENT
 
 library LiquidityAmounts {
     /// @notice Computes the amount of token0 for a given amount of liquidity and a price range

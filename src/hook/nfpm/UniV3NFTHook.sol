@@ -11,29 +11,11 @@ import { Feedbase } from '../../../lib/feedbase/src/Feedbase.sol';
 import { Hook } from '../hook.sol';
 import { DutchNFTFlower } from './DutchNFTFlower.sol';
 
-import { LiquidityAmounts } from './lib/LiquidityAmounts.sol';
-import { TickMath } from './lib/TickMath.sol';
 import { PoolAddress } from './lib/PoolAddress.sol';
+import { PositionValue } from './lib/PositionValue.sol';
 
-interface IUniswapV3Pool {
-    function slot0() external view returns (
-        uint160 sqrtPriceX96, int24, uint16,uint16,uint16,uint8,bool
-    );
-}
-
-interface IERC721 {
-    function transferFrom(address from, address to, uint256 tokenId) external;
-    function approve(address to, uint256 tokenId) external;
-}
-
-interface INonfungiblePositionManager is IERC721 {
-    function positions(uint256 tokenId) external view returns (
-        uint96, address, address token0, address token1, uint24 fee, 
-        int24 tickLower, int24 tickUpper, uint128 liquidity,
-        uint256, uint256, uint128 tokensOwed0, uint128 tokensOwed1
-    );
-    function factory() external view returns (address);
-}
+import { IUniswapV3Pool } from '@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol';
+import { INonfungiblePositionManager } from './interfaces/INonfungiblePositionManager.sol';
 
 // hook for uni NonfungiblePositionManager
 contract UniNFTHook is Hook, Ward, Flog, Math {
@@ -124,10 +106,8 @@ contract UniNFTHook is Hook, Ward, Flog, Math {
     function amounts(uint tokenId) view internal returns (
         address t0, address t1, uint a0, uint a1
     ) {
-        uint128 liquidity; int24 tickLower; int24 tickUpper; uint24 fee;
-        // tokens, fee, tick bounds, liquidity, amounts owed in trade fees
-        (,,t0,t1,fee,tickLower,tickUpper,liquidity,,,a0,a1) =
-            nfpm.positions(tokenId);
+        uint24 fee;
+        (,,t0,t1,fee,,,,,,,) = nfpm.positions(tokenId);
 
         // get the current price
         address pool = PoolAddress.computeAddress(
@@ -135,14 +115,8 @@ contract UniNFTHook is Hook, Ward, Flog, Math {
         );
         (uint160 sqrtPriceX96,,,,,,) = IUniswapV3Pool(pool).slot0();
 
-        // convert the position's tick bounds to sqrtX96 price bounds
-        // convert the price bounds, current price, and liquidity to amounts
-        uint160 sqrtX96Lower = TickMath.getSqrtRatioAtTick(tickLower);
-        uint160 sqrtX96Upper = TickMath.getSqrtRatioAtTick(tickUpper);
-        (uint amt0, uint amt1) = LiquidityAmounts.getAmountsForLiquidity(
-            sqrtPriceX96, sqrtX96Lower, sqrtX96Upper, liquidity
-        );
-        a0 += amt0; a1 += amt1;
+        // uni library function to get amounts
+        (a0, a1) = PositionValue.total(nfpm, tokenId, sqrtPriceX96);
     }
 
     function safehook(bytes32 ilk, address urn) public view returns (uint tot, uint minttl) {

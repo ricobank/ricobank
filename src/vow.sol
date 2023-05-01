@@ -90,6 +90,7 @@ contract Vow is Math, Ward, Flog, Flowback {
         vat.drip(i);
     }
 
+    // TODO should not approve to vat; no need...should be just rico and risk
     function grant(address gem) _flog_ external {
         Gem(gem).approve(address(flow), type(uint256).max);
         Gem(gem).approve(address(vat), type(uint256).max);

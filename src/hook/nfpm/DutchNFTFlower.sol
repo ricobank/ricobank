@@ -6,11 +6,7 @@ import { Math } from '../../mixin/math.sol';
 import { Flog } from '../../mixin/flog.sol';
 import { Lock } from '../../mixin/lock.sol';
 import { Gem } from '../../../lib/gemfab/src/gem.sol';
-
-interface IERC721 {
-    function transferFrom(address from, address to, uint256 tokenId) external;
-    function approve(address to, uint256 tokenId) external;
-}
+import '@openzeppelin/contracts/token/ERC721/IERC721.sol';
 
 interface Flowback {
     function flowback(uint256 aid, uint refund) external;
