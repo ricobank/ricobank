@@ -199,7 +199,7 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
             100000 * RAD, // line
             RAY, // liqr
             DutchFlower.Ramp(
-                RAY * 999 / 1000, 0, FLIP_GEL, UEL, false, address(feed), address(mdn), WETH_RICO_TAG
+                RAY * 999 / 1000, 0, FLIP_GEL, UEL, address(feed), address(mdn), WETH_RICO_TAG
             ),
             20000, // ttl
             BANKYEAR / 4 // range
@@ -221,10 +221,10 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
             10000, // twap
             BANKYEAR,
             DutchFlower.Ramp(
-                RAY * 999 / 1000, 0, GEL, UEL, true, azero, azero, bytes32(0)
+                RAY * 999 / 1000, 1, GEL, UEL, azero, azero, bytes32(0)
             ),
             DutchFlower.Ramp(
-                RAY * 999 / 1000, 0, GEL, UEL, true, azero, azero, bytes32(0)
+                RAY * 999 / 1000, 1, GEL, UEL, azero, azero, bytes32(0)
             ),
             Vow.Ramp(WAD, WAD, block.timestamp, 1),
             Ball.UniParams(

@@ -66,9 +66,8 @@ contract FlowTest is Test, Math {
 
         flow.curb(arico, 'fel', RAY / 2);
         flow.curb(arico, 'gel', 1000 * RAY);
-        flow.curb(arico, 'del', 0);
+        flow.curb(arico, 'del', 1);
         flow.curb(arico, 'uel', UEL);
-        flow.curb(arico, 'prld', 1);
         flow.curb(arico, 'feed', uint(uint160(address(feed))));
         flow.curb(arico, 'fsrc', uint(uint160(address(self))));
         flow.curb(arico, 'ftag', uint(RICO_RISK_TAG));
@@ -168,9 +167,9 @@ contract FlowTest is Test, Math {
         flow.flow(self, arico, WAD * 1000000, address(risk), type(uint256).max, self);
     }
 
-    // similar to test_refund, but prld false
+    // similar to test_refund, but del=0 so it is treated as a non native token
     function test_nongem() public {
-        flow.curb(arico, 'prld', 0);
+        flow.curb(arico, 'del', 0);
         // raise uel a little bit to test `fel`
         flow.curb(arico, 'uel', 4 * RAY);
         // create sale of 1k rico for 200 risk

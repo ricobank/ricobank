@@ -170,7 +170,7 @@ contract DssJsTest is Test, RicoSetUp {
 
         vow.pair(arisk, 'fel', RAY / 10);
         vow.pair(arisk, 'gel', GEL);
-        vow.pair(arisk, 'del', 0);
+        vow.pair(arisk, 'del', 1);
         vow.pair(arisk, 'uel', UEL);
         vow.pair(arisk, 'feed', uint(uint160(address(feed))));
         vow.pair(arisk, 'fsrc', uint(uint160(address(mdn))));
@@ -178,7 +178,7 @@ contract DssJsTest is Test, RicoSetUp {
 
         vow.pair(arico, 'fel', RAY / 10);
         vow.pair(arico, 'gel', GEL);
-        vow.pair(arico, 'del', 0);
+        vow.pair(arico, 'del', 1);
         vow.pair(arico, 'uel', UEL);
         vow.pair(arico, 'feed', uint(uint160(address(feed))));
         vow.pair(arico, 'fsrc', uint(uint160(address(mdn))));
@@ -200,8 +200,8 @@ contract DssJsTest is Test, RicoSetUp {
         hook.pair(agold, 'fsrc', uint(uint160(address(mdn))));
         hook.pair(agold, 'ftag', uint(grtag));
 
-        flow.curb(arico, 'prld', 1);
-        flow.curb(arisk, 'prld', 1);
+        flow.curb(arico, 'del', 1);
+        flow.curb(arisk, 'del', 1);
 
         flow.curb(agold, 'feed', uint(uint160(address(feed))));
         flow.curb(agold, 'fsrc', uint(uint160(address(mdn))));
@@ -984,7 +984,7 @@ contract DssClipTest is DssJsTest {
         uint gas = gasleft();
         vm.expectCall(address(flow), bytes(''));
         vow.bail(i0, me);
-        check_gas(gas, 395764);
+        check_gas(gas, 393631);
     }
 }
 

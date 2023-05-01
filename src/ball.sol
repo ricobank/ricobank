@@ -164,7 +164,6 @@ contract Ball is Math {
             hook.pair(gem, "fel", ilkparams.ramp.fel);
             hook.pair(gem, "del", ilkparams.ramp.del);
             hook.pair(gem, "gel", ilkparams.ramp.gel);
-            hook.pair(gem, 'prld', ilkparams.ramp.prld ? 1 : 0);
             hook.pair(gem, 'uel', ilkparams.ramp.uel);
             hook.pair(gem, "feed", uint(uint160(ilkparams.ramp.feed)));
             hook.pair(gem, "fsrc", uint(uint160(address(mdn))));
@@ -173,10 +172,10 @@ contract Ball is Math {
 
         // todo ramp config
         vow.pair(risk, "fel", args.riskramp.fel);
+        vow.pair(rico, "del", args.ricoramp.del);
         vow.pair(risk, "del", args.riskramp.del);
         vow.pair(risk, "gel", args.riskramp.gel);
         vow.pair(risk, "uel", args.riskramp.uel);
-        vow.pair(risk, 'prld', 1);
         vow.pair(risk, "feed", uint(uint160(args.feedbase)));
         vow.pair(risk, "fsrc", uint(uint160(bytes20(address(mdn)))));
         vow.pair(risk, "ftag", uint(RISK_RICO_TAG));
@@ -186,10 +185,8 @@ contract Ball is Math {
         vow.file("cel", args.mintramp.cel);
 
         vow.pair(rico, "fel", args.ricoramp.fel);
-        vow.pair(rico, "del", args.ricoramp.del);
         vow.pair(rico, "gel", args.ricoramp.gel);
         vow.pair(rico, "uel", args.ricoramp.uel);
-        vow.pair(rico, 'prld', 1);
         vow.pair(rico, "feed", uint(uint160(args.feedbase)));
         vow.pair(rico, "fsrc", uint(uint160(address(mdn))));
         vow.pair(rico, "ftag", uint(RICO_RISK_TAG));

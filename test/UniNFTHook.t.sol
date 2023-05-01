@@ -182,7 +182,7 @@ contract NFTHookTest is Test, RicoSetUp {
         feedpush(drtag, bytes32(0 * RAY), type(uint).max);
         uint gas = gasleft();
         uint aid = vow.bail(':uninft', self);
-        check_gas(gas, 393229);
+        check_gas(gas, 432101);
 
         skip(30);
         uint price = nftflow.curp(aid, block.timestamp);

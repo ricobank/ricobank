@@ -32,7 +32,6 @@ contract Vow is Math, Ward, Flog, Flowback {
 
     Ramp public ramp;
 
-    address internal immutable yank = address(0);
     address internal immutable self = address(this);
 
     DutchFlower public flow;

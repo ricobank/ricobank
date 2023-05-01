@@ -40,7 +40,6 @@ contract ERC20Hook is Hook, Ward, Lock, Flog, Math {
     Vat         public vat;
 
     error ErrBigFlowback();
-    error ErrMintCeil();
     error ErrLoanArgs();
     error ErrTransfer();
     error ErrDinkLength();

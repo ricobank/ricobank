@@ -18,7 +18,6 @@ contract DutchFlower is Math, Lock, Flog {
         uint256 del;  // min ham
         uint256 gel;  // [ray] mul by basefee for creator reward
         uint256 uel;  // [ray] mul by feed price or wam/ham for starting ask
-        bool    prld; // [bool] true if load hag in flow(), false if in glug()
         address feed; // Feedbase for price if applicable
         address fsrc;
         bytes32 ftag;
@@ -50,7 +49,8 @@ contract DutchFlower is Math, Lock, Flog {
     error ErrTinyFlow();
     error ErrStale();
 
-    uint256 internal constant delay = 5;
+    uint256 internal constant DELAY = 5;
+    uint256 internal constant FLIP_DUST = 0;
 
     uint256 public count;
     uint256[] public aids;
@@ -65,8 +65,9 @@ contract DutchFlower is Math, Lock, Flog {
     ) _lock_ _flog_ external returns (uint256 aid) {
         address flo = msg.sender;
         Ramp storage ramp = ramps[flo][hag];
-        if (ham < ramp.del) revert ErrTinyFlow();
-        if (ramp.prld) {
+        uint256 del = ramp.del;
+        if (del > FLIP_DUST) {
+            if (ham < del) revert ErrTinyFlow();
             // preload the hags instead of doing transferFrom in glug
             if (!Gem(hag).transferFrom(msg.sender, address(this), ham)) {
                 revert ErrTransfer();
@@ -100,7 +101,7 @@ contract DutchFlower is Math, Lock, Flog {
         }
         auction.ask = rmul(p, ramp.uel);
 
-        auctions[aid].gun = block.timestamp + delay;
+        auctions[aid].gun = block.timestamp + DELAY;
         auctions[aid].gir = gir;
         auctions[aid].gim = rmul(block.basefee, ramp.gel);
         auctions[aid].valid = uint(Valid.VALID);
@@ -118,7 +119,7 @@ contract DutchFlower is Math, Lock, Flog {
 
         address flo = auction.flo;
         if (!Gem(auction.wag).transferFrom(msg.sender, auction.vow, makers)) revert ErrTransfer();
-        if (ramps[flo][auction.hag].prld) {
+        if (ramps[flo][auction.hag].del > FLIP_DUST) {
             // hag preloaded, use transfer and send back what's left
             if (!Gem(auction.hag).transfer(msg.sender, takers)) revert ErrTransfer();
             if (!Gem(auction.hag).transfer(flo, rest)) revert ErrTransfer();
@@ -174,8 +175,6 @@ contract DutchFlower is Math, Lock, Flog {
             ramp.gel = val;
         } else if (key == 'uel') {
             ramp.uel = val;
-        } else if (key == 'prld') {
-            ramp.prld = val == 0 ? false : true;
         } else { revert ErrCurbKey(); }
     }
 

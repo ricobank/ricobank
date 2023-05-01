@@ -45,7 +45,6 @@ contract DutchNFTFlower is Math, Lock, Flog {
     error ErrEmptyAid();
     error ErrTransfer();
     error ErrHighStep();
-    error ErrTinyFlow();
 
     uint256 internal constant delay = 5;
 
