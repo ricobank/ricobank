@@ -71,9 +71,9 @@ contract BallTest is Test, UniSetUp, Math {
     int256  constant dart = int(wethamt * wethricoprice / INIT_PAR);
     bytes32[] ilks;
     uint DEV_FUND_RISK = 1000000 * WAD;
-    uint GEL = 1000 * RAY;
-    uint FEL = RAY * 999 / 1000;
-    uint UEL = 2 * RAY;
+    uint FUEL = 1000 * RAY;
+    uint FADE = RAY * 999 / 1000;
+    uint GAIN = 2 * RAY;
     uint DUST = 90 * RAD;
 
     Vat vat;
@@ -139,7 +139,7 @@ contract BallTest is Test, UniSetUp, Math {
             100000 * RAD, // line
             RAY, // liqr
             DutchFlower.Ramp(
-                FEL, 0, GEL, UEL, address(fb), address(mdn), WETH_RICO_TAG
+                FADE, 0, FUEL, GAIN, address(fb), address(mdn), WETH_RICO_TAG
             ),
             20000, // ttl
             1 // range
@@ -162,10 +162,10 @@ contract BallTest is Test, UniSetUp, Math {
             10000, // twap
             BANKYEAR,
             DutchFlower.Ramp(
-                FEL, WAD, GEL, UEL, address(fb), address(mdn), RICO_RISK_TAG
+                FADE, WAD, FUEL, GAIN, address(fb), address(mdn), RICO_RISK_TAG
             ),
             DutchFlower.Ramp(
-                FEL, WAD, GEL, UEL, address(fb), address(mdn), RISK_RICO_TAG
+                FADE, WAD, FUEL, GAIN, address(fb), address(mdn), RISK_RICO_TAG
             ),
             Vow.Ramp(WAD, WAD, block.timestamp, 1),
             Ball.UniParams(
@@ -183,7 +183,7 @@ contract BallTest is Test, UniSetUp, Math {
         uint gas = gasleft();
         Ball ball = new Ball(bargs, ips);
         uint usedgas     = gas - gasleft();
-        uint expectedgas = 19376656;
+        uint expectedgas = 19376673;
         if (usedgas < expectedgas) {
             console.log("ball saved %s gas...currently %s", expectedgas - usedgas, usedgas);
         }
@@ -254,14 +254,14 @@ contract BallTest is Test, UniSetUp, Math {
         uint rico_after = Gem(rico).balanceOf(address(flow));
         assertGt(rico_after, rico_before);
 
-        vow.pair(address(rico), 'fel', RAY / 10);
+        vow.pair(address(rico), 'fade', RAY / 10);
         skip(2);
         rico_before = Gem(rico).balanceOf(address(flow));
         uint gas = gasleft();
         Gem(risk).mint(me, 1000 * WAD);
         Gem(risk).approve(address(flow), type(uint).max);
         skip(glug_delay);
-        flow.glug{value: rmul(GEL, block.basefee)}(aid);
+        flow.glug{value: rmul(FUEL, block.basefee)}(aid);
         rico_after = Gem(rico).balanceOf(address(flow));
         assertLt(rico_after, rico_before);
     }
@@ -276,7 +276,7 @@ contract BallTest is Test, UniSetUp, Math {
         risk_before = Gem(risk).balanceOf(address(flow));
         Gem(rico).approve(address(flow), type(uint).max);
         skip(glug_delay);
-        flow.glug{value: rmul(GEL, block.basefee)}(aid);
+        flow.glug{value: rmul(FUEL, block.basefee)}(aid);
         risk_after = Gem(risk).balanceOf(address(flow));
         assertLt(risk_after, risk_before);
     }
@@ -321,7 +321,7 @@ contract BallTest is Test, UniSetUp, Math {
         Gem(rico).mint(me, 1000000 * WAD);
         Gem(rico).approve(address(flow), UINT256_MAX);
         skip(glug_delay);
-        flow.glug{value: rmul(GEL, block.basefee)}(aid);
+        flow.glug{value: rmul(FUEL, block.basefee)}(aid);
         assertGt(WethLike(WETH).balanceOf(me), meweth);
     }
 

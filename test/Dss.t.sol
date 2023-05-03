@@ -168,40 +168,40 @@ contract DssJsTest is Test, RicoSetUp {
         vow.file('cel', 1);
         guy = new Guy(avat, aflow);
 
-        vow.pair(arisk, 'fel', RAY / 10);
-        vow.pair(arisk, 'gel', GEL);
-        vow.pair(arisk, 'del', 1);
-        vow.pair(arisk, 'uel', UEL);
+        vow.pair(arisk, 'fade', RAY / 10);
+        vow.pair(arisk, 'fuel', FUEL);
+        vow.pair(arisk, 'tiny', 1);
+        vow.pair(arisk, 'gain', GAIN);
         vow.pair(arisk, 'feed', uint(uint160(address(feed))));
         vow.pair(arisk, 'fsrc', uint(uint160(address(mdn))));
         vow.pair(arisk, 'ftag', uint(RISK_RICO_TAG));
 
-        vow.pair(arico, 'fel', RAY / 10);
-        vow.pair(arico, 'gel', GEL);
-        vow.pair(arico, 'del', 1);
-        vow.pair(arico, 'uel', UEL);
+        vow.pair(arico, 'fade', RAY / 10);
+        vow.pair(arico, 'fuel', FUEL);
+        vow.pair(arico, 'tiny', 1);
+        vow.pair(arico, 'gain', GAIN);
         vow.pair(arico, 'feed', uint(uint160(address(feed))));
         vow.pair(arico, 'fsrc', uint(uint160(address(mdn))));
         vow.pair(arico, 'ftag', uint(RICO_RISK_TAG));
 
-        hook.pair(WETH, 'fel', RAY / 10);
-        hook.pair(WETH, 'del', 0);
-        hook.pair(WETH, 'gel', GEL);
-        hook.pair(WETH, 'uel', UEL);
+        hook.pair(WETH, 'fade', RAY / 10);
+        hook.pair(WETH, 'tiny', 0);
+        hook.pair(WETH, 'fuel', FUEL);
+        hook.pair(WETH, 'gain', GAIN);
         hook.pair(WETH, 'feed', uint(uint160(address(feed))));
         hook.pair(WETH, 'fsrc', uint(uint160(address(mdn))));
         hook.pair(WETH, 'ftag', uint(wrtag));
 
-        hook.pair(agold, 'fel', RAY / 10);
-        hook.pair(agold, 'del', 0);
-        hook.pair(agold, 'gel', GEL);
-        hook.pair(agold, 'uel', UEL);
+        hook.pair(agold, 'fade', RAY / 10);
+        hook.pair(agold, 'tiny', 0);
+        hook.pair(agold, 'fuel', FUEL);
+        hook.pair(agold, 'gain', GAIN);
         hook.pair(agold, 'feed', uint(uint160(address(feed))));
         hook.pair(agold, 'fsrc', uint(uint160(address(mdn))));
         hook.pair(agold, 'ftag', uint(grtag));
 
-        flow.curb(arico, 'del', 1);
-        flow.curb(arisk, 'del', 1);
+        flow.curb(arico, 'tiny', 1);
+        flow.curb(arisk, 'tiny', 1);
 
         flow.curb(agold, 'feed', uint(uint160(address(feed))));
         flow.curb(agold, 'fsrc', uint(uint160(address(mdn))));
@@ -426,7 +426,7 @@ contract DssBiteTest is DssVatTest {
     // vow_Woe N/A - no debt queue in vow
 
     function test_happy_bite() public _bite_ {
-        hook.pair(address(gold), 'fel', FEL);
+        hook.pair(address(gold), 'fade', FADE);
         // dss: spot = tag / (par . mat), tag=5, mat=2
         // rico: mark = feed.val = 2.5
         // create urn (push, frob)
@@ -451,7 +451,7 @@ contract DssBiteTest is DssVatTest {
         uint256 aid = vow.bail(i0, me);
         prepguyrico(1000 * WAD, true);
         skip(glug_delay);
-        guy.glug{value: rmul(GEL, block.basefee)}(aid);
+        guy.glug{value: rmul(FUEL, block.basefee)}(aid);
         // excess frobbed back into urn
         assertGt(_ink(i0, me), 0);
 
@@ -459,10 +459,10 @@ contract DssBiteTest is DssVatTest {
         aid = vow.keep(ilks);
         skip(2 + glug_delay);
         uint vowrico = rico.balanceOf(avow);
-        guy.glug{value: rmul(GEL, block.basefee)}(aid);
+        guy.glug{value: rmul(FUEL, block.basefee)}(aid);
         skip(7);
         vm.expectRevert(DutchFlower.ErrEmptyAid.selector);
-        guy.glug{value: rmul(GEL, block.basefee)}(aid);
+        guy.glug{value: rmul(FUEL, block.basefee)}(aid);
         assertGt(rico.balanceOf(avow), vowrico);
     }
 
@@ -516,9 +516,9 @@ contract DssBiteTest is DssVatTest {
         feedpush(grtag, bytes32(2 * RAY), block.timestamp + 1000);
 
         // mimic dss auction rates...need to flop wad(1000) risk
-        hook.pair(agold, 'fel', FEL);
-        hook.pair(agold, 'uel', UEL);
-        vow.pair(arisk, 'fel', FEL);
+        hook.pair(agold, 'fade', FADE);
+        hook.pair(agold, 'gain', GAIN);
+        vow.pair(arisk, 'fade', FADE);
 
         assertEq(gov.balanceOf(address(flow)), 0);
         // dunk N/A bail always liquidates whole urn
@@ -527,20 +527,20 @@ contract DssBiteTest is DssVatTest {
         assertEq(rico.balanceOf(address(vow)), 0);
         uint256 aid = vow.bail(i0, me);
         skip(glug_delay);
-        flow.glug{value: rmul(GEL, block.basefee)}(aid);
+        flow.glug{value: rmul(FUEL, block.basefee)}(aid);
         assertEq(vat.sin(address(vow)) / RAY, ricoamt);
         assertEq(rico.balanceOf(address(vow)), ricoamt);
 
         skip(1);
         vm.expectRevert(DutchFlower.ErrEmptyAid.selector);
-        flow.glug{value: rmul(GEL, block.basefee)}(aid);
+        flow.glug{value: rmul(FUEL, block.basefee)}(aid);
         assertEq(vat.sin(address(vow)) / RAY, ricoamt);
         assertEq(rico.balanceOf(avow), ricoamt);
     }
 
     // todo maybe a similar test but get the surplus using frob/bail?
     function test_flappy_bite() public _bite_ {
-        vow.pair(address(rico), 'fel', RAY / 10);
+        vow.pair(address(rico), 'fade', RAY / 10);
         uint ricoamt = 100 * WAD;
         rico.mint(address(vow), ricoamt);
         assertEq(rico.balanceOf(address(vow)), ricoamt);
@@ -553,7 +553,7 @@ contract DssBiteTest is DssVatTest {
         skip(27 + glug_delay);
         gov.mint(address(guy), 1000 * WAD);
         guy.approve(address(gov), aflow, UINT256_MAX);
-        guy.glug{value: rmul(GEL, block.basefee)}(aid);
+        guy.glug{value: rmul(FUEL, block.basefee)}(aid);
 
         assertEq(rico.balanceOf(address(vow)), 0);
         assertEq(vow_Awe() / RAY, 0);
@@ -561,13 +561,13 @@ contract DssBiteTest is DssVatTest {
 
         skip(1);
         vm.expectRevert(DutchFlower.ErrEmptyAid.selector);
-        guy.glug{value: rmul(GEL, block.basefee)}(aid);
+        guy.glug{value: rmul(FUEL, block.basefee)}(aid);
 
         aid = vow.keep(ilks);
         // no surplus or deficit, keep didn't create an auction
         // previous auction has already been deleted
         vm.expectRevert(DutchFlower.ErrEmptyAid.selector);
-        guy.glug{value: rmul(GEL, block.basefee)}(aid);
+        guy.glug{value: rmul(FUEL, block.basefee)}(aid);
         assertEq(rico.balanceOf(address(vow)), 0);
         assertEq(vow_Awe() / RAY, 0);
         assertEq(gov.balanceOf(address(vow)), 0);
@@ -631,7 +631,7 @@ contract DssFlipTest is DssJsTest {
         rico.mint(a, 200 * WAD);
         rico.mint(b, 200 * WAD);
 
-        hook.pair(address(gem), 'fel', FEL);
+        hook.pair(address(gem), 'fade', FADE);
         gal = cat;
     }
 
@@ -710,7 +710,7 @@ contract DssFlopTest is DssJsTest {
         rico.mint(me, 1000 * WAD);
         _gift(a, 200 * WAD);
         _gift(b, 200 * WAD);
-        flow.curb(arisk, 'uel', 2 * RAY);
+        flow.curb(arisk, 'gain', 2 * RAY);
     }
 
     modifier _flop_ { _flop_setup(); _; }
@@ -726,17 +726,17 @@ contract DssFlopTest is DssJsTest {
         assertEq(risk.balanceOf(me), 0);
         assertEq(rico.balanceOf(me), 600 * WAD);
 
-        (address v, address flo, address hag, uint ham, address wag,
+        (address v, address vip, address hag, uint ham, address wag,
          uint wam, uint ask, uint gun, address gir, uint gim, uint valid)
             = flow.auctions(flow.count());
 
         assertEq(v, me);
-        assertEq(flo, me);
+        assertEq(vip, me);
         assertEq(hag, address(risk));
         assertEq(ham, haveamt);
         assertEq(wag, address(rico));
         assertEq(wam, haveamt * 2);
-        assertEq(ask, 2 * UEL);
+        assertEq(ask, 2 * GAIN);
         assertEq(gun, block.timestamp + glug_delay);
         assertEq(gir, self);
         assertEq(gim, 0);
@@ -804,7 +804,7 @@ contract DssClipTest is DssJsTest {
         rico.mint(a, 1000 * WAD);
         rico.mint(b, 1000 * WAD);
 
-        hook.pair(agold, 'fel', FEL);
+        hook.pair(agold, 'fade', FADE);
 
     }
 
@@ -832,11 +832,11 @@ contract DssClipTest is DssJsTest {
         ali.bail(i0, me); // no keeper arg
         uint256 aid = flow.count();
 
-        hook.pair(WETH, 'fel', RAY / 10);
+        hook.pair(WETH, 'fade', RAY / 10);
         feedpush(wrtag, bytes32(RAY * 100), UINT256_MAX);
         skip(2 + glug_delay);
         prepguyrico(1000 * WAD, true);
-        guy.glug{value: rmul(GEL, block.basefee)}(aid);
+        guy.glug{value: rmul(FUEL, block.basefee)}(aid);
 
         // clip.kicks() N/A rico flow doesn't count flips
         // clip.sales() N/A rico flow doesn't store sale information
@@ -869,7 +869,7 @@ contract DssClipTest is DssJsTest {
         bob.bail(i0, me);
         // wait till price goes to 0
         skip(77 + glug_delay);
-        guy.glug{value: rmul(GEL, block.basefee)}(flow.count());
+        guy.glug{value: rmul(FUEL, block.basefee)}(flow.count());
         // clip.kicks() N/A rico flow doesn't count flips
         // clip.sales() N/A rico flow doesn't store sale information
 
@@ -1018,9 +1018,9 @@ contract DssVowTest is DssJsTest {
     //   N/A no vow.wait in rico
 
     function test_no_reflop() public _vow_ {
-        vow.pair(arico, 'fel', RAY / 10);
+        vow.pair(arico, 'fade', RAY / 10);
         uint amt = WAD / 1000;
-        vow.pair(arisk, 'fel', RAY / 10);
+        vow.pair(arisk, 'fade', RAY / 10);
         vow.file('vel', amt * 2);
         vow.file('rel', WAD);
         vow.file('bel', block.timestamp);
@@ -1041,11 +1041,11 @@ contract DssVowTest is DssJsTest {
         vm.expectRevert(Vow.ErrReflop.selector);
         vow.keep(ilks);
 
-        // glug to create a surplus (uel > RAY), then keep
+        // glug to create a surplus (gain > RAY), then keep
         feedpush(RISK_RICO_TAG, bytes32(1000 * RAY), UINT256_MAX);
         prepguyrico(1000 * WAD, false);
         skip(glug_delay);
-        guy.glug{value: rmul(GEL, block.basefee)}(aid);
+        guy.glug{value: rmul(FUEL, block.basefee)}(aid);
 
         // should be a flap this time
         aid = vow.keep(ilks);

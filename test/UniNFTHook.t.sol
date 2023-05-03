@@ -132,8 +132,8 @@ contract NFTHookTest is Test, RicoSetUp {
     }
 
     function test_nft_glug() public {
-        nfthook.pair('fel', RAY * 99 / 100);
-        nfthook.pair('gel', 1000 * RAY);
+        nfthook.pair('fade', RAY * 99 / 100);
+        nfthook.pair('fuel', 1000 * RAY);
         bytes memory addgwpos = abi.encodePacked(int(1), goldwethtokid);
         vat.frob(':uninft', self, addgwpos, int(WAD));
         feedpush(wrtag, bytes32(0 * RAY), type(uint).max);
@@ -144,21 +144,21 @@ contract NFTHookTest is Test, RicoSetUp {
 
         // can't glug at same time as bail
         vm.expectRevert(stdError.arithmeticError);
-        nftflow.glug{value: rmul(block.basefee, GEL)}(aid);
+        nftflow.glug{value: rmul(block.basefee, FUEL)}(aid);
 
         // not enough rico
         vm.expectRevert(Gem.ErrUnderflow.selector);
         skip(glug_delay);
-        nftflow.glug{value: rmul(block.basefee, GEL)}(aid);
+        nftflow.glug{value: rmul(block.basefee, FUEL)}(aid);
         rico_mint(1000 * WAD, true);
 
         // a little lower, but still lots to flowback
         skip(30);
-        uint price = nftflow.curp(aid, block.timestamp);
+        uint price = nftflow.deal(aid, block.timestamp);
         rico.transfer(address(guy), price);
         guy.approve(arico, address(nftflow), type(uint).max);
 
-        uint gim = rmul(block.basefee, GEL);
+        uint gim = rmul(block.basefee, FUEL);
         uint ricobefore = rico.balanceOf(self);
         guy.glug{value: gim}(aid);
         assertGt(rico.balanceOf(self), ricobefore);
@@ -166,8 +166,8 @@ contract NFTHookTest is Test, RicoSetUp {
     }
 
     function test_multipos() public {
-        nfthook.pair('fel', RAY * 99 / 100);
-        nfthook.pair('gel', 1000 * RAY);
+        nfthook.pair('fade', RAY * 99 / 100);
+        nfthook.pair('fuel', 1000 * RAY);
         // add goldwethtokid and golddaitokid at once
         bytes memory data = abi.encodePacked(int(1), goldwethtokid, golddaitokid);
         vat.frob(':uninft', self, data, int(WAD));
@@ -185,12 +185,12 @@ contract NFTHookTest is Test, RicoSetUp {
         check_gas(gas, 432101);
 
         skip(30);
-        uint price = nftflow.curp(aid, block.timestamp);
+        uint price = nftflow.deal(aid, block.timestamp);
         rico_mint(1000 * WAD, true);
         rico.transfer(address(guy), price);
         guy.approve(arico, address(nftflow), type(uint).max);
 
-        uint gim = rmul(block.basefee, GEL);
+        uint gim = rmul(block.basefee, FUEL);
         uint ricobefore = rico.balanceOf(self);
         gas = gasleft();
         guy.glug{value: gim}(aid);
@@ -201,8 +201,8 @@ contract NFTHookTest is Test, RicoSetUp {
     }
 
     function test_nft_frob_down() public {
-        nfthook.pair('fel', RAY * 99 / 100);
-        nfthook.pair('gel', 1000 * RAY);
+        nfthook.pair('fade', RAY * 99 / 100);
+        nfthook.pair('fuel', 1000 * RAY);
         // add goldwethtokid and golddaitokid at once
         bytes memory data = abi.encodePacked(int(1), goldwethtokid, golddaitokid);
         vat.frob(':uninft', self, data, int(WAD));
@@ -245,8 +245,8 @@ contract NFTHookTest is Test, RicoSetUp {
         feedpush(drtag, bytes32(RAY), type(uint).max);
         feedpush(grtag, bytes32(RAY), type(uint).max);
         feedpush(wrtag, bytes32(RAY), type(uint).max);
-        nfthook.pair('fel', RAY * 99 / 100);
-        nfthook.pair('gel', 1000 * RAY);
+        nfthook.pair('fade', RAY * 99 / 100);
+        nfthook.pair('fuel', 1000 * RAY);
         // add goldwethtokid and golddaitokid at once
         bytes memory data = abi.encodePacked(int(1), goldwethtokid, golddaitokid);
         vat.frob(':uninft', self, data, int(900 * WAD));
@@ -267,8 +267,8 @@ contract NFTHookTest is Test, RicoSetUp {
         feedpush(drtag, bytes32(RAY), type(uint).max);
         feedpush(grtag, bytes32(RAY), type(uint).max);
         feedpush(wrtag, bytes32(RAY), type(uint).max);
-        nfthook.pair('fel', RAY * 99 / 100);
-        nfthook.pair('gel', 1000 * RAY);
+        nfthook.pair('fade', RAY * 99 / 100);
+        nfthook.pair('fuel', 1000 * RAY);
         // add goldwethtokid and golddaitokid at once
         bytes memory data = abi.encodePacked(int(0));
         vm.expectRevert(UniNFTHook.ErrDir.selector);

@@ -66,9 +66,9 @@ contract Ball is Math {
         address nfpm;
         bytes32 ilk;
         uint fee;
-        uint uel;
-        uint gel;
-        uint fel;
+        uint gain;
+        uint fuel;
+        uint fade;
         uint chop;
         uint room;
     }
@@ -161,21 +161,21 @@ contract Ball is Math {
                 divider.setConfig(concat(ilk, 'rico'), Divider.Config(ss, ts));
             }
 
-            hook.pair(gem, "fel", ilkparams.ramp.fel);
-            hook.pair(gem, "del", ilkparams.ramp.del);
-            hook.pair(gem, "gel", ilkparams.ramp.gel);
-            hook.pair(gem, 'uel', ilkparams.ramp.uel);
+            hook.pair(gem, "fade", ilkparams.ramp.fade);
+            hook.pair(gem, "tiny", ilkparams.ramp.tiny);
+            hook.pair(gem, "fuel", ilkparams.ramp.fuel);
+            hook.pair(gem, 'gain', ilkparams.ramp.gain);
             hook.pair(gem, "feed", uint(uint160(ilkparams.ramp.feed)));
             hook.pair(gem, "fsrc", uint(uint160(address(mdn))));
             hook.pair(gem, "ftag", uint(ilkparams.ramp.ftag));
         }
 
         // todo ramp config
-        vow.pair(risk, "fel", args.riskramp.fel);
-        vow.pair(rico, "del", args.ricoramp.del);
-        vow.pair(risk, "del", args.riskramp.del);
-        vow.pair(risk, "gel", args.riskramp.gel);
-        vow.pair(risk, "uel", args.riskramp.uel);
+        vow.pair(risk, "fade", args.riskramp.fade);
+        vow.pair(rico, "tiny", args.ricoramp.tiny);
+        vow.pair(risk, "tiny", args.riskramp.tiny);
+        vow.pair(risk, "fuel", args.riskramp.fuel);
+        vow.pair(risk, "gain", args.riskramp.gain);
         vow.pair(risk, "feed", uint(uint160(args.feedbase)));
         vow.pair(risk, "fsrc", uint(uint160(bytes20(address(mdn)))));
         vow.pair(risk, "ftag", uint(RISK_RICO_TAG));
@@ -184,9 +184,9 @@ contract Ball is Math {
         vow.file("bel", args.mintramp.bel);
         vow.file("cel", args.mintramp.cel);
 
-        vow.pair(rico, "fel", args.ricoramp.fel);
-        vow.pair(rico, "gel", args.ricoramp.gel);
-        vow.pair(rico, "uel", args.ricoramp.uel);
+        vow.pair(rico, "fade", args.ricoramp.fade);
+        vow.pair(rico, "fuel", args.ricoramp.fuel);
+        vow.pair(rico, "gain", args.ricoramp.gain);
         vow.pair(rico, "feed", uint(uint160(args.feedbase)));
         vow.pair(rico, "fsrc", uint(uint160(address(mdn))));
         vow.pair(rico, "ftag", uint(RICO_RISK_TAG));
@@ -278,9 +278,9 @@ contract Ball is Math {
         vat.init(':uninft', address(nfthook));
         vat.filk(':uninft', 'fee', args.ups.fee);
         vat.filk(':uninft', 'chop', args.ups.chop);
-        nfthook.pair('uel', args.ups.uel);
-        nfthook.pair('gel', args.ups.gel);
-        nfthook.pair('fel', args.ups.fel);
+        nfthook.pair('gain', args.ups.gain);
+        nfthook.pair('fuel', args.ups.fuel);
+        nfthook.pair('fade', args.ups.fade);
 
         nfthook.ward(address(nftflow), true);
         nfthook.ward(address(vat), true);

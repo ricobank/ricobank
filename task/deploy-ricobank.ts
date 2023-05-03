@@ -45,13 +45,13 @@ task('deploy-ricobank', '')
         twaprange:    10000,
         twapttl:      BANKYEAR,
         ricoramp: {
-            fel : ray(0.999), del: wad(100), gel: ray(1000), uel: ray(2),
+            fade : ray(0.999), tiny: wad(100), fuel: ray(1000), gain: ray(2),
             feed: deps.objects.feedbase.address,
             fsrc: hre.ethers.constants.AddressZero,
             ftag: hre.ethers.constants.HashZero
         },
         riskramp: {
-            fel : ray(0.999), del: wad(100), gel: ray(1000), uel: ray(2),
+            fade : ray(0.999), tiny: wad(100), fuel: ray(1000), gain: ray(2),
             feed: deps.objects.feedbase.address,
             fsrc: hre.ethers.constants.AddressZero,
             ftag: hre.ethers.constants.HashZero
@@ -61,9 +61,9 @@ task('deploy-ricobank', '')
             nfpm: "0xC36442b4a4522E871399CD717aBDD847Ab11FE88",
             ilk: b32(':uninft'),
             fee: hre.ethers.BigNumber.from("1000000001546067052200000000"),
-            uel: ray(2),
-            gel: ray(1000),
-            fel: ray(0.999),
+            gain: ray(2),
+            fuel: ray(1000),
+            fade: ray(0.999),
             chop: ray(1),
             room: 8
         }
@@ -79,7 +79,7 @@ task('deploy-ricobank', '')
         line: rad(100000),
         liqr: ray(1),
         ramp: {
-            fel : ray(0.999), del: wad(0), gel: ray(900), uel: ray(2),
+            fade : ray(0.999), tiny: wad(0), fuel: ray(900), gain: ray(2),
             feed: deps.objects.feedbase.address,
             fsrc: hre.ethers.constants.AddressZero,
             ftag: hre.ethers.constants.HashZero

@@ -114,11 +114,10 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
 
     Guy guy;
 
-    uint constant public FEL = RAY / 2;
-    uint constant public BAR = type(uint).max / RAY;
-    uint constant public GEL = RAY * 1000;
-    uint constant public FLIP_GEL = RAY * 900;
-    uint constant public UEL = 2 * RAY;
+    uint constant public FADE = RAY / 2;
+    uint constant public FUEL = RAY * 1000;
+    uint constant public FLIP_FUEL = RAY * 900;
+    uint constant public GAIN = 2 * RAY;
 
     receive () external payable {}
 
@@ -199,7 +198,7 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
             100000 * RAD, // line
             RAY, // liqr
             DutchFlower.Ramp(
-                RAY * 999 / 1000, 0, FLIP_GEL, UEL, address(feed), address(mdn), WETH_RICO_TAG
+                RAY * 999 / 1000, 0, FLIP_FUEL, GAIN, address(feed), address(mdn), WETH_RICO_TAG
             ),
             20000, // ttl
             BANKYEAR / 4 // range
@@ -221,10 +220,10 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
             10000, // twap
             BANKYEAR,
             DutchFlower.Ramp(
-                RAY * 999 / 1000, 1, GEL, UEL, azero, azero, bytes32(0)
+                RAY * 999 / 1000, 1, FUEL, GAIN, azero, azero, bytes32(0)
             ),
             DutchFlower.Ramp(
-                RAY * 999 / 1000, 1, GEL, UEL, azero, azero, bytes32(0)
+                RAY * 999 / 1000, 1, FUEL, GAIN, azero, azero, bytes32(0)
             ),
             Vow.Ramp(WAD, WAD, block.timestamp, 1),
             Ball.UniParams(
@@ -276,8 +275,8 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
         feedpush(RISK_RICO_TAG, bytes32(RAY), block.timestamp + 1000);
         feedpush(RICO_RISK_TAG, bytes32(RAY), block.timestamp + 1000);
 
-        vow.pair(arico, 'gel', GEL);
-        vow.pair(arisk, 'gel', GEL);
+        vow.pair(arico, 'fuel', FUEL);
+        vow.pair(arisk, 'fuel', FUEL);
     }
 
     function init_dai() public {
@@ -315,8 +314,8 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
         hook.pair(agold, 'feed', uint(uint160(address(feed))));
         hook.pair(agold, 'fsrc', uint(uint160(address(mdn))));
         hook.pair(agold, 'ftag', uint(grtag));
-        hook.pair(agold, 'gel', GEL);
-        hook.pair(agold, 'uel', UEL);
+        hook.pair(agold, 'fuel', FUEL);
+        hook.pair(agold, 'gain', GAIN);
     }
 
     function init_ruby() public {

@@ -38,7 +38,7 @@ contract FlowTest is Test, Math {
     Feedbase feed;
     bool sendreverts;
     bool rxdone;
-    uint UEL = 2 * RAY;
+    uint GAIN = 2 * RAY;
 
     receive () payable external {
         if (sendreverts) revert('uh oh');
@@ -64,10 +64,10 @@ contract FlowTest is Test, Math {
         risk.approve(address(flow), type(uint256).max);
         feed = new Feedbase();
 
-        flow.curb(arico, 'fel', RAY / 2);
-        flow.curb(arico, 'gel', 1000 * RAY);
-        flow.curb(arico, 'del', 1);
-        flow.curb(arico, 'uel', UEL);
+        flow.curb(arico, 'fade', RAY / 2);
+        flow.curb(arico, 'fuel', 1000 * RAY);
+        flow.curb(arico, 'tiny', 1);
+        flow.curb(arico, 'gain', GAIN);
         flow.curb(arico, 'feed', uint(uint160(address(feed))));
         flow.curb(arico, 'fsrc', uint(uint160(address(self))));
         flow.curb(arico, 'ftag', uint(RICO_RISK_TAG));
@@ -80,8 +80,8 @@ contract FlowTest is Test, Math {
     function test_refund() public {
         // create sale of 1k rico for 200 risk
         uint ricoself = rico.balanceOf(self);
-        // raise uel a little bit to test `fel`
-        flow.curb(arico, 'uel', 4 * RAY);
+        // raise gain a little bit to test `fade`
+        flow.curb(arico, 'gain', 4 * RAY);
         feed.push(RICO_RISK_TAG, bytes32(RAY / 5 * 4), UINT256_MAX);
         uint256 aid = flow.flow(
             avow, address(rico), WAD * 1000, address(risk), WAD * 200, self
@@ -161,24 +161,24 @@ contract FlowTest is Test, Math {
  
 
     function test_selling_without_paying() public {
-        flow.curb(arico, 'fel', RAY / 10);
+        flow.curb(arico, 'fade', RAY / 10);
         rico.approve(address(flow), 0);
         vm.expectRevert(Gem.ErrUnderflow.selector);
         flow.flow(self, arico, WAD * 1000000, address(risk), type(uint256).max, self);
     }
 
-    // similar to test_refund, but del=0 so it is treated as a non native token
+    // similar to test_refund, but tiny=0 so it is treated as a non native token
     function test_nongem() public {
-        flow.curb(arico, 'del', 0);
-        // raise uel a little bit to test `fel`
-        flow.curb(arico, 'uel', 4 * RAY);
+        flow.curb(arico, 'tiny', 0);
+        // raise gain a little bit to test `fade`
+        flow.curb(arico, 'gain', 4 * RAY);
         // create sale of 1k rico for 200 risk
         uint ricoself = rico.balanceOf(self);
         feed.push(RICO_RISK_TAG, bytes32(RAY / 5 * 4), UINT256_MAX);
         uint256 aid = flow.flow(
             avow, address(rico), WAD * 1000, address(risk), WAD * 200, self
         );
-        // doesn't change, kept in flo
+        // doesn't change, kept in flow
         assertEq(rico.balanceOf(self), ricoself);
 
         // complete sale and test flowback gets called exactly once

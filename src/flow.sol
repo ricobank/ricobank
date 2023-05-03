@@ -14,10 +14,10 @@ interface Flowback {
 
 contract DutchFlower is Math, Lock, Flog {
     struct Ramp {
-        uint256 fel;  // [ray] rate of change in asking price/second
-        uint256 del;  // min ham
-        uint256 gel;  // [ray] mul by basefee for creator reward
-        uint256 uel;  // [ray] mul by feed price or wam/ham for starting ask
+        uint256 fade; // [ray] rate of change in asking price/second
+        uint256 tiny; // min ham
+        uint256 fuel; // [ray] mul by basefee for creator reward
+        uint256 gain; // [ray] mul by feed price or wam/ham for starting ask
         address feed; // Feedbase for price if applicable
         address fsrc;
         bytes32 ftag;
@@ -25,7 +25,7 @@ contract DutchFlower is Math, Lock, Flog {
 
     struct Auction {
         address vow;  // vow
-        address flo;  // client
+        address vip;  // client
         address hag;  // have gem
         uint256 ham;  // have amount
         address wag;  // want gem
@@ -63,11 +63,11 @@ contract DutchFlower is Math, Lock, Flog {
         uint    wam,
         address payable gir
     ) _lock_ _flog_ external returns (uint256 aid) {
-        address flo = msg.sender;
-        Ramp storage ramp = ramps[flo][hag];
-        uint256 del = ramp.del;
-        if (del > FLIP_DUST) {
-            if (ham < del) revert ErrTinyFlow();
+        address vip = msg.sender;
+        Ramp storage ramp = ramps[vip][hag];
+        uint256 tiny = ramp.tiny;
+        if (tiny > FLIP_DUST) {
+            if (ham < tiny) revert ErrTinyFlow();
             // preload the hags instead of doing transferFrom in glug
             if (!Gem(hag).transferFrom(msg.sender, address(this), ham)) {
                 revert ErrTransfer();
@@ -84,7 +84,7 @@ contract DutchFlower is Math, Lock, Flog {
 
         Auction storage auction = auctions[aid];
         auction.vow = vow;
-        auction.flo = flo;
+        auction.vip = vip;
         auction.hag = hag;
         auction.ham = ham;
         auction.wag = wag;
@@ -99,11 +99,11 @@ contract DutchFlower is Math, Lock, Flog {
         } else {
             p = rdiv(wam, ham);
         }
-        auction.ask = rmul(p, ramp.uel);
+        auction.ask = rmul(p, ramp.gain);
 
         auctions[aid].gun = block.timestamp + DELAY;
         auctions[aid].gir = gir;
-        auctions[aid].gim = rmul(block.basefee, ramp.gel);
+        auctions[aid].gim = rmul(block.basefee, ramp.fuel);
         auctions[aid].valid = uint(Valid.VALID);
     }
 
@@ -112,23 +112,23 @@ contract DutchFlower is Math, Lock, Flog {
 
         if (uint(Valid.VALID) != auction.valid) revert ErrEmptyAid();
 
-        uint price = curp(aid, block.timestamp);
+        uint price = deal(aid, block.timestamp);
 
         (uint makers, uint takers) = clip(auction.ham, auction.wam, price);
         uint rest  = auction.ham - takers;
 
-        address flo = auction.flo;
+        address vip = auction.vip;
         if (!Gem(auction.wag).transferFrom(msg.sender, auction.vow, makers)) revert ErrTransfer();
-        if (ramps[flo][auction.hag].del > FLIP_DUST) {
+        if (ramps[vip][auction.hag].tiny > FLIP_DUST) {
             // hag preloaded, use transfer and send back what's left
             if (!Gem(auction.hag).transfer(msg.sender, takers)) revert ErrTransfer();
-            if (!Gem(auction.hag).transfer(flo, rest)) revert ErrTransfer();
+            if (!Gem(auction.hag).transfer(vip, rest)) revert ErrTransfer();
         } else {
-            // hag still in flo, use transferFrom, may need to hook.grant(hag) for this to work
-            if (!Gem(auction.hag).transferFrom(flo, msg.sender, takers)) revert ErrTransfer();
+            // hag still in vip, use transferFrom, may need to hook.grant(hag) for this to work
+            if (!Gem(auction.hag).transferFrom(vip, msg.sender, takers)) revert ErrTransfer();
         }
 
-        Flowback(flo).flowback(aid, rest);
+        Flowback(vip).flowback(aid, rest);
 
         // pay whomever paid the gas to create the auction
         if (msg.value < auction.gim) revert ErrTransfer();
@@ -151,11 +151,11 @@ contract DutchFlower is Math, Lock, Flog {
     }
 
     // auction's asking price at `time`
-    function curp(uint aid, uint time) public view returns (uint) {
+    function deal(uint aid, uint time) public view returns (uint) {
         Auction storage auction = auctions[aid];
-        uint fel = ramps[auction.flo][auction.hag].fel;
-        // fel < RAY, so price decreases with time
-        return grow(auction.ask, fel, time - auction.gun);
+        uint fade = ramps[auction.vip][auction.hag].fade;
+        // fade < RAY, so price decreases with time
+        return grow(auction.ask, fade, time - auction.gun);
     }
 
     function curb(address gem, bytes32 key, uint val) _flog_ external {
@@ -166,15 +166,15 @@ contract DutchFlower is Math, Lock, Flog {
             ramp.fsrc = address(uint160(val));
         } else if (key == 'ftag') {
             ramp.ftag = bytes32(val);
-        } else if (key == 'fel') {
+        } else if (key == 'fade') {
             if (val > RAY) revert ErrHighStep();
-            ramp.fel = val;
-        } else if (key == 'del') {
-            ramp.del = val;
-        } else if (key == 'gel') {
-            ramp.gel = val;
-        } else if (key == 'uel') {
-            ramp.uel = val;
+            ramp.fade = val;
+        } else if (key == 'tiny') {
+            ramp.tiny = val;
+        } else if (key == 'fuel') {
+            ramp.fuel = val;
+        } else if (key == 'gain') {
+            ramp.gain = val;
         } else { revert ErrCurbKey(); }
     }
 
