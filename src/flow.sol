@@ -39,7 +39,7 @@ contract DutchFlower is Math, Lock, Flog {
 
     enum Valid { UNINITIALIZED, INVALID, VALID }
 
-    mapping (address usr => mapping (address hag => Ramp)) ramps;
+    mapping (address usr => mapping (address hag => Ramp)) public ramps;
     mapping (uint256 aid => Auction) public auctions;
 
     error ErrCurbKey();

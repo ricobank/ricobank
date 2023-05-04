@@ -6,7 +6,7 @@ import { Math } from '../../mixin/math.sol';
 import { Flog } from '../../mixin/flog.sol';
 import { Lock } from '../../mixin/lock.sol';
 import { Gem } from '../../../lib/gemfab/src/gem.sol';
-import '@openzeppelin/contracts/token/ERC721/IERC721.sol';
+import {IERC721} from './interfaces/INonfungiblePositionManager.sol';
 
 interface Flowback {
     function flowback(uint256 aid, uint refund) external;

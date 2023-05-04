@@ -11,14 +11,18 @@ import { Feedbase } from '../../../lib/feedbase/src/Feedbase.sol';
 import { Hook } from '../hook.sol';
 import { DutchNFTFlower } from './DutchNFTFlower.sol';
 
-import { PoolAddress } from './lib/PoolAddress.sol';
-import { PositionValue } from './lib/PositionValue.sol';
-
 import { IUniswapV3Pool } from '@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol';
 import { INonfungiblePositionManager } from './interfaces/INonfungiblePositionManager.sol';
 
+interface IUniWrapper {
+    function total(INonfungiblePositionManager nfpm, uint tokenId, uint160 sqrtPriceX96) view external returns (uint amount0, uint amount1);
+    function computeAddress(address factory, address t0, address t1, uint24 fee) view external returns (address);
+
+}
+
 // hook for uni NonfungiblePositionManager
 contract UniNFTHook is Hook, Ward, Flog, Math {
+    IUniWrapper public wrap;
     struct Source {
         address fsrc;  // [obj] feedbase `src` address
         bytes32 ftag;  // [tag] feedbase `tag` bytes32
@@ -43,12 +47,13 @@ contract UniNFTHook is Hook, Ward, Flog, Math {
     error ErrDir();
     error ErrFull();
 
-    constructor(address _feed, address _flow, address _rico, address _nfpm, uint _ROOM) {
+    constructor(address _feed, address _flow, address _rico, address _nfpm, uint _ROOM, address _wrap) {
         feed = Feedbase(_feed);
         flow = DutchNFTFlower(_flow);
         rico = Gem(_rico);
         ROOM = _ROOM;
         nfpm = INonfungiblePositionManager(_nfpm);
+        wrap = IUniWrapper(_wrap);
     }
 
     function frobhook(
@@ -110,13 +115,11 @@ contract UniNFTHook is Hook, Ward, Flog, Math {
         (,,t0,t1,fee,,,,,,,) = nfpm.positions(tokenId);
 
         // get the current price
-        address pool = PoolAddress.computeAddress(
-            nfpm.factory(), PoolAddress.getPoolKey(t0, t1, fee)
-        );
+        address pool = wrap.computeAddress(nfpm.factory(), t0, t1, fee);
         (uint160 sqrtPriceX96,,,,,,) = IUniswapV3Pool(pool).slot0();
 
         // uni library function to get amounts
-        (a0, a1) = PositionValue.total(nfpm, tokenId, sqrtPriceX96);
+        (a0, a1) = wrap.total(nfpm, tokenId, sqrtPriceX96);
     }
 
     function safehook(bytes32 ilk, address urn) public view returns (uint tot, uint minttl) {

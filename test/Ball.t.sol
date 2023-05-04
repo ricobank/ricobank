@@ -115,6 +115,14 @@ contract BallTest is Test, UniSetUp, Math {
         mdn.poke(RISK_RICO_TAG);
     }
 
+    function make_uniwrapper() internal returns (address deployed) {
+        bytes memory args = abi.encode('');
+        bytes memory bytecode = abi.encodePacked(vm.getCode("UniWrapper.sol:UniWrapper"), args);
+        assembly {
+            deployed := create(0, add(bytecode, 0x20), mload(bytecode))
+        }
+    }
+
     function setUp() public {
         me = address(this);
         gf = new GemFab();
@@ -176,14 +184,15 @@ contract BallTest is Test, UniSetUp, Math {
                 1000 * RAY,
                 RAY * 999 / 1000,
                 RAY,
-                8
+                8,
+                make_uniwrapper()
             )
         );
 
         uint gas = gasleft();
         Ball ball = new Ball(bargs, ips);
         uint usedgas     = gas - gasleft();
-        uint expectedgas = 19376673;
+        uint expectedgas = 18749589;
         if (usedgas < expectedgas) {
             console.log("ball saved %s gas...currently %s", expectedgas - usedgas, usedgas);
         }

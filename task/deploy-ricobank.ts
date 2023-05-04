@@ -28,6 +28,9 @@ task('deploy-ricobank', '')
     const ball_artifact = require('../artifacts/src/ball.sol/Ball.json')
     const ball_type = hre.ethers.ContractFactory.fromSolidity(ball_artifact, ali)
     const timestamp = (await hre.ethers.provider.getBlock('latest')).timestamp
+    const uniwrapper_artifact = require('../artifacts/src/hook/nfpm/UniWrapper.sol/UniWrapper.json')
+    const uniwrapper_type = hre.ethers.ContractFactory.fromSolidity(uniwrapper_artifact, ali)
+    const uniwrapper = await uniwrapper_type.deploy();
     const ballargs = {
         feedbase: deps.objects.feedbase.address,
         rico: deps.objects.rico.address,
@@ -65,7 +68,8 @@ task('deploy-ricobank', '')
             fuel: ray(1000),
             fade: ray(0.999),
             chop: ray(1),
-            room: 8
+            room: 8,
+            uniwrapper: uniwrapper.address
         }
     }
 

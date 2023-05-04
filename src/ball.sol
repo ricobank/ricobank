@@ -71,6 +71,7 @@ contract Ball is Math {
         uint fade;
         uint chop;
         uint room;
+        address uniwrapper;
     }
 
     struct BallArgs {
@@ -274,7 +275,7 @@ contract Ball is Math {
 
         // initialize uni ilk
         nftflow = new DutchNFTFlower(args.ups.nfpm, rico);
-        nfthook = new UniNFTHook(args.feedbase, address(nftflow), rico, args.ups.nfpm, args.ups.room);
+        nfthook = new UniNFTHook(args.feedbase, address(nftflow), rico, args.ups.nfpm, args.ups.room, args.ups.uniwrapper);
         vat.init(':uninft', address(nfthook));
         vat.filk(':uninft', 'fee', args.ups.fee);
         vat.filk(':uninft', 'chop', args.ups.chop);

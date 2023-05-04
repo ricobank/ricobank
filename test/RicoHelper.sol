@@ -111,6 +111,7 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
     address  public avox;
     address  public ahook;
     address  public aflow;
+    address  public uniwrapper;
 
     Guy guy;
 
@@ -176,6 +177,14 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
         mdn.setConfig(tag, mdnconf);
     }
 
+    function make_uniwrapper() internal returns (address deployed) {
+        bytes memory args = abi.encode('');
+        bytes memory bytecode = abi.encodePacked(vm.getCode("UniWrapper.sol:UniWrapper"), args);
+        assembly {
+            deployed := create(0, add(bytecode, 0x20), mload(bytecode))
+        }
+    }
+
     function make_bank() public {
         feed   = new Feedbase();
         gemfab = new GemFab();
@@ -186,6 +195,8 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
         uint160 sqrtparx96 = uint160(2 ** 96);
         ricodai  = create_pool(arico, DAI, 500, sqrtparx96);
         ricorisk = create_pool(arico, arisk, RISK_FEE, risk_price);
+
+        uniwrapper = make_uniwrapper();
 
         Ball.IlkParams[] memory ips = new Ball.IlkParams[](1);
         ips[0] = Ball.IlkParams(
@@ -234,7 +245,8 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
                 1000 * RAY,
                 RAY * 999 / 1000,
                 RAY,
-                HOOK_ROOM
+                HOOK_ROOM,
+                uniwrapper
             )
         );
 
