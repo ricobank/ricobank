@@ -1,0 +1,358 @@
+{
+  "format": "dpack-1",
+  "network": "arbitrum_goerli",
+  "types": {
+    "DutchFlower": {
+      "typename": "DutchFlower",
+      "artifact": {
+        "/": "bafkreief2ivnuaucxp2hp3hsoavphjr3l5wi65ftdvdg3mlercx7eznsom"
+      }
+    },
+    "Vat": {
+      "typename": "Vat",
+      "artifact": {
+        "/": "bafkreiactks722tm734uf6g4j6gawrwbci7caaxcyhgrfmbivnva5iqcni"
+      }
+    },
+    "Vow": {
+      "typename": "Vow",
+      "artifact": {
+        "/": "bafkreiag5oa6eddv76owhis4n4rvsp4vq3jaglr75q7zrlsgduipiorjta"
+      }
+    },
+    "Vox": {
+      "typename": "Vox",
+      "artifact": {
+        "/": "bafkreid6wl3ttsvee2w7k43aatkacqyagf26wr3pn4jzpqa2f3wfaszsxq"
+      }
+    },
+    "ERC20Hook": {
+      "typename": "ERC20Hook",
+      "artifact": {
+        "/": "bafkreid7mzlbj535gfz34luut4s3oqtb6lsvabppxtd3syphgoutb7axki"
+      }
+    },
+    "DutchNFTFlower": {
+      "typename": "DutchNFTFlower",
+      "artifact": {
+        "/": "bafkreicc3zpqgu6ioxki4dtcotbtgc6d3cabytwgxnp6jwjc3ajn45dkba"
+      }
+    },
+    "UniNFTHook": {
+      "typename": "UniNFTHook",
+      "artifact": {
+        "/": "bafkreiczcuxfhme5lxremrex4k3atuocc3wp4c4ys2qowjlbdfbsghziym"
+      }
+    },
+    "Ploker": {
+      "typename": "Ploker",
+      "artifact": {
+        "/": "bafkreidvrj2em43yemln5xiovekidwcozub7abhzncp3b54xwlst4qpoku"
+      }
+    },
+    "Ball": {
+      "typename": "Ball",
+      "artifact": {
+        "/": "bafkreihvkezs33ykdxqesh564jiw2ap5xpqvawzd4e5ekeiyk7xkwrnm3m"
+      }
+    },
+    "SwapRouter": {
+      "typename": "SwapRouter",
+      "artifact": {
+        "/": "bafkreib2n35tcvimnxjzxrl6qqzg5eyxclbc33kswygf2cqgmleidef5o4"
+      }
+    },
+    "UniswapV3Factory": {
+      "typename": "UniswapV3Factory",
+      "artifact": {
+        "/": "bafkreienusuuwkhdtzv6xk22fbmny4mi5hn6tsdlvokfbnzb3ouyaaxh4u"
+      }
+    },
+    "NonfungiblePositionManager": {
+      "typename": "NonfungiblePositionManager",
+      "artifact": {
+        "/": "bafkreidrlo6gimuqdguz7jbdh5zjkzkljx5p3nrgkk5vg4oqxr6oha6czu"
+      }
+    },
+    "UniswapV3Pool": {
+      "typename": "UniswapV3Pool",
+      "artifact": {
+        "/": "bafkreihifi6scj7hjyyhvvh6qxvzow3zpijbugveepskqm2nil2vxrl5oe"
+      }
+    },
+    "Feedbase": {
+      "typename": "Feedbase",
+      "artifact": {
+        "/": "bafkreidajew76haqrjgod5mldhsq65hlo6nte253pkxf7hl7nvys5evv3q"
+      }
+    },
+    "Medianizer": {
+      "typename": "Medianizer",
+      "artifact": {
+        "/": "bafkreib53spgrpkzbp6pgmg7wbsbsby6ppplzdnmb57j6ksoikabt7pl6u"
+      }
+    },
+    "Divider": {
+      "typename": "Divider",
+      "artifact": {
+        "/": "bafkreifsgpuimuvu4v2y5gdd2rmctz2iblvefxs2vgove2piaalmbtfgv4"
+      }
+    },
+    "TWAP": {
+      "typename": "TWAP",
+      "artifact": {
+        "/": "bafkreidynmftvo5qz332p7odokucum6pvk3p6n6n2qb4fhd2ucidvmxexi"
+      }
+    },
+    "UniswapV3Adapter": {
+      "typename": "UniswapV3Adapter",
+      "artifact": {
+        "/": "bafkreihvm2ceobuntlq4ovmsjk2tmygn477tyvrat7rbfyjmc6fi5e4tey"
+      }
+    },
+    "ChainlinkAdapter": {
+      "typename": "ChainlinkAdapter",
+      "artifact": {
+        "/": "bafkreicez7lvp4mqrneexzyepfo6j2c3c2bjkhg7zwlqojndu6cdj7f3oq"
+      }
+    },
+    "GemFab": {
+      "typename": "GemFab",
+      "artifact": {
+        "/": "bafybeifigdvp52bqvzz2xunuuimrgwnuurda6wdonhnhxwhuj75lcrhhbm"
+      }
+    },
+    "Gem": {
+      "typename": "Gem",
+      "artifact": {
+        "/": "bafybeigfeiirjbhx7n5eaksa5wfr5wth5674nagyed6p3vxba6ft3ebfuq"
+      }
+    }
+  },
+  "objects": {
+    "flow": {
+      "objectname": "flow",
+      "address": "0xcF25fed22E26C3808110134B28ce1942722a05Fb",
+      "typename": "DutchFlower",
+      "artifact": {
+        "/": "bafkreief2ivnuaucxp2hp3hsoavphjr3l5wi65ftdvdg3mlercx7eznsom"
+      }
+    },
+    "vat": {
+      "objectname": "vat",
+      "address": "0x9eC41C1598d1aB0E1CE98a991b05AD3CC945d71e",
+      "typename": "Vat",
+      "artifact": {
+        "/": "bafkreiactks722tm734uf6g4j6gawrwbci7caaxcyhgrfmbivnva5iqcni"
+      }
+    },
+    "vow": {
+      "objectname": "vow",
+      "address": "0x1eA64031DEbbeC9e041D3C0D3a6E0C7a0A31Becb",
+      "typename": "Vow",
+      "artifact": {
+        "/": "bafkreiag5oa6eddv76owhis4n4rvsp4vq3jaglr75q7zrlsgduipiorjta"
+      }
+    },
+    "vox": {
+      "objectname": "vox",
+      "address": "0x79E30faAF8fA4a51090903c10c7A54F16Bb8d8a6",
+      "typename": "Vox",
+      "artifact": {
+        "/": "bafkreid6wl3ttsvee2w7k43aatkacqyagf26wr3pn4jzpqa2f3wfaszsxq"
+      }
+    },
+    "mdn": {
+      "objectname": "mdn",
+      "address": "0x888bA5F5c7b032C9137f58D41c8E771ae96a1d01",
+      "typename": "Medianizer",
+      "artifact": {
+        "/": "bafkreib53spgrpkzbp6pgmg7wbsbsby6ppplzdnmb57j6ksoikabt7pl6u"
+      }
+    },
+    "divider": {
+      "objectname": "divider",
+      "address": "0xAFF2350598e81459b5C4d55910efA1479b078C0f",
+      "typename": "Divider",
+      "artifact": {
+        "/": "bafkreifsgpuimuvu4v2y5gdd2rmctz2iblvefxs2vgove2piaalmbtfgv4"
+      }
+    },
+    "uniadapt": {
+      "objectname": "uniadapt",
+      "address": "0x89dF397797953DBc5e5770FC5099FAd8c563ba38",
+      "typename": "UniswapV3Adapter",
+      "artifact": {
+        "/": "bafkreihvm2ceobuntlq4ovmsjk2tmygn477tyvrat7rbfyjmc6fi5e4tey"
+      }
+    },
+    "cladapt": {
+      "objectname": "cladapt",
+      "address": "0x49682B6610DE348b139ed9f0E8ff67f34754DcD4",
+      "typename": "ChainlinkAdapter",
+      "artifact": {
+        "/": "bafkreicez7lvp4mqrneexzyepfo6j2c3c2bjkhg7zwlqojndu6cdj7f3oq"
+      }
+    },
+    "twap": {
+      "objectname": "twap",
+      "address": "0xFbA3fdfd10A464EcBA3C6085e2E4c5BbcBE8AeE1",
+      "typename": "TWAP",
+      "artifact": {
+        "/": "bafkreidynmftvo5qz332p7odokucum6pvk3p6n6n2qb4fhd2ucidvmxexi"
+      }
+    },
+    "hook": {
+      "objectname": "hook",
+      "address": "0x772365867E8bdEf9E86D02ECd6b09D1f9AE17F9F",
+      "typename": "ERC20Hook",
+      "artifact": {
+        "/": "bafkreid7mzlbj535gfz34luut4s3oqtb6lsvabppxtd3syphgoutb7axki"
+      }
+    },
+    "nftflow": {
+      "objectname": "nftflow",
+      "address": "0x96F552536650108b3430a8aa7C9fC268e3834D6A",
+      "typename": "DutchNFTFlower",
+      "artifact": {
+        "/": "bafkreicc3zpqgu6ioxki4dtcotbtgc6d3cabytwgxnp6jwjc3ajn45dkba"
+      }
+    },
+    "nfthook": {
+      "objectname": "nfthook",
+      "address": "0x85d52FCf9471914E7b1ABE218Ad66bE0B7e022c5",
+      "typename": "UniNFTHook",
+      "artifact": {
+        "/": "bafkreiczcuxfhme5lxremrex4k3atuocc3wp4c4ys2qowjlbdfbsghziym"
+      }
+    },
+    "ploker": {
+      "objectname": "ploker",
+      "address": "0xF476CA2B3f311240075E39B75E994941F746b9CB",
+      "typename": "Ploker",
+      "artifact": {
+        "/": "bafkreidvrj2em43yemln5xiovekidwcozub7abhzncp3b54xwlst4qpoku"
+      }
+    },
+    "ball": {
+      "objectname": "ball",
+      "address": "0xDEe1D5266Aea2B05197C06F3Bb5BC9Eaa59Ddd05",
+      "typename": "Ball",
+      "artifact": {
+        "/": "bafkreihvkezs33ykdxqesh564jiw2ap5xpqvawzd4e5ekeiyk7xkwrnm3m"
+      }
+    },
+    "swapRouter": {
+      "objectname": "swapRouter",
+      "address": "0xab7664500b19a7a2362Ab26081e6DfB971B6F1B0",
+      "typename": "SwapRouter",
+      "artifact": {
+        "/": "bafkreib2n35tcvimnxjzxrl6qqzg5eyxclbc33kswygf2cqgmleidef5o4"
+      }
+    },
+    "uniswapV3Factory": {
+      "objectname": "uniswapV3Factory",
+      "address": "0x4893376342d5D7b3e31d4184c08b265e5aB2A3f6",
+      "typename": "UniswapV3Factory",
+      "artifact": {
+        "/": "bafkreienusuuwkhdtzv6xk22fbmny4mi5hn6tsdlvokfbnzb3ouyaaxh4u"
+      }
+    },
+    "nonfungiblePositionManager": {
+      "objectname": "nonfungiblePositionManager",
+      "address": "0x622e4726a167799826d1E1D150b076A7725f5D81",
+      "typename": "NonfungiblePositionManager",
+      "artifact": {
+        "/": "bafkreidrlo6gimuqdguz7jbdh5zjkzkljx5p3nrgkk5vg4oqxr6oha6czu"
+      }
+    },
+    "feedbase": {
+      "objectname": "feedbase",
+      "address": "0x36672148D378aC7b5992Bf84c913686422Ffc5c5",
+      "typename": "Feedbase",
+      "artifact": {
+        "/": "bafkreidajew76haqrjgod5mldhsq65hlo6nte253pkxf7hl7nvys5evv3q"
+      }
+    },
+    "gemfab": {
+      "objectname": "gemfab",
+      "typename": "GemFab",
+      "artifact": {
+        "/": "bafybeifigdvp52bqvzz2xunuuimrgwnuurda6wdonhnhxwhuj75lcrhhbm"
+      },
+      "address": "0xEd35E3ed4F88c0Bb9C99C566ae86C2514574964b"
+    },
+    "rico": {
+      "objectname": "rico",
+      "typename": "Gem",
+      "artifact": {
+        "/": "bafkreib46kjuq7hwhmiqfmlo675m5j2f2plecmkotsrfoaanzkmzfdydfu"
+      },
+      "address": "0x0ECec7d24C8EF36281959c657333983F7C4F7d15"
+    },
+    "risk": {
+      "objectname": "risk",
+      "typename": "Gem",
+      "artifact": {
+        "/": "bafkreib46kjuq7hwhmiqfmlo675m5j2f2plecmkotsrfoaanzkmzfdydfu"
+      },
+      "address": "0x32b8663e8dF863AF56671Cd4325BDE47Cac6ab21"
+    },
+    "dai": {
+      "objectname": "dai",
+      "typename": "Gem",
+      "artifact": {
+        "/": "bafkreib46kjuq7hwhmiqfmlo675m5j2f2plecmkotsrfoaanzkmzfdydfu"
+      },
+      "address": "0x8411120Df646D6c6DA15193Ebe9E436c1c3a5222"
+    },
+    "ricorisk": {
+      "objectname": "ricorisk",
+      "typename": "UniswapV3Pool",
+      "artifact": {
+        "/": "bafkreihifi6scj7hjyyhvvh6qxvzow3zpijbugveepskqm2nil2vxrl5oe"
+      },
+      "address": "0x77c71141F51313E0d3eD0F14b1344f02D5C3e819"
+    },
+    "ricodai": {
+      "objectname": "ricodai",
+      "typename": "UniswapV3Pool",
+      "artifact": {
+        "/": "bafkreihifi6scj7hjyyhvvh6qxvzow3zpijbugveepskqm2nil2vxrl5oe"
+      },
+      "address": "0x02ccc22Ccf5b7924BeFda43E34371BB926fA61eF"
+    },
+    "weth": {
+      "objectname": "weth",
+      "typename": "Gem",
+      "artifact": {
+        "/": "bafkreib46kjuq7hwhmiqfmlo675m5j2f2plecmkotsrfoaanzkmzfdydfu"
+      },
+      "address": "0x5Bd2c68aa07AC850Ea22BC5503BeF16744A5E1d7"
+    },
+    "wethdai": {
+      "objectname": "wethdai",
+      "typename": "UniswapV3Pool",
+      "artifact": {
+        "/": "bafkreihifi6scj7hjyyhvvh6qxvzow3zpijbugveepskqm2nil2vxrl5oe"
+      },
+      "address": "0x36801BCdC12599c656130bb709cB43Ed62C39E92"
+    },
+    "wsteth": {
+      "objectname": "wsteth",
+      "typename": "Gem",
+      "artifact": {
+        "/": "bafkreib46kjuq7hwhmiqfmlo675m5j2f2plecmkotsrfoaanzkmzfdydfu"
+      },
+      "address": "0x87726993938107d9B9ce08c99BDde8736D899a5D"
+    },
+    "wstethdai": {
+      "objectname": "wstethdai",
+      "typename": "UniswapV3Pool",
+      "artifact": {
+        "/": "bafkreihifi6scj7hjyyhvvh6qxvzow3zpijbugveepskqm2nil2vxrl5oe"
+      },
+      "address": "0x693aE158d28F0AdFaf8495765AF75a1491Fe0ff7"
+    }
+  }
+}

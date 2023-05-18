@@ -347,13 +347,23 @@ export default {
   },
   networks: {
       hardhat: {
-          blockGasLimit: 100000000,
+          allowUnlimitedContractSize: true,
+          blockGasLimit: 10000000000000,
           forking: {
               url: process.env["RPC_URL"],
-              blockNumber: 16445606
+              blockNumber: 16445606,
+              chainId: 1,
           },
-          // temporary until break up ball
-          allowUnlimitedContractSize: true
+          accounts: {
+              accountsBalance: '1000000000000000000000000000000'
+          }
+      },
+      arbitrum_goerli: {
+          url: process.env["ARB_GOERLI_RPC_URL"],
+          accounts: {
+            mnemonic: process.env["ARB_GOERLI_MNEMONIC"]
+          },
+          chainId: 421613
       }
   }
-};
+}

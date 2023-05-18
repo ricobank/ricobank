@@ -5,12 +5,15 @@
 [submodule "lib/gemfab"]
 	path = lib/gemfab
 	url = https://github.com/ricobank/gemfab
+	branch = develop
 [submodule "lib/weth"]
 	path = lib/weth
 	url = https://github.com/etherpacks/weth
+	branch = master
 [submodule "lib/forge-std"]
 	path = lib/forge-std
 	url = https://github.com/foundry-rs/forge-std
 [submodule "lib/uniswapv3"]
 	path = lib/uniswapv3
 	url = https://github.com/etherpacks/uniswapv3.git
+	branch = main

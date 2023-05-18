@@ -182,7 +182,7 @@ contract NFTHookTest is Test, RicoSetUp {
         feedpush(drtag, bytes32(0 * RAY), type(uint).max);
         uint gas = gasleft();
         uint aid = vow.bail(':uninft', self);
-        check_gas(gas, 432101);
+        check_gas(gas, 422889);
 
         skip(30);
         uint price = nftflow.deal(aid, block.timestamp);
@@ -194,7 +194,7 @@ contract NFTHookTest is Test, RicoSetUp {
         uint ricobefore = rico.balanceOf(self);
         gas = gasleft();
         guy.glug{value: gim}(aid);
-        check_gas(gas, 265434);
+        check_gas(gas, 265377);
         assertGt(rico.balanceOf(self), ricobefore);
         assertEq(nfpm.ownerOf(goldwethtokid), address(guy));
         assertEq(nfpm.ownerOf(golddaitokid), address(guy));

@@ -179,7 +179,9 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
 
     function make_uniwrapper() internal returns (address deployed) {
         bytes memory args = abi.encode('');
-        bytes memory bytecode = abi.encodePacked(vm.getCode("UniWrapper.sol:UniWrapper"), args);
+        bytes memory bytecode = abi.encodePacked(vm.getCode(
+            "../lib/feedbase/artifacts/src/adapters/UniWrapper.sol:UniWrapper"
+        ), args);
         assembly {
             deployed := create(0, add(bytecode, 0x20), mload(bytecode))
         }
@@ -214,6 +216,17 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
             20000, // ttl
             BANKYEAR / 4 // range
         );
+        Ball.UniParams memory ups = Ball.UniParams(
+            0xC36442b4a4522E871399CD717aBDD847Ab11FE88,
+            ':uninft',
+            1000000001546067052200000000,
+            2 * RAY,
+            1000 * RAY,
+            RAY * 999 / 1000,
+            RAY,
+            HOOK_ROOM,
+            uniwrapper
+        );
         Ball.BallArgs memory bargs = Ball.BallArgs(
             address(feed),
             arico,
@@ -221,7 +234,7 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
             ricodai,
             ricorisk,
             router,
-            self,
+            uniwrapper,
             RAY,
             100000 * WAD,
             20000, // ricodai
@@ -237,20 +250,15 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
                 RAY * 999 / 1000, 1, FUEL, GAIN, azero, azero, bytes32(0)
             ),
             Vow.Ramp(WAD, WAD, block.timestamp, 1),
-            Ball.UniParams(
-                0xC36442b4a4522E871399CD717aBDD847Ab11FE88,
-                ':uninft',
-                1000000001546067052200000000,
-                2 * RAY,
-                1000 * RAY,
-                RAY * 999 / 1000,
-                RAY,
-                HOOK_ROOM,
-                uniwrapper
-            )
+            0x6B175474E89094C44Da98b954EedeAC495271d0F,
+            0xAed0c38402a5d19df6E4c03F4E2DceD6e29c1ee9,
+            0x214eD9Da11D2fbe465a6fc601a91E62EbEc1a0D6
         );
 
-        ball = new Ball(bargs, ips);
+        ball = new Ball(bargs);
+        ball.makeilk(ips[0]);
+        ball.makeuni(ups);
+        ball.approve(self);
 
         ////////// these are outside ball, but must be part of real deploy process, unless warding ball first w create2
         Gem(rico).ward(address(ball.vat()), true);

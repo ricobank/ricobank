@@ -43,7 +43,7 @@ contract BallTest is Test, UniSetUp, Math {
     bytes32 constant public RICO_RISK_TAG  = "ricorisk";
     bytes32 constant public RISK_RICO_TAG  = "riskrico";
     ChainlinkAdapter cladapt;
-    UniswapV3Adapter adapt;
+    UniswapV3Adapter uniadapt;
     Divider divider;
     TWAP twap;
     Medianizer mdn;
@@ -101,9 +101,9 @@ contract BallTest is Test, UniSetUp, Math {
 
     function look_poke() internal {
         advance_chainlink();
-        adapt.look(WETH_DAI_TAG);
-        adapt.look(RICO_DAI_TAG);
-        adapt.look(RICO_RISK_TAG);
+        uniadapt.look(WETH_DAI_TAG);
+        uniadapt.look(RICO_DAI_TAG);
+        uniadapt.look(RICO_RISK_TAG);
 
         twap.poke(WETH_DAI_TAG);
         twap.poke(RICO_XAU_TAG);
@@ -117,7 +117,9 @@ contract BallTest is Test, UniSetUp, Math {
 
     function make_uniwrapper() internal returns (address deployed) {
         bytes memory args = abi.encode('');
-        bytes memory bytecode = abi.encodePacked(vm.getCode("UniWrapper.sol:UniWrapper"), args);
+        bytes memory bytecode = abi.encodePacked(vm.getCode(
+            "../lib/feedbase/artifacts/src/adapters/UniWrapper.sol:UniWrapper"
+        ), args);
         assembly {
             deployed := create(0, add(bytecode, 0x20), mload(bytecode))
         }
@@ -153,6 +155,19 @@ contract BallTest is Test, UniSetUp, Math {
             1 // range
         );
 
+        address uniwrapper = make_uniwrapper();
+        Ball.UniParams memory ups = Ball.UniParams(
+            0xC36442b4a4522E871399CD717aBDD847Ab11FE88,
+            ':uninft',
+            1000000001546067052200000000,
+            2 * RAY,
+            1000 * RAY,
+            RAY * 999 / 1000,
+            RAY,
+            8,
+            uniwrapper
+        );
+
         Ball.BallArgs memory bargs = Ball.BallArgs(
             address(fb),
             rico,
@@ -160,7 +175,7 @@ contract BallTest is Test, UniSetUp, Math {
             ricodai,
             ricorisk,
             router,
-            me,
+            uniwrapper,
             INIT_PAR,
             100000 * WAD,
             20000, // ricodai
@@ -176,23 +191,19 @@ contract BallTest is Test, UniSetUp, Math {
                 FADE, WAD, FUEL, GAIN, address(fb), address(mdn), RISK_RICO_TAG
             ),
             Vow.Ramp(WAD, WAD, block.timestamp, 1),
-            Ball.UniParams(
-                0xC36442b4a4522E871399CD717aBDD847Ab11FE88,
-                ':uninft',
-                1000000001546067052200000000,
-                2 * RAY,
-                1000 * RAY,
-                RAY * 999 / 1000,
-                RAY,
-                8,
-                make_uniwrapper()
-            )
+            0x6B175474E89094C44Da98b954EedeAC495271d0F,
+            0xAed0c38402a5d19df6E4c03F4E2DceD6e29c1ee9,
+            0x214eD9Da11D2fbe465a6fc601a91E62EbEc1a0D6
         );
 
         uint gas = gasleft();
-        Ball ball = new Ball(bargs, ips);
+        Ball ball = new Ball(bargs);
+        ball.makeilk(ips[0]);
+        ball.makeuni(ups);
+        ball.approve(me);
+
         uint usedgas     = gas - gasleft();
-        uint expectedgas = 18749589;
+        uint expectedgas = 26198674;
         if (usedgas < expectedgas) {
             console.log("ball saved %s gas...currently %s", expectedgas - usedgas, usedgas);
         }
@@ -205,7 +216,7 @@ contract BallTest is Test, UniSetUp, Math {
 
         vat = ball.vat();
         cladapt = ball.cladapt();
-        adapt = ball.adapt();
+        uniadapt = ball.uniadapt();
         divider = ball.divider();
         mdn = ball.mdn();
         twap = ball.twap();
@@ -217,7 +228,7 @@ contract BallTest is Test, UniSetUp, Math {
         skip(40000);
         cladapt.look(XAU_USD_TAG);
         cladapt.look(DAI_USD_TAG);
-        adapt.look(WETH_DAI_TAG);
+        uniadapt.look(WETH_DAI_TAG);
         look_poke();
         skip(BANKYEAR / 2);
 
@@ -233,7 +244,7 @@ contract BallTest is Test, UniSetUp, Math {
 
         cladapt.look(XAU_USD_TAG);
         cladapt.look(DAI_USD_TAG);
-        adapt.look(WETH_DAI_TAG);
+        uniadapt.look(WETH_DAI_TAG);
 
         look_poke();
 
