@@ -24,14 +24,14 @@ import {UniNFTHook, DutchNFTFlower} from './hook/nfpm/UniV3NFTHook.sol';
 import {Ploker} from './test/Ploker.sol';
 
 contract Ball is Math, Ward {
-    bytes32 internal constant RICO_DAI_TAG = "ricodai";
-    bytes32 internal constant DAI_RICO_TAG = "dairico";
-    bytes32 internal constant XAU_USD_TAG = "xauusd";
-    bytes32 internal constant DAI_USD_TAG = "daiusd";
-    bytes32 internal constant RICO_XAU_TAG = "ricoxau";
-    bytes32 internal constant RICO_REF_TAG = "ricoref";
-    bytes32 internal constant RICO_RISK_TAG  = "ricorisk";
-    bytes32 internal constant RISK_RICO_TAG  = "riskrico";
+    bytes32 internal constant RICO_DAI_TAG = "rico:dai";
+    bytes32 internal constant DAI_RICO_TAG = "dai:rico";
+    bytes32 internal constant XAU_USD_TAG = "xau:usd";
+    bytes32 internal constant DAI_USD_TAG = "dai:usd";
+    bytes32 internal constant RICO_XAU_TAG = "rico:xau";
+    bytes32 internal constant RICO_REF_TAG = "rico:ref";
+    bytes32 internal constant RICO_RISK_TAG  = "rico:risk";
+    bytes32 internal constant RISK_RICO_TAG  = "risk:rico";
 
     DutchFlower public flow;
     Vat public vat;
@@ -245,7 +245,7 @@ contract Ball is Math, Ward {
 
     function makeilk(IlkParams memory ilkparams) _ward_ public {
         bytes32 ilk = ilkparams.ilk;
-        bytes32 ilkrico = concat(ilk, 'rico');
+        bytes32 ilkrico = concat(ilk, ':rico');
         vat.init(ilk, address(hook));
         Medianizer.Config memory mdnconf =
             Medianizer.Config(new address[](1), new bytes32[](1), 0);
@@ -274,7 +274,7 @@ contract Ball is Math, Ward {
             plokerconf.combinators[0] = address(mdn); plokerconf.combinatortags[0] = ilkrico;
             ploker.setConfig(ilkrico, plokerconf);
         } else {
-            bytes32 tag = concat(ilk, 'dai');
+            bytes32 tag = concat(ilk, ':dai');
             uniadapt.setConfig(
                 tag,
                 UniswapV3Adapter.Config(

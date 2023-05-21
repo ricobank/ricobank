@@ -20,6 +20,7 @@ contract Ploker is Ward {
     }
 
     mapping(bytes32 tag => Config) configs;
+    error ErrNoConfig();
 
     function getConfig(bytes32 tag) view public returns (Config memory) {
         return configs[tag];
@@ -34,6 +35,9 @@ contract Ploker is Ward {
 
     function ploke(bytes32 tag) public {
         Config storage config = configs[tag];
+        if (config.adapters.length == 0 && config.combinators.length == 0) {
+            revert ErrNoConfig();
+        }
         for (uint i = 0; i < config.adapters.length; i++) {
             Adapter(config.adapters[i]).look(config.adaptertags[i]);
         }

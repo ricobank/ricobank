@@ -55,11 +55,9 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
     address constant public DAI  = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
     address constant public WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
     address constant public WETH_DAI_POOL = 0xC2e9F25Be6257c210d7Adf0D4Cd6E3E881ba25f8;
-    bytes32 constant public WETH_RICO_TAG = "wethrico";
-    bytes32 constant public RICO_RISK_TAG = "ricorisk";
-    bytes32 constant public RISK_RICO_TAG = "riskrico";
-    bytes32 constant public UNI_NFT_TAG = ":uninft";
-
+    bytes32 constant public WETH_RICO_TAG = "weth:rico";
+    bytes32 constant public RICO_RISK_TAG = "rico:risk";
+    bytes32 constant public RISK_RICO_TAG = "risk:rico";
 
     address constant public VAULT = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;
     bytes32 constant public dilk  = "dai";
@@ -67,12 +65,12 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
     bytes32 constant public wilk  = "weth";
     bytes32 constant public rilk  = "ruby";
     bytes32 constant public uilk  = ":uninft";
-    bytes32 constant public dutag = "daiusd";
-    bytes32 constant public grtag = "goldrico";
-    bytes32 constant public wrtag = "wethrico";
-    bytes32 constant public drtag = "dairico";
+    bytes32 constant public dutag = "dai:usd";
+    bytes32 constant public grtag = "gold:rico";
+    bytes32 constant public wrtag = "weth:rico";
+    bytes32 constant public drtag = "dai:rico";
 
-    bytes32 constant public rtag       = "ricousd";
+    bytes32 constant public rtag       = "rico:usd";
     uint160 constant public risk_price = 2 ** 96;
     uint24  constant public RICO_FEE   = 500;
     uint24  constant public RISK_FEE   = 3000;

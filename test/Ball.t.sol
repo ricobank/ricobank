@@ -29,19 +29,18 @@ contract BallTest is Test, UniSetUp, Math {
     address internal constant VAULT = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;
     address internal constant WETH  = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
     address internal constant WETH_DAI_POOL  = 0xC2e9F25Be6257c210d7Adf0D4Cd6E3E881ba25f8;
-    // TODO these should have dashes
     bytes32 internal constant WETH_ILK = "weth";
-    bytes32 internal constant WETH_DAI_TAG = "wethdai";
-    bytes32 internal constant WETH_RICO_TAG = "wethrico";
-    bytes32 internal constant RICO_DAI_TAG = "ricodai";
-    bytes32 internal constant DAI_RICO_TAG = "dairico";
-    bytes32 internal constant XAU_USD_TAG = "xauusd";
-    bytes32 internal constant DAI_USD_TAG = "daiusd";
-    bytes32 internal constant RICO_XAU_TAG = "ricoxau";
-    bytes32 internal constant REF_RICO_TAG = "refrico";
-    bytes32 internal constant RICO_REF_TAG = "ricoref";
-    bytes32 constant public RICO_RISK_TAG  = "ricorisk";
-    bytes32 constant public RISK_RICO_TAG  = "riskrico";
+    bytes32 internal constant WETH_DAI_TAG = "weth:dai";
+    bytes32 internal constant WETH_RICO_TAG = "weth:rico";
+    bytes32 internal constant RICO_DAI_TAG = "rico:dai";
+    bytes32 internal constant DAI_RICO_TAG = "dai:rico";
+    bytes32 internal constant XAU_USD_TAG = "xau:usd";
+    bytes32 internal constant DAI_USD_TAG = "dai:usd";
+    bytes32 internal constant RICO_XAU_TAG = "rico:xau";
+    bytes32 internal constant REF_RICO_TAG = "ref:rico";
+    bytes32 internal constant RICO_REF_TAG = "rico:ref";
+    bytes32 constant public RICO_RISK_TAG  = "rico:risk";
+    bytes32 constant public RISK_RICO_TAG  = "risk:rico";
     ChainlinkAdapter cladapt;
     UniswapV3Adapter uniadapt;
     Divider divider;
@@ -197,7 +196,7 @@ contract BallTest is Test, UniSetUp, Math {
         ball.approve(me);
 
         uint usedgas     = gas - gasleft();
-        uint expectedgas = 26198674;
+        uint expectedgas = 24811789;
         if (usedgas < expectedgas) {
             console.log("ball saved %s gas...currently %s", expectedgas - usedgas, usedgas);
         }
