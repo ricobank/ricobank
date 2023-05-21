@@ -241,8 +241,6 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
             BANKYEAR / 4,
             BANKYEAR, // daiusd
             BANKYEAR, // xauusd
-            10000, // twap
-            BANKYEAR,
             DutchFlower.Ramp(
                 RAY * 999 / 1000, 1, FUEL, GAIN, azero, azero, bytes32(0)
             ),

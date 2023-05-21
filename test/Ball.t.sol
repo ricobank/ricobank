@@ -45,7 +45,6 @@ contract BallTest is Test, UniSetUp, Math {
     ChainlinkAdapter cladapt;
     UniswapV3Adapter uniadapt;
     Divider divider;
-    TWAP twap;
     Medianizer mdn;
     Feedbase fb;
     GemFab gf;
@@ -105,9 +104,6 @@ contract BallTest is Test, UniSetUp, Math {
         uniadapt.look(RICO_DAI_TAG);
         uniadapt.look(RICO_RISK_TAG);
 
-        twap.poke(WETH_DAI_TAG);
-        twap.poke(RICO_XAU_TAG);
-        twap.poke(RICO_RISK_TAG);
 
         mdn.poke(WETH_RICO_TAG);
         mdn.poke(RICO_REF_TAG);
@@ -179,11 +175,9 @@ contract BallTest is Test, UniSetUp, Math {
             INIT_PAR,
             100000 * WAD,
             20000, // ricodai
-            BANKYEAR / 4,
+            BANKYEAR * 100,
             BANKYEAR, // daiusd
             BANKYEAR, // xauusd
-            10000, // twap
-            BANKYEAR,
             DutchFlower.Ramp(
                 FADE, WAD, FUEL, GAIN, address(fb), address(mdn), RICO_RISK_TAG
             ),
@@ -219,11 +213,6 @@ contract BallTest is Test, UniSetUp, Math {
         uniadapt = ball.uniadapt();
         divider = ball.divider();
         mdn = ball.mdn();
-        twap = ball.twap();
-
-        advance_twap(RICO_RISK_TAG);
-        advance_twap(WETH_RICO_TAG);
-        advance_twap(RICO_XAU_TAG);
 
         skip(40000);
         cladapt.look(XAU_USD_TAG);
@@ -248,23 +237,12 @@ contract BallTest is Test, UniSetUp, Math {
 
         look_poke();
 
-        // advance WETHDAI twap
-        skip(bargs.twaprange);
-        look_poke();
-        skip(bargs.twaprange);
-        look_poke();
-
         vow = ball.vow();
         vox = ball.vox();
 
         flow = ball.flow();
 
         Gem(risk).mint(address(this), DEV_FUND_RISK);
-    }
-
-    function advance_twap(bytes32 tag) internal {
-        (address src, bytes32 stag, uint range,) = twap.configs(tag);
-        twap.setConfig(tag, TWAP.Config(src, stag, range, type(uint).max));
     }
 
     modifier _flap_after_ {

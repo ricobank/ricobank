@@ -161,7 +161,6 @@ task('deploy-ricobank', '')
         ['divider', 'Divider', await getartifact('Divider')],
         ['uniadapt', 'UniswapV3Adapter', await getartifact('UniswapV3Adapter')],
         ['cladapt', 'ChainlinkAdapter', await getartifact('ChainlinkAdapter')],
-        ['twap', 'TWAP', await getartifact('TWAP')],
         ['hook', 'ERC20Hook', require('../artifacts/src/hook/ERC20hook.sol/ERC20Hook.json')],
         ['nftflow', 'DutchNFTFlower', require('../artifacts/src/hook/nfpm/DutchNFTFlower.sol/DutchNFTFlower.json')],
         ['nfthook', 'UniNFTHook', require('../artifacts/src/hook/nfpm/UniV3NFTHook.sol/UniNFTHook.json')],
