@@ -43,6 +43,7 @@ contract UniNFTHook is Hook, Ward, Flog, Math {
 
     error ErrBigFlowback();
     error ErrDinkLength();
+    error ErrIdx();
     error ErrDir();
     error ErrFull();
 
@@ -80,15 +81,40 @@ contract UniNFTHook is Hook, Ward, Flog, Math {
                 if (tokenIds.length > ROOM) revert ErrFull();
             }
         } else if (dir == FREE) {
-            // dink is an array of indexes into inks
+            // dink is an array of indexes into tokenIds
             uint[] storage tokenIds = inks[ilk][urn];
-            for (uint i = 32; i < dink.length; i += 32) {
-                // transfer position back to user, then remove position from inks
+            if ((dink.length - 32) / 32 > tokenIds.length) revert ErrDinkLength();
+
+            // move all of the outgoing tokenIds to the end of the array, then pop
+            // swidx is index to swap next idx with
+            // with possible exception of swidx == tokenIds.length - 1, in which
+            // case idx == swidx,  tokenIds[swidx] does not need to be removed,
+            // so it's always ok to swap with something that does need to be removed
+            uint swidx = tokenIds.length;
+            uint last = type(uint).max;
+            for (uint i = dink.length - 32; i >= 32; i -= 32) {
+                // tokenIds[swidx] is OOB or needs to be removed, so decrement swidx
+                swidx--;
+
                 uint idx = uint(bytes32(dink[i:i+32]));
+                // removal indices must be in ascending order
+                if (idx >= last || idx >= tokenIds.length) revert ErrIdx();
+                // transfer position back to user
                 nfpm.transferFrom(address(this), sender, tokenIds[idx]);
-                // swap current and last elements, then pop
-                tokenIds[idx] = tokenIds[tokenIds.length - 1];
+
+                // swap current and last elements
+                uint tokenId    = tokenIds[idx];
+                tokenIds[idx]   = tokenIds[swidx];
+                tokenIds[swidx] = tokenId;
+
+                last = idx;
+            }
+
+            // last elements of the list are all to be removed
+            uint rm = tokenIds.length - swidx;
+            while (rm > 0) {
                 tokenIds.pop();
+                unchecked {rm--;}
             }
         } else {
             revert ErrDir();

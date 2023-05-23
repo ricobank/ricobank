@@ -238,7 +238,14 @@ contract NFTHookTest is Test, RicoSetUp {
         vat.frob(':uninft', self, data, 0);
         assertEq(nfpm.ownerOf(goldwethtokid), address(nfthook));
         assertEq(nfpm.ownerOf(golddaitokid), address(nfthook));
-        assertEq(uint(vat.safe(':uninft', self)), uint(Vat.Spot.Safe));
+
+        // remove both
+        data = abi.encodePacked(-int(1), uint(0), uint(1));
+        rico_mint(100, true); // rounding
+        vat.frob(':uninft', self, data, -int(WAD));
+        assertEq(nfpm.ownerOf(goldwethtokid), self);
+        assertEq(nfpm.ownerOf(golddaitokid), self);
+        assertEq(nfthook.getInk(':uninft', self).length, 0);
     }
 
     function test_nft_make_unsafe_by_rack() public {
@@ -273,6 +280,67 @@ contract NFTHookTest is Test, RicoSetUp {
         bytes memory data = abi.encodePacked(int(0));
         vm.expectRevert(UniNFTHook.ErrDir.selector);
         vat.frob(':uninft', self, data, int(0));
+    }
+
+    function test_frob_down_ooo() public {
+        nfthook.pair('fade', RAY * 99 / 100);
+        nfthook.pair('fuel', 1000 * RAY);
+        bytes memory data = abi.encodePacked(int(1), goldwethtokid, golddaitokid);
+        vat.frob(':uninft', self, data, int(WAD));
+
+        // remove both, but ooo
+        data = abi.encodePacked(-int(1), uint(1), uint(0));
+        rico_mint(100, true); // rounding
+        vm.expectRevert(UniNFTHook.ErrIdx.selector);
+        vat.frob(':uninft', self, data, -int(WAD));
+    }
+
+    function test_frob_down_five() public {
+        uint160 onex96 = 2 ** 96;
+        PoolArgs memory args = PoolArgs(
+            Asset(agold, 1000 * WAD), Asset(WETH, 1000 * WAD),
+            500, onex96, onex96 * 3 / 4, onex96 * 4 / 3, 10
+        );
+        uint[4] memory goldwethtokids;
+        goldwethtokids[0] = goldwethtokid;
+        nfpm.approve(address(nfthook), golddaitokid);
+        for (uint i = 0; i < 4; i++) {
+            (goldwethtokids[i],,,) = join_pool(args);
+            nfpm.approve(address(nfthook), goldwethtokids[i]);
+        }
+
+        bytes memory data = abi.encodePacked(
+            int(1), golddaitokid, goldwethtokids[0], goldwethtokids[1],
+            goldwethtokids[2], goldwethtokids[3]
+        );
+        vat.frob(':uninft', self, data, int(WAD));
+        
+        assertEq(nfpm.ownerOf(golddaitokid), address(nfthook));
+        for (uint i = 0; i < 4; i++) {
+            assertEq(nfpm.ownerOf(goldwethtokids[i]), address(nfthook));
+        }
+
+        data = abi.encodePacked(-int(1), uint(0), uint(1), uint(2), uint(3), uint(4));
+        rico_mint(100, true); // rounding
+        vat.frob(':uninft', self, data, -int(WAD));
+
+        assertEq(nfpm.ownerOf(golddaitokid), self);
+        for (uint i = 0; i < 4; i++) {
+            assertEq(nfpm.ownerOf(goldwethtokids[i]), self);
+        }
+
+        nfpm.approve(address(nfthook), golddaitokid);
+        for (uint i = 0; i < 4; i++) {
+            nfpm.approve(address(nfthook), goldwethtokids[i]);
+        }
+        data = abi.encodePacked(
+            int(1), golddaitokid, goldwethtokids[0], goldwethtokids[1],
+            goldwethtokids[2], goldwethtokids[3]
+        );
+        vat.frob(':uninft', self, data, int(WAD));
+
+        data = abi.encodePacked(-int(1), uint(0), uint(2), uint(4));
+        vat.frob(':uninft', self, data, -int(WAD));
     }
 
 }
