@@ -70,9 +70,9 @@ contract UniNFTHook is Hook, Ward, Flog, Math {
     ) _ward_ _flog_ external returns (bool safer) {
         if (dink.length < 32 || dink.length % 32 != 0) revert ErrDinkLength();
         int dir = int(uint(bytes32(dink[:32])));
+        uint[] storage tokenIds = inks[ilk][urn];
         if (dir == LOCK) {
             // dink is an array of tokenIds
-            uint[] storage tokenIds = inks[ilk][urn];
             for (uint i = 32; i < dink.length; i += 32) {
                 // transfer position from user, record it in inks
                 uint tokenId = uint(bytes32(dink[i:i+32]));
@@ -82,7 +82,6 @@ contract UniNFTHook is Hook, Ward, Flog, Math {
             }
         } else if (dir == FREE) {
             // dink is an array of indexes into tokenIds
-            uint[] storage tokenIds = inks[ilk][urn];
             if ((dink.length - 32) / 32 > tokenIds.length) revert ErrDinkLength();
 
             // move all of the outgoing tokenIds to the end of the array, then pop
@@ -101,12 +100,7 @@ contract UniNFTHook is Hook, Ward, Flog, Math {
                 if (idx >= last || idx >= tokenIds.length) revert ErrIdx();
                 // transfer position back to user
                 nfpm.transferFrom(address(this), sender, tokenIds[idx]);
-
-                // swap current and last elements
-                uint tokenId    = tokenIds[idx];
-                tokenIds[idx]   = tokenIds[swidx];
-                tokenIds[swidx] = tokenId;
-
+                tokenIds[idx] = tokenIds[swidx];
                 last = idx;
             }
 
