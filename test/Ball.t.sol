@@ -17,7 +17,6 @@ import {ChainlinkAdapter} from "../lib/feedbase/src/adapters/ChainlinkAdapter.so
 import {TWAP} from "../lib/feedbase/src/combinators/TWAP.sol";
 import {Progression} from "../lib/feedbase/src/combinators/Progression.sol";
 import { Vow } from "../src/vow.sol";
-import {DutchFlower} from '../src/flow.sol';
 import { ERC20Hook } from '../src/hook/ERC20hook.sol';
 import { Vox } from "../src/vox.sol";
 
@@ -65,18 +64,14 @@ contract BallTest is Test, UniSetUp, Math {
     uint256 constant INIT_PAR = (INIT_SQRTPAR ** 2) / RAY;
     uint256 constant wethricoprice = 1500 * RAY * RAY / INIT_PAR;
     uint256 constant wethamt = WAD;
-    uint256 constant glug_delay = 5;
     int256  constant dart = int(wethamt * wethricoprice / INIT_PAR);
     bytes32[] ilks;
     uint DEV_FUND_RISK = 1000000 * WAD;
-    uint FUEL = 1000 * RAY;
-    uint FADE = RAY * 999 / 1000;
-    uint GAIN = 2 * RAY;
     uint DUST = 90 * RAD;
 
+    ERC20Hook hook;
     Vat vat;
     Vow vow;
-    DutchFlower flow;
     Vox vox;
 
     receive () payable external {}
@@ -93,8 +88,8 @@ contract BallTest is Test, UniSetUp, Math {
     }
 
     function _ink(bytes32 i, address u) view internal returns (uint) {
-        (,,,,,,,,address hook) = vat.ilks(i);
-        return ERC20Hook(hook).inks(i, u);
+        (,,,,,,,,address ihook) = vat.ilks(i);
+        return ERC20Hook(ihook).inks(i, u);
     }
 
     function look_poke() internal {
@@ -143,9 +138,6 @@ contract BallTest is Test, UniSetUp, Math {
             1000000001546067052200000000, // fee
             100000 * RAD, // line
             RAY, // liqr
-            DutchFlower.Ramp(
-                FADE, 0, FUEL, GAIN, address(fb), address(mdn), WETH_RICO_TAG
-            ),
             20000, // ttl
             1 // range
         );
@@ -155,9 +147,6 @@ contract BallTest is Test, UniSetUp, Math {
             0xC36442b4a4522E871399CD717aBDD847Ab11FE88,
             ':uninft',
             1000000001546067052200000000,
-            2 * RAY,
-            1000 * RAY,
-            RAY * 999 / 1000,
             RAY,
             8,
             uniwrapper
@@ -177,12 +166,6 @@ contract BallTest is Test, UniSetUp, Math {
             BANKYEAR * 100,
             BANKYEAR, // daiusd
             BANKYEAR, // xauusd
-            DutchFlower.Ramp(
-                FADE, WAD, FUEL, GAIN, address(fb), address(mdn), RICO_RISK_TAG
-            ),
-            DutchFlower.Ramp(
-                FADE, WAD, FUEL, GAIN, address(fb), address(mdn), RISK_RICO_TAG
-            ),
             Vow.Ramp(WAD, WAD, block.timestamp, 1),
             0x6B175474E89094C44Da98b954EedeAC495271d0F,
             0xAed0c38402a5d19df6E4c03F4E2DceD6e29c1ee9,
@@ -196,7 +179,7 @@ contract BallTest is Test, UniSetUp, Math {
         ball.approve(me);
 
         uint usedgas     = gas - gasleft();
-        uint expectedgas = 24945830;
+        uint expectedgas = 19923011;
         if (usedgas < expectedgas) {
             console.log("ball saved %s gas...currently %s", expectedgas - usedgas, usedgas);
         }
@@ -220,10 +203,9 @@ contract BallTest is Test, UniSetUp, Math {
         look_poke();
         skip(BANKYEAR / 2);
 
+        hook = ball.hook();
         vm.prank(VAULT);
         Gem(DAI).transfer(address(this), 500 * WAD);
-
-        (,,,,,,,,address hook) = vat.ilks(WILK);
         Gem(WETH).approve(address(hook), type(uint).max);
         WethLike(WETH).deposit{value: wethamt * 100}();
         // try to frob 1 weth for at least $1k...shouldn't work because no look
@@ -239,49 +221,39 @@ contract BallTest is Test, UniSetUp, Math {
         vow = ball.vow();
         vox = ball.vox();
 
-        flow = ball.flow();
-
         Gem(risk).mint(address(this), DEV_FUND_RISK);
+        Gem(rico).approve(address(hook), type(uint256).max);
+        Gem(risk).approve(address(hook), type(uint256).max);
     }
 
     modifier _flap_after_ {
         _;
-        uint rico_before = Gem(rico).balanceOf(address(flow));
-        uint aid = vow.keep(ilks);
-        uint rico_after = Gem(rico).balanceOf(address(flow));
-        assertGt(rico_after, rico_before);
-
-        vow.pair(address(rico), 'fade', RAY / 10);
-        skip(2);
-        rico_before = Gem(rico).balanceOf(address(flow));
-        uint gas = gasleft();
-        Gem(risk).mint(me, 1000 * WAD);
-        Gem(risk).approve(address(flow), type(uint).max);
-        skip(glug_delay);
-        flow.glug{value: rmul(FUEL, block.basefee)}(aid);
-        rico_after = Gem(rico).balanceOf(address(flow));
-        assertLt(rico_after, rico_before);
+        uint vow_risk_before = Gem(risk).balanceOf(address(vow));
+        Gem(risk).mint(me, 10000 * WAD);
+        vow.keep(ilks);
+        uint vow_risk_after = Gem(risk).balanceOf(address(vow));
+        assertGt(vow_risk_after, vow_risk_before);
     }
 
     modifier _flop_after_ {
         _;
-        uint risk_before = Gem(risk).balanceOf(address(flow));
-        uint aid = vow.keep(ilks);
-        uint risk_after = Gem(risk).balanceOf(address(flow));
-        assertGt(risk_after, risk_before);
-
-        risk_before = Gem(risk).balanceOf(address(flow));
-        Gem(rico).approve(address(flow), type(uint).max);
-        skip(glug_delay);
-        flow.glug{value: rmul(FUEL, block.basefee)}(aid);
-        risk_after = Gem(risk).balanceOf(address(flow));
-        assertLt(risk_after, risk_before);
+        vm.expectCall(risk, abi.encodePacked(Gem(risk).mint.selector));
+        vow.keep(ilks);
     }
 
     modifier _balanced_after_ {
         _;
-        uint aid = vow.keep(ilks);
-        assertEq(aid, 0);
+        // should not be any auctions
+        uint me_risk_1 = Gem(risk).balanceOf(me);
+        uint me_rico_1 = Gem(rico).balanceOf(me);
+
+        vow.keep(ilks);
+
+        uint me_risk_2 = Gem(risk).balanceOf(me);
+        uint me_rico_2 = Gem(rico).balanceOf(me);
+
+        assertEq(me_risk_1, me_risk_2);
+        assertEq(me_rico_1, me_rico_2);
     }
 
     function test_basic() public {
@@ -311,14 +283,9 @@ contract BallTest is Test, UniSetUp, Math {
         vow.bail(WETH_ILK, me);
         look_poke();
         vow.keep(ilks);
-        uint aid = vow.bail(WETH_ILK, me);
-        Gem(rico).approve(address(flow), type(uint).max);
         uint meweth = WethLike(WETH).balanceOf(me);
-        skip(700); // enough to bring `makers` below `wam`
         Gem(rico).mint(me, 1000000 * WAD);
-        Gem(rico).approve(address(flow), UINT256_MAX);
-        skip(glug_delay);
-        flow.glug{value: rmul(FUEL, block.basefee)}(aid);
+        vow.bail(WETH_ILK, me);
         assertGt(WethLike(WETH).balanceOf(me), meweth);
     }
 
@@ -347,10 +314,10 @@ contract BallTest is Test, UniSetUp, Math {
         assertEq(inkleftafter, inkleft);
         assertEq(artleftafter, dust / rack);
 
-        uint aid = vow.keep(ilks);
-        (,,address hag, uint ham,,,,,,,) = flow.auctions(aid);
-        assertEq(hag, rico);
-        assertGt(ham, 0);
+        uint self_risk_1 = Gem(risk).balanceOf(me);
+        vow.keep(ilks);
+        uint self_risk_2 = Gem(risk).balanceOf(me);
+        assertLt(self_risk_2, self_risk_1);
     }
 
     function test_ball_pay_flap_success() public  _balanced_after_ {

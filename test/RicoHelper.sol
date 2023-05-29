@@ -4,7 +4,6 @@ pragma solidity 0.8.19;
 import 'forge-std/Test.sol';
 
 import '../src/mixin/math.sol';
-import { DutchFlower } from '../src/flow.sol';
 import { Feedbase } from '../lib/feedbase/src/Feedbase.sol';
 import { Divider } from '../lib/feedbase/src/combinators/Divider.sol';
 import { Medianizer } from '../lib/feedbase/src/Medianizer.sol';
@@ -13,8 +12,8 @@ import { Ball } from '../src/ball.sol';
 import { Vat } from '../src/vat.sol';
 import { Vow } from '../src/vow.sol';
 import { Vox } from '../src/vox.sol';
-import {ERC20Hook} from '../src/hook/ERC20hook.sol';
-import {UniNFTHook, DutchNFTFlower} from '../src/hook/nfpm/UniV3NFTHook.sol';
+import { ERC20Hook } from '../src/hook/ERC20hook.sol';
+import { UniNFTHook } from '../src/hook/nfpm/UniV3NFTHook.sol';
 import { UniSetUp } from "./UniHelper.sol";
 
 interface WethLike {
@@ -24,17 +23,13 @@ interface WethLike {
     function balanceOf(address) external returns (uint);
 }
 
-interface Gluggable {
-    function glug(uint256 aid) payable external;
-}
-
 
 contract Guy {
     Vat vat;
-    Gluggable flow;
-    constructor(address _vat, address _flow) {
+    Vow vow;
+    constructor(address _vat, address _vow) {
         vat  = Vat(_vat);
-        flow = Gluggable(_flow);
+        vow = Vow(_vow);
     }
     function approve(address gem, address dst, uint amt) public {
         Gem(gem).approve(dst, amt);
@@ -45,9 +40,11 @@ contract Guy {
     function transfer(address gem, address dst, uint amt) public {
         Gem(gem).transfer(dst, amt);
     }
-
-    function glug(uint aid) payable public {
-        flow.glug{value: msg.value}(aid);
+    function bail(bytes32 i, address u) public {
+        vow.bail(i, u);
+    }
+    function keep(bytes32[] calldata ilks) public {
+        vow.keep(ilks);
     }
 }
 
@@ -77,14 +74,12 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
     uint256 constant public HOOK_ROOM  = 8;
     uint256 constant public init_mint  = 10000;
     uint256 constant public BANKYEAR   = (365 * 24 + 6) * 3600;
-    uint256 constant public glug_delay = 5;
+    uint256 constant public no_rush    = WAD;
     address public immutable azero     = address(0);
     address payable public immutable self = payable(address(this));
 
-    DutchFlower public flow;
     ERC20Hook   public hook;
     UniNFTHook  public nfthook;
-    DutchNFTFlower public nftflow;
     Medianizer  public mdn;
     Ball     public ball;
     Divider  public divider;
@@ -108,29 +103,27 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
     address  public avow;
     address  public avox;
     address  public ahook;
-    address  public aflow;
     address  public uniwrapper;
 
+    Guy _bob;
     Guy guy;
-
-    uint constant public FADE = RAY / 2;
-    uint constant public FUEL = RAY * 1000;
-    uint constant public FLIP_FUEL = RAY * 900;
-    uint constant public GAIN = 2 * RAY;
 
     receive () external payable {}
 
     function rico_mint(uint amt, bool bail) internal {
-        Guy bob = new Guy(avat, aflow);
+        uint start_gold = gold.balanceOf(self);
+        _bob = new Guy(avat, avow);
         (bytes32 v, uint t) = feedpull(grtag);
         feedpush(grtag, bytes32(RAY * 10000), type(uint).max);
-        gold.mint(address(bob), amt);
-        bob.approve(agold, address(hook), amt);
-        bob.frob(gilk, address(bob), abi.encodePacked(amt), int(amt));
+        gold.mint(address(_bob), amt);
+        _bob.approve(agold, address(hook), amt);
+        _bob.frob(gilk, address(_bob), abi.encodePacked(amt), int(amt));
         feedpush(grtag, bytes32(0), type(uint).max);
-        if (bail) vow.bail(gilk, address(bob));
-        bob.transfer(arico, self, amt);
+        if (bail) vow.bail(gilk, address(_bob));
+        _bob.transfer(arico, self, amt);
         feedpush(grtag, v, t);
+        uint end_gold = gold.balanceOf(self);
+        gold.burn(self, end_gold - start_gold);
     }
 
     function _ink(bytes32 ilk, address usr) internal view returns (uint) {
@@ -208,9 +201,6 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
             1000000001546067052200000000, // fee
             100000 * RAD, // line
             RAY, // liqr
-            DutchFlower.Ramp(
-                RAY * 999 / 1000, 0, FLIP_FUEL, GAIN, address(feed), address(mdn), WETH_RICO_TAG
-            ),
             20000, // ttl
             BANKYEAR / 4 // range
         );
@@ -218,9 +208,6 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
             0xC36442b4a4522E871399CD717aBDD847Ab11FE88,
             ':uninft',
             1000000001546067052200000000,
-            2 * RAY,
-            1000 * RAY,
-            RAY * 999 / 1000,
             RAY,
             HOOK_ROOM,
             uniwrapper
@@ -239,12 +226,6 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
             BANKYEAR / 4,
             BANKYEAR, // daiusd
             BANKYEAR, // xauusd
-            DutchFlower.Ramp(
-                RAY * 999 / 1000, 1, FUEL, GAIN, azero, azero, bytes32(0)
-            ),
-            DutchFlower.Ramp(
-                RAY * 999 / 1000, 1, FUEL, GAIN, azero, azero, bytes32(0)
-            ),
             Vow.Ramp(WAD, WAD, block.timestamp, 1),
             0x6B175474E89094C44Da98b954EedeAC495271d0F,
             0xAed0c38402a5d19df6E4c03F4E2DceD6e29c1ee9,
@@ -266,8 +247,6 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
         vat  = Vat(address(ball.vat()));
         vow  = Vow(address(ball.vow()));
         vox  = Vox(address(ball.vox()));
-        flow = ball.flow();
-        nftflow = ball.nftflow();
         hook = ball.hook();
         nfthook = ball.nfthook();
         mdn  = ball.mdn();
@@ -277,10 +256,10 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
         avow  = address(vow);
         avox  = address(vox);
         ahook = address(hook);
-        aflow = address(flow);
 
         rico.approve(avat, type(uint256).max);
-        
+        rico.approve(ahook, type(uint256).max);
+
         feed.push(bytes32("ONE"), bytes32(RAY), type(uint).max);
         make_feed(rtag);
         make_feed(wrtag);
@@ -290,9 +269,6 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
 
         feedpush(RISK_RICO_TAG, bytes32(RAY), block.timestamp + 1000);
         feedpush(RICO_RISK_TAG, bytes32(RAY), block.timestamp + 1000);
-
-        vow.pair(arico, 'fuel', FUEL);
-        vow.pair(arisk, 'fuel', FUEL);
     }
 
     function init_dai() public {
@@ -301,8 +277,7 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
         dai.transfer(address(this), 10000 * WAD);
         dai.approve(address(hook), type(uint256).max);
         vat.init(dilk, address(hook));
-        hook.wire(dilk, address(dai), self, dutag);
-        hook.grant(address(dai));
+        hook.wire(dilk, address(dai), self, drtag);
         vat.filk(dilk, 'hook', uint(bytes32(bytes20(address(hook)))));
         vat.filk(dilk, bytes32('chop'), RAD);
         vat.filk(dilk, bytes32('line'), init_mint * 10 * RAD);
@@ -318,7 +293,6 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
         gold.approve(address(hook), type(uint256).max);
         vat.init(gilk, address(hook));
         hook.wire(gilk, address(gold), self, grtag);
-        hook.grant(address(gold));
         vat.filk(gilk, 'hook', uint(bytes32(bytes20(address(hook)))));
         // todo fix other chops, should be rays
         vat.filk(gilk, bytes32('chop'), RAY);
@@ -327,11 +301,6 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
         feedpush(grtag, bytes32(RAY), block.timestamp + 1000);
         agold = address(gold);
         hook.list(agold, true);
-        hook.pair(agold, 'feed', uint(uint160(address(feed))));
-        hook.pair(agold, 'fsrc', uint(uint160(address(mdn))));
-        hook.pair(agold, 'ftag', uint(grtag));
-        hook.pair(agold, 'fuel', FUEL);
-        hook.pair(agold, 'gain', GAIN);
     }
 
     function init_ruby() public {
@@ -340,7 +309,6 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
         ruby.approve(address(hook), type(uint256).max);
         vat.init(rilk, address(hook));
         hook.wire(rilk, address(ruby), self, rtag);
-        hook.grant(address(ruby));
         vat.filk(rilk, 'hook', uint(bytes32(bytes20(address(hook)))));
         vat.filk(rilk, bytes32('chop'), RAD);
         vat.filk(rilk, bytes32('line'), init_mint * 10 * RAD);
@@ -353,7 +321,13 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
     function prepguyrico(uint amt, bool bail) internal {
         rico_mint(amt, bail);
         rico.transfer(address(guy), amt);
-        guy.approve(arico, aflow, UINT256_MAX);
+        guy.approve(arico, ahook, UINT256_MAX);
+    }
+
+    function assertClose(uint v1, uint v2, uint rel) internal {
+        uint abs = v1 / rel;
+        assertGt(v1 + abs, v2);
+        assertLt(v1 - abs, v2);
     }
 
 }

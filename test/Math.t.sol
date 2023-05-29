@@ -25,21 +25,6 @@ contract MathTest is Test, Math {
         foo = add(0, -1);
     }
 
-    function test_sub() public {
-        assertEq(sub(5, -2), 7);
-        assertEq(sub(5, 2), 3);
-        assertEq(sub(0, 0), 0);
-        assertEq(sub(0, -1), 1);
-        assertEq(sub(1, 0), 1);
-
-        assertEq(sub(type(uint).max - 1, -1), type(uint).max);
-        vm.expectRevert(Math.ErrUintOver.selector);
-        foo = sub(type(uint).max, -1);
-        assertEq(sub(1, 1), 0);
-        vm.expectRevert(Math.ErrUintUnder.selector);
-        foo = sub(0, 1);
-    }
-
     function test_mul() public {
         assertEq(mul(1, 1), 1);
         assertEq(mul(1, -1), -1);

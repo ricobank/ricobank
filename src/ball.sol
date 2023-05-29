@@ -10,17 +10,15 @@ pragma solidity 0.8.19;
 import {Vat} from './vat.sol';
 import {Vow} from './vow.sol';
 import {Vox} from './vox.sol';
-import {DutchFlower} from './flow.sol';
 import {Feedbase} from "../lib/feedbase/src/Feedbase.sol";
 import {Ward} from "../lib/feedbase/src/mixin/ward.sol";
 import {Divider} from "../lib/feedbase/src/combinators/Divider.sol";
 import {UniswapV3Adapter, IUniWrapper} from "../lib/feedbase/src/adapters/UniswapV3Adapter.sol";
 import {Medianizer} from "../lib/feedbase/src/Medianizer.sol";
-import {TWAP} from "../lib/feedbase/src/combinators/TWAP.sol";
 import {ChainlinkAdapter} from "../lib/feedbase/src/adapters/ChainlinkAdapter.sol";
 import {Math} from '../src/mixin/math.sol';
 import {ERC20Hook} from './hook/ERC20hook.sol';
-import {UniNFTHook, DutchNFTFlower} from './hook/nfpm/UniV3NFTHook.sol';
+import {UniNFTHook} from './hook/nfpm/UniV3NFTHook.sol';
 import {Ploker} from './test/Ploker.sol';
 
 contract Ball is Math, Ward {
@@ -33,43 +31,37 @@ contract Ball is Math, Ward {
     bytes32 internal constant RICO_RISK_TAG  = "rico:risk";
     bytes32 internal constant RISK_RICO_TAG  = "risk:rico";
 
-    DutchFlower public flow;
     Vat public vat;
     Vow public vow;
     Vox public vox;
     ERC20Hook public hook;
     UniNFTHook public nfthook;
-    DutchNFTFlower public nftflow;
     address public feedbase;
 
     Medianizer public mdn;
     UniswapV3Adapter public uniadapt;
     Divider public divider;
     ChainlinkAdapter public cladapt;
-   
+
     struct IlkParams {
         bytes32 ilk;
         address gem;
         address pool;
-        uint    chop;
-        uint    dust;
-        uint    fee;
-        uint    line;
-        uint    liqr;
-        DutchFlower.Ramp ramp;
-        uint    ttl;
-        uint    range;
+        uint256 chop;
+        uint256 dust;
+        uint256 fee;
+        uint256 line;
+        uint256 liqr;
+        uint256 ttl;
+        uint256 range;
     }
 
     struct UniParams {
         address nfpm;
         bytes32 ilk;
-        uint fee;
-        uint gain;
-        uint fuel;
-        uint fade;
-        uint chop;
-        uint room;
+        uint256 fee;
+        uint256 chop;
+        uint256 room;
         address uniwrapper;
     }
 
@@ -81,15 +73,13 @@ contract Ball is Math, Ward {
         address ricorisk;
         address router;
         address uniwrapper;
-        uint    par;
-        uint    ceil;
-        uint    adaptrange;
-        uint    adaptttl;
-        uint    daiusdttl;
-        uint    xauusdttl;
-        DutchFlower.Ramp ricoramp;
-        DutchFlower.Ramp riskramp;
-        Vow.Ramp         mintramp;
+        uint256 par;
+        uint256 ceil;
+        uint256 adaptrange;
+        uint256 adaptttl;
+        uint256 daiusdttl;
+        uint256 xauusdttl;
+        Vow.Ramp mintramp;
         address DAI;
         address DAI_USD_AGG;
         address XAU_USD_AGG;
@@ -102,58 +92,41 @@ contract Ball is Math, Ward {
     Ploker public ploker;
 
     constructor(
-        BallArgs    memory args
+        BallArgs memory args
     ) payable {
         rico = args.rico;
         risk = args.risk;
         dai = args.DAI;
         feedbase = args.feedbase;
 
-        flow = new DutchFlower();
         vat  = new Vat();
         vow  = new Vow();
-        hook = new ERC20Hook(feedbase, address(vat), address(flow), rico);
+        hook = new ERC20Hook(feedbase, address(vat), rico);
         mdn = new Medianizer(feedbase);
         uniadapt = new UniswapV3Adapter(Feedbase(feedbase), IUniWrapper(args.uniwrapper));
         cladapt = new ChainlinkAdapter(feedbase);
         divider = new Divider(feedbase, RAY);
         ploker = new Ploker();
-
         vat.prod(args.par);
 
-        vow.link('flow', address(flow));
+        vow.link('flow', address(hook));
         vow.link('vat',  address(vat));
         vow.link('RICO', rico);
         vow.link('RISK', risk);
 
         vat.file('ceil',  args.ceil);
         vat.link('rico',  rico);
-        vow.ward(address(flow), true);
         vat.ward(address(vow), true);
-        hook.ward(address(flow), true); // flowback
-        hook.ward(address(vat), true);  // grabhook, frobhook
 
-        // todo ramp config
-        vow.pair(risk, "fade", args.riskramp.fade);
-        vow.pair(risk, "tiny", args.riskramp.tiny);
-        vow.pair(risk, "fuel", args.riskramp.fuel);
-        vow.pair(risk, "gain", args.riskramp.gain);
-        vow.pair(risk, "feed", uint(uint160(feedbase)));
-        vow.pair(risk, "fsrc", uint(uint160(bytes20(address(mdn)))));
-        vow.pair(risk, "ftag", uint(RISK_RICO_TAG));
+        hook.ward(address(vat), true);  // grabhook, frobhook
+        hook.ward(address(vow), true);  // flow
+        hook.wire("flap", rico, address(mdn), RICO_RISK_TAG);
+        hook.wire("flop", risk, address(mdn), RISK_RICO_TAG);
+
         vow.file("vel", args.mintramp.vel);
         vow.file("rel", args.mintramp.vel);
         vow.file("bel", args.mintramp.bel);
         vow.file("cel", args.mintramp.cel);
-
-        vow.pair(rico, "fade", args.ricoramp.fade);
-        vow.pair(rico, "tiny", args.ricoramp.tiny);
-        vow.pair(rico, "fuel", args.ricoramp.fuel);
-        vow.pair(rico, "gain", args.ricoramp.gain);
-        vow.pair(rico, "feed", uint(uint160(feedbase)));
-        vow.pair(rico, "fsrc", uint(uint160(address(mdn))));
-        vow.pair(rico, "ftag", uint(RICO_RISK_TAG));
-
         vow.grant(rico);
         vow.grant(risk);
 
@@ -243,7 +216,7 @@ contract Ball is Math, Ward {
         vat.ward(address(vox), true);
     }
 
-    function makeilk(IlkParams memory ilkparams) _ward_ public {
+    function makeilk(IlkParams calldata ilkparams) _ward_ public {
         bytes32 ilk = ilkparams.ilk;
         bytes32 ilkrico = concat(ilk, ':rico');
         vat.init(ilk, address(hook));
@@ -253,7 +226,6 @@ contract Ball is Math, Ward {
         mdnconf.tags[0] = ilkrico;
         mdn.setConfig(ilkrico, mdnconf);
         hook.wire(ilk, ilkparams.gem, address(mdn), ilkrico);
-        hook.grant(ilkparams.gem);
         vat.filk(ilk, 'chop', ilkparams.chop);
         vat.filk(ilk, 'dust', ilkparams.dust);
         vat.filk(ilk, 'fee',  ilkparams.fee);  // 5%
@@ -294,26 +266,16 @@ contract Ball is Math, Ward {
 
         ss[1] = address(uniadapt); ts[1] = RICO_DAI_TAG;
         divider.setConfig(ilkrico, Divider.Config(ss, ts));
-
-        hook.pair(ilkparams.gem, "fade", ilkparams.ramp.fade);
-        hook.pair(ilkparams.gem, "tiny", ilkparams.ramp.tiny);
-        hook.pair(ilkparams.gem, "fuel", ilkparams.ramp.fuel);
-        hook.pair(ilkparams.gem, 'gain', ilkparams.ramp.gain);
     }
 
-    function makeuni(UniParams memory ups) _ward_ public {
-        if (address(nftflow) != address(0)) return;
+    function makeuni(UniParams calldata ups) _ward_ public {
+        if (address(nfthook) != address(0)) return;
         // initialize uni ilk
-        nftflow = new DutchNFTFlower(ups.nfpm, rico);
-        nfthook = new UniNFTHook(feedbase, address(nftflow), rico, ups.nfpm, ups.room, ups.uniwrapper);
-        vat.init(':uninft', address(nfthook));
-        vat.filk(':uninft', 'fee', ups.fee);
-        vat.filk(':uninft', 'chop', ups.chop);
-        nfthook.pair('gain', ups.gain);
-        nfthook.pair('fuel', ups.fuel);
-        nfthook.pair('fade', ups.fade);
+        nfthook = new UniNFTHook(feedbase, rico, ups.nfpm, ups.room, ups.uniwrapper);
+        vat.init(ups.ilk, address(nfthook));
+        vat.filk(ups.ilk, 'fee', ups.fee);
+        vat.filk(ups.ilk, 'chop', ups.chop);
 
-        nfthook.ward(address(nftflow), true);
         nfthook.ward(address(vat), true);
     }
 

@@ -58,14 +58,6 @@ contract Math {
         }
     }
 
-    function sub(uint x, int y) internal pure returns (uint z) {
-        unchecked {
-            z = x - uint(y);
-            if (y > 0 && z >= x) revert ErrUintUnder();
-            if (y < 0 && z <= x) revert ErrUintOver();
-        }
-    }
-
     function mul(uint x, int y) internal pure returns (int z) {
         unchecked {
             z = int(x) * y;

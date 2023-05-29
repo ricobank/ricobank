@@ -64,7 +64,8 @@ contract Vat is Lock, Math, Ward, Flog {
     error ErrWrongKey();
     error ErrWrongUrn();
 
-    uint256 public constant MINT = 2**128;
+    uint256 public constant MINT = 2 ** 128;
+    uint256 public constant DASH = 2 *  RAY;
 
     uint256 public rest;  // [rad] Remainder from
     uint256 public debt;  // [wad] Total Rico Issued
@@ -93,21 +94,23 @@ contract Vat is Lock, Math, Ward, Flog {
     }
 
     function safe(bytes32 i, address u)
-      public view returns (Spot)
+      public view returns (Spot, uint, uint)
     {
         Ilk storage ilk = ilks[i];
         (uint cut, uint ttl) = Hook(ilk.hook).safehook(i, u);
         if (block.timestamp > ttl) {
-            return Spot.Iffy;
+            return (Spot.Iffy, 0, 0);
         }
         // par acts as a multiplier for collateral requirements
         // par increase has same effect on cut as fee accumulation through rack
         // par decrease acts like a negative fee
         uint256 tab = urns[i][u] * rmul(rmul(par, ilk.rack), ilk.liqr);
         if (tab <= cut) {
-            return Spot.Safe;
+            return (Spot.Safe, 0, cut);
         } else {
-            return Spot.Sunk;
+            uint256 rush = DASH;
+            if (cut > RAY) rush = min(rush, tab / (cut / RAY));
+            return (Spot.Sunk, rush, cut);
         }
     }
 
@@ -151,13 +154,14 @@ contract Vat is Lock, Math, Ward, Flog {
         }
 
         // urn is safer, or is safe
-        if (!either(safer, safe(i, u) == Spot.Safe)) revert ErrNotSafe();
+        (Spot spot,,) = safe(i, u);
+        if (!either(safer, spot == Spot.Safe)) revert ErrNotSafe();
         // urn is safer, or urn is caller
         if (!either(safer, u == msg.sender)) revert ErrWrongUrn();
     }
 
-    function grab(bytes32 i, address u, address k)
-        _ward_ _flog_ external returns (uint aid)
+    function grab(bytes32 i, address u, address k, uint rush, uint cut)
+        _ward_ _flog_ external
     {
         // liquidate the urn
         Ilk storage ilk = ilks[i];
@@ -175,7 +179,7 @@ contract Vat is Lock, Math, Ward, Flog {
         sin[msg.sender] += dtab;
 
         // ink auction
-        aid = Hook(ilk.hook).grabhook(msg.sender, i, u, art, bill, payable(k));
+        Hook(ilk.hook).grabhook(msg.sender, i, u, art, bill, k, rush, cut);
     }
 
     function prod(uint256 jam)

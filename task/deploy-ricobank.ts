@@ -52,14 +52,11 @@ task('deploy-ricobank', '')
             nfpm: deps.objects.nonfungiblePositionManager.address,
             ilk: b32(':uninft'),
             fee: hre.ethers.BigNumber.from("1000000001546067052200000000"),
-            gain: ray(2),
-            fuel: ray(1000),
-            fade: ray(0.999),
             chop: ray(1),
             room: 8,
             uniwrapper: uniwrapper.address
     }
- 
+
     const ballargs = {
         feedbase: deps.objects.feedbase.address,
         rico: deps.objects.rico.address,
@@ -76,18 +73,6 @@ task('deploy-ricobank', '')
         xauusdttl:    BANKYEAR,
         twaprange:    500,
         twapttl:      BANKYEAR,
-        ricoramp: {
-            fade : ray(0.999), tiny: wad(100), fuel: ray(1000), gain: ray(2),
-            feed: deps.objects.feedbase.address,
-            fsrc: hre.ethers.constants.AddressZero,
-            ftag: hre.ethers.constants.HashZero
-        },
-        riskramp: {
-            fade : ray(0.999), tiny: wad(100), fuel: ray(1000), gain: ray(2),
-            feed: deps.objects.feedbase.address,
-            fsrc: hre.ethers.constants.AddressZero,
-            ftag: hre.ethers.constants.HashZero
-        },
         mintramp:   { vel: wad(1), rel: wad(1), bel: timestamp, cel: 1 },
         DAI: deps.objects.dai.address,
         DAI_USD_AGG: agg_daiusd.address,
@@ -112,17 +97,8 @@ task('deploy-ricobank', '')
             fee: ray(params.fee),
             line: rad(params.line),
             liqr: ray(params.liqr),
-            ramp: {
-                fade: ray(params.ramp.fade),
-                tiny: wad(params.ramp.tiny),
-                fuel: ray(params.ramp.fuel),
-                gain: ray(params.ramp.gain),
-                feed: deps.objects.feedbase.address,
-                fsrc: hre.ethers.constants.AddressZero,
-                ftag: hre.ethers.constants.HashZero
-            },
-            range: params.range,
-            ttl: params.ttl
+            ttl: params.ttl,
+            range: params.range
         }
         ilks.push(ilk)
     }
@@ -145,15 +121,12 @@ task('deploy-ricobank', '')
     await send(deps_dapp.risk.ward, vow_addr, 1)
     debug('creating pack')
 
-    const mdn_artifact = await dpack.getIpfsJson(deps.types.Medianizer.artifact['/'])
-    const div_artifact = await dpack.getIpfsJson(deps.types.Divider.artifact['/'])
     const getartifact = async (ty) => {
         debug(`getting artifact for ${ty}`)
         return dpack.getIpfsJson(deps.types[ty].artifact['/']);
     }
 
     const contracts = [
-        ['flow', 'DutchFlower', require('../artifacts/src/flow.sol/DutchFlower.json')],
         ['vat', 'Vat', require('../artifacts/src/vat.sol/Vat.json')],
         ['vow', 'Vow', require('../artifacts/src/vow.sol/Vow.json')],
         ['vox', 'Vox', require('../artifacts/src/vox.sol/Vox.json')],
@@ -162,7 +135,6 @@ task('deploy-ricobank', '')
         ['uniadapt', 'UniswapV3Adapter', await getartifact('UniswapV3Adapter')],
         ['cladapt', 'ChainlinkAdapter', await getartifact('ChainlinkAdapter')],
         ['hook', 'ERC20Hook', require('../artifacts/src/hook/ERC20hook.sol/ERC20Hook.json')],
-        ['nftflow', 'DutchNFTFlower', require('../artifacts/src/hook/nfpm/DutchNFTFlower.sol/DutchNFTFlower.json')],
         ['nfthook', 'UniNFTHook', require('../artifacts/src/hook/nfpm/UniV3NFTHook.sol/UniNFTHook.json')],
         ['ploker', 'Ploker', require('../artifacts/src/test/Ploker.sol/Ploker.json')]
     ]

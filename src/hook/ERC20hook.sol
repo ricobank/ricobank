@@ -10,17 +10,11 @@ import { Gem } from '../../lib/gemfab/src/gem.sol';
 import { Feedbase } from '../../lib/feedbase/src/Feedbase.sol';
 
 import { Vat } from '../vat.sol';
-import { DutchFlower } from '../flow.sol';
-
 import { Hook } from './hook.sol';
 
-contract ERC20Hook is Hook, Ward, Lock, Flog, Math {
-    // per-auction urn identifier
-    struct Sale {
-        bytes32 ilk;
-        address urn;
-    }
+uint256 constant NO_CUT = type(uint256).max;
 
+contract ERC20Hook is Hook, Ward, Lock, Flog, Math {
     // per-ilk gem and price feed
     struct Item {
         address gem;   // this ilk's gem
@@ -30,24 +24,23 @@ contract ERC20Hook is Hook, Ward, Lock, Flog, Math {
 
     mapping (address gem => bool flashable) public pass;
     mapping (bytes32 ilk => Item) public items;
-    mapping (uint256 aid => Sale) public sales;
     // collateral amounts
     mapping (bytes32 ilk => mapping(address usr => uint)) public inks;
 
-    Feedbase    public feed;
-    DutchFlower public flow;
-    Gem         public rico;
-    Vat         public vat;
-
-    error ErrBigFlowback();
+    error ErrOutDated();
     error ErrLoanArgs();
     error ErrTransfer();
-    error ErrDinkLength();
+    error ErrDinkSize();
 
-    constructor(address _feed, address _vat, address _flow, address _rico) {
+    address internal immutable self = address(this);
+
+    Feedbase    public feed;
+    address     public rico;
+    Vat         public vat;
+
+    constructor(address _feed, address _vat, address _rico) {
         feed = Feedbase(_feed);
-        flow = DutchFlower(_flow);
-        rico = Gem(_rico);
+        rico = _rico;
         vat  = Vat(_vat);
     }
 
@@ -60,12 +53,12 @@ contract ERC20Hook is Hook, Ward, Lock, Flog, Math {
     ) _ward_ _flog_ external returns (bool safer) {
         // read dink as a single uint
         address gem = items[i].gem;
-        if (_dink.length != 32) revert ErrDinkLength();
+        if (_dink.length != 32) revert ErrDinkSize();
         int dink = int(uint(bytes32(_dink)));
         inks[i][u] = add(inks[i][u], dink);
-        if (sender != address(this)) {
+        if (sender != self) {
             if (dink > 0) {
-                if (!Gem(gem).transferFrom(sender, address(this), uint(dink))) {
+                if (!Gem(gem).transferFrom(sender, self, uint(dink))) {
                     revert ErrTransfer();
                 }
             } else if (dink < 0) {
@@ -83,13 +76,35 @@ contract ERC20Hook is Hook, Ward, Lock, Flog, Math {
         address u,
         uint256, // art
         uint256 bill,
-        address payable keeper
-    ) _ward_ _flog_ external returns (uint aid) {
-        uint ham = inks[i][u];
-        inks[i][u] = 0;
-        // flip the ink, try to get bill back
-        aid = flow.flow(vow, items[i].gem, ham, address(rico), bill, keeper);
-        sales[aid] = Sale({ ilk: i, urn: u });
+        address keeper,
+        uint256 rush,
+        uint256 cut
+    ) _ward_ _flog_ external {
+        inks[i][u] -= flow(vow, i, inks[i][u], rico, bill, keeper, self, rush, cut);
+    }
+
+    function flow(address vow, bytes32 i, uint ham, address wag, uint wam, address keeper, address from, uint rush, uint cut
+    ) _ward_ public returns (uint sell) {
+        Item storage item = items[i];
+        uint earn;
+        if (cut == NO_CUT) {
+            (bytes32 val, uint ttl) = feed.pull(item.fsrc, item.ftag);
+            if (ttl < block.timestamp) revert ErrOutDated();
+            cut = ham * uint(val);
+        }
+        // cut is RAD, rush is RAY, so vow earns a WAD
+        earn = cut / rush;
+        sell = ham;
+        if (earn > wam) {
+            sell = wam * ham / earn;
+            earn = wam;
+        }
+        if (!Gem(wag).transferFrom(keeper, vow, earn)) revert ErrTransfer();
+        if (from == self) {
+            if (!Gem(item.gem).transfer(keeper, sell)) revert ErrTransfer();
+        } else {
+            if (!Gem(item.gem).transferFrom(from, keeper, sell)) revert ErrTransfer();
+        }
     }
 
     function safehook(bytes32 i, address u) view public returns (uint, uint) {
@@ -97,21 +112,6 @@ contract ERC20Hook is Hook, Ward, Lock, Flog, Math {
         Item storage item = items[i];
         (bytes32 val, uint ttl) = feed.pull(item.fsrc, item.ftag);
         return (uint(val) * inks[i][u], ttl);
-    }
-
-    function grant(address gem) _flog_ external {
-        Gem(gem).approve(address(flow), type(uint).max);
-    }
-
-    function flowback(uint256 aid, uint refund) _ward_ _flog_ external {
-        // frob refunded ink back into the urn
-        if (refund == 0)  return;
-        if (refund >= 2 ** 255) revert ErrBigFlowback();
-        Sale storage sale = sales[aid];
-        bytes32 ilk = sale.ilk;
-        address urn = sale.urn;
-        delete sales[aid];
-        vat.frob(ilk, urn, abi.encodePacked(refund), 0);
     }
 
     function wire(bytes32 ilk, address gem, address fsrc, bytes32 ftag) _ward_ _flog_ external {
@@ -136,12 +136,8 @@ contract ERC20Hook is Hook, Ward, Lock, Flog, Math {
         require(ok, string(result));
 
         for(uint i = 0; i < gems.length; i++) {
-            if (!Gem(gems[i]).transferFrom(code, address(this), wads[i])) revert ErrTransfer();
+            if (!Gem(gems[i]).transferFrom(code, self, wads[i])) revert ErrTransfer();
         }
-    }
-
-    function pair(address gem, bytes32 key, uint val) _ward_ _flog_ external {
-        flow.curb(gem, key, val);
     }
 
     function list(address gem, bool bit)

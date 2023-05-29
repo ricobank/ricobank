@@ -9,7 +9,6 @@ import { Gem } from '../../../lib/gemfab/src/gem.sol';
 import { Feedbase } from '../../../lib/feedbase/src/Feedbase.sol';
 
 import { Hook } from '../hook.sol';
-import { DutchNFTFlower } from './DutchNFTFlower.sol';
 
 import { IUniswapV3Pool } from '@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol';
 import { INonfungiblePositionManager } from './interfaces/INonfungiblePositionManager.sol';
@@ -27,8 +26,6 @@ contract UniNFTHook is Hook, Ward, Flog, Math {
         bytes32 ftag;  // [tag] feedbase `tag` bytes32
     }
 
-    // unlike ERC20 hook, flowback sends rico to sender; no need to identify urn
-    mapping (uint256 aid => address urn) public sales;
     mapping (bytes32 ilk => mapping(address gem => Source source))   public sources;
     mapping (bytes32 ilk => mapping(address usr => uint[] tokenIds)) public inks;
 
@@ -37,19 +34,16 @@ contract UniNFTHook is Hook, Ward, Flog, Math {
     uint256 public immutable ROOM;
 
     Feedbase       public feed;
-    DutchNFTFlower public flow;
     Gem            public rico;
     INonfungiblePositionManager public immutable nfpm;
 
-    error ErrBigFlowback();
     error ErrDinkLength();
     error ErrIdx();
     error ErrDir();
     error ErrFull();
 
-    constructor(address _feed, address _flow, address _rico, address _nfpm, uint _ROOM, address _wrap) {
+    constructor(address _feed, address _rico, address _nfpm, uint _ROOM, address _wrap) {
         feed = Feedbase(_feed);
-        flow = DutchNFTFlower(_flow);
         rico = Gem(_rico);
         ROOM = _ROOM;
         nfpm = INonfungiblePositionManager(_nfpm);
@@ -122,12 +116,26 @@ contract UniNFTHook is Hook, Ward, Flog, Math {
         address urn,
         uint256, // art
         uint256 bill,
-        address payable keeper
-    ) _ward_ _flog_ external returns (uint aid) {
-        uint[] memory hat = inks[ilk][urn];
+        address keeper,
+        uint256 rush,
+        uint256 cut
+    ) _ward_ _flog_ external {
+        uint[] memory ids = inks[ilk][urn];
         delete inks[ilk][urn];
-        aid = flow.flow(vow, hat, bill, keeper);
-        sales[aid] = urn;
+        // cut is RAD, rush is RAY, so vow earns a WAD
+        uint256 earn = cut / rush;
+        uint256 over = earn > bill ? earn - bill : 0;
+        rico.transferFrom(keeper, vow, earn - over);
+        rico.transferFrom(keeper, urn, over);
+
+        uint len = ids.length;
+        uint idx;
+        while (true) {
+            uint id = ids[idx];
+            nfpm.transferFrom(address(this), keeper, id);
+            unchecked{ idx++; }
+            if (idx >= len) break;
+        }
     }
 
     // respective amounts of token0 and token1 that this position
@@ -182,19 +190,6 @@ contract UniNFTHook is Hook, Ward, Flog, Math {
                 tot += amount1 * uint(val);
             }
         }
-    }
-
-    function grant(uint tokenId) _flog_ external {
-        nfpm.approve(address(flow), tokenId);
-    }
-
-    function flowback(uint256 aid, uint refund) _ward_ _flog_ external {
-        if (refund != 0) rico.transfer(sales[aid], refund);
-        delete sales[aid];
-    }
-
-    function pair(bytes32 key, uint val) _ward_ _flog_ external {
-        flow.curb(key, val);
     }
 
     function wire(bytes32 ilk, address gem, address fsrc, bytes32 ftag) _ward_ _flog_ external {
