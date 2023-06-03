@@ -135,14 +135,14 @@ contract Ball is Math, Ward {
             RICO_DAI_TAG,
             UniswapV3Adapter.Config(args.ricodai, args.adaptrange, args.adaptttl, args.DAI < rico)
         );
-        {
-            address[] memory sources = new address[](2);
-            bytes32[] memory tags    = new bytes32[](2);
-            Feedbase(feedbase).push(bytes32("ONE"), bytes32(RAY), type(uint).max);
-            sources[0] = address(this); tags[0] = bytes32("ONE");
-            sources[1] = address(uniadapt); tags[1] = RICO_DAI_TAG;
-            divider.setConfig(DAI_RICO_TAG, Divider.Config(sources, tags));
-        }
+        address[] memory sources = new address[](2);
+        bytes32[] memory tags    = new bytes32[](2);
+        uint256[] memory scales  = new uint256[](2);
+        scales[0] = scales[1] = RAY;
+        Feedbase(feedbase).push(bytes32("ONE"), bytes32(RAY), type(uint).max);
+        sources[0] = address(this);     tags[0] = bytes32("ONE");
+        sources[1] = address(uniadapt); tags[1] = RICO_DAI_TAG;
+        divider.setConfig(DAI_RICO_TAG, Divider.Config(sources, tags, scales));
 
         //
         // rico/ref
@@ -156,10 +156,11 @@ contract Ball is Math, Ward {
         {
             address[] memory src3 = new address[](3);
             bytes32[] memory tag3 = new bytes32[](3);
-            src3[0] = address(cladapt); tag3[0] = DAI_USD_TAG;
-            src3[1] = address(divider); tag3[1] = DAI_RICO_TAG;
-            src3[2] = address(cladapt); tag3[2] = XAU_USD_TAG;
-            divider.setConfig(RICO_XAU_TAG, Divider.Config(src3, tag3));
+            uint256[] memory scl3 = new uint256[](3);
+            src3[0] = address(cladapt); tag3[0] = DAI_USD_TAG;  scl3[0] = RAY;
+            src3[1] = address(divider); tag3[1] = DAI_RICO_TAG; scl3[1] = RAY;
+            src3[2] = address(cladapt); tag3[2] = XAU_USD_TAG;  scl3[2] = RAY;
+            divider.setConfig(RICO_XAU_TAG, Divider.Config(src3, tag3, scl3));
         }
         Medianizer.Config memory mdnconf =
             Medianizer.Config(new address[](1), new bytes32[](1), 0);
@@ -185,13 +186,9 @@ contract Ball is Math, Ward {
             RICO_RISK_TAG,
             UniswapV3Adapter.Config(args.ricorisk, args.adaptrange, args.adaptttl, rico < risk)
         );
-        {
-            address[] memory src2 = new address[](2);
-            bytes32[] memory tag2 = new bytes32[](2);
-            src2[0] = address(this); tag2[0] = bytes32("ONE");
-            src2[1] = address(uniadapt); tag2[1] = RICO_RISK_TAG;
-            divider.setConfig(RISK_RICO_TAG, Divider.Config(src2, tag2));
-        }
+        sources[0] = address(this);     tags[0] = bytes32("ONE");
+        sources[1] = address(uniadapt); tags[1] = RICO_RISK_TAG;
+        divider.setConfig(RISK_RICO_TAG, Divider.Config(sources, tags, scales));
         mdnconf.srcs[0] = address(uniadapt);
         mdnconf.tags[0] = RICO_RISK_TAG;
         mdn.setConfig(RICO_RISK_TAG, mdnconf);
@@ -233,10 +230,13 @@ contract Ball is Math, Ward {
         vat.filk(ilk, 'liqr', ilkparams.liqr);
         hook.list(ilkparams.gem, true);
 
-        address[] memory ss = new address[](2);
-        bytes32[] memory ts = new bytes32[](2);
+        address[] memory sources = new address[](2);
+        bytes32[] memory tags    = new bytes32[](2);
+        uint256[] memory scales  = new uint256[](2);
+        // uni adapter returns a ray, and both ink and sqrtPriceX96 ignore decimals, so scale always a RAY
+        scales[0] = scales[1] = RAY;
         if (ilkparams.gem == dai) {
-            ss[0] = address(this); ts[0] = bytes32("ONE");
+            sources[0] = address(this); tags[0] = bytes32("ONE");
 
             // not using second uni adapter here, it's just dai/dai
             Ploker.Config memory plokerconf = Ploker.Config(
@@ -253,7 +253,7 @@ contract Ball is Math, Ward {
                     ilkparams.pool, ilkparams.range, ilkparams.ttl, ilkparams.gem > dai
                 )
             );
-            ss[0] = address(uniadapt); ts[0] = tag;
+            sources[0] = address(uniadapt); tags[0] = tag;
 
             Ploker.Config memory plokerconf = Ploker.Config(
                 new address[](2), new bytes32[](2), new address[](1), new bytes32[](1)
@@ -264,8 +264,8 @@ contract Ball is Math, Ward {
             ploker.setConfig(ilkrico, plokerconf);
         }
 
-        ss[1] = address(uniadapt); ts[1] = RICO_DAI_TAG;
-        divider.setConfig(ilkrico, Divider.Config(ss, ts));
+        sources[1] = address(uniadapt); tags[1] = RICO_DAI_TAG;
+        divider.setConfig(ilkrico, Divider.Config(sources, tags, scales));
     }
 
     function makeuni(UniParams calldata ups) _ward_ public {

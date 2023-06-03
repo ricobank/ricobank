@@ -156,10 +156,11 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
 
     function make_feed(bytes32 tag) internal {
         address[] memory sources = new address[](2);
-        bytes32[] memory tags = new bytes32[](2);
-        sources[0] = address(this); tags[0] = bytes32(tag);
-        sources[1] = address(this); tags[1] = bytes32("ONE");
-        divider.setConfig(tag, Divider.Config(sources, tags));
+        bytes32[] memory tags    = new bytes32[](2);
+        uint256[] memory scales  = new uint256[](2);
+        sources[0] = address(this); tags[0] = bytes32(tag);   scales[0] = RAY;
+        sources[1] = address(this); tags[1] = bytes32("ONE"); scales[1] = RAY;
+        divider.setConfig(tag, Divider.Config(sources, tags, scales));
         // todo quorum?
         Medianizer.Config memory mdnconf =
             Medianizer.Config(new address[](1), new bytes32[](1), 0);

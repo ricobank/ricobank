@@ -179,7 +179,7 @@ contract BallTest is Test, UniSetUp, Math {
         ball.approve(me);
 
         uint usedgas     = gas - gasleft();
-        uint expectedgas = 19923011;
+        uint expectedgas = 20421556;
         if (usedgas < expectedgas) {
             console.log("ball saved %s gas...currently %s", expectedgas - usedgas, usedgas);
         }
