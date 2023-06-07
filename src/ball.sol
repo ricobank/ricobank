@@ -11,6 +11,7 @@ import {Vat} from './vat.sol';
 import {Vow} from './vow.sol';
 import {Vox} from './vox.sol';
 import {Feedbase} from "../lib/feedbase/src/Feedbase.sol";
+import {Gem} from "../lib/gemfab/src/gem.sol";
 import {Ward} from "../lib/feedbase/src/mixin/ward.sol";
 import {Divider} from "../lib/feedbase/src/combinators/Divider.sol";
 import {UniswapV3Adapter, IUniWrapper} from "../lib/feedbase/src/adapters/UniswapV3Adapter.sol";
@@ -20,6 +21,9 @@ import {Math} from '../src/mixin/math.sol';
 import {ERC20Hook} from './hook/ERC20hook.sol';
 import {UniNFTHook} from './hook/nfpm/UniV3NFTHook.sol';
 import {Ploker} from './test/Ploker.sol';
+import {Bank} from './bank.sol';
+import {File} from './file.sol';
+import {Diamond, IDiamondCuttable} from '../lib/solidstate-solidity/contracts/proxy/diamond/Diamond.sol';
 
 contract Ball is Math, Ward {
     bytes32 internal constant RICO_DAI_TAG = "rico:dai";
@@ -30,6 +34,7 @@ contract Ball is Math, Ward {
     bytes32 internal constant RICO_REF_TAG = "rico:ref";
     bytes32 internal constant RICO_RISK_TAG  = "rico:risk";
     bytes32 internal constant RISK_RICO_TAG  = "risk:rico";
+    bytes32 internal constant UNI_NFT_ILK = ":uninft";
 
     Vat public vat;
     Vow public vow;
@@ -42,6 +47,8 @@ contract Ball is Math, Ward {
     UniswapV3Adapter public uniadapt;
     Divider public divider;
     ChainlinkAdapter public cladapt;
+    address payable public bank;
+    File public file;
 
     struct IlkParams {
         bytes32 ilk;
@@ -66,6 +73,7 @@ contract Ball is Math, Ward {
     }
 
     struct BallArgs {
+        address payable bank; // diamond
         address feedbase;
         address rico;
         address risk;
@@ -91,44 +99,88 @@ contract Ball is Math, Ward {
 
     Ploker public ploker;
 
-    constructor(
-        BallArgs memory args
-    ) payable {
+    function singleCut(address facet, bytes4 sel) internal {
+        bytes4[] memory sels = new bytes4[](1);
+        sels[0] = sel;
+        IDiamondCuttable.FacetCut[] memory cuts = new IDiamondCuttable.FacetCut[](1);
+        cuts[0] = IDiamondCuttable.FacetCut(
+            facet, IDiamondCuttable.FacetCutAction.ADD, sels
+        );
+
+        Diamond(bank).diamondCut(cuts, address(0), bytes(''));
+    }
+
+    constructor(BallArgs memory args) {
+        file = new File();
+        vat  = new Vat();
+        vow  = new Vow();
+        hook = new ERC20Hook();
+        ploker = new Ploker();
+
+        mdn = new Medianizer(args.feedbase);
+        uniadapt = new UniswapV3Adapter(Feedbase(args.feedbase), IUniWrapper(args.uniwrapper));
+        cladapt = new ChainlinkAdapter(args.feedbase);
+        divider = new Divider(args.feedbase, RAY);
+    }
+
+    function setup(BallArgs memory args) _ward_ public payable {
+        bank = args.bank;
         rico = args.rico;
         risk = args.risk;
         dai = args.DAI;
         feedbase = args.feedbase;
 
-        vat  = new Vat();
-        vow  = new Vow();
-        hook = new ERC20Hook(feedbase, address(vat), rico);
-        mdn = new Medianizer(feedbase);
-        uniadapt = new UniswapV3Adapter(Feedbase(feedbase), IUniWrapper(args.uniwrapper));
-        cladapt = new ChainlinkAdapter(feedbase);
-        divider = new Divider(feedbase, RAY);
-        ploker = new Ploker();
-        vat.prod(args.par);
+        Diamond(bank).acceptOwnership();
+        singleCut(address(file), File.file.selector);
+        singleCut(address(file), File.link.selector);
+        singleCut(address(file), File.fb.selector);
+        singleCut(address(file), File.rico.selector);
+        singleCut(address(vat), Vat.filk.selector);
+        singleCut(address(vat), Vat.filh.selector);
+        singleCut(address(vat), Vat.filhi.selector);
+        singleCut(address(vat), Vat.filhi2.selector);
+        singleCut(address(vat), Vat.init.selector);
+        singleCut(address(vat), Vat.frob.selector);
+        singleCut(address(vat), Vat.grab.selector);
+        singleCut(address(vat), Vat.safe.selector);
+        singleCut(address(vat), Vat.heal.selector);
+        singleCut(address(vat), Vat.sin.selector);
+        singleCut(address(vat), Vat.ilks.selector);
+        singleCut(address(vat), Vat.urns.selector);
+        singleCut(address(vat), Vat.rest.selector);
+        singleCut(address(vat), Vat.debt.selector);
+        singleCut(address(vat), Vat.ceil.selector);
+        singleCut(address(vat), Vat.par.selector);
+        singleCut(address(vat), Vat.drip.selector);
+        singleCut(address(vat), Vat.DASH.selector);
+        singleCut(address(vat), Vat.MINT.selector);
+        singleCut(address(vat), Vat.ink.selector);
+        singleCut(address(vat), Vat.flash.selector);
 
-        vow.link('flow', address(hook));
-        vow.link('vat',  address(vat));
-        vow.link('RICO', rico);
-        vow.link('RISK', risk);
+        singleCut(address(vow), Vow.keep.selector);
+        singleCut(address(vow), Vow.bail.selector);
+        singleCut(address(vow), Vow.RISK.selector);
+        singleCut(address(vow), Vow.ramp.selector);
+        singleCut(address(vow), Vow.flapfeed.selector);
+        singleCut(address(vow), Vow.flopfeed.selector);
 
-        vat.file('ceil',  args.ceil);
-        vat.link('rico',  rico);
-        vat.ward(address(vow), true);
+        singleCut(address(hook), ERC20Hook.erc20flash.selector);
+        File(bank).file('par', bytes32(args.par));
 
-        hook.ward(address(vat), true);  // grabhook, frobhook
-        hook.ward(address(vow), true);  // flow
-        hook.wire("flap", rico, address(mdn), RICO_RISK_TAG);
-        hook.wire("flop", risk, address(mdn), RISK_RICO_TAG);
+        File(bank).link('rico', rico);
+        File(bank).link('risk', risk);
 
-        vow.file("vel", args.mintramp.vel);
-        vow.file("rel", args.mintramp.vel);
-        vow.file("bel", args.mintramp.bel);
-        vow.file("cel", args.mintramp.cel);
-        vow.grant(rico);
-        vow.grant(risk);
+        File(bank).file('ceil', bytes32(args.ceil));
+
+        File(bank).file('flaptag', RICO_RISK_TAG);
+        File(bank).file('flapsrc', bytes32(bytes20(address(mdn))));
+        File(bank).file('floptag', RISK_RICO_TAG);
+        File(bank).file('flopsrc', bytes32(bytes20(address(mdn))));
+
+        File(bank).file("vel", bytes32(args.mintramp.vel));
+        File(bank).file("rel", bytes32(args.mintramp.vel));
+        File(bank).file("bel", bytes32(args.mintramp.bel));
+        File(bank).file("cel", bytes32(args.mintramp.cel));
 
         // rico/dai, dai/rico (== 1 / (rico/dai))
         uniadapt.setConfig(
@@ -206,29 +258,40 @@ contract Ball is Math, Ward {
         cladapt.look(XAU_USD_TAG);
         (bytes32 ref,) = Feedbase(feedbase).pull(address(cladapt), XAU_USD_TAG);
         vox = new Vox(uint256(ref));
-        vox.link('fb',  feedbase);
-        vox.link('vat', address(vat));
-        vox.link('tip', address(mdn));
-        vox.file('tag', RICO_REF_TAG);
-        vat.ward(address(vox), true);
+        singleCut(address(vox), Vox.poke.selector);
+        singleCut(address(vox), Vox.way.selector);
+        singleCut(address(vox), Vox.how.selector);
+        singleCut(address(vox), Vox.cap.selector);
+        singleCut(address(vox), Vox.tip.selector);
+        singleCut(address(vox), Vox.tag.selector);
+        singleCut(address(vox), Vox.amp.selector);
+        File(bank).link('fb',  feedbase);
+        File(bank).link('tip', address(mdn));
+        File(bank).file('tag', RICO_REF_TAG);
+        File(bank).file('how', bytes32(uint(1000000115170000000000000000)));
+        File(bank).file('cap', bytes32(uint(1000000022000000000000000000)));
+        File(bank).file('tau', bytes32(block.timestamp));
+        File(bank).file('way', bytes32(RAY));
     }
 
     function makeilk(IlkParams calldata ilkparams) _ward_ public {
         bytes32 ilk = ilkparams.ilk;
         bytes32 ilkrico = concat(ilk, ':rico');
-        vat.init(ilk, address(hook));
+        Vat(bank).init(ilk, address(hook));
         Medianizer.Config memory mdnconf =
             Medianizer.Config(new address[](1), new bytes32[](1), 0);
         mdnconf.srcs[0] = address(divider);
         mdnconf.tags[0] = ilkrico;
         mdn.setConfig(ilkrico, mdnconf);
-        hook.wire(ilk, ilkparams.gem, address(mdn), ilkrico);
-        vat.filk(ilk, 'chop', ilkparams.chop);
-        vat.filk(ilk, 'dust', ilkparams.dust);
-        vat.filk(ilk, 'fee',  ilkparams.fee);  // 5%
-        vat.filk(ilk, 'line', ilkparams.line);
-        vat.filk(ilk, 'liqr', ilkparams.liqr);
-        hook.list(ilkparams.gem, true);
+        Vat(bank).filhi(ilk, 'gem', ilk, bytes32(bytes20(ilkparams.gem)));
+        Vat(bank).filhi(ilk, 'fsrc', ilk, bytes32(bytes20(address(mdn))));
+        Vat(bank).filhi(ilk, 'ftag', ilk, ilkrico);
+        Vat(bank).filhi(ilk, 'pass', ilk, bytes32(uint(1)));
+        Vat(bank).filk(ilk, 'chop', ilkparams.chop);
+        Vat(bank).filk(ilk, 'dust', ilkparams.dust);
+        Vat(bank).filk(ilk, 'fee',  ilkparams.fee);  // 5%
+        Vat(bank).filk(ilk, 'line', ilkparams.line);
+        Vat(bank).filk(ilk, 'liqr', ilkparams.liqr);
 
         address[] memory sources = new address[](2);
         bytes32[] memory tags    = new bytes32[](2);
@@ -270,13 +333,15 @@ contract Ball is Math, Ward {
 
     function makeuni(UniParams calldata ups) _ward_ public {
         if (address(nfthook) != address(0)) return;
+        nfthook = new UniNFTHook();
         // initialize uni ilk
-        nfthook = new UniNFTHook(feedbase, rico, ups.nfpm, ups.room, ups.uniwrapper);
-        vat.init(ups.ilk, address(nfthook));
-        vat.filk(ups.ilk, 'fee', ups.fee);
-        vat.filk(ups.ilk, 'chop', ups.chop);
+        Vat(bank).init(ups.ilk, address(nfthook));
+        Vat(bank).filh(UNI_NFT_ILK, 'nfpm', bytes32(bytes20(address(ups.nfpm))));
+        Vat(bank).filh(UNI_NFT_ILK, 'ROOM', bytes32(ups.room));
+        Vat(bank).filh(UNI_NFT_ILK, 'wrap', bytes32(bytes20(address(ups.uniwrapper))));
 
-        nfthook.ward(address(vat), true);
+        Vat(bank).filk(ups.ilk, 'fee', ups.fee);
+        Vat(bank).filk(ups.ilk, 'chop', ups.chop);
     }
 
     function approve(address usr) _ward_ public {
@@ -286,12 +351,7 @@ contract Ball is Math, Ward {
         cladapt.give(usr);
         ploker.give(usr);
 
-        hook.give(usr);
-        nfthook.give(usr);
-
-        vow.give(usr);
-        vat.give(usr);
-        vox.give(usr);
+        Diamond(bank).transferOwnership(usr);
     }
 
     function concat(bytes32 a, bytes32 b) internal pure returns (bytes32 res) {

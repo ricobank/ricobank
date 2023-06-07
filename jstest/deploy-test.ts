@@ -13,13 +13,12 @@ describe('deployments', ()=>{
       debug(Object.keys(hh.network))
       debug(hh.network.name)
       const [gas, pack] = await task_total_gas(hh, 'deploy-ricobank', {mock:'true', netname: 'ethereum', tokens: './tokens.json'})
-      const expectedgas = 44426806
+      const expectedgas = 46115273
       want(gas).to.be.at.most(expectedgas)
       if (gas < expectedgas) {
           console.log("deploy saved", expectedgas - gas, "gas...currently", gas)
       }
-      want(pack.objects.vat).exists
-
+      want(pack.objects.bank).exists
 
       let [ali] = await hh.ethers.getSigners()
       const dapp = await dpack.load(pack, hh.ethers, ali)

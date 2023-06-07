@@ -11,104 +11,84 @@ import { Flog } from './mixin/flog.sol';
 import { Math } from './mixin/math.sol';
 import { Vat }  from './vat.sol';
 import { ERC20Hook, NO_CUT } from '../src/hook/ERC20hook.sol';
+import { Bank } from './bank.sol';
 
 // accounting mechanism
 // triggers collateral (flip), surplus (flap), and deficit (flop) auctions
-contract Vow is Math, Ward, Flog {
-    error ErrSafeBail();
-    error ErrWrongKey();
-    error ErrReflop();
-
-    // RISK mint rate
-    // flop uses min(vel rate, rel rate)
-    struct Ramp {
-        uint vel; // [wad] RISK/s
-        uint rel; // [wad] fraction of RISK supply/s
-        uint bel; // [sec] last flop timestamp
-        uint cel; // [sec] max seconds flop can ramp up
+contract Vow is Bank {
+    function RISK() view external returns (Gem) {return getVowStorage().RISK;}
+    function ramp() view external returns (Ramp memory) {
+        return getVowStorage().ramp;
+    }
+    function flapfeed() view external returns (address, bytes32) {
+        return (getVowStorage().flapsrc, getVowStorage().flaptag);
+    }
+    function flopfeed() view external returns (address, bytes32) {
+        return (getVowStorage().flopsrc, getVowStorage().floptag);
     }
 
-    Ramp public ramp;
+    error ErrSafeBail();
+    error ErrReflop();
+    error ErrOutDated();
+    error ErrTransfer();
 
-    address internal immutable self = address(this);
     uint256 internal constant  DASH = 2 * RAY;
 
-    ERC20Hook public flow;
-    Vat  public vat;
-    Gem  public RICO;
-    Gem  public RISK;
-
-    function keep(bytes32[] calldata ilks) 
-      _flog_ external {
+    function keep(bytes32[] calldata ilks) _flog_ external {
+        VowStorage storage  vowS  = getVowStorage();
+        VatStorage storage  vatS  = getVatStorage();
+        BankStorage storage bankS = getBankStorage();
         for (uint256 i = 0; i < ilks.length; i++) {
-            vat.drip(ilks[i]);
+            Vat(address(this)).drip(ilks[i]);
         }
-        uint rico = RICO.balanceOf(self);
-        uint risk = RISK.balanceOf(self);
-        RISK.burn(self, risk);
+        uint rico = bankS.rico.balanceOf(address(this));
+        uint risk = vowS.RISK.balanceOf(address(this));
+        vowS.RISK.burn(address(this), risk);
 
         // rico is a wad, sin is a rad
-        uint sin = vat.sin(self) / RAY;
+        uint sin = vatS.sin / RAY;
         uint rush = DASH;
         if (rico > sin) {
             // pay down sin, then auction off surplus RICO for RISK
-            if (sin > 1) vat.heal(sin - 1);
+            if (sin > 1) Vat(address(this)).heal(sin - 1);
             // buy-and-burn risk with remaining rico
             uint flap = rico - sin;
-            uint debt = vat.debt();
+            uint debt = vatS.debt;
             if (debt > 0) rush = min(rush, rdiv(debt + flap, debt));
-            flow.flow(
-                self, "flap", flap, address(RISK), type(uint256).max,
-                msg.sender, self, rush, NO_CUT
-            );
+            flow(vowS.flapsrc, vowS.flaptag, address(bankS.rico), flap, address(vowS.RISK), rush);
         } else if (sin > rico) {
             // pay down as much sin as possible
-            if (rico > 1) vat.heal(rico - 1);
-            uint debt = vat.debt();
+            if (rico > 1) Vat(address(this)).heal(rico - 1);
+            uint debt = vatS.debt;
             if (debt > 0) rush = min(rush, rdiv(debt + sin - rico, debt));
-            uint slope = min(ramp.vel, wmul(ramp.rel, RISK.totalSupply()));
-            uint flop  = slope * min(block.timestamp - ramp.bel, ramp.cel);
+            uint slope = min(vowS.ramp.vel, wmul(vowS.ramp.rel, vowS.RISK.totalSupply()));
+            uint flop  = slope * min(block.timestamp - vowS.ramp.bel, vowS.ramp.cel);
             if (0 == flop) revert ErrReflop();
-            ramp.bel = block.timestamp;
+            vowS.ramp.bel = block.timestamp;
             // mint-and-sell risk to cover remaining sin
-            RISK.mint(self, flop);
-            flow.flow(
-                self, "flop", flop, address(RICO), type(uint256).max,
-                msg.sender, self, rush, NO_CUT
-            );
+            vowS.RISK.mint(address(this), flop);
+            flow(vowS.flopsrc, vowS.floptag, address(vowS.RISK), flop, address(bankS.rico), rush);
         }
     }
 
+    function flow(
+        address src, bytes32 tag, address hag, uint ham, address wag, uint rush
+    ) internal {
+        (bytes32 val, uint ttl) = getBankStorage().fb.pull(src, tag);
+        if (ttl < block.timestamp) revert ErrOutDated();
+        uint cut = ham * uint(val);
+
+        // cut is RAD, rush is RAY, so vow earns a WAD
+        uint earn = cut / rush;
+        if (!Gem(wag).transferFrom(msg.sender, address(this), earn)) revert ErrTransfer();
+        if (!Gem(hag).transfer(msg.sender, ham)) revert ErrTransfer();
+    }
+
     function bail(bytes32 i, address u) _flog_ external {
-        vat.drip(i);
-        (Vat.Spot spot, uint rush, uint cut) = vat.safe(i, u);
+        Vat(address(this)).drip(i);
+        (Vat.Spot spot, uint rush, uint cut) = Vat(address(this)).safe(i, u);
         if (spot != Vat.Spot.Sunk) revert ErrSafeBail();
-        vat.grab(i, u, msg.sender, rush, cut);
+        Vat(address(this)).grab(i, u, msg.sender, rush, cut);
     }
 
-    // drip to mint accumulated fees
-    // minted rico will later heal sin or be auctioned as surplus
-    function drip(bytes32 i) _flog_ external {
-        vat.drip(i);
-    }
-
-    function grant(address gem) _flog_ external {
-        Gem(gem).approve(address(flow), type(uint256).max);
-    }
-
-    function link(bytes32 key, address val) _ward_ _flog_ external {
-             if (key == "flow") { flow = ERC20Hook(val); }
-        else if (key == "RISK") { RISK = Gem(val); }
-        else if (key == "RICO") { RICO = Gem(val); }
-        else if (key == "vat")  { vat  = Vat(val); }
-        else revert ErrWrongKey();
-    }
-
-    function file(bytes32 key, uint val) _ward_ _flog_ external {
-             if (key == "vel") { ramp.vel = val; }
-        else if (key == "rel") { ramp.rel = val; }
-        else if (key == "bel") { ramp.bel = val; }
-        else if (key == "cel") { ramp.cel = val; }
-        else revert ErrWrongKey();
-    }
 }

@@ -15,6 +15,9 @@ import { Vox } from '../src/vox.sol';
 import { ERC20Hook } from '../src/hook/ERC20hook.sol';
 import { UniNFTHook } from '../src/hook/nfpm/UniV3NFTHook.sol';
 import { UniSetUp } from "./UniHelper.sol";
+import { Bank } from '../src/bank.sol';
+import { File } from '../src/file.sol';
+import { BankDiamond } from '../src/diamond.sol';
 
 interface WethLike {
     function deposit() external payable;
@@ -23,28 +26,26 @@ interface WethLike {
     function balanceOf(address) external returns (uint);
 }
 
-
 contract Guy {
-    Vat vat;
-    Vow vow;
-    constructor(address _vat, address _vow) {
-        vat  = Vat(_vat);
-        vow = Vow(_vow);
+    address payable bank;
+
+    constructor(address payable _bank) {
+        bank = _bank;
     }
     function approve(address gem, address dst, uint amt) public {
         Gem(gem).approve(dst, amt);
     }
     function frob(bytes32 ilk, address usr, bytes calldata dink, int dart) public {
-        vat.frob(ilk, usr, dink, dart);
+        Vat(bank).frob(ilk, usr, dink, dart);
     }
     function transfer(address gem, address dst, uint amt) public {
         Gem(gem).transfer(dst, amt);
     }
     function bail(bytes32 i, address u) public {
-        vow.bail(i, u);
+        Vow(bank).bail(i, u);
     }
     function keep(bytes32[] calldata ilks) public {
-        vow.keep(ilks);
+        Vow(bank).keep(ilks);
     }
 }
 
@@ -74,9 +75,9 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
     uint256 constant public HOOK_ROOM  = 8;
     uint256 constant public init_mint  = 10000;
     uint256 constant public BANKYEAR   = (365 * 24 + 6) * 3600;
-    uint256 constant public no_rush    = WAD;
+    uint256 constant public no_rush    = RAY;
     address public immutable azero     = address(0);
-    address payable public immutable self = payable(address(this));
+    address public immutable self = payable(address(this));
 
     ERC20Hook   public hook;
     UniNFTHook  public nfthook;
@@ -90,20 +91,15 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
     Gem      public rico;
     Gem      public risk;
     GemFab   public gemfab;
-    Vat      public vat;
-    Vow      public vow;
-    Vox      public vox;
     address  public ricodai;
     address  public ricorisk;
     address  public arico;
     address  public arisk;
     address  public agold;
     address  public aruby;
-    address  public avat;
-    address  public avow;
-    address  public avox;
-    address  public ahook;
+    address  payable public ahook;
     address  public uniwrapper;
+    address payable public bank;
 
     Guy _bob;
     Guy guy;
@@ -112,27 +108,26 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
 
     function rico_mint(uint amt, bool bail) internal {
         uint start_gold = gold.balanceOf(self);
-        _bob = new Guy(avat, avow);
+        _bob = new Guy(bank);
         (bytes32 v, uint t) = feedpull(grtag);
         feedpush(grtag, bytes32(RAY * 10000), type(uint).max);
         gold.mint(address(_bob), amt);
-        _bob.approve(agold, address(hook), amt);
+        _bob.approve(agold, bank, amt);
         _bob.frob(gilk, address(_bob), abi.encodePacked(amt), int(amt));
         feedpush(grtag, bytes32(0), type(uint).max);
-        if (bail) vow.bail(gilk, address(_bob));
+        if (bail) Vow(bank).bail(gilk, address(_bob));
         _bob.transfer(arico, self, amt);
         feedpush(grtag, v, t);
         uint end_gold = gold.balanceOf(self);
         gold.burn(self, end_gold - start_gold);
     }
 
-    function _ink(bytes32 ilk, address usr) internal view returns (uint) {
-        (,,,,,,,,address h) = vat.ilks(ilk);
-        return ERC20Hook(h).inks(ilk, usr);
+    function _ink(bytes32 ilk, address usr) internal returns (uint) {
+        return abi.decode(Vat(bank).ink(ilk, usr), (uint));
     }
 
     function _art(bytes32 ilk, address usr) internal view returns (uint art) {
-        art = vat.urns(ilk, usr);
+        art = Vat(bank).urns(ilk, usr);
     }
 
     function check_gas(uint gas, uint expectedgas) internal view {
@@ -179,6 +174,10 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
         }
     }
 
+    function make_diamond() internal returns (address payable deployed) {
+        return payable(address(new BankDiamond()));
+    }
+
     function make_bank() public {
         feed   = new Feedbase();
         gemfab = new GemFab();
@@ -191,6 +190,7 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
         ricorisk = create_pool(arico, arisk, RISK_FEE, risk_price);
 
         uniwrapper = make_uniwrapper();
+        bank = make_diamond();
 
         Ball.IlkParams[] memory ips = new Ball.IlkParams[](1);
         ips[0] = Ball.IlkParams(
@@ -214,6 +214,7 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
             uniwrapper
         );
         Ball.BallArgs memory bargs = Ball.BallArgs(
+            bank,
             address(feed),
             arico,
             arisk,
@@ -227,39 +228,43 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
             BANKYEAR / 4,
             BANKYEAR, // daiusd
             BANKYEAR, // xauusd
-            Vow.Ramp(WAD, WAD, block.timestamp, 1),
+            Bank.Ramp(WAD, WAD, block.timestamp, 1),
             0x6B175474E89094C44Da98b954EedeAC495271d0F,
             0xAed0c38402a5d19df6E4c03F4E2DceD6e29c1ee9,
             0x214eD9Da11D2fbe465a6fc601a91E62EbEc1a0D6
         );
 
         ball = new Ball(bargs);
+        BankDiamond(bank).transferOwnership(address(ball));
+        ball.setup(bargs);
         ball.makeilk(ips[0]);
         ball.makeuni(ups);
         ball.approve(self);
+        BankDiamond(bank).acceptOwnership();
+
 
         ////////// these are outside ball, but must be part of real deploy process, unless warding ball first w create2
-        Gem(rico).ward(address(ball.vat()), true);
-        Gem(risk).ward(address(ball.vow()), true);
+        Gem(rico).ward(bank, true);
+        Gem(risk).ward(bank, true);
         // Gem(rico).ward(address(self), false);
         // Gem(risk).ward(address(self), false);
         //////////
 
-        vat  = Vat(address(ball.vat()));
-        vow  = Vow(address(ball.vow()));
-        vox  = Vox(address(ball.vox()));
+        //vat  = ball.vat();
+        //vow  = ball.vow();
+        //vox  = ball.vox();
         hook = ball.hook();
         nfthook = ball.nfthook();
         mdn  = ball.mdn();
         divider = ball.divider();
 
-        avat  = address(vat);
-        avow  = address(vow);
-        avox  = address(vox);
-        ahook = address(hook);
+        //avat  = payable(address(vat));
+        //avow  = payable(address(vow));
+        //avox  = payable(address(vox));
+        ahook = payable(address(hook));
 
-        rico.approve(avat, type(uint256).max);
-        rico.approve(ahook, type(uint256).max);
+        rico.approve(bank, type(uint256).max);
+        rico.approve(bank, type(uint256).max);
 
         feed.push(bytes32("ONE"), bytes32(RAY), type(uint).max);
         make_feed(rtag);
@@ -276,53 +281,61 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
         dai = Gem(DAI);
         vm.prank(VAULT);
         dai.transfer(address(this), 10000 * WAD);
-        dai.approve(address(hook), type(uint256).max);
-        vat.init(dilk, address(hook));
-        hook.wire(dilk, address(dai), self, drtag);
-        vat.filk(dilk, 'hook', uint(bytes32(bytes20(address(hook)))));
-        vat.filk(dilk, bytes32('chop'), RAD);
-        vat.filk(dilk, bytes32('line'), init_mint * 10 * RAD);
-        vat.filk(dilk, bytes32('fee'),  1000000001546067052200000000);  // 5%
+        dai.approve(bank, type(uint256).max);
+        Vat(bank).init(dilk, address(hook));
+        Vat(bank).filhi(dilk, 'gem', dilk, bytes32(bytes20(address(dai))));
+        Vat(bank).filhi(dilk, 'fsrc', dilk, bytes32(bytes20(self)));
+        Vat(bank).filhi(dilk, 'ftag', dilk, drtag);
+        Vat(bank).filk(dilk, 'hook', uint(bytes32(bytes20(address(hook)))));
+        Vat(bank).filk(dilk, bytes32('chop'), RAD);
+        Vat(bank).filk(dilk, bytes32('line'), init_mint * 10 * RAD);
+        Vat(bank).filk(dilk, bytes32('fee'),  1000000001546067052200000000);  // 5%
         // feedpush(dutag, bytes32(RAY), block.timestamp + 1000);
-        hook.list(DAI, true);
+        Vat(bank).filhi(dilk, 'pass', dilk, bytes32(uint(1)));
         make_feed(drtag);
     }
 
     function init_gold() public {
         gold = Gem(address(gemfab.build(bytes32("Gold"), bytes32("GOLD"))));
         gold.mint(self, init_mint * WAD);
-        gold.approve(address(hook), type(uint256).max);
-        vat.init(gilk, address(hook));
-        hook.wire(gilk, address(gold), self, grtag);
-        vat.filk(gilk, 'hook', uint(bytes32(bytes20(address(hook)))));
+        gold.approve(bank, type(uint256).max);
+        Vat(bank).init(gilk, address(hook));
+        Vat(bank).filhi(gilk, 'gem', gilk, bytes32(bytes20(address(gold))));
+        Vat(bank).filhi(gilk, 'fsrc', gilk, bytes32(bytes20(self)));
+        Vat(bank).filhi(gilk, 'ftag', gilk, grtag);
+ 
+        Vat(bank).filk(gilk, 'hook', uint(bytes32(bytes20(address(hook)))));
         // todo fix other chops, should be rays
-        vat.filk(gilk, bytes32('chop'), RAY);
-        vat.filk(gilk, bytes32('line'), init_mint * 10 * RAD);
-        vat.filk(gilk, bytes32('fee'),  1000000001546067052200000000);  // 5%
+        Vat(bank).filk(gilk, bytes32('chop'), RAY);
+        Vat(bank).filk(gilk, bytes32('line'), init_mint * 10 * RAD);
+        Vat(bank).filk(gilk, bytes32('fee'),  1000000001546067052200000000);  // 5%
         feedpush(grtag, bytes32(RAY), block.timestamp + 1000);
         agold = address(gold);
-        hook.list(agold, true);
+        Vat(bank).filhi(gilk, 'pass', gilk, bytes32(uint(1)));
     }
 
     function init_ruby() public {
         ruby = Gem(address(gemfab.build(bytes32("Ruby"), bytes32("RUBY"))));
         ruby.mint(self, init_mint * WAD);
-        ruby.approve(address(hook), type(uint256).max);
-        vat.init(rilk, address(hook));
-        hook.wire(rilk, address(ruby), self, rtag);
-        vat.filk(rilk, 'hook', uint(bytes32(bytes20(address(hook)))));
-        vat.filk(rilk, bytes32('chop'), RAD);
-        vat.filk(rilk, bytes32('line'), init_mint * 10 * RAD);
-        vat.filk(rilk, bytes32('fee'),  1000000001546067052200000000);  // 5%
+        ruby.approve(bank, type(uint256).max);
+        Vat(bank).init(rilk, address(hook));
+        Vat(bank).filhi(rilk, 'gem', rilk, bytes32(bytes20(address(ruby))));
+        Vat(bank).filhi(rilk, 'fsrc', rilk, bytes32(bytes20(self)));
+        Vat(bank).filhi(rilk, 'ftag', rilk, rtag);
+ 
+        Vat(bank).filk(rilk, 'hook', uint(bytes32(bytes20(address(hook)))));
+        Vat(bank).filk(rilk, bytes32('chop'), RAD);
+        Vat(bank).filk(rilk, bytes32('line'), init_mint * 10 * RAD);
+        Vat(bank).filk(rilk, bytes32('fee'),  1000000001546067052200000000);  // 5%
         feedpush(rtag, bytes32(RAY), block.timestamp + 1000);
-        hook.list(address(ruby), true);
+        Vat(bank).filhi(rilk, 'pass', rilk, bytes32(uint(1)));
         aruby = address(ruby);
     }
 
     function prepguyrico(uint amt, bool bail) internal {
         rico_mint(amt, bail);
         rico.transfer(address(guy), amt);
-        guy.approve(arico, ahook, UINT256_MAX);
+        guy.approve(arico, bank, UINT256_MAX);
     }
 
     function assertClose(uint v1, uint v2, uint rel) internal {

@@ -18,9 +18,8 @@ const TAG = Buffer.from('feed'.repeat(16), 'hex')
 describe('Vox', () => {
   let ali, bob, cat
   let ALI, BOB, CAT
-  let vat
-  let vox
   let fb
+  let bank
 
   before(async () => {
     [ali, bob, cat] = await ethers.getSigners();
@@ -28,16 +27,15 @@ describe('Vox', () => {
     const pack = await hh.run('deploy-ricobank', { mock: 'true', netname: 'ethereum' })
     const dapp = await dpack.load(pack, ethers, ali)
 
-    vat = dapp.vat
-    vox = dapp.vox
     fb = dapp.feedbase
+    bank = dapp.bank
 
-    await send(vox.file, b32("tag"), TAG)
-    await send(vox.link, b32("tip"), ALI)
+    await send(bank.file, b32("tag"), TAG)
+    await send(bank.link, b32("tip"), ALI)
 
-    await send(vox.file, b32("cap"), bn2b32(ray(3)))
+    await send(bank.file, b32("cap"), b32(ray(3)))
 
-    await send(vat.prod, wad(7))
+    await send(bank.file, b32('par'), b32(wad(7)))
 
     await snapshot(hh);
   })
@@ -53,7 +51,7 @@ describe('Vox', () => {
 
   it('sway', async () => {
     let progress = 10 ** 10
-    await send(vat.prod, wad(7))
+    await send(bank.file, b32('par'), b32(wad(7)))
 
     await warp(hh, progress)
     await mine(hh)
@@ -67,25 +65,25 @@ describe('Vox', () => {
     const t1 = await gettime()
     want(t1).equal(10 ** 10 + 10)
 
-    const par0 = await vat.par() // jammed to 7
+    const par0 = await bank.par() // jammed to 7
     want(par0.eq(wad(7))).true
 
     await send(fb.push, TAG, bn2b32(wad(7)), t1 + 1000)
 
-    await send(vox.poke)
+    await send(bank.poke)
 
-    const par1 = await vat.par() // still at 7 because way == RAY
+    const par1 = await bank.par() // still at 7 because way == RAY
     want(par1.eq(wad(7))).true
 
     const t2 = await gettime()
 
-    await send(vox.file, b32('way'), bn2b32(ray(2)))// doubles every second (!)
-    await send(vox.poke)
+    await send(bank.file, b32('way'), bn2b32(ray(2)))// doubles every second (!)
+    await send(bank.poke)
 
     await warp(hh, progress += 10)
     await mine(hh)
 
-    const par2 = await vat.par()
+    const par2 = await bank.par()
     want(par2.eq(wad(28))).true
   })
 
@@ -99,24 +97,24 @@ describe('Vox', () => {
     const t10_ = await gettime()
     want(t10_).equals(t10)
 
-    await send(vat.prod, wad(1.24))
-    await send(vox.file, b32('how'), bn2b32(ray(1 + 1.2e-16)))
+    await send(bank.file, b32('par'), b32(wad(1.24)))
+    await send(bank.file, b32('how'), bn2b32(ray(1 + 1.2e-16)))
 
     await send(fb.push, TAG, bn2b32(wad(1.25)), 10 ** 12)
-    await send(vox.poke)
+    await send(bank.poke)
 
     await warp(hh, t0 + 3600)
     await mine(hh)
 
-    await send(vox.poke)
-    const par2 = await vat.par()
+    await send(bank.poke)
+    const par2 = await bank.par()
     debug(par2.toString())
 
     await warp(hh, t0 + 2 * 3600)
     await mine(hh)
 
-    await send(vox.poke)
-    const par3 = await vat.par()
+    await send(bank.poke)
+    const par3 = await bank.par()
     debug(par3.toString())
   })
 })

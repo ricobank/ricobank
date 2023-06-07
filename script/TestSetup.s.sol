@@ -12,7 +12,7 @@ contract SetupScript is Script, RicoSetUp {
         make_bank();
         feedpush(wrtag, bytes32(RAY * 1000), block.timestamp + 1000);
         WethLike(WETH).deposit{value: 1000 * WAD}();
-        console.log('vat @ %s, vox at %s, fb @ %s', avat, avox, address(feed));
+        console.log('bank @ %s fb @ %s', bank, address(feed));
         vm.stopBroadcast();
     }
 }

@@ -29,29 +29,32 @@ import { Flog } from './mixin/flog.sol';
 import { Ward } from '../lib/feedbase/src/mixin/ward.sol';
 import { Gem }  from '../lib/gemfab/src/gem.sol';
 import { Hook } from './hook/hook.sol';
+import { Bank } from './bank.sol';
 
-contract Vat is Lock, Math, Ward, Flog {
-    struct Ilk {
-        uint256 tart;  // [wad] Total Normalised Debt
-        uint256 rack;  // [ray] Accumulated Rate
-
-        uint256 line;  // [rad] Debt Ceiling
-        uint256 dust;  // [rad] Urn Debt Floor
-
-        uint256  fee;  // [ray] Collateral-specific, per-second compounding rate
-        uint256  rho;  // [sec] Time of last drip
-
-        uint256 chop;  // [ray] Liquidation Penalty
-        uint256 liqr;  // [ray] Liquidation Ratio
-
-        address hook;  // [obj] Frob/grab hook
+contract Vat is Bank {
+    function ilks(bytes32 i) view external returns (Ilk memory) {
+        return getVatStorage().ilks[i];
     }
-
-    mapping (bytes32 ilk => Ilk)                                   public ilks;
-    mapping (bytes32 ilk => mapping (address usr => uint256 art )) public urns;
-    mapping (address usr => uint256)                               public sin;  // [rad]
+    function urns(bytes32 i, address u) view external returns (uint) {
+        return getVatStorage().urns[i][u];
+    }
+    function sin() view external returns (uint) {return getVatStorage().sin;}
+    function rest() view external returns (uint) {return getVatStorage().rest;}
+    function debt() view external returns (uint) {return getVatStorage().debt;}
+    function ceil() view external returns (uint) {return getVatStorage().ceil;}
+    function par() view external returns (uint) {return getVatStorage().par;}
+    function ink(bytes32 i, address u) external returns (bytes memory data) {
+        data = abi.decode(hookcall(i, abi.encodeWithSelector(
+            Hook.ink.selector, i, u
+        )), (bytes));
+    }
+    function DASH() pure external returns (uint) {return _DASH;}
+    function MINT() pure external returns (uint) {return _MINT;}
 
     enum Spot {Sunk, Iffy, Safe}
+
+    uint256 constant _MINT = 2 ** 128;
+    uint256 constant _DASH = 2 *  RAY;
 
     error ErrFeeMin();
     error ErrFeeRho();
@@ -61,28 +64,17 @@ contract Vat is Lock, Math, Ward, Flog {
     error ErrDebtCeil();
     error ErrMultiIlk();
     error ErrTransfer();
-    error ErrWrongKey();
     error ErrWrongUrn();
-
-    uint256 public constant MINT = 2 ** 128;
-    uint256 public constant DASH = 2 *  RAY;
-
-    uint256 public rest;  // [rad] Remainder from
-    uint256 public debt;  // [wad] Total Rico Issued
-    uint256 public ceil;  // [wad] Total Debt Ceiling
-    uint256 public par;   // [ray] System Price (rico/ref)
-
-    Gem public rico;
-
-    constructor() {
-        par = RAY;
-    }
+    error ErrHookData();
+    error ErrStatic();
+    error ErrLock();
 
     function init(bytes32 ilk, address hook)
       _ward_ _flog_ external
     {
-        if (ilks[ilk].rack != 0) revert ErrMultiIlk();
-        ilks[ilk] = Ilk({
+        VatStorage storage vs = getVatStorage();
+        if (vs.ilks[ilk].rack != 0) revert ErrMultiIlk();
+        vs.ilks[ilk] = Ilk({
             rack: RAY,
             fee : RAY,
             liqr: RAY,
@@ -94,21 +86,27 @@ contract Vat is Lock, Math, Ward, Flog {
     }
 
     function safe(bytes32 i, address u)
-      public view returns (Spot, uint, uint)
+      public returns (Spot, uint, uint)
     {
-        Ilk storage ilk = ilks[i];
-        (uint cut, uint ttl) = Hook(ilk.hook).safehook(i, u);
+        VatStorage storage vs = getVatStorage();
+        Ilk storage ilk = vs.ilks[i];
+        bytes memory data = hookcall(i, abi.encodeWithSelector(
+            Hook.safehook.selector, i, u
+        ));
+        if (data.length != 64) revert ErrHookData();
+ 
+        (uint cut, uint ttl) = abi.decode(data, (uint, uint));
         if (block.timestamp > ttl) {
             return (Spot.Iffy, 0, 0);
         }
         // par acts as a multiplier for collateral requirements
         // par increase has same effect on cut as fee accumulation through rack
         // par decrease acts like a negative fee
-        uint256 tab = urns[i][u] * rmul(rmul(par, ilk.rack), ilk.liqr);
+        uint256 tab = vs.urns[i][u] * rmul(rmul(vs.par, ilk.rack), ilk.liqr);
         if (tab <= cut) {
             return (Spot.Safe, 0, cut);
         } else {
-            uint256 rush = DASH;
+            uint256 rush = _DASH;
             if (cut > RAY) rush = min(rush, tab / (cut / RAY));
             return (Spot.Sunk, rush, cut);
         }
@@ -117,12 +115,13 @@ contract Vat is Lock, Math, Ward, Flog {
     function frob(bytes32 i, address u, bytes calldata dink, int dart)
       _flog_ public
     {
-        Ilk storage ilk = ilks[i];
+        VatStorage storage vs = getVatStorage();
+        Ilk storage ilk = vs.ilks[i];
 
         if (ilk.rack == 0) revert ErrIlkInit();
 
-        urns[i][u] = add(urns[i][u], dart);
-        uint art   = urns[i][u];
+        vs.urns[i][u] = add(vs.urns[i][u], dart);
+        uint art   = vs.urns[i][u];
         ilk.tart   = add(ilk.tart, dart);
 
         // rico mint/burn amount increases with rack
@@ -131,26 +130,30 @@ contract Vat is Lock, Math, Ward, Flog {
 
         if (dtab > 0) {
             uint wad = uint(dtab) / RAY;
-            debt += wad;
-            rest += uint(dtab) % RAY;
-            rico.mint(msg.sender, wad);
+            vs.debt += wad;
+            vs.rest += uint(dtab) % RAY;
+            getBankStorage().rico.mint(msg.sender, wad);
         } else if (dtab < 0) {
             // dtab is a rad, so burn one extra to round in system's favor
             uint wad = uint(-dtab) / RAY + 1;
-            rest += add(wad * RAY, dtab);
-            debt -= wad;
-            rico.burn(msg.sender, wad);
+            vs.rest += add(wad * RAY, dtab);
+            vs.debt -= wad;
+            getBankStorage().rico.burn(msg.sender, wad);
         }
 
         // either debt has decreased, or debt ceilings are not exceeded
-        if (both(dart > 0, either(ilk.tart * ilk.rack > ilk.line, debt > ceil))) revert ErrDebtCeil();
+        if (both(dart > 0, either(ilk.tart * ilk.rack > ilk.line, vs.debt > vs.ceil))) revert ErrDebtCeil();
         // urn has no debt, or a non-dusty amount
         if (both(art != 0, tab < ilk.dust)) revert ErrUrnDust();
 
         // safer if less/same art and more/same ink
         bool safer = dart <= 0;
         if (dink.length != 0) {
-            safer = both(safer, Hook(ilk.hook).frobhook(msg.sender, i, u, dink, dart));
+            bytes memory data = hookcall(i, abi.encodeWithSelector(
+                Hook.frobhook.selector, msg.sender, i, u, dink, dart
+            ));
+            if (data.length != 32) revert ErrHookData();
+            safer = both(safer, abi.decode(data, (bool)));
         }
 
         // urn is safer, or is safe
@@ -160,13 +163,27 @@ contract Vat is Lock, Math, Ward, Flog {
         if (!either(safer, u == msg.sender)) revert ErrWrongUrn();
     }
 
+    function hookcall(bytes32 i, bytes memory indata) internal returns (bytes memory outdata) {
+        VatStorage storage vs = getVatStorage();
+        bool success;
+        (success, outdata) = vs.ilks[i].hook.delegatecall(indata);
+        if (!success) {
+            // bubble up revert reason, first 32 bytes is bytes length
+            assembly {
+                let size := mload(outdata)
+                revert(add(32, outdata), size)
+            }
+        }
+    }
+
     function grab(bytes32 i, address u, address k, uint rush, uint cut)
         _ward_ _flog_ external
     {
+        VatStorage storage vs = getVatStorage();
         // liquidate the urn
-        Ilk storage ilk = ilks[i];
-        uint art = urns[i][u];
-        urns[i][u] = 0;
+        Ilk storage ilk = vs.ilks[i];
+        uint art = vs.urns[i][u];
+        vs.urns[i][u] = 0;
 
         // bill is the debt hook will attempt to cover when auctioning ink
         // todo maybe make this +1?
@@ -176,75 +193,62 @@ contract Vat is Lock, Math, Ward, Flog {
 
         // record the bad debt for vow to heal
         uint dtab = art * ilk.rack;
-        sin[msg.sender] += dtab;
+        vs.sin += dtab;
 
         // ink auction
-        Hook(ilk.hook).grabhook(msg.sender, i, u, art, bill, k, rush, cut);
-    }
-
-    function prod(uint256 jam)
-      _ward_ _flog_ external
-    {
-        par = jam;
+        hookcall(i, abi.encodeWithSelector(
+            Hook.grabhook.selector, i, u, art, bill, k, rush, cut
+        ));
     }
 
     function drip(bytes32 i)
       _ward_ _flog_ external
     {
+        VatStorage storage vs = getVatStorage();
         // multiply rack by fee every second
-        if (block.timestamp == ilks[i].rho) return;
-        address vow  = msg.sender;
-        uint256 prev = ilks[i].rack;
-        uint256 rack = grow(prev, ilks[i].fee, block.timestamp - ilks[i].rho);
+        if (block.timestamp == vs.ilks[i].rho) return;
+        uint256 prev = vs.ilks[i].rack;
+        uint256 rack = grow(prev, vs.ilks[i].fee, block.timestamp - vs.ilks[i].rho);
         // difference between current and previous rack determines interest
         uint256 delt = rack - prev;
-        uint256 rad  = ilks[i].tart * delt;
-        uint256 all  = rest + rad;
-        ilks[i].rho  = block.timestamp;
-        ilks[i].rack = rack;
-        debt         = debt + all / RAY;
+        uint256 rad  = vs.ilks[i].tart * delt;
+        uint256 all  = vs.rest + rad;
+        vs.ilks[i].rho  = block.timestamp;
+        vs.ilks[i].rack = rack;
+        vs.debt         = vs.debt + all / RAY;
         // tart * rack is a rad, interest is a wad, rest is the change
-        rest         = all % RAY;
+        vs.rest         = all % RAY;
         // optimistically mint the interest to the vow
-        rico.mint(vow, all / RAY);
+        getBankStorage().rico.mint(address(this), all / RAY);
     }
 
     function heal(uint wad) _flog_ external {
+        VatStorage storage vs = getVatStorage();
         // burn rico to pay down sin
         uint256 rad = wad * RAY;
-        address u = msg.sender;
-        sin[u] = sin[u] - rad;
-        debt   = debt   - wad;
-        rico.burn(u, wad);
+        vs.sin = vs.sin - rad;
+        vs.debt   = vs.debt   - wad;
+        getBankStorage().rico.burn(msg.sender, wad);
     }
 
     function flash(address code, bytes calldata data)
-      _lock_ external returns (bytes memory result) {
+      external returns (bytes memory result) {
+        VatStorage storage vs = getVatStorage();
+        if (vs.lock == LOCKED) revert ErrLock();
+        vs.lock = LOCKED;
         bool ok;
-        rico.mint(code, MINT);
+        getBankStorage().rico.mint(code, _MINT);
         (ok, result) = code.call(data);
         require(ok, string(result));
-        rico.burn(code, MINT);
-    }
-
-    function file(bytes32 key, uint256 val)
-      _ward_ _flog_ external
-    {
-        if (key == "ceil") { ceil = val;
-        } else { revert ErrWrongKey(); }
-    }
-
-    function link(bytes32 key, address val)
-      _ward_ _flog_ external
-    {
-        if (key == "rico") rico = Gem(val);
-        else revert ErrWrongKey();
+        getBankStorage().rico.burn(code, _MINT);
+        vs.lock = UNLOCKED;
     }
 
     function filk(bytes32 ilk, bytes32 key, uint val)
       _ward_ _flog_ external
     {
-        Ilk storage i = ilks[ilk];
+        VatStorage storage vs = getVatStorage();
+        Ilk storage i = vs.ilks[ilk];
                if (key == "line") { i.line = val;
         } else if (key == "dust") { i.dust = val;
         } else if (key == "hook") { i.hook = address(bytes20(bytes32(val)));
@@ -255,5 +259,25 @@ contract Vat is Lock, Math, Ward, Flog {
             if (block.timestamp != i.rho) revert ErrFeeRho();
             i.fee = val;
         } else { revert ErrWrongKey(); }
+    }
+
+    function filh(bytes32 ilk, bytes32 key, bytes32 val)
+      _ward_ _flog_ external {
+        hookcall(
+            ilk, abi.encodeWithSignature("file(bytes32,bytes32)", key, val)
+        );
+    }
+
+    function filhi(bytes32 ilk, bytes32 key, bytes32 idx, bytes32 val)
+      _ward_ _flog_ external {
+        hookcall(
+            ilk, abi.encodeWithSignature(
+                "fili(bytes32,bytes32,bytes32)", key, idx, val
+        ));
+    }
+
+    function filhi2(bytes32 ilk, bytes32 key, bytes32 idx0, bytes32 idx1, bytes32 val)
+      _ward_ _flog_ external {
+        hookcall(ilk, abi.encodeWithSignature("fili2(bytes32,bytes32,bytes32,bytes32)", key, idx0, idx1, val));
     }
 }

@@ -4,7 +4,7 @@
   "license": "GPL-3.0",
   "scripts": {
     "initialize": "npm i && npm run download-submodules && npm run install-submodules && npm run build:all",
-    "download-submodules": "git submodule update --init --recursive",
+    "download-submodules": "git submodule update --init --recursive && cd lib/solidstate-solidity && git checkout e23bd67e28a8435ea9f2cca2cfa2c87cd7febd18 && cd -",
     "install-submodules": "npm run init:feedbase && npm run init:gemfab && npm run init:weth && npm run init:uniswapv3",
     "init:feedbase": "cd lib/feedbase && npm i",
     "init:gemfab": "cd lib/gemfab && npm i",

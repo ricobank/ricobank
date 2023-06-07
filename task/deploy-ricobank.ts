@@ -40,6 +40,9 @@ task('deploy-ricobank', '')
     await send(fb.push, b32('daiusd'), bn2b32(hre.ethers.BigNumber.from('100000000')), timestamp * 2);
     await send(fb.push, b32('xauusd'), bn2b32(hre.ethers.BigNumber.from('190000000000')), timestamp * 2);
 
+    const diamond_artifact = require('../artifacts/src/diamond.sol/BankDiamond.json')
+    const diamond_type = hre.ethers.ContractFactory.fromSolidity(diamond_artifact, ali)
+    const diamond = await diamond_type.deploy()
     const ball_artifact = require('../artifacts/src/ball.sol/Ball.json')
     const ball_type = hre.ethers.ContractFactory.fromSolidity(ball_artifact, ali)
     timestamp = (await hre.ethers.provider.getBlock('latest')).timestamp
@@ -58,6 +61,7 @@ task('deploy-ricobank', '')
     }
 
     const ballargs = {
+        bank: diamond.address,
         feedbase: deps.objects.feedbase.address,
         rico: deps.objects.rico.address,
         risk: deps.objects.risk.address,
@@ -105,6 +109,10 @@ task('deploy-ricobank', '')
 
     debug('deploying ball...')
     const ball = await ball_type.deploy(ballargs, {gasLimit: GASLIMIT})
+    await send(diamond.transferOwnership, ball.address)
+    debug('running ball setup...')
+
+    await send(ball.setup, ballargs)
     debug(`done deploying ball at ${ball.address}...making ilks`)
     for (let ilk of ilks) {
         await send(ball.makeilk, ilk)
@@ -119,6 +127,8 @@ task('deploy-ricobank', '')
     debug('ward rico and risk')
     await send(deps_dapp.rico.ward, vat_addr, 1)
     await send(deps_dapp.risk.ward, vow_addr, 1)
+    debug('accept ownership')
+    await send(diamond.acceptOwnership)
     debug('creating pack')
 
     const getartifact = async (ty) => {
@@ -126,10 +136,9 @@ task('deploy-ricobank', '')
         return dpack.getIpfsJson(deps.types[ty].artifact['/']);
     }
 
+
+    debug('packing feeds')
     const contracts = [
-        ['vat', 'Vat', require('../artifacts/src/vat.sol/Vat.json')],
-        ['vow', 'Vow', require('../artifacts/src/vow.sol/Vow.json')],
-        ['vox', 'Vox', require('../artifacts/src/vox.sol/Vox.json')],
         ['mdn', 'Medianizer', await getartifact('Medianizer')],
         ['divider', 'Divider', await getartifact('Divider')],
         ['uniadapt', 'UniswapV3Adapter', await getartifact('UniswapV3Adapter')],
@@ -152,12 +161,39 @@ task('deploy-ricobank', '')
       }, pack_type)
     }
 
+    debug('packing ball')
     await pb.packObject({
         objectname: 'ball',
         address: ball.address,
         typename: 'Ball',
         artifact: require('../artifacts/src/ball.sol/Ball.json')
     })
+
+    const artifact_dirs = [
+        '../artifacts/src/bank.sol/Bank.json',
+        '../artifacts/src/file.sol/File.json',
+        '../artifacts/src/vat.sol/Vat.json',
+        '../artifacts/src/vow.sol/Vow.json',
+        '../artifacts/src/vox.sol/Vox.json'
+    ]
+
+    debug('packing Ricobank diamond')
+    let top_artifact = JSON.parse(JSON.stringify(diamond_artifact))
+    for (let dir of artifact_dirs) {
+        top_artifact.abi = top_artifact.abi.concat(
+            require(dir).abi.filter(item =>
+                top_artifact.abi.find(a => item.name == a.name) == undefined
+            )
+        )
+    }
+
+    await pb.packObject({
+        objectname: 'bank',
+        address: diamond.address,
+        typename: 'Ricobank',
+        artifact: top_artifact
+    }, true)
+    debug('all packed, merging')
 
     const pack = (await pb.merge(deps)).build()
     if (args.writepack) {

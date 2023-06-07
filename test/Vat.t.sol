@@ -9,10 +9,13 @@ import { RicoSetUp, Guy } from "./RicoHelper.sol";
 import { OverrideableGem } from './mixin/OverrideableGem.sol';
 import { Gem } from '../lib/gemfab/src/gem.sol';
 import { Vat }  from '../src/vat.sol';
+import { Vow }  from '../src/vow.sol';
 import { Hook } from '../src/hook/hook.sol';
 import '../src/mixin/lock.sol';
 import '../src/mixin/math.sol';
 import { ERC20Hook, NO_CUT } from '../src/hook/ERC20hook.sol';
+import {File} from '../src/file.sol';
+import {BankDiamond} from '../src/diamond.sol';
 
 contract VatTest is Test, RicoSetUp {
     uint256 public init_join = 1000;
@@ -28,8 +31,8 @@ contract VatTest is Test, RicoSetUp {
         make_bank();
         init_gold();
         ilks.push(gilk);
-        rico.approve(ahook, type(uint256).max);
-        chap = new Flasher(avat, arico, gilk, address(hook));
+        rico.approve(bank, type(uint256).max);
+        chap = new Flasher(bank, arico, gilk);
         achap = address(chap);
         gold.mint(achap, 500 * WAD);
         gold.approve(achap, type(uint256).max);
@@ -37,7 +40,7 @@ contract VatTest is Test, RicoSetUp {
         gold.ward(achap, true);
         rico.ward(achap, true);
 
-        gold.mint(address(hook), init_join * WAD);
+        gold.mint(bank, init_join * WAD);
     }
 
     modifier _chap_ {
@@ -48,51 +51,51 @@ contract VatTest is Test, RicoSetUp {
 
     function test_frob_gas() public {
         feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
-        gold.mint(address(hook), 1);
-        assertGt(gold.balanceOf(address(hook)), 0);
+        gold.mint(bank, 1);
+        assertGt(gold.balanceOf(bank), 0);
         uint gas = gasleft();
-        vat.frob(gilk, self, abi.encodePacked(WAD), int(WAD));
-        check_gas(gas, 204598);
+        Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(WAD));
+        check_gas(gas, 208452);
         gas = gasleft();
-        vat.frob(gilk, self, abi.encodePacked(WAD), int(WAD));
-        check_gas(gas, 26883);
+        Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(WAD));
+        check_gas(gas, 30237);
     }
 
     function test_grab_gas() public {
         feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
-        vat.frob(gilk, self, abi.encodePacked(WAD), int(WAD));
+        Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(WAD));
         uint gas = gasleft();
-        vat.grab(gilk, self, self, no_rush, NO_CUT);
-        check_gas(gas, 72194);
+        Vat(bank).grab(gilk, self, self, no_rush, NO_CUT);
+        check_gas(gas, 74388);
     }
 
     function test_heal_gas() public {
         feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
-        vat.frob(gilk, self, abi.encodePacked(WAD), int(WAD));
+        Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(WAD));
         feedpush(grtag, bytes32(0), type(uint).max);
-        vat.grab(gilk, self, self, no_rush, NO_CUT);
+        Vat(bank).grab(gilk, self, self, no_rush * 2, WAD);
 
         uint gas = gasleft();
-        vat.heal(WAD - 1);
-        check_gas(gas, 7520);
+        Vat(bank).heal(1);
+        check_gas(gas, 10393);
     }
 
     function test_drip_gas() public {
         uint gas = gasleft();
-        vat.drip(gilk);
-        check_gas(gas, 12097);
+        Vat(bank).drip(gilk);
+        check_gas(gas, 18175);
 
-        vat.filk(gilk, 'fee', 2 * RAY);
+        Vat(bank).filk(gilk, 'fee', 2 * RAY);
         skip(1);
-        vat.frob(gilk, self, abi.encodePacked(100 * WAD), int(50 * WAD));
+        Vat(bank).frob(gilk, self, abi.encodePacked(100 * WAD), int(50 * WAD));
         gas = gasleft();
-        vat.drip(gilk);
-        check_gas(gas, 14902);
+        Vat(bank).drip(gilk);
+        check_gas(gas, 38594);
     }
 
     function test_ilk_reset() public {
         vm.expectRevert(Vat.ErrMultiIlk.selector);
-        vat.init(gilk, address(hook));
+        Vat(bank).init(gilk, address(hook));
     }
 
     /* urn safety tests */
@@ -101,17 +104,17 @@ contract VatTest is Test, RicoSetUp {
     function test_create_unsafe() public {
         // art should not exceed ink
         vm.expectRevert(Vat.ErrNotSafe.selector);
-        vat.frob(gilk, address(this), abi.encodePacked(stack), int(stack) + 1);
+        Vat(bank).frob(gilk, address(this), abi.encodePacked(stack), int(stack) + 1);
 
         // art should not increase if iffy
         skip(1100);
         vm.expectRevert(Vat.ErrNotSafe.selector);
-        vat.frob(gilk, address(this), abi.encodePacked(stack), int(1));
+        Vat(bank).frob(gilk, address(this), abi.encodePacked(stack), int(1));
     }
 
     function test_safe_return_vals() public {
-        vat.frob(gilk, address(this), abi.encodePacked(stack), int(stack));
-        (Vat.Spot spot, uint rush, uint cut) = vat.safe(gilk, self);
+        Vat(bank).frob(gilk, address(this), abi.encodePacked(stack), int(stack));
+        (Vat.Spot spot, uint rush, uint cut) = Vat(bank).safe(gilk, self);
         // position should be safe, just
         assertTrue(spot == Vat.Spot.Safe);
         // when safe rush should be 0
@@ -120,7 +123,7 @@ contract VatTest is Test, RicoSetUp {
         assertEq(cut , RAD * 10);
         // drop price to 80%
         feedpush(grtag, bytes32(RAY * 4 / 5), block.timestamp + 1000);
-        (spot, rush, cut) = vat.safe(gilk, self);
+        (spot, rush, cut) = Vat(bank).safe(gilk, self);
         // position should now be underwater
         assertTrue(spot == Vat.Spot.Sunk);
         // the rush should now be 1.25
@@ -128,177 +131,177 @@ contract VatTest is Test, RicoSetUp {
         // cut should be 80%
         assertEq(cut , RAD * 8);
         // beyond DASH the rush factor should be clipped
-        uint dash = vat.DASH();
+        uint dash = Vat(bank).DASH();
         feedpush(grtag, bytes32(RAY / 10), block.timestamp + 1000);
-        (spot, rush, cut) = vat.safe(gilk, self);
+        (spot, rush, cut) = Vat(bank).safe(gilk, self);
         assertEq(rush, dash);
         // wait longer than ttl so price feed is stale and expect iffy
         skip(1100);
-        (spot, rush, cut) = vat.safe(gilk, self);
+        (spot, rush, cut) = Vat(bank).safe(gilk, self);
         assertTrue(spot == Vat.Spot.Iffy);
     }
 
     function test_rack_puts_urn_underwater() public {
         // frob to exact edge
-        vat.frob(gilk, address(this), abi.encodePacked(stack), int(stack));
-        (Vat.Spot spot,,) = vat.safe(gilk, self);
+        Vat(bank).frob(gilk, address(this), abi.encodePacked(stack), int(stack));
+        (Vat.Spot spot,,) = Vat(bank).safe(gilk, self);
         assertTrue(spot == Vat.Spot.Safe);
 
         // accrue some interest to sink
         skip(100);
-        vat.drip(gilk);
-        (spot,,) = vat.safe(gilk, self);
+        Vat(bank).drip(gilk);
+        (spot,,) = Vat(bank).safe(gilk, self);
         assertTrue(spot == Vat.Spot.Sunk);
 
         // can't refloat with neg quantity rate
         vm.expectRevert(Vat.ErrFeeMin.selector);
-        vat.filk(gilk, 'fee', RAY - 1);
+        Vat(bank).filk(gilk, 'fee', RAY - 1);
     }
 
     function test_liqr_puts_urn_underwater() public {
-        vat.frob(gilk, address(this), abi.encodePacked(stack), int(stack));
-        (Vat.Spot spot,,) = vat.safe(gilk, self);
+        Vat(bank).frob(gilk, address(this), abi.encodePacked(stack), int(stack));
+        (Vat.Spot spot,,) = Vat(bank).safe(gilk, self);
         assertTrue(spot == Vat.Spot.Safe);
-        vat.filk(gilk, 'liqr', RAY + 1000000);
-        (spot,,) = vat.safe(gilk, self);
+        Vat(bank).filk(gilk, 'liqr', RAY + 1000000);
+        (spot,,) = Vat(bank).safe(gilk, self);
         assertTrue(spot == Vat.Spot.Sunk);
 
-        vat.filk(gilk, 'liqr', RAY - 1000000);
-        (spot,,) = vat.safe(gilk, self);
+        Vat(bank).filk(gilk, 'liqr', RAY - 1000000);
+        (spot,,) = Vat(bank).safe(gilk, self);
         assertTrue(spot == Vat.Spot.Safe);
     }
 
     function test_gold_crash_sinks_urn() public {
-        vat.frob(gilk, address(this), abi.encodePacked(stack), int(stack));
-        (Vat.Spot spot,,) = vat.safe(gilk, self);
+        Vat(bank).frob(gilk, address(this), abi.encodePacked(stack), int(stack));
+        (Vat.Spot spot,,) = Vat(bank).safe(gilk, self);
         assertTrue(spot == Vat.Spot.Safe);
 
         feed.push(grtag, bytes32(RAY / 2), block.timestamp + 1000);
-        (spot,,) = vat.safe(gilk, self);
+        (spot,,) = Vat(bank).safe(gilk, self);
         assertTrue(spot == Vat.Spot.Sunk);
 
         feed.push(grtag, bytes32(RAY * 2), block.timestamp + 1000);
-        (spot,,) = vat.safe(gilk, self);
+        (spot,,) = Vat(bank).safe(gilk, self);
         assertTrue(spot == Vat.Spot.Safe);
     }
 
     function test_time_makes_urn_iffy() public {
-        vat.frob(gilk, address(this), abi.encodePacked(stack), int(stack));
-        (Vat.Spot spot,,) = vat.safe(gilk, self);
+        Vat(bank).frob(gilk, address(this), abi.encodePacked(stack), int(stack));
+        (Vat.Spot spot,,) = Vat(bank).safe(gilk, self);
         assertTrue(spot == Vat.Spot.Safe);
 
         // feed was set will ttl of now + 1000
         skip(1100);
-        (spot,,) = vat.safe(gilk, self);
+        (spot,,) = Vat(bank).safe(gilk, self);
         assertTrue(spot == Vat.Spot.Iffy);
 
         // without a drip an update should refloat urn
         feed.push(grtag, bytes32(RAY), block.timestamp + 1000);
-        (spot,,) = vat.safe(gilk, self);
+        (spot,,) = Vat(bank).safe(gilk, self);
         assertTrue(spot == Vat.Spot.Safe);
     }
 
     function test_frob_refloat() public {
-        vat.frob(gilk, address(this), abi.encodePacked(stack), int(stack));
-        (Vat.Spot spot,,) = vat.safe(gilk, self);
+        Vat(bank).frob(gilk, address(this), abi.encodePacked(stack), int(stack));
+        (Vat.Spot spot,,) = Vat(bank).safe(gilk, self);
         assertTrue(spot == Vat.Spot.Safe);
 
         feed.push(grtag, bytes32(RAY / 2), block.timestamp + 1000);
-        (spot,,) = vat.safe(gilk, self);
+        (spot,,) = Vat(bank).safe(gilk, self);
         assertTrue(spot == Vat.Spot.Sunk);
 
-        vat.frob(gilk, address(this), abi.encodePacked(stack), int(0));
-        (spot,,) = vat.safe(gilk, self);
+        Vat(bank).frob(gilk, address(this), abi.encodePacked(stack), int(0));
+        (spot,,) = Vat(bank).safe(gilk, self);
         assertTrue(spot == Vat.Spot.Safe);
     }
 
     function test_increasing_risk_sunk_urn() public {
-        vat.frob(gilk, address(this), abi.encodePacked(stack), int(stack));
-        (Vat.Spot spot,,) = vat.safe(gilk, self);
+        Vat(bank).frob(gilk, address(this), abi.encodePacked(stack), int(stack));
+        (Vat.Spot spot,,) = Vat(bank).safe(gilk, self);
         assertTrue(spot == Vat.Spot.Safe);
 
         feed.push(grtag, bytes32(RAY / 2), block.timestamp + 1000);
-        (spot,,) = vat.safe(gilk, self);
+        (spot,,) = Vat(bank).safe(gilk, self);
         assertTrue(spot == Vat.Spot.Sunk);
 
         //should always be able to decrease art
-        vat.frob(gilk, address(this), abi.encodePacked(int(0)), int(-1));
+        Vat(bank).frob(gilk, address(this), abi.encodePacked(int(0)), int(-1));
         //should always be able to increase ink
-        vat.frob(gilk, address(this), abi.encodePacked(int(1)), int(0));
+        Vat(bank).frob(gilk, address(this), abi.encodePacked(int(1)), int(0));
 
         // should not be able to increase art of sunk urn
         vm.expectRevert(Vat.ErrNotSafe.selector);
-        vat.frob(gilk, address(this), abi.encodePacked(int(10)), int(1));
+        Vat(bank).frob(gilk, address(this), abi.encodePacked(int(10)), int(1));
 
         // should not be able to decrease ink of sunk urn
         vm.expectRevert(Vat.ErrNotSafe.selector);
-        vat.frob(gilk, address(this), abi.encodePacked(int(-1)), int(1));
+        Vat(bank).frob(gilk, address(this), abi.encodePacked(int(-1)), int(1));
     }
 
     function test_increasing_risk_iffy_urn() public {
-        vat.frob(gilk, address(this), abi.encodePacked(stack), int(10));
-        (Vat.Spot spot,,) = vat.safe(gilk, self);
+        Vat(bank).frob(gilk, address(this), abi.encodePacked(stack), int(10));
+        (Vat.Spot spot,,) = Vat(bank).safe(gilk, self);
         assertTrue(spot == Vat.Spot.Safe);
 
         skip(1100);
-        (spot,,) = vat.safe(gilk, self);
+        (spot,,) = Vat(bank).safe(gilk, self);
         assertTrue(spot == Vat.Spot.Iffy);
 
         //should always be able to decrease art
-        vat.frob(gilk, address(this), abi.encodePacked(int(0)), int(-1));
+        Vat(bank).frob(gilk, address(this), abi.encodePacked(int(0)), int(-1));
         //should always be able to increase ink
-        vat.frob(gilk, address(this), abi.encodePacked(int(1)), int(0));
+        Vat(bank).frob(gilk, address(this), abi.encodePacked(int(1)), int(0));
 
         // should not be able to increase art of iffy urn
         vm.expectRevert(Vat.ErrNotSafe.selector);
-        vat.frob(gilk, address(this), abi.encodePacked(int(10)), int(1));
+        Vat(bank).frob(gilk, address(this), abi.encodePacked(int(10)), int(1));
 
         // should not be able to decrease ink of iffy urn
         vm.expectRevert(Vat.ErrNotSafe.selector);
-        vat.frob(gilk, address(this), abi.encodePacked(int(-1)), int(1));
+        Vat(bank).frob(gilk, address(this), abi.encodePacked(int(-1)), int(1));
     }
 
     function test_increasing_risk_safe_urn() public {
-        vat.frob(gilk, address(this), abi.encodePacked(stack), int(10));
-        (Vat.Spot spot,,) = vat.safe(gilk, self);
+        Vat(bank).frob(gilk, address(this), abi.encodePacked(stack), int(10));
+        (Vat.Spot spot,,) = Vat(bank).safe(gilk, self);
         assertTrue(spot == Vat.Spot.Safe);
 
         //should always be able to decrease art
-        vat.frob(gilk, address(this), abi.encodePacked(int(0)), int(-1));
+        Vat(bank).frob(gilk, address(this), abi.encodePacked(int(0)), int(-1));
         //should always be able to increase ink
-        vat.frob(gilk, address(this), abi.encodePacked(int(1)), int(0));
+        Vat(bank).frob(gilk, address(this), abi.encodePacked(int(1)), int(0));
 
         // should be able to increase art of iffy urn
-        vat.frob(gilk, address(this), abi.encodePacked(int(0)), int(1));
+        Vat(bank).frob(gilk, address(this), abi.encodePacked(int(0)), int(1));
 
         // should be able to decrease ink of iffy urn
-        vat.frob(gilk, address(this), abi.encodePacked(int(-1)), int(0));
+        Vat(bank).frob(gilk, address(this), abi.encodePacked(int(-1)), int(0));
     }
 
     /* join/exit/flash tests */
 
     function test_rico_join_exit() public _chap_ {
         // give vat extra rico and gold to make sure it won't get withdrawn
-        rico.mint(avat, 10000 * WAD);
-        gold.mint(avat, 10000 * WAD);
+        rico.mint(bank, 10000 * WAD);
+        gold.mint(bank, 10000 * WAD);
 
         uint self_gold_bal0 = gold.balanceOf(self);
         uint self_rico_bal0 = rico.balanceOf(self);
 
         // revert for trying to join more gems than owned
         vm.expectRevert(Gem.ErrUnderflow.selector);
-        vat.frob(gilk, self, abi.encodePacked(self_gold_bal0 + 1), 0);
+        Vat(bank).frob(gilk, self, abi.encodePacked(self_gold_bal0 + 1), 0);
 
         // revert for trying to exit too much rico
         vm.expectRevert(Vat.ErrNotSafe.selector);
-        vat.frob(gilk, self, abi.encodePacked(int(10)), int(11));
+        Vat(bank).frob(gilk, self, abi.encodePacked(int(10)), int(11));
 
         // revert for trying to exit gems from other users
         vm.expectRevert(Math.ErrUintUnder.selector);
-        vat.frob(gilk, self, abi.encodePacked(int(-1)), 0);
+        Vat(bank).frob(gilk, self, abi.encodePacked(int(-1)), 0);
 
         // gems are taken from user when joining, and rico given to user
-        vat.frob(gilk, self, abi.encodePacked(stack), int(stack / 2));
+        Vat(bank).frob(gilk, self, abi.encodePacked(stack), int(stack / 2));
         uint self_gold_bal1 = gold.balanceOf(self);
         uint self_rico_bal1 = rico.balanceOf(self);
         assertEq(self_gold_bal1 + stack, self_gold_bal0);
@@ -306,7 +309,7 @@ contract VatTest is Test, RicoSetUp {
 
         // close, even without drip need 1 extra rico as rounding is in systems favour
         rico.mint(self, 1);
-        vat.frob(gilk, self, abi.encodePacked(-int(stack)), -int(stack / 2));
+        Vat(bank).frob(gilk, self, abi.encodePacked(-int(stack)), -int(stack / 2));
         uint self_gold_bal2 = gold.balanceOf(self);
         uint self_rico_bal2 = rico.balanceOf(self);
         assertEq(self_gold_bal0, self_gold_bal2);
@@ -317,41 +320,42 @@ contract VatTest is Test, RicoSetUp {
         uint initial_rico_supply = rico.totalSupply();
 
         bytes memory data = abi.encodeWithSelector(chap.nop.selector);
-        vat.flash(achap, data);
+        Vat(bank).flash(achap, data);
 
         assertEq(rico.totalSupply(), initial_rico_supply);
         assertEq(rico.balanceOf(self), 0);
-        assertEq(rico.balanceOf(ahook), 0);
+        assertEq(rico.balanceOf(bank), 0);
     }
 
     function test_rico_reentry() public _chap_ {
         bytes memory data = abi.encodeWithSelector(chap.reenter.selector, arico, flash_size * WAD);
         vm.expectRevert(Lock.ErrLock.selector);
-        vat.flash(achap, data);
+        Vat(bank).flash(achap, data);
     }
 
     function test_borrow_gem_after_rico() public _chap_ {
         uint flash_gold1 = gold.balanceOf(achap);
         uint flash_rico1 = rico.balanceOf(achap);
-        uint hook_gold1  = gold.balanceOf(ahook);
-        uint vat_rico1   = rico.balanceOf(avat);
+        uint hook_gold1  = gold.balanceOf(bank);
+        uint vat_rico1   = rico.balanceOf(bank);
         uint rico_supply = rico.totalSupply();
 
         bytes memory data = abi.encodeWithSelector(chap.borrow_gem_after_rico.selector, agold, stack);
-        vat.flash(achap, data);
+        Vat(bank).flash(achap, data);
 
         assertEq(flash_gold1, gold.balanceOf(achap));
         assertEq(flash_rico1, rico.balanceOf(achap));
-        assertEq(hook_gold1,  gold.balanceOf(ahook));
-        assertEq(vat_rico1,   rico.balanceOf(avat));
+        assertEq(hook_gold1,  gold.balanceOf(bank));
+        assertEq(vat_rico1,   rico.balanceOf(bank));
         assertEq(rico_supply, rico.totalSupply());
     }
+
 
     function test_rico_flash_over_max_supply_reverts() public _chap_ {
         rico.mint(self, type(uint256).max - stack - rico.totalSupply());
         bytes memory data = abi.encodeWithSelector(chap.nop.selector);
         vm.expectRevert(Gem.ErrOverflow.selector);
-        vat.flash(achap, data);
+        Vat(bank).flash(achap, data);
     }
 
     function test_repayment_failure() public _chap_ {
@@ -369,9 +373,9 @@ contract VatTest is Test, RicoSetUp {
         bytes memory data0 = abi.encodeWithSelector(chap.welch.selector, gems, wads, 0);
         bytes memory data1 = abi.encodeWithSelector(chap.welch.selector, gems, wads, 1);
         vm.expectRevert(Gem.ErrUnderflow.selector);
-        hook.flash(gems, wads, achap, data0);
+        ERC20Hook(bank).erc20flash(gems, wads, achap, data0);
         // not welching should pass
-        hook.flash(gems, wads, achap, data1);
+        ERC20Hook(bank).erc20flash(gems, wads, achap, data1);
 
         // and rico
         gems.pop();
@@ -379,8 +383,8 @@ contract VatTest is Test, RicoSetUp {
         data0 = abi.encodeWithSelector(chap.welch.selector, gems, wads, 0);
         data1 = abi.encodeWithSelector(chap.welch.selector, gems, wads, 1);
         vm.expectRevert(Gem.ErrUnderflow.selector);
-        vat.flash(achap, data0);
-        vat.flash(achap, data1);
+        Vat(bank).flash(achap, data0);
+        Vat(bank).flash(achap, data1);
     }
 
     function test_revert_wrong_joy() public _chap_ {
@@ -388,13 +392,13 @@ contract VatTest is Test, RicoSetUp {
         gems.push(arisk);
         wads.push(stack);
         vm.expectRevert(ERC20Hook.ErrLoanArgs.selector);
-        hook.flash(gems, wads, achap, data);
+        ERC20Hook(bank).erc20flash(gems, wads, achap, data);
     }
 
     function test_rico_handler_error() public _chap_ {
         bytes memory data = abi.encodeWithSelector(chap.failure.selector);
         vm.expectRevert(bytes4(keccak256(bytes('ErrBroken()'))));
-        vat.flash(achap, data);
+        Vat(bank).flash(achap, data);
     }
 
     function test_gem_handler_error() public _chap_ {
@@ -402,7 +406,7 @@ contract VatTest is Test, RicoSetUp {
         gems.push(agold);
         wads.push(stack);
         vm.expectRevert(bytes4(keccak256(bytes('ErrBroken()'))));
-        hook.flash(gems, wads, achap, data);
+        ERC20Hook(bank).erc20flash(gems, wads, achap, data);
     }
 
     function test_rico_wind_up_and_release() public _chap_ {
@@ -415,7 +419,7 @@ contract VatTest is Test, RicoSetUp {
         uint hook_rico1  = rico.balanceOf(address(hook));
 
         bytes memory data = abi.encodeWithSelector(chap.rico_lever.selector, agold, lock, draw);
-        vat.flash(achap, data);
+        Vat(bank).flash(achap, data);
 
         uint ink = _ink(gilk, achap);
         uint art = _art(gilk, achap);
@@ -423,7 +427,7 @@ contract VatTest is Test, RicoSetUp {
         assertEq(art, draw);
 
         data = abi.encodeWithSelector(chap.rico_release.selector, agold, lock, draw);
-        vat.flash(achap, data);
+        Vat(bank).flash(achap, data);
 
         assertEq(flash_gold1, gold.balanceOf(achap));
         assertEq(flash_rico1, rico.balanceOf(achap) + 1);
@@ -433,15 +437,15 @@ contract VatTest is Test, RicoSetUp {
 
     function test_gem_simple_flash() public _chap_ {
         uint chap_gold1 = gold.balanceOf(achap);
-        uint vat_gold1 = gold.balanceOf(avat);
+        uint vat_gold1 = gold.balanceOf(bank);
 
         bytes memory data = abi.encodeWithSelector(chap.approve_hook.selector, agold, flash_size * WAD);
         gems.push(agold);
         wads.push(flash_size * WAD);
-        hook.flash(gems, wads, achap, data);
+        ERC20Hook(bank).erc20flash(gems, wads, achap, data);
 
         assertEq(gold.balanceOf(achap), chap_gold1);
-        assertEq(gold.balanceOf(avat), vat_gold1);
+        assertEq(gold.balanceOf(bank), vat_gold1);
     }
 
     function test_gem_flash_insufficient_approval() public _chap_ {
@@ -449,28 +453,28 @@ contract VatTest is Test, RicoSetUp {
         gems.push(agold);
         wads.push(flash_size * WAD);
         vm.expectRevert(Gem.ErrUnderflow.selector);
-        hook.flash(gems, wads, achap, data);
+        ERC20Hook(bank).erc20flash(gems, wads, achap, data);
     }
 
     function test_gem_flash_insufficient_assets() public _chap_ {
         bytes memory data = abi.encodeWithSelector(chap.approve_hook.selector, agold, type(uint256).max);
         gems.push(agold);
         wads.push(init_join * WAD);
-        hook.flash(gems, wads, achap, data);
+        ERC20Hook(bank).erc20flash(gems, wads, achap, data);
         wads.pop();
         wads.push(init_join * WAD + 1);
         vm.expectRevert(Gem.ErrUnderflow.selector);
-        hook.flash(gems, wads, achap, data);
+        ERC20Hook(bank).erc20flash(gems, wads, achap, data);
     }
 
     function test_gem_flash_unsupported_gem() public _chap_ {
         bytes memory data = abi.encodeWithSelector(chap.approve_hook.selector, agold, type(uint256).max);
         gems.push(agold);
         wads.push(init_join * WAD);
-        hook.flash(gems, wads, achap, data);
-        hook.list(agold, false);
+        ERC20Hook(bank).erc20flash(gems, wads, achap, data);
+        Vat(bank).filhi(gilk, 'pass', gilk, bytes32(0));
         vm.expectRevert(ERC20Hook.ErrLoanArgs.selector);
-        hook.flash(gems, wads, achap, data);
+        ERC20Hook(bank).erc20flash(gems, wads, achap, data);
     }
 
     function test_gem_flasher_failure() public _chap_ {
@@ -478,7 +482,7 @@ contract VatTest is Test, RicoSetUp {
         gems.push(agold);
         wads.push(init_join * WAD);
         vm.expectRevert(bytes4(keccak256(bytes('ErrBroken()'))));
-        hook.flash(gems, wads, achap, data);
+        ERC20Hook(bank).erc20flash(gems, wads, achap, data);
     }
 
     function test_gem_flash_reentry() public _chap_ {
@@ -486,7 +490,7 @@ contract VatTest is Test, RicoSetUp {
         gems.push(agold);
         wads.push(init_join * WAD);
         vm.expectRevert(Lock.ErrLock.selector);
-        hook.flash(gems, wads, achap, data);
+        ERC20Hook(bank).erc20flash(gems, wads, achap, data);
     }
 
     function test_gem_jump_wind_up_and_release() public _chap_ {
@@ -501,14 +505,14 @@ contract VatTest is Test, RicoSetUp {
         bytes memory data = abi.encodeWithSelector(chap.gem_lever.selector, agold, lock, draw);
         gems.push(agold);
         wads.push(draw);
-        hook.flash(gems, wads, achap, data);
+        ERC20Hook(bank).erc20flash(gems, wads, achap, data);
         uint ink = _ink(gilk, achap);
         uint art = _art(gilk, achap);
         assertEq(ink, lock);
         assertEq(art, draw);
 
         data = abi.encodeWithSelector(chap.gem_release.selector, agold, lock, draw);
-        hook.flash(gems, wads, achap, data);
+        ERC20Hook(bank).erc20flash(gems, wads, achap, data);
         assertEq(gold.balanceOf(achap), chap_gold1);
         assertEq(rico.balanceOf(achap) + 1, chap_rico1);
         assertEq(gold.balanceOf(address(hook)), hook_gold1);
@@ -516,7 +520,7 @@ contract VatTest is Test, RicoSetUp {
     }
 
     function test_init_conditions() public {
-        assertEq(vat.wards(self), true);
+        assertEq(BankDiamond(bank).owner(), self);
     }
 
     function test_rejects_unsafe_frob() public {
@@ -525,22 +529,22 @@ contract VatTest is Test, RicoSetUp {
         assertEq(ink, 0);
         assertEq(art, 0);
         vm.expectRevert(Vat.ErrNotSafe.selector);
-        vat.frob(gilk, self, abi.encodePacked(int(0)), int(WAD));
+        Vat(bank).frob(gilk, self, abi.encodePacked(int(0)), int(WAD));
     }
 
     function owed() internal returns (uint) {
-        vat.drip(gilk);
-        (,uint rack,,,,,,,) = vat.ilks(gilk);
+        Vat(bank).drip(gilk);
+        uint rack = Vat(bank).ilks(gilk).rack;
         uint art = _art(gilk, self);
         return rack * art;
     }
 
     function test_drip() public {
-        vat.filk(gilk, 'fee', RAY + RAY / 50);
+        Vat(bank).filk(gilk, 'fee', RAY + RAY / 50);
 
         skip(1);
-        vat.drip(gilk);
-        vat.frob(gilk, self, abi.encodePacked(100 * WAD), int(50 * WAD));
+        Vat(bank).drip(gilk);
+        Vat(bank).frob(gilk, self, abi.encodePacked(100 * WAD), int(50 * WAD));
 
         skip(1);
         uint debt0 = owed();
@@ -551,89 +555,89 @@ contract VatTest is Test, RicoSetUp {
     }
 
     function test_rest_monotonic() public {
-        vat.filk(gilk, 'fee', RAY + 2);
-        vat.filk(gilk, 'dust', 0);
-        vat.frob(gilk, self, abi.encodePacked(WAD + 1), int(WAD + 1));
+        Vat(bank).filk(gilk, 'fee', RAY + 2);
+        Vat(bank).filk(gilk, 'dust', 0);
+        Vat(bank).frob(gilk, self, abi.encodePacked(WAD + 1), int(WAD + 1));
         skip(1);
-        vat.drip(gilk);
-        assertEq(vat.rest(), 2 * WAD + 2);
+        Vat(bank).drip(gilk);
+        assertEq(Vat(bank).rest(), 2 * WAD + 2);
         skip(1);
-        vat.drip(gilk);
-        assertGt(vat.rest(), 2 * WAD + 2);
+        Vat(bank).drip(gilk);
+        assertGt(Vat(bank).rest(), 2 * WAD + 2);
     }
 
     function test_rest_drip_0() public {
-        vat.filk(gilk, 'fee', RAY + 1);
-        vat.frob(gilk, self, abi.encodePacked(WAD), int(WAD));
+        Vat(bank).filk(gilk, 'fee', RAY + 1);
+        Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(WAD));
         skip(1);
-        vat.drip(gilk);
-        assertEq(vat.rest(), WAD);
+        Vat(bank).drip(gilk);
+        assertEq(Vat(bank).rest(), WAD);
 
         skip(1);
-        vat.drip(gilk);
-        assertEq(vat.rest(), 2 * WAD);
+        Vat(bank).drip(gilk);
+        assertEq(Vat(bank).rest(), 2 * WAD);
 
-        vat.filk(gilk, 'fee', RAY);
+        Vat(bank).filk(gilk, 'fee', RAY);
         skip(1);
-        vat.drip(gilk);
-        assertEq(vat.rest(), 2 * WAD);
+        Vat(bank).drip(gilk);
+        assertEq(Vat(bank).rest(), 2 * WAD);
 
-        vat.filk(gilk, 'fee', 3 * RAY);
+        Vat(bank).filk(gilk, 'fee', 3 * RAY);
         skip(1);
-        vat.drip(gilk);
-        assertEq(vat.rest(), 6 * WAD);
+        Vat(bank).drip(gilk);
+        assertEq(Vat(bank).rest(), 6 * WAD);
     }
 
     function test_rest_drip_toggle_ones() public {
-        vat.filk(gilk, 'fee', RAY);
-        vat.filk(gilk, 'dust', 0);
+        Vat(bank).filk(gilk, 'fee', RAY);
+        Vat(bank).filk(gilk, 'dust', 0);
         rico_mint(1, true);
-        vat.frob(gilk, self, abi.encodePacked(int(1)), int(1));
-        vat.frob(gilk, self, abi.encodePacked(-int(1)), -int(1));
-        vat.drip(gilk);
-        assertEq(vat.rest(), RAY);
+        Vat(bank).frob(gilk, self, abi.encodePacked(int(1)), int(1));
+        Vat(bank).frob(gilk, self, abi.encodePacked(-int(1)), -int(1));
+        Vat(bank).drip(gilk);
+        assertEq(Vat(bank).rest(), RAY);
         skip(1);
-        vat.drip(gilk);
-        assertEq(vat.rest(), 0);
+        Vat(bank).drip(gilk);
+        assertEq(Vat(bank).rest(), 0);
     }
 
     function test_rest_drip_toggle_wads() public {
-        vat.filk(gilk, 'fee', RAY);
-        vat.drip(gilk);
-        vat.filk(gilk, 'fee', RAY + 1);
-        vat.filk(gilk, 'dust', 0);
+        Vat(bank).filk(gilk, 'fee', RAY);
+        Vat(bank).drip(gilk);
+        Vat(bank).filk(gilk, 'fee', RAY + 1);
+        Vat(bank).filk(gilk, 'dust', 0);
         rico_mint(WAD, true);
-        vat.frob(gilk, self, abi.encodePacked(WAD), int(WAD));
+        Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(WAD));
         skip(1);
-        vat.drip(gilk);
+        Vat(bank).drip(gilk);
 
-        assertEq(vat.rest(), WAD);
+        assertEq(Vat(bank).rest(), WAD);
 
         uint art = _art(gilk, self);
-        vat.frob(gilk, self, abi.encodePacked(int(0)), -int(art));
-        assertEq(vat.rest(), RAY);
+        Vat(bank).frob(gilk, self, abi.encodePacked(int(0)), -int(art));
+        assertEq(Vat(bank).rest(), RAY);
 
         skip(1);
-        vat.drip(gilk);
-        assertEq(vat.rest(), 0);
+        Vat(bank).drip(gilk);
+        assertEq(Vat(bank).rest(), 0);
     }
 
     function test_drip_neg_fee() public {
         vm.expectRevert(Vat.ErrFeeMin.selector);
-        vat.filk(gilk, 'fee', RAY / 2);
+        Vat(bank).filk(gilk, 'fee', RAY / 2);
         skip(1);
         vm.expectRevert(Vat.ErrFeeRho.selector);
-        vat.filk(gilk, 'fee', RAY);
-        vat.drip(gilk);
+        Vat(bank).filk(gilk, 'fee', RAY);
+        Vat(bank).drip(gilk);
     }
 
     function test_feed_plot_safe() public {
-        (Vat.Spot safe0,,) = vat.safe(gilk, self);
+        (Vat.Spot safe0,,) = Vat(bank).safe(gilk, self);
         assertEq(uint(safe0), uint(Vat.Spot.Safe));
 
-        vat.frob(gilk, self, abi.encodePacked(100 * WAD), int(50 * WAD));
+        Vat(bank).frob(gilk, self, abi.encodePacked(100 * WAD), int(50 * WAD));
 
-        (Vat.Spot safe1,,) = vat.safe(gilk, self);
+        (Vat.Spot safe1,,) = Vat(bank).safe(gilk, self);
         assertEq(uint(safe1), uint(Vat.Spot.Safe));
 
 
@@ -644,23 +648,23 @@ contract VatTest is Test, RicoSetUp {
 
         feed.push(grtag, bytes32(RAY), block.timestamp + 1000);
 
-        (Vat.Spot safe2,,) = vat.safe(gilk, self);
+        (Vat.Spot safe2,,) = Vat(bank).safe(gilk, self);
         assertEq(uint(safe2), uint(Vat.Spot.Safe));
 
         feed.push(grtag, bytes32(RAY / 50), block.timestamp + 1000);
 
-        (Vat.Spot safe3,,) = vat.safe(gilk, self);
+        (Vat.Spot safe3,,) = Vat(bank).safe(gilk, self);
         assertEq(uint(safe3), uint(Vat.Spot.Sunk));
     }
 
     function test_par() public {
-        assertEq(vat.par(), RAY);
-        vat.frob(gilk, self, abi.encodePacked(100 * WAD), int(50 * WAD));
-        (Vat.Spot spot,,) = vat.safe(gilk, self);
+        assertEq(Vat(bank).par(), RAY);
+        Vat(bank).frob(gilk, self, abi.encodePacked(100 * WAD), int(50 * WAD));
+        (Vat.Spot spot,,) = Vat(bank).safe(gilk, self);
         assertEq(uint(spot), uint(Vat.Spot.Safe));
         // par increase should increase collateral requirement
-        vat.prod(RAY * 3);
-        (Vat.Spot spot2,,) = vat.safe(gilk, self);
+        File(bank).file('par', bytes32(RAY * 3));
+        (Vat.Spot spot2,,) = Vat(bank).safe(gilk, self);
         assertEq(uint(spot2), uint(Vat.Spot.Sunk));
     }
 
@@ -669,29 +673,32 @@ contract VatTest is Test, RicoSetUp {
         bytes32 hilk = 'hgm';
         uint dink = WAD;
         uint dart = WAD + 1;
-        Gem hgm = Gem(address(new HackyGem(Frobber(self), vat, "hacky gem", "HGM")));
+        Gem hgm = Gem(address(new HackyGem(Frobber(self), bank, "hacky gem", "HGM")));
         HackyGem(address(hgm)).setargs(hilk, self, int(dink), int(dart));
         HackyGem(address(hgm)).setdepth(1);
-        hook.wire(hilk, address(hgm), address(mdn), htag);
+        Vat(bank).init(hilk, address(hook));
+        Vat(bank).filhi(hilk, 'gem', hilk, bytes32(bytes20(address(hgm))));
+        Vat(bank).filhi(hilk, 'fsrc', hilk, bytes32(bytes20(address(mdn))));
+        Vat(bank).filhi(hilk, 'ftag', hilk, htag);
+ 
         uint amt = WAD;
 
         hgm.mint(self, amt * 5);
-        hgm.approve(address(hook), type(uint).max);
+        hgm.approve(bank, type(uint).max);
         make_feed(htag);
-        vat.init(hilk, address(hook));
-        vat.filk(hilk, 'line', 100000000 * RAD);
-        vat.prod(RAY);
+        Vat(bank).filk(hilk, 'line', 100000000 * RAD);
+        File(bank).file('par', bytes32(RAY));
         feedpush(htag, bytes32(RAY), type(uint).max);
         uint fee = RAY + 1;
-        vat.filk(hilk, bytes32('fee'),  fee); 
+        Vat(bank).filk(hilk, bytes32('fee'),  fee); 
 
         skip(1);
         // with one frob rest would be WAD + 1
         // should be double that with an extra recursive frob
-        vat.drip(hilk);
+        Vat(bank).drip(hilk);
         feedpush(htag, bytes32(RAY * 1000000), type(uint).max);
-        vat.frob(hilk, self, abi.encodePacked(dink), int(dart));
-        assertEq(vat.rest(), 2 * (WAD + 1));
+        Vat(bank).frob(hilk, self, abi.encodePacked(dink), int(dart));
+        assertEq(Vat(bank).rest(), 2 * (WAD + 1));
     }
 
     function test_frob_reentrancy_toggle_rico() public {
@@ -699,29 +706,31 @@ contract VatTest is Test, RicoSetUp {
         bytes32 hilk = 'hgm';
         uint dink = WAD;
         uint dart = WAD + 1;
-        Gem hgm = Gem(address(new HackyGem(Frobber(self), vat, "hacky gem", "HGM")));
+        Gem hgm = Gem(address(new HackyGem(Frobber(self), bank, "hacky gem", "HGM")));
         HackyGem(address(hgm)).setargs(hilk, self, int(dink), int(dart));
         HackyGem(address(hgm)).setdepth(1);
-        hook.wire(hilk, address(hgm), address(mdn), htag);
+        Vat(bank).init(hilk, address(hook));
+        Vat(bank).filhi(hilk, 'gem', hilk, bytes32(bytes20(address(hgm))));
+        Vat(bank).filhi(hilk, 'fsrc', hilk, bytes32(bytes20(address(mdn))));
+        Vat(bank).filhi(hilk, 'ftag', hilk, htag);
 
         hgm.mint(self, dink * 1000);
-        hgm.approve(address(hook), type(uint).max);
+        hgm.approve(bank, type(uint).max);
         make_feed(htag);
-        vat.init(hilk, address(hook));
-        vat.filk(hilk, 'line', 100000000 * RAD);
-        vat.prod(RAY);
+        Vat(bank).filk(hilk, 'line', 100000000 * RAD);
+        File(bank).file('par', bytes32(RAY));
         feedpush(htag, bytes32(RAY), type(uint).max);
         uint fee = RAY + 1;
-        vat.filk(hilk, bytes32('fee'),  fee); 
+        Vat(bank).filk(hilk, bytes32('fee'),  fee); 
 
         skip(1);
         // with one frob rest would be WAD + 1
         // should be double that with an extra recursive frob
-        vat.drip(hilk);
+        Vat(bank).drip(hilk);
         feedpush(htag, bytes32(RAY * 1000000), type(uint).max);
         // rico balance should underflow
-        vat.frob(hilk, self, abi.encodePacked(dink), int(dart));
-        assertEq(vat.rest(), 2 * (WAD + 1));
+        Vat(bank).frob(hilk, self, abi.encodePacked(dink), int(dart));
+        assertEq(Vat(bank).rest(), 2 * (WAD + 1));
 
 
         // throw most out
@@ -731,11 +740,11 @@ contract VatTest is Test, RicoSetUp {
         HackyGem(address(hgm)).setdepth(1);
         // should fail because not enough left to send to vat
         vm.expectRevert(OverrideableGem.ErrUnderflow.selector);
-        vat.frob(hilk, self, abi.encodePacked(dink), -int(dart));
+        Vat(bank).frob(hilk, self, abi.encodePacked(dink), -int(dart));
     }
 
     function dofrob(bytes32 i, address u, int dink, int dart) public {
-        vat.frob(i, u, abi.encodePacked(dink), dart);
+        Vat(bank).frob(i, u, abi.encodePacked(dink), dart);
     }
 
     function test_grab_reentrancy() public {
@@ -743,33 +752,35 @@ contract VatTest is Test, RicoSetUp {
         bytes32 grabilk = 'ggm';
         uint dink = WAD;
         uint dart = WAD;
-        Gem ggm = Gem(address(new GrabbyGem(Grabber(self), vat, "grabby gem", "GGM")));
+        Gem ggm = Gem(address(new GrabbyGem(Grabber(self), bank, "grabby gem", "GGM")));
         GrabbyGem(address(ggm)).setargs(grabilk, self, -int(dink), -int(dart));
-        hook.wire(grabilk, address(ggm), address(mdn), grabtag);
+        Vat(bank).init(grabilk, address(hook));
+        Vat(bank).filhi(grabilk, 'gem', grabilk, bytes32(bytes20(address(ggm))));
+        Vat(bank).filhi(grabilk, 'fsrc', grabilk, bytes32(bytes20(address(mdn))));
+        Vat(bank).filhi(grabilk, 'ftag', grabilk, grabtag);
 
         ggm.mint(self, dink * 1000);
-        ggm.approve(address(hook), type(uint).max);
-        vat.init(grabilk, address(hook));
-        vat.filk(grabilk, 'line', 100000000 * RAD);
-        vat.prod(RAY);
+        ggm.approve(bank, type(uint).max);
+        Vat(bank).filk(grabilk, 'line', 100000000 * RAD);
+        File(bank).file('par', bytes32(RAY));
         make_feed(grabtag);
         feedpush(grabtag, bytes32(RAY * 1000000), type(uint).max);
-        vat.filk(grabilk, 'chop', RAY);
+        Vat(bank).filk(grabilk, 'chop', RAY);
 
-        vat.frob(grabilk, self, abi.encodePacked(dink * 2), int(dart));
+        Vat(bank).frob(grabilk, self, abi.encodePacked(dink * 2), int(dart));
         GrabbyGem(address(ggm)).setdepth(1);
         // additional grab will not impact vat
-        vat.grab(grabilk, self, self, no_rush, NO_CUT);
-        assertEq(vat.sin(self), WAD * RAY);
+        Vat(bank).grab(grabilk, self, self, no_rush, NO_CUT);
+        assertEq(Vat(bank).sin(), WAD * RAY);
     }
 
     function dograb(bytes32 i, address u) public {
-        vat.grab(i, u, self, no_rush, NO_CUT);
+        Vat(bank).grab(i, u, self, no_rush, NO_CUT);
     }
 
     function test_frob_hook() public {
         FrobHook hook = new FrobHook();
-        vat.filk(gilk, 'hook', uint(bytes32(bytes20(address(hook)))));
+        Vat(bank).filk(gilk, 'hook', uint(bytes32(bytes20(address(hook)))));
         uint goldbefore = gold.balanceOf(self);
         bytes memory hookdata = abi.encodeCall(
             hook.frobhook,
@@ -777,240 +788,240 @@ contract VatTest is Test, RicoSetUp {
         );
 
         vm.expectCall(address(hook), hookdata);
-        vat.frob(gilk, self, abi.encodePacked(WAD), 0);
+        Vat(bank).frob(gilk, self, abi.encodePacked(WAD), 0);
         assertEq(gold.balanceOf(self), goldbefore);
     }
 
     function test_frob_hook_neg_dink() public {
         FrobHook hook = new FrobHook();
-        vat.filk(gilk, 'hook', uint(bytes32(bytes20(address(hook)))));
+        Vat(bank).filk(gilk, 'hook', uint(bytes32(bytes20(address(hook)))));
         uint goldbefore = gold.balanceOf(self);
-        vat.frob(gilk, self, abi.encodePacked(WAD), 0);
+        Vat(bank).frob(gilk, self, abi.encodePacked(WAD), 0);
         bytes memory hookdata = abi.encodeCall(
             hook.frobhook,
             (self, gilk, self, abi.encodePacked(-int(WAD)), 0)
         );
 
         vm.expectCall(address(hook), hookdata);
-        vat.frob(gilk, self, abi.encodePacked(-int(WAD)), 0);
+        Vat(bank).frob(gilk, self, abi.encodePacked(-int(WAD)), 0);
         assertEq(gold.balanceOf(self), goldbefore);
     }
 
     function test_grab_hook_1() public {
         // FrobHook's safehook returns a high number, so frob is safe
         FrobHook hook = new FrobHook();
-        vat.filk(gilk, 'hook', uint(bytes32(bytes20(address(hook)))));
+        Vat(bank).filk(gilk, 'hook', uint(bytes32(bytes20(address(hook)))));
         feedpush(grtag, bytes32(RAY), type(uint).max);
-        vat.frob(gilk, self, abi.encodePacked(WAD), int(WAD));
+        Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(WAD));
         uint goldbefore = gold.balanceOf(self);
 
         // ZeroHook's safehook makes the urn unsafe
         ZeroHook zhook = new ZeroHook();
-        vat.filk(gilk, 'hook', uint(bytes32(bytes20(address(zhook)))));
+        Vat(bank).filk(gilk, 'hook', uint(bytes32(bytes20(address(zhook)))));
 
         // check that grabhook called
         bytes memory hookdata = abi.encodeCall(
             zhook.grabhook,
-            (self, gilk, self, WAD, WAD, self, no_rush, NO_CUT)
+            (gilk, self, WAD, WAD, self, no_rush, NO_CUT)
         );
         vm.expectCall(address(zhook), hookdata);
-        vat.grab(gilk, self, self, no_rush, NO_CUT);
+        Vat(bank).grab(gilk, self, self, no_rush, NO_CUT);
         assertEq(gold.balanceOf(self), goldbefore);
     }
 
     function test_frob_err_ordering_1() public {
-        vat.filk(gilk, 'fee', 2 * RAY);
-        vat.file('ceil', WAD - 1);
-        vat.filk(gilk, 'dust', RAD);
+        Vat(bank).filk(gilk, 'fee', 2 * RAY);
+        File(bank).file('ceil', bytes32(WAD - 1));
+        Vat(bank).filk(gilk, 'dust', RAD);
         skip(1);
-        vow.drip(gilk);
+        Vat(bank).drip(gilk);
 
         // ceily, not safe, wrong urn, dusty...should be ceily
         feedpush(grtag, bytes32(0), type(uint).max);
         vm.expectRevert(Vat.ErrDebtCeil.selector);
-        vat.frob(gilk, avox, abi.encodePacked(WAD), int(WAD / 2));
+        Vat(bank).frob(gilk, bank, abi.encodePacked(WAD), int(WAD / 2));
 
         // non-ceily, should be dusty
         vm.expectRevert(Vat.ErrUrnDust.selector);
-        vat.frob(gilk, avox, abi.encodePacked(WAD), int(WAD / 2 - 1));
+        Vat(bank).frob(gilk, bank, abi.encodePacked(WAD), int(WAD / 2 - 1));
 
         // non-dusty, should be unsafe
-        vat.filk(gilk, 'dust', RAD - RAY * 2);
+        Vat(bank).filk(gilk, 'dust', RAD - RAY * 2);
         vm.expectRevert(Vat.ErrNotSafe.selector);
-        vat.frob(gilk, avox, abi.encodePacked(WAD), int(WAD / 2 - 1));
+        Vat(bank).frob(gilk, bank, abi.encodePacked(WAD), int(WAD / 2 - 1));
 
         //safe, should be wrong urn
         feedpush(grtag, bytes32(RAY), type(uint).max);
         vm.expectRevert(Vat.ErrWrongUrn.selector);
-        vat.frob(gilk, avox, abi.encodePacked(WAD), int(WAD / 2 - 1));
+        Vat(bank).frob(gilk, bank, abi.encodePacked(WAD), int(WAD / 2 - 1));
 
         // raising ceil should fix ceil
-        vat.file('ceil', WAD);
-        vat.frob(gilk, self, abi.encodePacked(WAD * 2), int(WAD / 2));
+        File(bank).file('ceil', bytes32(WAD));
+        Vat(bank).frob(gilk, self, abi.encodePacked(WAD * 2), int(WAD / 2));
     }
 
     function test_frob_err_ordering_darts() public {
-        vat.filk(gilk, 'fee', 2 * RAY);
-        vat.file('ceil', WAD);
-        vat.filk(gilk, 'dust', RAD);
+        Vat(bank).filk(gilk, 'fee', 2 * RAY);
+        File(bank).file('ceil', bytes32(WAD));
+        Vat(bank).filk(gilk, 'dust', RAD);
         skip(1);
-        vow.drip(gilk);
+        Vat(bank).drip(gilk);
         feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
 
         address amdn = address(mdn);
         gold.mint(amdn, 1000 * WAD);
         vm.startPrank(amdn);
-        gold.approve(ahook, 1000 * WAD);
-        vat.frob(gilk, address(mdn), abi.encodePacked(WAD * 2), int(WAD / 2));
+        gold.approve(bank, 1000 * WAD);
+        Vat(bank).frob(gilk, address(mdn), abi.encodePacked(WAD * 2), int(WAD / 2));
         rico.transfer(self, 100);
         vm.stopPrank();
 
         // bypasses most checks when dart <= 0
         feedpush(grtag, bytes32(0), type(uint).max);
-        vat.file('ceil', 0);
+        File(bank).file('ceil', bytes32(0));
         vm.expectRevert(Vat.ErrDebtCeil.selector);
-        vat.frob(gilk, amdn, abi.encodePacked(WAD), int(1));
-        vat.frob(gilk, amdn, abi.encodePacked(WAD), int(0));
+        Vat(bank).frob(gilk, amdn, abi.encodePacked(WAD), int(1));
+        Vat(bank).frob(gilk, amdn, abi.encodePacked(WAD), int(0));
         vm.expectRevert(Vat.ErrUrnDust.selector);
-        vat.frob(gilk, amdn, abi.encodePacked(WAD), -int(1));
+        Vat(bank).frob(gilk, amdn, abi.encodePacked(WAD), -int(1));
     }
 
     function test_frob_err_ordering_dinks() public {
-        vat.filk(gilk, 'fee', 2 * RAY);
-        vat.file('ceil', WAD);
-        vat.filk(gilk, 'dust', RAD);
+        Vat(bank).filk(gilk, 'fee', 2 * RAY);
+        File(bank).file('ceil', bytes32(WAD));
+        Vat(bank).filk(gilk, 'dust', RAD);
         skip(1);
-        vow.drip(gilk);
+        Vat(bank).drip(gilk);
         feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
 
         address amdn = address(mdn);
         gold.mint(amdn, 1000 * WAD);
         vm.startPrank(amdn);
-        gold.approve(ahook, 1000 * WAD);
-        vat.frob(gilk, address(mdn), abi.encodePacked(WAD * 2), int(WAD / 2));
+        gold.approve(bank, 1000 * WAD);
+        Vat(bank).frob(gilk, address(mdn), abi.encodePacked(WAD * 2), int(WAD / 2));
         vm.stopPrank();
 
         // bypasses most checks when dink >= 0
         feedpush(grtag, bytes32(0), type(uint).max);
-        vat.file('ceil', 0);
+        File(bank).file('ceil', bytes32(0));
         vm.expectRevert(Vat.ErrNotSafe.selector);
-        vat.frob(gilk, amdn, abi.encodePacked(-int(1)), int(0));
+        Vat(bank).frob(gilk, amdn, abi.encodePacked(-int(1)), int(0));
         feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
         vm.expectRevert(Vat.ErrWrongUrn.selector);
-        vat.frob(gilk, amdn, abi.encodePacked(-int(1)), int(0));
+        Vat(bank).frob(gilk, amdn, abi.encodePacked(-int(1)), int(0));
         feedpush(grtag, bytes32(0), type(uint).max);
         // doesn't care when ink >= 0
-        vat.frob(gilk, amdn, abi.encodePacked(int(0)), int(0));
-        vat.frob(gilk, amdn, abi.encodePacked(int(1)), int(0));
+        Vat(bank).frob(gilk, amdn, abi.encodePacked(int(0)), int(0));
+        Vat(bank).frob(gilk, amdn, abi.encodePacked(int(1)), int(0));
     }
 
     function test_frob_err_ordering_dinks_darts() public {
-        vat.filk(gilk, 'fee', 2 * RAY);
-        vat.file('ceil', WAD * 10000);
-        vat.filk(gilk, 'dust', RAD);
+        Vat(bank).filk(gilk, 'fee', 2 * RAY);
+        File(bank).file('ceil', bytes32(WAD * 10000));
+        Vat(bank).filk(gilk, 'dust', RAD);
         skip(1);
-        vow.drip(gilk);
+        Vat(bank).drip(gilk);
         feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
 
         address amdn = address(mdn);
         gold.mint(amdn, 1000 * WAD);
         vm.startPrank(amdn);
-        gold.approve(ahook, 1000 * WAD);
-        vat.frob(gilk, address(mdn), abi.encodePacked(WAD * 2), int(WAD / 2));
+        gold.approve(bank, 1000 * WAD);
+        Vat(bank).frob(gilk, address(mdn), abi.encodePacked(WAD * 2), int(WAD / 2));
         // 2 for accumulated debt, 1 for rounding
         rico.transfer(self, 3);
         vm.stopPrank();
 
         // bypasses most checks when dink >= 0
         feedpush(grtag, bytes32(0), type(uint).max);
-        vat.file('ceil', WAD * 10000);
+        File(bank).file('ceil', bytes32(WAD * 10000));
 
         vm.expectRevert(Vat.ErrNotSafe.selector);
-        vat.frob(gilk, amdn, abi.encodePacked(-int(1)), int(1));
+        Vat(bank).frob(gilk, amdn, abi.encodePacked(-int(1)), int(1));
         feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
         vm.expectRevert(Vat.ErrWrongUrn.selector);
-        vat.frob(gilk, amdn, abi.encodePacked(-int(1)), int(1));
+        Vat(bank).frob(gilk, amdn, abi.encodePacked(-int(1)), int(1));
         feedpush(grtag, bytes32(0), type(uint).max);
         // doesn't care when ink >= 0
-        vat.frob(gilk, amdn, abi.encodePacked(int(0)), int(0));
+        Vat(bank).frob(gilk, amdn, abi.encodePacked(int(0)), int(0));
         vm.expectRevert(Vat.ErrUrnDust.selector);
-        vat.frob(gilk, amdn, abi.encodePacked(int(1)), int(-1));
-        vat.filk(gilk, 'dust', RAD / 2);
-        vat.frob(gilk, amdn, abi.encodePacked(int(1)), int(-1));
+        Vat(bank).frob(gilk, amdn, abi.encodePacked(int(1)), int(-1));
+        Vat(bank).filk(gilk, 'dust', RAD / 2);
+        Vat(bank).frob(gilk, amdn, abi.encodePacked(int(1)), int(-1));
     }
 
     function test_frob_ilk_uninitialized() public {
         feedpush(grtag, bytes32(0), type(uint).max);
         vm.expectRevert(Vat.ErrIlkInit.selector);
-        vat.frob('hello', self, abi.encodePacked(WAD), int(WAD));
+        Vat(bank).frob('hello', self, abi.encodePacked(WAD), int(WAD));
     }
 
     function test_debt_not_normalized() public {
-        vow.drip(gilk);
-        vat.filk(gilk, 'fee', 2 * RAY);
-        vat.frob(gilk, self, abi.encodePacked(WAD), int(WAD));
-        assertEq(vat.debt(), WAD);
+        Vat(bank).drip(gilk);
+        Vat(bank).filk(gilk, 'fee', 2 * RAY);
+        Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(WAD));
+        assertEq(Vat(bank).debt(), WAD);
         skip(1);
-        vow.drip(gilk);
-        assertEq(vat.debt(), WAD * 2);
+        Vat(bank).drip(gilk);
+        assertEq(Vat(bank).debt(), WAD * 2);
     }
 
     function test_dtab_not_normalized() public {
         feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
-        vow.drip(gilk);
-        vat.filk(gilk, 'fee', 2 * RAY);
-        vat.frob(gilk, self, abi.encodePacked(WAD), int(WAD));
-        assertEq(vat.debt(), WAD);
+        Vat(bank).drip(gilk);
+        Vat(bank).filk(gilk, 'fee', 2 * RAY);
+        Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(WAD));
+        assertEq(Vat(bank).debt(), WAD);
         skip(1);
-        vow.drip(gilk);
+        Vat(bank).drip(gilk);
 
         // dtab > 0
         uint ricobefore = rico.balanceOf(self);
-        vat.frob(gilk, self, abi.encodePacked(WAD), int(WAD));
+        Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(WAD));
         uint ricoafter = rico.balanceOf(self);
         assertEq(ricoafter, ricobefore + WAD * 2);
 
         // dtab < 0
         ricobefore = rico.balanceOf(self);
-        vat.frob(gilk, self, abi.encodePacked(int(0)), -int(WAD));
+        Vat(bank).frob(gilk, self, abi.encodePacked(int(0)), -int(WAD));
         ricoafter = rico.balanceOf(self);
         assertEq(ricoafter, ricobefore - (WAD * 2 + 1));
     }
 
     function test_drip_all_rest_1() public {
         feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
-        vat.filk(gilk, 'fee', RAY * 3 / 2);
+        Vat(bank).filk(gilk, 'fee', RAY * 3 / 2);
         // raise rack to 1.5
         skip(1);
         // now frob 1, so debt is 1 * RAY
         // and rest is 0.5 * RAY
-        vat.drip(gilk);
-        vat.frob(gilk, self, abi.encodePacked(int(1)), int(1));
-        assertEq(vat.rest(), RAY / 2);
-        assertEq(vat.debt(), 1);
+        Vat(bank).drip(gilk);
+        Vat(bank).frob(gilk, self, abi.encodePacked(int(1)), int(1));
+        assertEq(Vat(bank).rest(), RAY / 2);
+        assertEq(Vat(bank).debt(), 1);
         // need to wait for drip to do anything...
-        vow.drip(gilk);
-        assertEq(vat.debt(), 1);
-        assertEq(vat.rest(), RAY / 2);
+        Vat(bank).drip(gilk);
+        assertEq(Vat(bank).debt(), 1);
+        assertEq(Vat(bank).rest(), RAY / 2);
 
         // frob again so rest reaches RAY
-        vat.frob(gilk, self, abi.encodePacked(int(1)), int(1));
-        assertEq(vat.debt(), 2);
-        assertEq(vat.rest(), RAY);
+        Vat(bank).frob(gilk, self, abi.encodePacked(int(1)), int(1));
+        assertEq(Vat(bank).debt(), 2);
+        assertEq(Vat(bank).rest(), RAY);
 
         // so regardless of fee next drip should drip 1
-        vat.filk(gilk, 'fee', RAY);
+        Vat(bank).filk(gilk, 'fee', RAY);
         skip(1);
-        vat.drip(gilk);
-        assertEq(vat.debt(), 3);
-        assertEq(vat.rest(), 0);
+        Vat(bank).drip(gilk);
+        assertEq(Vat(bank).debt(), 3);
+        assertEq(Vat(bank).rest(), 0);
         assertEq(rico.totalSupply(), 3);
     }
 
     function test_frobhook_only_checks_dink() public {
-        Guy guy = new Guy(avat, avow);
+        Guy guy = new Guy(bank);
         OnlyInkHook inkhook = new OnlyInkHook();
-        vat.filk(gilk, 'hook', uint(bytes32(bytes20(address(inkhook)))));
+        Vat(bank).filk(gilk, 'hook', uint(bytes32(bytes20(address(inkhook)))));
 
         feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
         gold.mint(address(guy), 1000 * WAD);
@@ -1027,11 +1038,14 @@ contract OnlyInkHook is Hook {
         return int(uint(bytes32(dink[:32]))) >= 0; 
     }
     function grabhook(
-        address vow, bytes32 i, address u, uint art, uint bill, address keeper, uint rush, uint cut
+        bytes32 i, address u, uint art, uint bill, address keeper, uint rush, uint cut
     ) external {}
     function safehook(
         bytes32, address
     ) pure external returns (uint, uint){return(uint(10 ** 18 * 10 ** 27), type(uint256).max);}
+    function ink(bytes32, address) external pure returns (bytes memory) {
+        return abi.encode(uint(0));
+    }
 }
 
 contract FrobHook is Hook {
@@ -1041,22 +1055,28 @@ contract FrobHook is Hook {
         return int(uint(bytes32(dink[:32]))) >= 0 && dart <= 0; 
     }
     function grabhook(
-        address vow, bytes32 i, address u, uint art, uint bill, address keeper, uint rush, uint cut
+        bytes32 i, address u, uint art, uint bill, address keeper, uint rush, uint cut
     ) external {}
     function safehook(
         bytes32, address
     ) pure external returns (uint, uint){return(uint(10 ** 18 * 10 ** 27), type(uint256).max);}
+    function ink(bytes32, address) external pure returns (bytes memory) {
+        return abi.encode(uint(0));
+    }
 }
 contract ZeroHook is Hook {
     function frobhook(
         address sender, bytes32 i, address u, bytes calldata dink, int dart
     ) external returns (bool safer) {}
     function grabhook(
-        address vow, bytes32 i, address u, uint art, uint bill, address keeper, uint rush, uint cut
+        bytes32 i, address u, uint art, uint bill, address keeper, uint rush, uint cut
     ) external {}
     function safehook(
         bytes32, address
     ) pure external returns (uint, uint){return(uint(0), type(uint256).max);}
+    function ink(bytes32, address) external pure returns (bytes memory) {
+        return abi.encode(uint(0));
+    }
 }
 
 interface Frobber {
@@ -1064,16 +1084,16 @@ interface Frobber {
 }
 
 contract HackyGem is OverrideableGem {
-    Vat vat;
     uint depth;
     bytes32 i;
     address u;
     int dink;
     int dart;
     Frobber frobber;
+    address payable bank;
 
-    constructor(Frobber _frobber, Vat _vat, bytes32 name, bytes32 symbol) OverrideableGem(name, symbol) {
-        vat = _vat;
+    constructor(Frobber _frobber, address payable _bank, bytes32 name, bytes32 symbol) OverrideableGem(name, symbol) {
+        bank = _bank;
         frobber = _frobber;
     }
 
@@ -1123,7 +1143,7 @@ interface Grabber {
 }
 
 contract GrabbyGem is OverrideableGem {
-    Vat vat;
+    address payable bank;
     uint depth;
     bytes32 i;
     address u;
@@ -1131,8 +1151,8 @@ contract GrabbyGem is OverrideableGem {
     int dart;
     Grabber grabber;
 
-    constructor(Grabber _grabber, Vat _vat, bytes32 name, bytes32 symbol) OverrideableGem(name, symbol) {
-        vat = _vat;
+    constructor(Grabber _grabber, address payable _bank, bytes32 name, bytes32 symbol) OverrideableGem(name, symbol) {
+        bank = _bank;
         grabber = _grabber;
     }
 

@@ -19,6 +19,8 @@ import {Progression} from "../lib/feedbase/src/combinators/Progression.sol";
 import { Vow } from "../src/vow.sol";
 import { ERC20Hook } from '../src/hook/ERC20hook.sol';
 import { Vox } from "../src/vox.sol";
+import { Bank } from '../src/bank.sol';
+import { BankDiamond } from '../src/diamond.sol';
 
 contract BallTest is Test, UniSetUp, Math {
     bytes32 internal constant WILK = "weth";
@@ -46,6 +48,7 @@ contract BallTest is Test, UniSetUp, Math {
     Medianizer mdn;
     Feedbase fb;
     GemFab gf;
+    address payable bank;
     address me;
     INonfungiblePositionManager npfm = INonfungiblePositionManager(
         0xC36442b4a4522E871399CD717aBDD847Ab11FE88
@@ -87,9 +90,8 @@ contract BallTest is Test, UniSetUp, Math {
         fb.push(DAI_USD_TAG, v, type(uint).max);
     }
 
-    function _ink(bytes32 i, address u) view internal returns (uint) {
-        (,,,,,,,,address ihook) = vat.ilks(i);
-        return ERC20Hook(ihook).inks(i, u);
+    function _ink(bytes32 ilk, address usr) internal returns (uint) {
+        return abi.decode(Vat(bank).ink(ilk, usr), (uint));
     }
 
     function look_poke() internal {
@@ -113,6 +115,10 @@ contract BallTest is Test, UniSetUp, Math {
         assembly {
             deployed := create(0, add(bytecode, 0x20), mload(bytecode))
         }
+    }
+
+    function make_diamond() internal returns (address payable deployed) {
+        return payable(address(new BankDiamond()));
     }
 
     function setUp() public {
@@ -143,6 +149,7 @@ contract BallTest is Test, UniSetUp, Math {
         );
 
         address uniwrapper = make_uniwrapper();
+        bank = make_diamond();
         Ball.UniParams memory ups = Ball.UniParams(
             0xC36442b4a4522E871399CD717aBDD847Ab11FE88,
             ':uninft',
@@ -153,6 +160,7 @@ contract BallTest is Test, UniSetUp, Math {
         );
 
         Ball.BallArgs memory bargs = Ball.BallArgs(
+            bank,
             address(fb),
             rico,
             risk,
@@ -166,7 +174,7 @@ contract BallTest is Test, UniSetUp, Math {
             BANKYEAR * 100,
             BANKYEAR, // daiusd
             BANKYEAR, // xauusd
-            Vow.Ramp(WAD, WAD, block.timestamp, 1),
+            Bank.Ramp(WAD, WAD, block.timestamp, 1),
             0x6B175474E89094C44Da98b954EedeAC495271d0F,
             0xAed0c38402a5d19df6E4c03F4E2DceD6e29c1ee9,
             0x214eD9Da11D2fbe465a6fc601a91E62EbEc1a0D6
@@ -174,12 +182,15 @@ contract BallTest is Test, UniSetUp, Math {
 
         uint gas = gasleft();
         Ball ball = new Ball(bargs);
+        BankDiamond(bank).transferOwnership(address(ball));
+        ball.setup(bargs);
         ball.makeilk(ips[0]);
         ball.makeuni(ups);
         ball.approve(me);
+        BankDiamond(bank).acceptOwnership();
 
         uint usedgas     = gas - gasleft();
-        uint expectedgas = 20421556;
+        uint expectedgas = 23832130;
         if (usedgas < expectedgas) {
             console.log("ball saved %s gas...currently %s", expectedgas - usedgas, usedgas);
         }
@@ -187,8 +198,8 @@ contract BallTest is Test, UniSetUp, Math {
             console.log("ball gas increase by %s...currently %s", usedgas - expectedgas, usedgas);
         }
 
-        Gem(rico).ward(address(ball.vat()), true);
-        Gem(risk).ward(address(ball.vow()), true);
+        Gem(rico).ward(bank, true);
+        Gem(risk).ward(bank, true);
 
         vat = ball.vat();
         cladapt = ball.cladapt();
@@ -206,11 +217,11 @@ contract BallTest is Test, UniSetUp, Math {
         hook = ball.hook();
         vm.prank(VAULT);
         Gem(DAI).transfer(address(this), 500 * WAD);
-        Gem(WETH).approve(address(hook), type(uint).max);
+        Gem(WETH).approve(bank, type(uint).max);
         WethLike(WETH).deposit{value: wethamt * 100}();
         // try to frob 1 weth for at least $1k...shouldn't work because no look
         vm.expectRevert(Vat.ErrNotSafe.selector);
-        vat.frob(WETH_ILK, me, abi.encodePacked(wethamt), dart);
+        Vat(bank).frob(WETH_ILK, me, abi.encodePacked(wethamt), dart);
 
         cladapt.look(XAU_USD_TAG);
         cladapt.look(DAI_USD_TAG);
@@ -222,23 +233,23 @@ contract BallTest is Test, UniSetUp, Math {
         vox = ball.vox();
 
         Gem(risk).mint(address(this), DEV_FUND_RISK);
-        Gem(rico).approve(address(hook), type(uint256).max);
-        Gem(risk).approve(address(hook), type(uint256).max);
+        Gem(rico).approve(bank, type(uint256).max);
+        Gem(risk).approve(bank, type(uint256).max);
     }
 
     modifier _flap_after_ {
         _;
-        uint vow_risk_before = Gem(risk).balanceOf(address(vow));
+        uint vow_risk_before = Gem(risk).balanceOf(bank);
         Gem(risk).mint(me, 10000 * WAD);
-        vow.keep(ilks);
-        uint vow_risk_after = Gem(risk).balanceOf(address(vow));
+        Vow(bank).keep(ilks);
+        uint vow_risk_after = Gem(risk).balanceOf(bank);
         assertGt(vow_risk_after, vow_risk_before);
     }
 
     modifier _flop_after_ {
         _;
         vm.expectCall(risk, abi.encodePacked(Gem(risk).mint.selector));
-        vow.keep(ilks);
+        Vow(bank).keep(ilks);
     }
 
     modifier _balanced_after_ {
@@ -247,7 +258,7 @@ contract BallTest is Test, UniSetUp, Math {
         uint me_risk_1 = Gem(risk).balanceOf(me);
         uint me_rico_1 = Gem(rico).balanceOf(me);
 
-        vow.keep(ilks);
+        Vow(bank).keep(ilks);
 
         uint me_risk_2 = Gem(risk).balanceOf(me);
         uint me_rico_2 = Gem(rico).balanceOf(me);
@@ -258,7 +269,7 @@ contract BallTest is Test, UniSetUp, Math {
 
     function test_basic() public {
         (bytes32 price, uint ttl) = fb.pull(address(mdn), RICO_REF_TAG);
-        uint vox_price = rmul(uint(price), vox.amp());
+        uint vox_price = rmul(uint(price), Vox(bank).amp());
         assertGt(uint(vox_price), INIT_PAR * 99 / 100);
         assertLt(uint(vox_price), INIT_PAR * 100 / 99);
         (price, ttl) = fb.pull(address(mdn), WETH_RICO_TAG);
@@ -268,71 +279,73 @@ contract BallTest is Test, UniSetUp, Math {
     }
 
     function test_ball() public {
-        vat.frob(WETH_ILK, me, abi.encodePacked(wethamt), dart);
+        Vat(bank).frob(WETH_ILK, me, abi.encodePacked(wethamt), dart);
         vm.expectRevert(Vat.ErrNotSafe.selector);
-        vat.frob(WETH_ILK, me, abi.encodePacked(int(0)), dart);
+        Vat(bank).frob(WETH_ILK, me, abi.encodePacked(int(0)), dart);
     }
 
     function test_fee_bail_flop() public _flop_after_ {
-        vat.frob(WETH_ILK, me, abi.encodePacked(wethamt), dart);
+        Vat(bank).frob(WETH_ILK, me, abi.encodePacked(wethamt), dart);
         vm.expectRevert(Vow.ErrSafeBail.selector);
-        vow.bail(WETH_ILK, me);
+        Vow(bank).bail(WETH_ILK, me);
         skip(BANKYEAR * 100);
         // revert bc feed data old
         vm.expectRevert(Vow.ErrSafeBail.selector);
-        vow.bail(WETH_ILK, me);
+        Vow(bank).bail(WETH_ILK, me);
         look_poke();
-        vow.keep(ilks);
+        Vow(bank).keep(ilks);
         uint meweth = WethLike(WETH).balanceOf(me);
         Gem(rico).mint(me, 1000000 * WAD);
-        vow.bail(WETH_ILK, me);
+        Vow(bank).bail(WETH_ILK, me);
         assertGt(WethLike(WETH).balanceOf(me), meweth);
     }
 
 
     function test_ball_flap() public _flap_after_ {
-        vat.frob(WETH_ILK, me, abi.encodePacked(wethamt), dart);
+        Vat(bank).frob(WETH_ILK, me, abi.encodePacked(wethamt), dart);
         vm.expectRevert(Vow.ErrSafeBail.selector);
-        vow.bail(WETH_ILK, me);
+        Vow(bank).bail(WETH_ILK, me);
         skip(BANKYEAR * 100);
     }
 
     // user pays down the urn first, then try to flap
     function test_ball_pay_flap_1() public {
-        vat.frob(WETH_ILK, me, abi.encodePacked(wethamt), dart);
+        Vat(bank).frob(WETH_ILK, me, abi.encodePacked(wethamt), dart);
         vm.expectRevert(Vow.ErrSafeBail.selector);
-        vow.bail(WETH_ILK, me);
+        Vow(bank).bail(WETH_ILK, me);
         skip(BANKYEAR * 100); advance_chainlink(); look_poke();
 
-        uint artleft = vat.urns(WETH_ILK, me);
+        uint artleft = Vat(bank).urns(WETH_ILK, me);
         uint inkleft = _ink(WETH_ILK, me);
 
-        (,uint rack,,uint dust,,,,,) = vat.ilks(WETH_ILK);
-        vat.frob(WETH_ILK, me, abi.encodePacked(int(0)), -int((artleft * rack - dust) / rack));
-        uint artleftafter = vat.urns(WETH_ILK, me);
+        uint rack = Vat(bank).ilks(WETH_ILK).rack;
+        uint dust = Vat(bank).ilks(WETH_ILK).dust;
+        Vat(bank).frob(WETH_ILK, me, abi.encodePacked(int(0)), -int((artleft * rack - dust) / rack));
+        uint artleftafter = Vat(bank).urns(WETH_ILK, me);
         uint inkleftafter = _ink(WETH_ILK, me);
         assertEq(inkleftafter, inkleft);
         assertEq(artleftafter, dust / rack);
 
         uint self_risk_1 = Gem(risk).balanceOf(me);
-        vow.keep(ilks);
+        Vow(bank).keep(ilks);
         uint self_risk_2 = Gem(risk).balanceOf(me);
         assertLt(self_risk_2, self_risk_1);
     }
 
     function test_ball_pay_flap_success() public  _balanced_after_ {
-        vat.frob(WETH_ILK, me, abi.encodePacked(wethamt), dart);
+        Vat(bank).frob(WETH_ILK, me, abi.encodePacked(wethamt), dart);
         vm.expectRevert(Vow.ErrSafeBail.selector);
-        vow.bail(WETH_ILK, me);
+        Vow(bank).bail(WETH_ILK, me);
         skip(BANKYEAR * 100); look_poke();
 
-        uint artleft = vat.urns(WETH_ILK, me);
+        uint artleft = Vat(bank).urns(WETH_ILK, me);
         uint inkleft = _ink(WETH_ILK, me);
-        vow.keep(ilks); // drips
+        Vow(bank).keep(ilks); // drips
         Gem(rico).mint(me, artleft * 1000);
-        (,uint rack,,uint dust,,,,,) = vat.ilks(WETH_ILK);
-        vat.frob(WETH_ILK, me, abi.encodePacked(int(0)), -int((artleft * rack - dust) / rack));
-        uint artleftafter = vat.urns(WETH_ILK, me);
+        uint rack = Vat(bank).ilks(WETH_ILK).rack;
+        uint dust = Vat(bank).ilks(WETH_ILK).dust;
+        Vat(bank).frob(WETH_ILK, me, abi.encodePacked(int(0)), -int((artleft * rack - dust) / rack));
+        uint artleftafter = Vat(bank).urns(WETH_ILK, me);
         uint inkleftafter = _ink(WETH_ILK, me);
         assertEq(inkleftafter, inkleft);
         assertGt(artleftafter, dust / rack * 999 / 1000);

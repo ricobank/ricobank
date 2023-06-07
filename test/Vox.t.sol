@@ -4,6 +4,9 @@ pragma solidity 0.8.19;
 import "forge-std/Test.sol";
 
 import { RicoSetUp } from "./RicoHelper.sol";
+import { File } from '../src/file.sol';
+import { Vat } from '../src/vat.sol';
+import { Vox } from '../src/vox.sol';
 
 contract VoxTest is Test, RicoSetUp {
     uint256 public init_join = 1000;
@@ -14,122 +17,122 @@ contract VoxTest is Test, RicoSetUp {
 
     function setUp() public {
         make_bank();
-        vox.file(bytes32('tag'), rtag);
-        vox.file(bytes32('cap'), bytes32(3 * RAY));
-        vat.prod(7 * WAD);
+        File(bank).file(bytes32('tag'), rtag);
+        File(bank).file(bytes32('cap'), bytes32(3 * RAY));
+        File(bank).file('par', bytes32(7 * WAD));
     }
 
     function test_sway() public {
         feedpush(rtag, bytes32(7 * WAD), block.timestamp + 1000);
 
         skip(100);
-        vox.poke();
-        assertEq(vat.par(), 7 * WAD);
+        Vox(bank).poke();
+        assertEq(Vat(bank).par(), 7 * WAD);
 
-        vox.file(bytes32('way'), bytes32(2 * RAY));
+        File(bank).file(bytes32('way'), bytes32(2 * RAY));
         skip(2);
-        vox.poke();
-        assertEq(vat.par(), 28 * WAD);
+        Vox(bank).poke();
+        assertEq(Vat(bank).par(), 28 * WAD);
     }
 
     function test_poke_highmar_gas() public {
         skip(1);
-        uint way = vox.way();
+        uint way = Vox(bank).way();
         feedpush(rtag, bytes32(10 * WAD), block.timestamp + 1000);
         uint gas = gasleft();
-        vox.poke();
-        check_gas(gas, 37296);
-        assertLt(vox.way(), way);
+        Vox(bank).poke();
+        check_gas(gas, 30043);
+        assertLt(Vox(bank).way(), way);
     }
 
     function test_poke_lowmar_gas() public {
         skip(1);
-        uint way = vox.way();
-        feedpush(rtag, bytes32(1 * WAD / (vox.amp() / RAY)), block.timestamp + 1000);
+        uint way = Vox(bank).way();
+        feedpush(rtag, bytes32(1 * WAD / (Vox(bank).amp() / RAY)), block.timestamp + 1000);
         uint gas = gasleft();
-        vox.poke();
-        check_gas(gas, 36809);
-        assertGt(vox.way(), way);
+        Vox(bank).poke();
+        check_gas(gas, 29556);
+        assertGt(Vox(bank).way(), way);
     }
 
     function test_ricolike_vox() public {
-        vox.poke(); // how > 1 but mar == par, par stuck at 7
+        Vox(bank).poke(); // how > 1 but mar == par, par stuck at 7
         uint how = RAY + (RAY * 12 / 10) / (10 ** 16);
-        vox.file(bytes32('how'), bytes32(how));
-        feedpush(rtag, bytes32(vox.amp() / RAY), 10 ** 12);
+        File(bank).file(bytes32('how'), bytes32(how));
+        feedpush(rtag, bytes32(Vox(bank).amp() / RAY), 10 ** 12);
 
-        vox.poke(); // no time has passed
-        assertEq(vat.par(), 7 * WAD);
+        Vox(bank).poke(); // no time has passed
+        assertEq(Vat(bank).par(), 7 * WAD);
         skip(1);
-        vox.poke();
-        assertEq(vat.par(), 7 * WAD); // way *= how, par will increase next
+        Vox(bank).poke();
+        assertEq(Vat(bank).par(), 7 * WAD); // way *= how, par will increase next
 
         skip(1);
-        vox.poke();
+        Vox(bank).poke();
         uint expectedpar2 = 7 * WAD * how / RAY;
-        assertEq(vat.par(), expectedpar2); // way > 1 -> par increases
+        assertEq(Vat(bank).par(), expectedpar2); // way > 1 -> par increases
 
         skip(1);
         feedpush(rtag, bytes32(10 * WAD), 10 ** 12); // raise mar above par
-        vox.poke(); // poke updates par before way, par should increase again
+        Vox(bank).poke(); // poke updates par before way, par should increase again
         // this time it's multiplied by how ** 2
         uint expectedpar3 = 7 * WAD * how / RAY * how / RAY * how / RAY;
-        assertEq(vat.par(), expectedpar3);
+        assertEq(Vat(bank).par(), expectedpar3);
 
         skip(1);
         // way decreased but still > 1, par increases
-        vox.poke();
-        assertGt(vat.par(), expectedpar3);
+        Vox(bank).poke();
+        assertGt(Vat(bank).par(), expectedpar3);
         skip(1);
         // way ~= 1, par shouldn't change much
-        vox.poke();
-        assertGt(vat.par(), expectedpar3);
+        Vox(bank).poke();
+        assertGt(Vat(bank).par(), expectedpar3);
         skip(1);
         // way < 1, should decrease, maybe rounding error goes a little under par3
-        vox.poke();
-        assertLe(vat.par(), expectedpar3);
+        Vox(bank).poke();
+        assertLe(Vat(bank).par(), expectedpar3);
         skip(1);
         // way < 1, should decrease
-        vox.poke();
-        assertLe(vat.par(), expectedpar2);
+        Vox(bank).poke();
+        assertLe(Vat(bank).par(), expectedpar2);
 
         feedpush(rtag, bytes32(0), 10 ** 12);
         skip(100000000);
         // way doesn't change until after par update
-        vox.poke();
+        Vox(bank).poke();
         skip(100000000);
-        vox.poke();
-        assertGe(vat.par(), 20 * WAD);
+        Vox(bank).poke();
+        assertGe(Vat(bank).par(), 20 * WAD);
     }
 
     function test_ttl() public {
-        uint old_way = vox.way();
-        vm.startPrank(vox.tip());
-        vox.fb().push(vox.tag(), bytes32(vat.par()), block.timestamp - 1);
+        uint old_way = Vox(bank).way();
+        vm.startPrank(Vox(bank).tip());
+        File(bank).fb().push(Vox(bank).tag(), bytes32(Vat(bank).par()), block.timestamp - 1);
         vm.stopPrank();
-        vox.poke();
-        assertEq(old_way, vox.way());
+        Vox(bank).poke();
+        assertEq(old_way, Vox(bank).way());
     }
 
     function test_cap_min() public {
-        vox.poke();
+        Vox(bank).poke();
         skip(100000000);
-        vm.startPrank(vox.tip());
-        vox.fb().push(vox.tag(), 0, block.timestamp + 1);
+        vm.startPrank(Vox(bank).tip());
+        File(bank).fb().push(Vox(bank).tag(), 0, block.timestamp + 1);
         vm.stopPrank();
-        vox.poke();
-        assertEq(vox.way(), vox.cap());
+        Vox(bank).poke();
+        assertEq(Vox(bank).way(), Vox(bank).cap());
     }
 
     function test_cap_max() public {
-        vox.poke();
+        Vox(bank).poke();
         skip(100000000);
-        vm.startPrank(vox.tip());
+        vm.startPrank(Vox(bank).tip());
         uint256 high = 2 ** 128;
-        vox.fb().push(vox.tag(), bytes32(high), block.timestamp + 1 );
+        File(bank).fb().push(Vox(bank).tag(), bytes32(high), block.timestamp + 1 );
         vm.stopPrank();
-        vox.poke();
-        assertEq(vox.way(), rinv(vox.cap()));
+        Vox(bank).poke();
+        assertEq(Vox(bank).way(), rinv(Vox(bank).cap()));
     }
 }
 
