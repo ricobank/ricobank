@@ -41,6 +41,9 @@ task('deploy-ricobank', '')
     await send(fb.push, b32('xauusd'), bn2b32(hre.ethers.BigNumber.from('190000000000')), timestamp * 2);
 
     const diamond_artifact = require('../artifacts/src/diamond.sol/BankDiamond.json')
+    diamond_artifact.abi = diamond_artifact.abi.filter(
+        (e, idx) => diamond_artifact.abi.findIndex(ee => ee.name == e.name) == idx
+    )
     const diamond_type = hre.ethers.ContractFactory.fromSolidity(diamond_artifact, ali)
     const diamond = await diamond_type.deploy()
     const ball_artifact = require('../artifacts/src/ball.sol/Ball.json')
