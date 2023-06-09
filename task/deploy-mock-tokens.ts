@@ -113,7 +113,6 @@ task('deploy-mock-tokens', '')
     address: ricodai_addr
   }, false)
 
-  debug('deploy pools')
   let tokensPlusWeth = JSON.parse(JSON.stringify(tokens))
   if (args.weth) tokensPlusWeth.weth.gem = args.weth
   for (let tokenname in tokensPlusWeth) {
@@ -124,30 +123,12 @@ task('deploy-mock-tokens', '')
       b32(tokenname), b32(tokenname.toUpperCase())
     )
 
-    ;[t0, t1] = [token_addr, dai_addr]
-    let sqrtPriceX96 = '0x20' + '0'.repeat(96/4) // weth/dai price 1024
-    if (hre.ethers.BigNumber.from(t1).lt(hre.ethers.BigNumber.from(t0))) {
-        sqrtPriceX96 = '0x08' + '0'.repeat(96/4-2) // 1/1024
-    }
-
-    const tokendai_addr = await createAndInitializePoolIfNecessary(
-        uni_dapp.uniswapV3Factory, t0, t1, 500, sqrtPriceX96
-    )
-
     await pb.packObject({
       objectname: tokenname,
       typename: 'Gem',
       artifact: gem_artifact,
       address: token_addr
     }, false)
-
-    await pb.packObject({
-      objectname: tokenname+'dai',
-      typename: 'UniswapV3Pool',
-      artifact: pool_artifact,
-      address: tokendai_addr
-    }, false)
-
   }
 
 

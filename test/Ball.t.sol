@@ -21,6 +21,7 @@ import { ERC20Hook } from '../src/hook/ERC20hook.sol';
 import { Vox } from "../src/vox.sol";
 import { Bank } from '../src/bank.sol';
 import { BankDiamond } from '../src/diamond.sol';
+import {Ploker} from '../src/test/Ploker.sol';
 
 contract BallTest is Test, UniSetUp, Math {
     bytes32 internal constant WILK = "weth";
@@ -29,10 +30,11 @@ contract BallTest is Test, UniSetUp, Math {
     address internal constant DAI   = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
     address internal constant VAULT = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;
     address internal constant WETH  = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
-    address internal constant WETH_DAI_POOL  = 0xC2e9F25Be6257c210d7Adf0D4Cd6E3E881ba25f8;
+    address internal constant WETH_USD_AGG  = 0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419;
     bytes32 internal constant WETH_ILK = "weth";
     bytes32 internal constant WETH_DAI_TAG = "weth:dai";
     bytes32 internal constant WETH_RICO_TAG = "weth:rico";
+    bytes32 internal constant WETH_USD_TAG = "weth:usd";
     bytes32 internal constant RICO_DAI_TAG = "rico:dai";
     bytes32 internal constant DAI_RICO_TAG = "dai:rico";
     bytes32 internal constant XAU_USD_TAG = "xau:usd";
@@ -42,6 +44,7 @@ contract BallTest is Test, UniSetUp, Math {
     bytes32 internal constant RICO_REF_TAG = "rico:ref";
     bytes32 constant public RICO_RISK_TAG  = "rico:risk";
     bytes32 constant public RISK_RICO_TAG  = "risk:rico";
+    Ploker ploker;
     ChainlinkAdapter cladapt;
     UniswapV3Adapter uniadapt;
     Divider divider;
@@ -81,13 +84,25 @@ contract BallTest is Test, UniSetUp, Math {
 
     function advance_chainlink() internal {
         // chainlink adapter advances from chainlink time
-        // prank ttl to uint max
+        // a ploke will overwrite this back to chain time
+        vm.startPrank(address(cladapt));
         (bytes32 v,) = fb.pull(address(cladapt), XAU_USD_TAG);
-        vm.prank(address(cladapt));
-        fb.push(XAU_USD_TAG, v, type(uint).max);
+        fb.push(XAU_USD_TAG,  v, block.timestamp + 100_000);
         (v,) = fb.pull(address(cladapt), DAI_USD_TAG);
-        vm.prank(address(cladapt));
-        fb.push(DAI_USD_TAG, v, type(uint).max);
+        fb.push(DAI_USD_TAG,  v, block.timestamp + 100_000);
+        (v,) = fb.pull(address(cladapt), WETH_USD_TAG);
+        fb.push(WETH_USD_TAG, v, block.timestamp + 100_000);
+        vm.stopPrank();
+    }
+
+    function advance_uni() internal {
+        // uni adapter advances from chainlink time
+        vm.startPrank(address(uniadapt));
+        (bytes32 v,) = fb.pull(address(uniadapt), RICO_DAI_TAG);
+        fb.push(RICO_DAI_TAG,  v, block.timestamp + 100_000);
+        (v,) = fb.pull(address(uniadapt), RICO_RISK_TAG);
+        fb.push(RICO_RISK_TAG, v, block.timestamp + 100_000);
+        vm.stopPrank();
     }
 
     function _ink(bytes32 ilk, address usr) internal returns (uint) {
@@ -95,16 +110,18 @@ contract BallTest is Test, UniSetUp, Math {
     }
 
     function look_poke() internal {
-        advance_chainlink();
-        uniadapt.look(WETH_DAI_TAG);
-        uniadapt.look(RICO_DAI_TAG);
-        uniadapt.look(RICO_RISK_TAG);
+        ploker.ploke(RICO_RISK_TAG);
+        ploker.ploke(RISK_RICO_TAG);
 
+        cladapt.look(WETH_USD_TAG);
+        cladapt.look(DAI_USD_TAG);
+        cladapt.look(XAU_USD_TAG);
+        uniadapt.look(RICO_DAI_TAG);
+        advance_chainlink();
+        advance_uni();
 
         mdn.poke(WETH_RICO_TAG);
         mdn.poke(RICO_REF_TAG);
-        mdn.poke(RICO_RISK_TAG);
-        mdn.poke(RISK_RICO_TAG);
     }
 
     function make_uniwrapper() internal returns (address deployed) {
@@ -138,7 +155,7 @@ contract BallTest is Test, UniSetUp, Math {
         ips[0] = Ball.IlkParams(
             'weth',
             WETH,
-            WETH_DAI_POOL,
+            WETH_USD_AGG,
             RAY, // chop
             DUST, // dust
             1000000001546067052200000000, // fee
@@ -190,7 +207,7 @@ contract BallTest is Test, UniSetUp, Math {
         BankDiamond(bank).acceptOwnership();
 
         uint usedgas     = gas - gasleft();
-        uint expectedgas = 23832130;
+        uint expectedgas = 24294719;
         if (usedgas < expectedgas) {
             console.log("ball saved %s gas...currently %s", expectedgas - usedgas, usedgas);
         }
@@ -206,11 +223,13 @@ contract BallTest is Test, UniSetUp, Math {
         uniadapt = ball.uniadapt();
         divider = ball.divider();
         mdn = ball.mdn();
-
+        ploker = ball.ploker();
         skip(40000);
         cladapt.look(XAU_USD_TAG);
         cladapt.look(DAI_USD_TAG);
-        uniadapt.look(WETH_DAI_TAG);
+        cladapt.look(WETH_USD_TAG);
+        uniadapt.look(RICO_DAI_TAG);
+        uniadapt.look(RICO_RISK_TAG);
         look_poke();
         skip(BANKYEAR / 2);
 
@@ -219,13 +238,9 @@ contract BallTest is Test, UniSetUp, Math {
         Gem(DAI).transfer(address(this), 500 * WAD);
         Gem(WETH).approve(bank, type(uint).max);
         WethLike(WETH).deposit{value: wethamt * 100}();
-        // try to frob 1 weth for at least $1k...shouldn't work because no look
-        vm.expectRevert(Vat.ErrNotSafe.selector);
-        Vat(bank).frob(WETH_ILK, me, abi.encodePacked(wethamt), dart);
 
         cladapt.look(XAU_USD_TAG);
         cladapt.look(DAI_USD_TAG);
-        uniadapt.look(WETH_DAI_TAG);
 
         look_poke();
 
@@ -268,6 +283,7 @@ contract BallTest is Test, UniSetUp, Math {
     }
 
     function test_basic() public {
+        ploker.ploke(RICO_REF_TAG);
         (bytes32 price, uint ttl) = fb.pull(address(mdn), RICO_REF_TAG);
         uint vox_price = rmul(uint(price), Vox(bank).amp());
         assertGt(uint(vox_price), INIT_PAR * 99 / 100);
@@ -278,7 +294,7 @@ contract BallTest is Test, UniSetUp, Math {
         assertLt(uint(price) / RAY, 2000 * RAY / INIT_PAR);
     }
 
-    function test_ball() public {
+    function test_ball_1() public {
         Vat(bank).frob(WETH_ILK, me, abi.encodePacked(wethamt), dart);
         vm.expectRevert(Vat.ErrNotSafe.selector);
         Vat(bank).frob(WETH_ILK, me, abi.encodePacked(int(0)), dart);

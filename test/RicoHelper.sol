@@ -52,7 +52,7 @@ contract Guy {
 abstract contract RicoSetUp is UniSetUp, Math, Test {
     address constant public DAI  = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
     address constant public WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
-    address constant public WETH_DAI_POOL = 0xC2e9F25Be6257c210d7Adf0D4Cd6E3E881ba25f8;
+    address constant public WETH_USD_AGG  = 0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419;
     bytes32 constant public WETH_RICO_TAG = "weth:rico";
     bytes32 constant public RICO_RISK_TAG = "rico:risk";
     bytes32 constant public RISK_RICO_TAG = "risk:rico";
@@ -196,7 +196,7 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
         ips[0] = Ball.IlkParams(
             'weth',
             WETH,
-            WETH_DAI_POOL,
+            WETH_USD_AGG,
             RAY, // chop
             90 * RAD, // dust
             1000000001546067052200000000, // fee
@@ -250,17 +250,11 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
         // Gem(risk).ward(address(self), false);
         //////////
 
-        //vat  = ball.vat();
-        //vow  = ball.vow();
-        //vox  = ball.vox();
         hook = ball.hook();
         nfthook = ball.nfthook();
         mdn  = ball.mdn();
         divider = ball.divider();
 
-        //avat  = payable(address(vat));
-        //avow  = payable(address(vow));
-        //avox  = payable(address(vox));
         ahook = payable(address(hook));
 
         rico.approve(bank, type(uint256).max);

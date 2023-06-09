@@ -28,6 +28,7 @@ import {Diamond, IDiamondCuttable} from '../lib/solidstate-solidity/contracts/pr
 contract Ball is Math, Ward {
     bytes32 internal constant RICO_DAI_TAG = "rico:dai";
     bytes32 internal constant DAI_RICO_TAG = "dai:rico";
+    bytes32 internal constant RICO_USD_TAG = "rico:usd";
     bytes32 internal constant XAU_USD_TAG = "xau:usd";
     bytes32 internal constant DAI_USD_TAG = "dai:usd";
     bytes32 internal constant RICO_XAU_TAG = "rico:xau";
@@ -53,7 +54,7 @@ contract Ball is Math, Ward {
     struct IlkParams {
         bytes32 ilk;
         address gem;
-        address pool;
+        address gemusdagg;
         uint256 chop;
         uint256 dust;
         uint256 fee;
@@ -96,6 +97,7 @@ contract Ball is Math, Ward {
     address public rico;
     address public risk;
     address public dai;
+    address public daiusdagg;
 
     Ploker public ploker;
 
@@ -127,8 +129,9 @@ contract Ball is Math, Ward {
         bank = args.bank;
         rico = args.rico;
         risk = args.risk;
-        dai = args.DAI;
-        feedbase = args.feedbase;
+        dai  = args.DAI;
+        feedbase  = args.feedbase;
+        daiusdagg = args.DAI_USD_AGG;
 
         Diamond(bank).acceptOwnership();
         singleCut(address(file), File.file.selector);
@@ -197,7 +200,7 @@ contract Ball is Math, Ward {
         divider.setConfig(DAI_RICO_TAG, Divider.Config(sources, tags, scales));
 
         //
-        // rico/ref
+        // rico/usd, rico/ref
         //
         cladapt.setConfig(
             XAU_USD_TAG, ChainlinkAdapter.Config(args.XAU_USD_AGG, args.xauusdttl, RAY)
@@ -205,21 +208,19 @@ contract Ball is Math, Ward {
         cladapt.setConfig(
             DAI_USD_TAG, ChainlinkAdapter.Config(args.DAI_USD_AGG, args.daiusdttl, RAY)
         );
-        {
-            address[] memory src3 = new address[](3);
-            bytes32[] memory tag3 = new bytes32[](3);
-            uint256[] memory scl3 = new uint256[](3);
-            src3[0] = address(cladapt); tag3[0] = DAI_USD_TAG;  scl3[0] = RAY;
-            src3[1] = address(divider); tag3[1] = DAI_RICO_TAG; scl3[1] = RAY;
-            src3[2] = address(cladapt); tag3[2] = XAU_USD_TAG;  scl3[2] = RAY;
-            divider.setConfig(RICO_XAU_TAG, Divider.Config(src3, tag3, scl3));
-        }
-        Medianizer.Config memory mdnconf =
-            Medianizer.Config(new address[](1), new bytes32[](1), 0);
-        mdnconf.srcs[0] = address(divider);
-        mdnconf.tags[0] = RICO_XAU_TAG;
-        mdnconf.quorum  = 1;
+
+        sources[0] = address(cladapt); tags[0] = DAI_USD_TAG;
+        sources[1] = address(divider); tags[1] = DAI_RICO_TAG;
+        divider.setConfig(RICO_USD_TAG, Divider.Config(sources, tags, scales));
+
+        sources[0] = address(divider); tags[0] = RICO_USD_TAG;
+        sources[1] = address(cladapt); tags[1] = XAU_USD_TAG;
+        divider.setConfig(RICO_XAU_TAG, Divider.Config(sources, tags, scales));
+
+        Medianizer.Config memory mdnconf = Medianizer.Config(new address[](1), new bytes32[](1), 1);
+        mdnconf.srcs[0] = address(divider); mdnconf.tags[0] = RICO_XAU_TAG;
         mdn.setConfig(RICO_REF_TAG, mdnconf);
+
         // need four plokers: rico/ref, rico/risk, risk/rico, collateral/rico
         Ploker.Config memory plokerconf = Ploker.Config(
             new address[](3), new bytes32[](3), new address[](1), new bytes32[](1)
@@ -241,19 +242,19 @@ contract Ball is Math, Ward {
         sources[0] = address(this);     tags[0] = bytes32("ONE");
         sources[1] = address(uniadapt); tags[1] = RICO_RISK_TAG;
         divider.setConfig(RISK_RICO_TAG, Divider.Config(sources, tags, scales));
-        mdnconf.srcs[0] = address(uniadapt);
-        mdnconf.tags[0] = RICO_RISK_TAG;
-        mdn.setConfig(RICO_RISK_TAG, mdnconf);
-        mdnconf.srcs[0] = address(divider);
-        mdnconf.tags[0] = RISK_RICO_TAG;
+        mdnconf.srcs[0] = address(divider); mdnconf.tags[0] = RISK_RICO_TAG;
         mdn.setConfig(RISK_RICO_TAG, mdnconf);
+        mdnconf.srcs[0] = address(uniadapt); mdnconf.tags[0] = RICO_RISK_TAG;
+        mdn.setConfig(RICO_RISK_TAG, mdnconf);
+
         plokerconf = Ploker.Config(
-            new address[](1), new bytes32[](1), new address[](0), new bytes32[](0)
+            new address[](1), new bytes32[](1), new address[](1), new bytes32[](1)
         );
         plokerconf.adapters[0] = address(uniadapt); plokerconf.adaptertags[0] = RICO_RISK_TAG;
-        ploker.setConfig(RICO_RISK_TAG, plokerconf);
+        plokerconf.combinators[0] = address(mdn); plokerconf.combinatortags[0] = RISK_RICO_TAG;
         ploker.setConfig(RISK_RICO_TAG, plokerconf);
-
+        plokerconf.combinators[0] = address(mdn); plokerconf.combinatortags[0] = RICO_RISK_TAG;
+        ploker.setConfig(RICO_RISK_TAG, plokerconf);
 
         cladapt.look(XAU_USD_TAG);
         (bytes32 ref,) = Feedbase(feedbase).pull(address(cladapt), XAU_USD_TAG);
@@ -276,16 +277,11 @@ contract Ball is Math, Ward {
 
     function makeilk(IlkParams calldata ilkparams) _ward_ public {
         bytes32 ilk = ilkparams.ilk;
-        bytes32 ilkrico = concat(ilk, ':rico');
+        bytes32 gemricotag = concat(ilk, ':rico');
         Vat(bank).init(ilk, address(hook));
-        Medianizer.Config memory mdnconf =
-            Medianizer.Config(new address[](1), new bytes32[](1), 0);
-        mdnconf.srcs[0] = address(divider);
-        mdnconf.tags[0] = ilkrico;
-        mdn.setConfig(ilkrico, mdnconf);
         Vat(bank).filhi(ilk, 'gem', ilk, bytes32(bytes20(ilkparams.gem)));
         Vat(bank).filhi(ilk, 'fsrc', ilk, bytes32(bytes20(address(mdn))));
-        Vat(bank).filhi(ilk, 'ftag', ilk, ilkrico);
+        Vat(bank).filhi(ilk, 'ftag', ilk, gemricotag);
         Vat(bank).filhi(ilk, 'pass', ilk, bytes32(uint(1)));
         Vat(bank).filk(ilk, 'chop', ilkparams.chop);
         Vat(bank).filk(ilk, 'dust', ilkparams.dust);
@@ -298,37 +294,34 @@ contract Ball is Math, Ward {
         uint256[] memory scales  = new uint256[](2);
         // uni adapter returns a ray, and both ink and sqrtPriceX96 ignore decimals, so scale always a RAY
         scales[0] = scales[1] = RAY;
-        if (ilkparams.gem == dai) {
-            sources[0] = address(this); tags[0] = bytes32("ONE");
+        bytes32 gemusdtag = concat(ilk, ':usd');
 
-            // not using second uni adapter here, it's just dai/dai
+        Medianizer.Config memory mdnconf = Medianizer.Config(new address[](1), new bytes32[](1), 1);
+        mdnconf.srcs[0] = address(divider); mdnconf.tags[0] = gemricotag;
+        mdn.setConfig(gemricotag, mdnconf);
+
+        if (ilkparams.gem == dai) {
             Ploker.Config memory plokerconf = Ploker.Config(
                 new address[](1), new bytes32[](1), new address[](1), new bytes32[](1)
             );
             plokerconf.adapters[0] = address(uniadapt); plokerconf.adaptertags[0] = RICO_DAI_TAG;
-            plokerconf.combinators[0] = address(mdn); plokerconf.combinatortags[0] = ilkrico;
-            ploker.setConfig(ilkrico, plokerconf);
+            plokerconf.combinators[0] = address(mdn); plokerconf.combinatortags[0] = gemricotag;
+            ploker.setConfig(gemricotag, plokerconf);
         } else {
-            bytes32 tag = concat(ilk, ':dai');
-            uniadapt.setConfig(
-                tag,
-                UniswapV3Adapter.Config(
-                    ilkparams.pool, ilkparams.range, ilkparams.ttl, ilkparams.gem > dai
-                )
-            );
-            sources[0] = address(uniadapt); tags[0] = tag;
+            cladapt.setConfig(gemusdtag, ChainlinkAdapter.Config(ilkparams.gemusdagg, ilkparams.ttl, RAY));
+            sources[0] = address(cladapt); tags[0] = gemusdtag;
+            sources[1] = address(divider); tags[1] = RICO_USD_TAG;
+            divider.setConfig(gemricotag, Divider.Config(sources, tags, scales));
 
             Ploker.Config memory plokerconf = Ploker.Config(
-                new address[](2), new bytes32[](2), new address[](1), new bytes32[](1)
+                new address[](3), new bytes32[](3), new address[](1), new bytes32[](1)
             );
-            plokerconf.adapters[0] = address(uniadapt); plokerconf.adaptertags[0] = tag;
-            plokerconf.adapters[1] = address(uniadapt); plokerconf.adaptertags[1] = RICO_DAI_TAG;
-            plokerconf.combinators[0] = address(mdn); plokerconf.combinatortags[0] = ilkrico;
-            ploker.setConfig(ilkrico, plokerconf);
+            plokerconf.adapters[0] = address(uniadapt); plokerconf.adaptertags[0] = RICO_DAI_TAG;
+            plokerconf.adapters[1] = address(cladapt); plokerconf.adaptertags[1] = gemusdtag;
+            plokerconf.adapters[2] = address(cladapt); plokerconf.adaptertags[2] = DAI_USD_TAG;
+            plokerconf.combinators[0] = address(mdn); plokerconf.combinatortags[0] = gemricotag;
+            ploker.setConfig(gemricotag, plokerconf);
         }
-
-        sources[1] = address(uniadapt); tags[1] = RICO_DAI_TAG;
-        divider.setConfig(ilkrico, Divider.Config(sources, tags, scales));
     }
 
     function makeuni(UniParams calldata ups) _ward_ public {

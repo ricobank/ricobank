@@ -5,8 +5,7 @@ const dpack = require('@etherpacks/dpack')
 
 task('deploy-mock-dependencies', '')
 .setAction(async (args, hre) => {
-  let weth_pack
-  let weth_addr
+  let weth_addr  // todo never set
   debug('deploying dependencies...')
   const uni_pack = require(`../lib/uniswapv3/pack/uniswapv3_${args.netname}.dpack.json`)
   uni_pack.network = hre.network.name

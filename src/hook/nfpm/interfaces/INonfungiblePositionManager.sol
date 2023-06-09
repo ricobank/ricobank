@@ -4,7 +4,6 @@ pragma solidity >=0.7.0;
 interface IERC721 {
     function transfer(address, uint) external;
     function transferFrom(address, address, uint) external;
-    function approve(address, uint) external;
 }
 interface INonfungiblePositionManager is IERC721 {
     function positions(uint256 tokenId) external view returns (

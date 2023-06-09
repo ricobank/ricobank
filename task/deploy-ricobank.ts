@@ -32,13 +32,13 @@ task('deploy-ricobank', '')
 
     const agg_artifact = require('../artifacts/src/test/MockChainlinkAggregator.sol/MockChainlinkAggregator.json')
     const agg_type = hre.ethers.ContractFactory.fromSolidity(agg_artifact, ali)
-    const agg_daiusd = await agg_type.deploy(deps.objects.feedbase.address, ali.address, b32('daiusd'), 8, {gasLimit: GASLIMIT})
-    const agg_xauusd = await agg_type.deploy(deps.objects.feedbase.address, ali.address, b32('xauusd'), 8, {gasLimit: GASLIMIT})
+    const agg_daiusd = await agg_type.deploy(deps.objects.feedbase.address, ali.address, b32('dai:usd'), 8, {gasLimit: GASLIMIT})
+    const agg_xauusd = await agg_type.deploy(deps.objects.feedbase.address, ali.address, b32('xau:usd'), 8, {gasLimit: GASLIMIT})
     let fb = await hre.ethers.getContractAt('Feedbase', deps.objects.feedbase.address);
     let timestamp = (await hre.ethers.provider.getBlock('latest')).timestamp
     const bn2b32 = (bn) => hre.ethers.utils.hexZeroPad(bn.toHexString(), 32)
-    await send(fb.push, b32('daiusd'), bn2b32(hre.ethers.BigNumber.from('100000000')), timestamp * 2);
-    await send(fb.push, b32('xauusd'), bn2b32(hre.ethers.BigNumber.from('190000000000')), timestamp * 2);
+    await send(fb.push, b32('dai:usd'), bn2b32(hre.ethers.BigNumber.from('100000000')), timestamp * 2);
+    await send(fb.push, b32('xau:usd'), bn2b32(hre.ethers.BigNumber.from('190000000000')), timestamp * 2);
 
     const diamond_artifact = require('../artifacts/src/diamond.sol/BankDiamond.json')
     diamond_artifact.abi = diamond_artifact.abi.filter(
@@ -89,16 +89,11 @@ task('deploy-ricobank', '')
     let ilks = []
     const tokens = args.tokens ? require(args.tokens)[args.netname] : {}
     for (let token in tokens) {
-        let pool = hre.ethers.constants.AddressZero
-        if (token !== 'dai') {
-            pool = deps.objects[token + 'dai'].address
-        }
-
         const params = tokens[token];
-        const ilk = {
+        let ilk = {
             ilk: b32(params.ilk),
             gem: deps.objects[token].address,
-            pool: pool,
+            gemusdagg: params.gemusdagg,
             chop: ray(params.chop),
             dust: rad(params.dust),
             fee: ray(params.fee),
@@ -106,6 +101,12 @@ task('deploy-ricobank', '')
             liqr: ray(params.liqr),
             ttl: params.ttl,
             range: params.range
+        }
+        // create mock chainlink feed with price of 2000
+        if (!params.gemusdagg) {
+            await send(fb.push, b32(token + ':usd'), bn2b32(hre.ethers.BigNumber.from('200000000000')), timestamp * 2);
+            const agg_tokenusd = await agg_type.deploy(deps.objects.feedbase.address, ali.address, b32(token + ':usd'), 8, {gasLimit: GASLIMIT})
+            ilk.gemusdagg = agg_tokenusd.address;
         }
         ilks.push(ilk)
     }
