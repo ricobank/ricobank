@@ -177,7 +177,7 @@ contract Vat is Bank {
     }
 
     function grab(bytes32 i, address u, address k, uint rush, uint cut)
-        _ward_ _flog_ external
+        _ward_ _flog_ external returns (bytes memory)
     {
         VatStorage storage vs = getVatStorage();
         // liquidate the urn
@@ -196,8 +196,8 @@ contract Vat is Bank {
         vs.sin += dtab;
 
         // ink auction
-        hookcall(i, abi.encodeWithSelector(
-            Hook.grabhook.selector, i, u, art, bill, k, rush, cut
+        return hookcall(i, abi.encodeWithSelector(
+            Hook.grabhook.selector, i, u, bill, k, rush, cut
         ));
     }
 
