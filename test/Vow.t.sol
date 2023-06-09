@@ -129,12 +129,7 @@ contract VowTest is Test, RicoSetUp {
         rico_mint(expected, false);
         rico.transfer(address(guy), expected);
         guy.approve(address(rico), bank, expected);
-        bytes memory data = guy.bail(gilk, self);
-
-        uint earn = uint(bytes32(abi.decode(data, (bytes))));
-
-        // check returned bytes represent quantity of tokens received
-        assertEq(earn, WAD);
+        guy.bail(gilk, self);
 
         // guy was given exact amount, check all was spent for all gold deposit
         assertEq(rico.balanceOf(address(guy)), uint(0));
@@ -181,7 +176,7 @@ contract VowTest is Test, RicoSetUp {
         rico_mint(100 * WAD, false);
         uint gas = gasleft();
         Vow(bank).keep(gilks);
-        check_gas(gas, 132678);
+        check_gas(gas, 132677);
     }
 
     function test_keep_surplus_gas() public {
@@ -204,7 +199,7 @@ contract VowTest is Test, RicoSetUp {
         feedpush(grtag, bytes32(0), block.timestamp + 1000);
         uint gas = gasleft();
         Vow(bank).bail(gilk, self);
-        check_gas(gas, 66430);
+        check_gas(gas, 64185);
     }
 
     // goldusd, par, and liqr all = 1 after setup
@@ -370,8 +365,8 @@ contract FrobHook is Hook {
         return int(uint(bytes32(dink[:32]))) >= 0 && dart <= 0; 
     }
     function grabhook(
-        bytes32 i, address u, uint bill, address keeper, uint rush, uint cut
-    ) external returns (bytes memory) {}
+        bytes32 i, address u, uint art, uint bill, address keeper, uint rush, uint cut
+    ) external {}
     function safehook(
         bytes32 , address
     ) external pure returns (uint, uint){return(uint(10 ** 18 * 10 ** 27), type(uint256).max);}
@@ -384,8 +379,8 @@ contract ZeroHook is Hook {
         address sender, bytes32 i, address u, bytes calldata dink, int dart
     ) external returns (bool safer) {}
     function grabhook(
-        bytes32 i, address u, uint bill, address keeper, uint rush, uint cut
-    ) external returns (bytes memory) {}
+        bytes32 i, address u, uint art, uint bill, address keeper, uint rush, uint cut
+    ) external {}
     function safehook(
         bytes32 , address
     ) external pure returns (uint, uint){return(uint(0), type(uint256).max);}

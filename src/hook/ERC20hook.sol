@@ -78,11 +78,12 @@ contract ERC20Hook is Hook, Bank {
     function grabhook(
         bytes32 i,
         address u,
+        uint256, // art
         uint256 bill,
         address keeper,
         uint256 rush,
         uint256 cut
-    ) _flog_ external returns (bytes memory) {
+    ) _flog_ external {
         ERC20HookStorage storage hs = getStorage();
         // try to take enough ink to cover the debt
         // cut is RAD, rush is RAY, so bank earns a WAD
@@ -99,7 +100,6 @@ contract ERC20Hook is Hook, Bank {
         Gem rico = getBankStorage().rico;
         if (!rico.transferFrom(keeper, address(this), earn)) revert ErrTransfer();
         if (!gem.transfer(keeper, sell)) revert ErrTransfer();
-        return abi.encodePacked(sell);
     }
 
     function safehook(bytes32 i, address u) view public returns (uint, uint) {

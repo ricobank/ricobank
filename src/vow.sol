@@ -84,11 +84,11 @@ contract Vow is Bank {
         if (!Gem(hag).transfer(msg.sender, ham)) revert ErrTransfer();
     }
 
-    function bail(bytes32 i, address u) _flog_ external returns (bytes memory) {
+    function bail(bytes32 i, address u) _flog_ external {
         Vat(address(this)).drip(i);
         (Vat.Spot spot, uint rush, uint cut) = Vat(address(this)).safe(i, u);
         if (spot != Vat.Spot.Sunk) revert ErrSafeBail();
-        return Vat(address(this)).grab(i, u, msg.sender, rush, cut);
+        Vat(address(this)).grab(i, u, msg.sender, rush, cut);
     }
 
 }
