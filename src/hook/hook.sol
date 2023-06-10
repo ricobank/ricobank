@@ -7,8 +7,8 @@ interface Hook {
         address sender, bytes32 i, address u, bytes calldata dink, int dart
     ) external returns (bool safer);
     function grabhook(
-        bytes32 i, address u, uint art, uint bill, address keeper, uint rush, uint cut
-    ) external;
+        bytes32 i, address u, uint bill, address keeper, uint rush, uint cut
+    ) external returns (bytes memory);
     function safehook(
         bytes32 i, address u
     ) view external returns (uint, uint);

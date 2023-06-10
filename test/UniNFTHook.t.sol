@@ -224,7 +224,7 @@ contract NFTHookTest is Test, RicoSetUp {
 
         uint gas = gasleft();
         guy.bail(':uninft', self);
-        check_gas(gas, 265132);
+        check_gas(gas, 269218);
 
         assertLt(rico.balanceOf(address(guy)), guy_rico_before);
         assertEq(nfpm.ownerOf(goldwethtokid), address(guy));
@@ -304,7 +304,18 @@ contract NFTHookTest is Test, RicoSetUp {
         rico_mint(wad_cost, true);
         rico.approve(bank, type(uint).max);
 
-        Vow(bank).bail(':uninft', self);
+        bytes memory res = Vow(bank).bail(':uninft', self);
+
+        bytes memory ids = abi.decode(res, (bytes));
+        uint256[] memory tok_ids = new uint256[](ids.length / 32);
+        // convert bytes to uints by putting bytes mem into uint array
+        for (uint i = 32; i <= ids.length; i += 32) {
+            assembly { mstore(add(tok_ids, i), mload(add(ids, i))) }
+        }
+
+        // assert result returned from bail gives all tokens bought
+        assertEq(tok_ids[0], goldwethtokid);
+        assertEq(tok_ids[1], golddaitokid);
     }
 
     function test_dir_zero() public {

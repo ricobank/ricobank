@@ -115,12 +115,11 @@ contract UniNFTHook is Hook, Bank {
     function grabhook(
         bytes32 ilk,
         address urn,
-        uint256, // art
         uint256 bill,
         address keeper,
         uint256 rush,
         uint256 cut
-    ) _flog_ external {
+    ) _flog_ external returns (bytes memory) {
         UniNFTHookStorage storage hs = getStorage();
         uint[] memory ids = hs.inks[ilk][urn];
         delete hs.inks[ilk][urn];
@@ -139,6 +138,7 @@ contract UniNFTHook is Hook, Bank {
             unchecked{ idx++; }
             if (idx >= len) break;
         }
+        return abi.encodePacked(ids);
     }
 
     // respective amounts of token0 and token1 that this position

@@ -55,10 +55,10 @@ contract VatTest is Test, RicoSetUp {
         assertGt(gold.balanceOf(bank), 0);
         uint gas = gasleft();
         Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(WAD));
-        check_gas(gas, 208452);
+        check_gas(gas, 208474);
         gas = gasleft();
         Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(WAD));
-        check_gas(gas, 30237);
+        check_gas(gas, 30259);
     }
 
     function test_grab_gas() public {
@@ -66,7 +66,7 @@ contract VatTest is Test, RicoSetUp {
         Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(WAD));
         uint gas = gasleft();
         Vat(bank).grab(gilk, self, self, no_rush, NO_CUT);
-        check_gas(gas, 74388);
+        check_gas(gas, 75568);
     }
 
     function test_heal_gas() public {
@@ -77,7 +77,7 @@ contract VatTest is Test, RicoSetUp {
 
         uint gas = gasleft();
         Vat(bank).heal(1);
-        check_gas(gas, 10393);
+        check_gas(gas, 10396);
     }
 
     function test_drip_gas() public {
@@ -822,7 +822,7 @@ contract VatTest is Test, RicoSetUp {
         // check that grabhook called
         bytes memory hookdata = abi.encodeCall(
             zhook.grabhook,
-            (gilk, self, WAD, WAD, self, no_rush, NO_CUT)
+            (gilk, self, WAD, self, no_rush, NO_CUT)
         );
         vm.expectCall(address(zhook), hookdata);
         Vat(bank).grab(gilk, self, self, no_rush, NO_CUT);
@@ -1038,8 +1038,8 @@ contract OnlyInkHook is Hook {
         return int(uint(bytes32(dink[:32]))) >= 0; 
     }
     function grabhook(
-        bytes32 i, address u, uint art, uint bill, address keeper, uint rush, uint cut
-    ) external {}
+        bytes32 i, address u, uint bill, address keeper, uint rush, uint cut
+    ) external returns (bytes memory) {}
     function safehook(
         bytes32, address
     ) pure external returns (uint, uint){return(uint(10 ** 18 * 10 ** 27), type(uint256).max);}
@@ -1055,8 +1055,8 @@ contract FrobHook is Hook {
         return int(uint(bytes32(dink[:32]))) >= 0 && dart <= 0; 
     }
     function grabhook(
-        bytes32 i, address u, uint art, uint bill, address keeper, uint rush, uint cut
-    ) external {}
+        bytes32 i, address u, uint bill, address keeper, uint rush, uint cut
+    ) external returns (bytes memory) {}
     function safehook(
         bytes32, address
     ) pure external returns (uint, uint){return(uint(10 ** 18 * 10 ** 27), type(uint256).max);}
@@ -1069,8 +1069,8 @@ contract ZeroHook is Hook {
         address sender, bytes32 i, address u, bytes calldata dink, int dart
     ) external returns (bool safer) {}
     function grabhook(
-        bytes32 i, address u, uint art, uint bill, address keeper, uint rush, uint cut
-    ) external {}
+        bytes32 i, address u, uint bill, address keeper, uint rush, uint cut
+    ) external returns (bytes memory) {}
     function safehook(
         bytes32, address
     ) pure external returns (uint, uint){return(uint(0), type(uint256).max);}

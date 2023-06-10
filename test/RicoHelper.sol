@@ -41,8 +41,8 @@ contract Guy {
     function transfer(address gem, address dst, uint amt) public {
         Gem(gem).transfer(dst, amt);
     }
-    function bail(bytes32 i, address u) public {
-        Vow(bank).bail(i, u);
+    function bail(bytes32 i, address u) public returns (bytes memory) {
+        return Vow(bank).bail(i, u);
     }
     function keep(bytes32[] calldata ilks) public {
         Vow(bank).keep(ilks);
