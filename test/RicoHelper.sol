@@ -155,7 +155,7 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
         uint256[] memory scales  = new uint256[](2);
         sources[0] = address(this); tags[0] = bytes32(tag);   scales[0] = RAY;
         sources[1] = address(this); tags[1] = bytes32("ONE"); scales[1] = RAY;
-        divider.setConfig(tag, Divider.Config(sources, tags, scales));
+        divider.setConfig(tag, Divider.Config(sources, tags));
         // todo quorum?
         Medianizer.Config memory mdnconf =
             Medianizer.Config(new address[](1), new bytes32[](1), 0);

@@ -122,7 +122,7 @@ contract Ball is Math, Ward {
         mdn = new Medianizer(args.feedbase);
         uniadapt = new UniswapV3Adapter(Feedbase(args.feedbase), IUniWrapper(args.uniwrapper));
         cladapt = new ChainlinkAdapter(args.feedbase);
-        divider = new Divider(args.feedbase, RAY);
+        divider = new Divider(args.feedbase);
     }
 
     function setup(BallArgs memory args) _ward_ public payable {
@@ -192,12 +192,10 @@ contract Ball is Math, Ward {
         );
         address[] memory sources = new address[](2);
         bytes32[] memory tags    = new bytes32[](2);
-        uint256[] memory scales  = new uint256[](2);
-        scales[0] = scales[1] = RAY;
         Feedbase(feedbase).push(bytes32("ONE"), bytes32(RAY), type(uint).max);
         sources[0] = address(this);     tags[0] = bytes32("ONE");
         sources[1] = address(uniadapt); tags[1] = RICO_DAI_TAG;
-        divider.setConfig(DAI_RICO_TAG, Divider.Config(sources, tags, scales));
+        divider.setConfig(DAI_RICO_TAG, Divider.Config(sources, tags));
 
         //
         // rico/usd, rico/ref
@@ -211,11 +209,11 @@ contract Ball is Math, Ward {
 
         sources[0] = address(cladapt); tags[0] = DAI_USD_TAG;
         sources[1] = address(divider); tags[1] = DAI_RICO_TAG;
-        divider.setConfig(RICO_USD_TAG, Divider.Config(sources, tags, scales));
+        divider.setConfig(RICO_USD_TAG, Divider.Config(sources, tags));
 
         sources[0] = address(divider); tags[0] = RICO_USD_TAG;
         sources[1] = address(cladapt); tags[1] = XAU_USD_TAG;
-        divider.setConfig(RICO_XAU_TAG, Divider.Config(sources, tags, scales));
+        divider.setConfig(RICO_XAU_TAG, Divider.Config(sources, tags));
 
         Medianizer.Config memory mdnconf = Medianizer.Config(new address[](1), new bytes32[](1), 1);
         mdnconf.srcs[0] = address(divider); mdnconf.tags[0] = RICO_XAU_TAG;
@@ -241,7 +239,7 @@ contract Ball is Math, Ward {
         );
         sources[0] = address(this);     tags[0] = bytes32("ONE");
         sources[1] = address(uniadapt); tags[1] = RICO_RISK_TAG;
-        divider.setConfig(RISK_RICO_TAG, Divider.Config(sources, tags, scales));
+        divider.setConfig(RISK_RICO_TAG, Divider.Config(sources, tags));
         mdnconf.srcs[0] = address(divider); mdnconf.tags[0] = RISK_RICO_TAG;
         mdn.setConfig(RISK_RICO_TAG, mdnconf);
         mdnconf.srcs[0] = address(uniadapt); mdnconf.tags[0] = RICO_RISK_TAG;
@@ -291,9 +289,7 @@ contract Ball is Math, Ward {
 
         address[] memory sources = new address[](2);
         bytes32[] memory tags    = new bytes32[](2);
-        uint256[] memory scales  = new uint256[](2);
         // uni adapter returns a ray, and both ink and sqrtPriceX96 ignore decimals, so scale always a RAY
-        scales[0] = scales[1] = RAY;
         bytes32 gemusdtag = concat(ilk, ':usd');
 
         Medianizer.Config memory mdnconf = Medianizer.Config(new address[](1), new bytes32[](1), 1);
@@ -311,7 +307,7 @@ contract Ball is Math, Ward {
             cladapt.setConfig(gemusdtag, ChainlinkAdapter.Config(ilkparams.gemusdagg, ilkparams.ttl, RAY));
             sources[0] = address(cladapt); tags[0] = gemusdtag;
             sources[1] = address(divider); tags[1] = RICO_USD_TAG;
-            divider.setConfig(gemricotag, Divider.Config(sources, tags, scales));
+            divider.setConfig(gemricotag, Divider.Config(sources, tags));
 
             Ploker.Config memory plokerconf = Ploker.Config(
                 new address[](3), new bytes32[](3), new address[](1), new bytes32[](1)
