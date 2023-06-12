@@ -13,6 +13,7 @@ remappings = [
 ]
 optimizer=true
 optimizer-runs=10_000
+solc_version='0.8.19'
 
 [profile.lite.optimizer_details.yulDetails]
 stackAllocation = true

@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity 0.8.20;
+pragma solidity ^0.8.19;
 
 import { Math } from './mixin/math.sol';
 import { Flog } from './mixin/flog.sol';

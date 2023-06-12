@@ -44,6 +44,8 @@ task('deploy-ricobank', '')
     diamond_artifact.abi = diamond_artifact.abi.filter(
         (e, idx) => diamond_artifact.abi.findIndex(ee => ee.name == e.name) == idx
     )
+
+
     const diamond_type = hre.ethers.ContractFactory.fromSolidity(diamond_artifact, ali)
     const diamond = await diamond_type.deploy()
     const ball_artifact = require('../artifacts/src/ball.sol/Ball.json')

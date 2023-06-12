@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-pragma solidity 0.8.20;
+pragma solidity ^0.8.19;
 import { Lock } from './mixin/lock.sol';
 import { Math } from './mixin/math.sol';
 import { Flog } from './mixin/flog.sol';
