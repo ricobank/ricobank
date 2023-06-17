@@ -20,6 +20,8 @@ contract File is Bank {
         else if (key == "rel") { vowS.ramp.rel = uint(val); }
         else if (key == "bel") { vowS.ramp.bel = uint(val); }
         else if (key == "cel") { vowS.ramp.cel = uint(val); }
+        else if (key == "floppep") { vowS.floppep = uint(val); }
+        else if (key == "flappep") { vowS.flappep = uint(val); }
         else if (key == "flopsrc") { vowS.flopsrc = address(bytes20(bytes32(val))); }
         else if (key == "flapsrc") { vowS.flapsrc = address(bytes20(bytes32(val))); }
         else if (key == "floptag") { vowS.floptag = val; }

@@ -35,7 +35,7 @@ contract Bank is Math, Flog {
     struct VatStorage {
         mapping (bytes32 => Ilk) ilks;
         mapping (bytes32 => mapping (address => uint256)) urns;
-        uint sin;  // [rad]
+        uint sin;   // [rad]
         uint rest;  // [rad] Remainder from
         uint debt;  // [wad] Total Rico Issued
         uint ceil;  // [wad] Total Debt Ceiling
@@ -58,8 +58,10 @@ contract Bank is Math, Flog {
     struct VowStorage {
         Gem     RISK;
         Ramp    ramp;
+        uint256 flappep;  // [ray] rush multiplier
         address flapsrc;
         bytes32 flaptag;
+        uint256 floppep;  // [ray] rush multiplier
         address flopsrc;
         bytes32 floptag;
     }
@@ -106,4 +108,3 @@ contract Bank is Math, Flog {
         bytes32 pos = BANK_POS; assembly { bs.slot := pos }
     }
 }
-

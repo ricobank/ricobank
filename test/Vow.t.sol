@@ -12,7 +12,7 @@ import { RicoSetUp, WethLike, Guy } from "./RicoHelper.sol";
 import { Asset, PoolArgs } from "./UniHelper.sol";
 import { Math } from '../src/mixin/math.sol';
 import { Hook } from '../src/hook/hook.sol';
-import { ERC20Hook, NO_CUT } from '../src/hook/ERC20hook.sol';
+import { ERC20Hook } from '../src/hook/ERC20hook.sol';
 import {File} from '../src/file.sol';
 import {Bank} from '../src/bank.sol';
 
@@ -23,8 +23,6 @@ contract VowTest is Test, RicoSetUp {
     bytes32[] ilks;
     address rico_risk_pool;
     uint back_count;
-
-
 
     function setUp() public {
         make_bank();
@@ -75,8 +73,11 @@ contract VowTest is Test, RicoSetUp {
         rico_mint(sin_wad, false);
         rico.transfer(bank, sin_wad);
 
+        // set pep to double rush
+        File(bank).file('flappep', bytes32(2 * RAY));
+
         uint debt = Vat(bank).debt();
-        uint rush = wdiv((surplus + debt), debt);
+        uint rush = wdiv((surplus + debt), debt) * 2;
         uint expected_risk_cost = wdiv(surplus * rico_price_in_risk, rush);
 
         risk.mint(self, WAD * 1_000);
@@ -99,10 +100,12 @@ contract VowTest is Test, RicoSetUp {
         feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
         feedpush(RISK_RICO_TAG, bytes32(risk_price_in_rico * RAY), type(uint).max);
         Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(borrow));
+        // set pep to double rush
+        File(bank).file('floppep', bytes32(2 * RAY));
 
         uint debt = Vat(bank).debt();
         uint sin  = Vat(bank).sin() / RAY;
-        uint rush = wdiv((sin + debt), debt);
+        uint rush = wdiv((sin + debt), debt) * 2;
         uint expected_rico_per_risk = wdiv(risk_price_in_rico, rush);
 
         rico.approve(bank, type(uint).max);
@@ -181,7 +184,7 @@ contract VowTest is Test, RicoSetUp {
         rico_mint(100 * WAD, false);
         uint gas = gasleft();
         Vow(bank).keep(gilks);
-        check_gas(gas, 132678);
+        check_gas(gas, 134553);
     }
 
     function test_keep_surplus_gas() public {
@@ -195,7 +198,7 @@ contract VowTest is Test, RicoSetUp {
         gilks[1] = gilk;
         uint gas = gasleft();
         Vow(bank).keep(gilks);
-        check_gas(gas, 131795);
+        check_gas(gas, 133631);
     }
 
     function test_bail_gas() public {
@@ -204,7 +207,7 @@ contract VowTest is Test, RicoSetUp {
         feedpush(grtag, bytes32(0), block.timestamp + 1000);
         uint gas = gasleft();
         Vow(bank).bail(gilk, self);
-        check_gas(gas, 66430);
+        check_gas(gas, 66333);
     }
 
     // goldusd, par, and liqr all = 1 after setup

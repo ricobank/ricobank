@@ -10,7 +10,7 @@ import { Ward } from '../lib/feedbase/src/mixin/ward.sol';
 import { Flog } from './mixin/flog.sol';
 import { Math } from './mixin/math.sol';
 import { Vat }  from './vat.sol';
-import { ERC20Hook, NO_CUT } from '../src/hook/ERC20hook.sol';
+import { ERC20Hook } from '../src/hook/ERC20hook.sol';
 import { Bank } from './bank.sol';
 
 // accounting mechanism
@@ -26,13 +26,14 @@ contract Vow is Bank {
     function flopfeed() view external returns (address, bytes32) {
         return (getVowStorage().flopsrc, getVowStorage().floptag);
     }
+    function pep() view external returns (uint, uint) {
+        return (getVowStorage().flappep, getVowStorage().floppep);
+    }
 
     error ErrSafeBail();
     error ErrReflop();
     error ErrOutDated();
     error ErrTransfer();
-
-    uint256 internal constant  DASH = 2 * RAY;
 
     function keep(bytes32[] calldata ilks) _flog_ external {
         VowStorage storage  vowS  = getVowStorage();
@@ -47,20 +48,19 @@ contract Vow is Bank {
 
         // rico is a wad, sin is a rad
         uint sin = vatS.sin / RAY;
-        uint rush = DASH;
         if (rico > sin) {
             // pay down sin, then auction off surplus RICO for RISK
             if (sin > 1) Vat(address(this)).heal(sin - 1);
             // buy-and-burn risk with remaining rico
             uint flap = rico - sin;
             uint debt = vatS.debt;
-            if (debt > 0) rush = min(rush, rdiv(debt + flap, debt));
+            uint rush = (debt + flap) * vowS.flappep / debt;
             flow(vowS.flapsrc, vowS.flaptag, address(bankS.rico), flap, address(vowS.RISK), rush);
         } else if (sin > rico) {
             // pay down as much sin as possible
             if (rico > 1) Vat(address(this)).heal(rico - 1);
             uint debt = vatS.debt;
-            if (debt > 0) rush = min(rush, rdiv(debt + sin - rico, debt));
+            uint rush = (debt + sin - rico) * vowS.floppep / debt;
             uint slope = min(vowS.ramp.vel, wmul(vowS.ramp.rel, vowS.RISK.totalSupply()));
             uint flop  = slope * min(block.timestamp - vowS.ramp.bel, vowS.ramp.cel);
             if (0 == flop) revert ErrReflop();

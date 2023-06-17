@@ -12,8 +12,6 @@ import { Feedbase } from '../../lib/feedbase/src/Feedbase.sol';
 import { Hook } from './hook.sol';
 import { Bank } from '../bank.sol';
 
-uint256 constant NO_CUT = type(uint256).max;
-
 contract ERC20Hook is Hook, Bank {
     // per-ilk gem and price feed
     struct Item {

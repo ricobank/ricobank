@@ -13,7 +13,7 @@ import { Vow }  from '../src/vow.sol';
 import { Hook } from '../src/hook/hook.sol';
 import '../src/mixin/lock.sol';
 import '../src/mixin/math.sol';
-import { ERC20Hook, NO_CUT } from '../src/hook/ERC20hook.sol';
+import { ERC20Hook } from '../src/hook/ERC20hook.sol';
 import {File} from '../src/file.sol';
 import {BankDiamond} from '../src/diamond.sol';
 
@@ -26,6 +26,7 @@ contract VatTest is Test, RicoSetUp {
     Flasher public chap;
     address public achap;
     uint public constant flash_size = 100;
+    uint public constant NO_CUT = type(uint256).max;
 
     function setUp() public {
         make_bank();
@@ -55,10 +56,10 @@ contract VatTest is Test, RicoSetUp {
         assertGt(gold.balanceOf(bank), 0);
         uint gas = gasleft();
         Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(WAD));
-        check_gas(gas, 208474);
+        check_gas(gas, 208496);
         gas = gasleft();
         Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(WAD));
-        check_gas(gas, 30259);
+        check_gas(gas, 30281);
     }
 
     function test_grab_gas() public {
@@ -66,7 +67,7 @@ contract VatTest is Test, RicoSetUp {
         Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(WAD));
         uint gas = gasleft();
         Vat(bank).grab(gilk, self, self, no_rush, NO_CUT);
-        check_gas(gas, 75568);
+        check_gas(gas, 75590);
     }
 
     function test_heal_gas() public {
@@ -77,7 +78,7 @@ contract VatTest is Test, RicoSetUp {
 
         uint gas = gasleft();
         Vat(bank).heal(1);
-        check_gas(gas, 10396);
+        check_gas(gas, 10351);
     }
 
     function test_drip_gas() public {
@@ -130,11 +131,6 @@ contract VatTest is Test, RicoSetUp {
         assertEq(rush, RAY * 5 / 4);
         // cut should be 80%
         assertEq(cut , RAD * 8);
-        // beyond DASH the rush factor should be clipped
-        uint dash = Vat(bank).DASH();
-        feedpush(grtag, bytes32(RAY / 10), block.timestamp + 1000);
-        (spot, rush, cut) = Vat(bank).safe(gilk, self);
-        assertEq(rush, dash);
         // wait longer than ttl so price feed is stale and expect iffy
         skip(1100);
         (spot, rush, cut) = Vat(bank).safe(gilk, self);

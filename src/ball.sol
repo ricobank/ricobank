@@ -88,6 +88,8 @@ contract Ball is Math, Ward {
         uint256 adaptttl;
         uint256 daiusdttl;
         uint256 xauusdttl;
+        uint256 flappep;
+        uint256 floppep;
         Vow.Ramp mintramp;
         address DAI;
         address DAI_USD_AGG;
@@ -155,7 +157,6 @@ contract Ball is Math, Ward {
         singleCut(address(vat), Vat.ceil.selector);
         singleCut(address(vat), Vat.par.selector);
         singleCut(address(vat), Vat.drip.selector);
-        singleCut(address(vat), Vat.DASH.selector);
         singleCut(address(vat), Vat.MINT.selector);
         singleCut(address(vat), Vat.ink.selector);
         singleCut(address(vat), Vat.flash.selector);
@@ -175,8 +176,10 @@ contract Ball is Math, Ward {
 
         File(bank).file('ceil', bytes32(args.ceil));
 
+        File(bank).file('flappep', bytes32(args.flappep));
         File(bank).file('flaptag', RICO_RISK_TAG);
         File(bank).file('flapsrc', bytes32(bytes20(address(mdn))));
+        File(bank).file('floppep', bytes32(args.floppep));
         File(bank).file('floptag', RISK_RICO_TAG);
         File(bank).file('flopsrc', bytes32(bytes20(address(mdn))));
 

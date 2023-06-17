@@ -48,13 +48,11 @@ contract Vat is Bank {
             Hook.ink.selector, i, u
         )), (bytes));
     }
-    function DASH() pure external returns (uint) {return _DASH;}
     function MINT() pure external returns (uint) {return _MINT;}
 
     enum Spot {Sunk, Iffy, Safe}
 
     uint256 constant _MINT = 2 ** 128;
-    uint256 constant _DASH = 2 *  RAY;
 
     error ErrFeeMin();
     error ErrFeeRho();
@@ -106,8 +104,8 @@ contract Vat is Bank {
         if (tab <= cut) {
             return (Spot.Safe, 0, cut);
         } else {
-            uint256 rush = _DASH;
-            if (cut > RAY) rush = min(rush, tab / (cut / RAY));
+            uint256 rush = type(uint256).max;
+            if (cut > RAY) rush = tab / (cut / RAY);
             return (Spot.Sunk, rush, cut);
         }
     }

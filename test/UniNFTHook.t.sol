@@ -224,7 +224,7 @@ contract NFTHookTest is Test, RicoSetUp {
 
         uint gas = gasleft();
         guy.bail(':uninft', self);
-        check_gas(gas, 269218);
+        check_gas(gas, 269052);
 
         assertLt(rico.balanceOf(address(guy)), guy_rico_before);
         assertEq(nfpm.ownerOf(goldwethtokid), address(guy));
