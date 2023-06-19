@@ -192,7 +192,9 @@ contract BallTest is Test, UniSetUp, Math {
             BANKYEAR, // daiusd
             BANKYEAR, // xauusd
             RAY,  // flappep
+            RAY,  // flappop
             RAY,  // floppep
+            RAY,  // floppop
             Bank.Ramp(WAD, WAD, block.timestamp, 1),
             0x6B175474E89094C44Da98b954EedeAC495271d0F,
             0xAed0c38402a5d19df6E4c03F4E2DceD6e29c1ee9,
@@ -209,7 +211,7 @@ contract BallTest is Test, UniSetUp, Math {
         BankDiamond(bank).acceptOwnership();
 
         uint usedgas     = gas - gasleft();
-        uint expectedgas = 24056351;
+        uint expectedgas = 24302074;
         if (usedgas < expectedgas) {
             console.log("ball saved %s gas...currently %s", expectedgas - usedgas, usedgas);
         }

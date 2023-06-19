@@ -26,8 +26,11 @@ contract Vow is Bank {
     function flopfeed() view external returns (address, bytes32) {
         return (getVowStorage().flopsrc, getVowStorage().floptag);
     }
-    function pep() view external returns (uint, uint) {
-        return (getVowStorage().flappep, getVowStorage().floppep);
+    function flapplot() view external returns (uint, uint) {
+        return (getVowStorage().flappep, getVowStorage().flappop);
+    }
+    function flopplot() view external returns (uint, uint) {
+        return (getVowStorage().floppep, getVowStorage().floppop);
     }
 
     error ErrSafeBail();
@@ -54,13 +57,13 @@ contract Vow is Bank {
             // buy-and-burn risk with remaining rico
             uint flap = rico - sin;
             uint debt = vatS.debt;
-            uint rush = (debt + flap) * vowS.flappep / debt;
+            uint rush = (flap * vowS.flappep + debt * vowS.flappop) / debt;
             flow(vowS.flapsrc, vowS.flaptag, address(bankS.rico), flap, address(vowS.RISK), rush);
         } else if (sin > rico) {
             // pay down as much sin as possible
             if (rico > 1) Vat(address(this)).heal(rico - 1);
             uint debt = vatS.debt;
-            uint rush = (debt + sin - rico) * vowS.floppep / debt;
+            uint rush = ((sin - rico) * vowS.floppep + debt * vowS.floppop) / debt;
             uint slope = min(vowS.ramp.vel, wmul(vowS.ramp.rel, vowS.RISK.totalSupply()));
             uint flop  = slope * min(block.timestamp - vowS.ramp.bel, vowS.ramp.cel);
             if (0 == flop) revert ErrReflop();

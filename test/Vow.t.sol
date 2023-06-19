@@ -73,11 +73,19 @@ contract VowTest is Test, RicoSetUp {
         rico_mint(sin_wad, false);
         rico.transfer(bank, sin_wad);
 
-        // set pep to double rush
-        File(bank).file('flappep', bytes32(2 * RAY));
+        // set pep to * 1000 growth rate
+        File(bank).file('flappep', bytes32(RAY * 1000));
+        // set pop to increase initial price by 1%
+        File(bank).file('flappop', bytes32(RAY * 99 / 100));
 
-        uint debt = Vat(bank).debt();
-        uint rush = wdiv((surplus + debt), debt) * 2;
+        uint debt = Vat(bank).debt() - sin_wad;
+        uint gain = surplus * 1000;
+        uint init = debt * 99 / 100;
+
+        uint rush = wdiv((gain + init), debt);
+        // (50 + 2101.05 * 0.99) / 2101.05 = 1.013_797_624_9970253
+        assertClose(rush, WAD * 1_013_797_624 / 1_000_000_000, 100_000);
+
         uint expected_risk_cost = wdiv(surplus * rico_price_in_risk, rush);
 
         risk.mint(self, WAD * 1_000);
@@ -95,18 +103,24 @@ contract VowTest is Test, RicoSetUp {
     }
 
     function test_flop_price() public {
-        uint borrow = WAD * 1000;
-        uint risk_price_in_rico = 10;
-        feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
-        feedpush(RISK_RICO_TAG, bytes32(risk_price_in_rico * RAY), type(uint).max);
+        uint borrow = WAD * 10000;
+        uint risk_price_in_rico = 10 * RAY;
+        feedpush(grtag, bytes32(10000 * RAY), type(uint).max);
+        feedpush(RISK_RICO_TAG, bytes32(risk_price_in_rico), type(uint).max);
         Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(borrow));
-        // set pep to double rush
-        File(bank).file('floppep', bytes32(2 * RAY));
+
+        // set pep to *1000 rate discount increases
+        File(bank).file('floppep', bytes32(RAY * 1000));
+        // set pop so initial flop discount is about 1%
+        File(bank).file('floppop', bytes32(RAY * 101 / 100));
 
         uint debt = Vat(bank).debt();
         uint sin  = Vat(bank).sin() / RAY;
-        uint rush = wdiv((sin + debt), debt) * 2;
-        uint expected_rico_per_risk = wdiv(risk_price_in_rico, rush);
+
+        uint gain = sin * 1000;
+        uint init = debt * 101 / 100;
+        uint rush = wdiv((gain + init), debt);
+        uint expected_rico_per_risk = wdiv(risk_price_in_rico, rush) / 10**9;
 
         rico.approve(bank, type(uint).max);
         uint self_rico_1 = rico.balanceOf(self);
@@ -116,7 +130,8 @@ contract VowTest is Test, RicoSetUp {
 
         uint rico_cost = self_rico_1 - rico.balanceOf(self);
         uint risk_gain = risk.balanceOf(self) - self_risk_1;
-        assertEq(rico_cost / risk_gain, expected_rico_per_risk);
+
+        assertEq(wdiv(rico_cost, risk_gain), expected_rico_per_risk);
     }
 
     function test_bail_price() public {
@@ -184,7 +199,7 @@ contract VowTest is Test, RicoSetUp {
         rico_mint(100 * WAD, false);
         uint gas = gasleft();
         Vow(bank).keep(gilks);
-        check_gas(gas, 134553);
+        check_gas(gas, 136750);
     }
 
     function test_keep_surplus_gas() public {
@@ -198,7 +213,7 @@ contract VowTest is Test, RicoSetUp {
         gilks[1] = gilk;
         uint gas = gasleft();
         Vow(bank).keep(gilks);
-        check_gas(gas, 133631);
+        check_gas(gas, 135830);
     }
 
     function test_bail_gas() public {
@@ -207,7 +222,7 @@ contract VowTest is Test, RicoSetUp {
         feedpush(grtag, bytes32(0), block.timestamp + 1000);
         uint gas = gasleft();
         Vow(bank).bail(gilk, self);
-        check_gas(gas, 66333);
+        check_gas(gas, 66355);
     }
 
     // goldusd, par, and liqr all = 1 after setup

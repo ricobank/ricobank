@@ -58,10 +58,12 @@ contract Bank is Math, Flog {
     struct VowStorage {
         Gem     RISK;
         Ramp    ramp;
-        uint256 flappep;  // [ray] rush multiplier
+        uint256 flappep;  // [ray] rush gradient
+        uint256 flappop;  // [ray] rush offset
         address flapsrc;
         bytes32 flaptag;
-        uint256 floppep;  // [ray] rush multiplier
+        uint256 floppep;  // [ray] rush gradient
+        uint256 floppop;  // [ray] rush offset
         address flopsrc;
         bytes32 floptag;
     }

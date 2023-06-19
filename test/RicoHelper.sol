@@ -77,7 +77,9 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
     uint256 constant public BANKYEAR   = (365 * 24 + 6) * 3600;
     uint256 constant public no_rush    = RAY;
     uint256 constant public flappep    = RAY;
+    uint256 constant public flappop    = RAY;
     uint256 constant public floppep    = RAY;
+    uint256 constant public floppop    = RAY;
     address public immutable azero     = address(0);
     address public immutable self = payable(address(this));
 
@@ -231,7 +233,9 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
             BANKYEAR, // daiusd
             BANKYEAR, // xauusd
             flappep,
+            flappop,
             floppep,
+            floppop,
             Bank.Ramp(WAD, WAD, block.timestamp, 1),
             0x6B175474E89094C44Da98b954EedeAC495271d0F,
             0xAed0c38402a5d19df6E4c03F4E2DceD6e29c1ee9,

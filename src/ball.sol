@@ -89,7 +89,9 @@ contract Ball is Math, Ward {
         uint256 daiusdttl;
         uint256 xauusdttl;
         uint256 flappep;
+        uint256 flappop;
         uint256 floppep;
+        uint256 floppop;
         Vow.Ramp mintramp;
         address DAI;
         address DAI_USD_AGG;
@@ -167,6 +169,8 @@ contract Ball is Math, Ward {
         singleCut(address(vow), Vow.ramp.selector);
         singleCut(address(vow), Vow.flapfeed.selector);
         singleCut(address(vow), Vow.flopfeed.selector);
+        singleCut(address(vow), Vow.flapplot.selector);
+        singleCut(address(vow), Vow.flopplot.selector);
 
         singleCut(address(hook), ERC20Hook.erc20flash.selector);
         File(bank).file('par', bytes32(args.par));
@@ -177,9 +181,11 @@ contract Ball is Math, Ward {
         File(bank).file('ceil', bytes32(args.ceil));
 
         File(bank).file('flappep', bytes32(args.flappep));
+        File(bank).file('flappop', bytes32(args.flappop));
         File(bank).file('flaptag', RICO_RISK_TAG);
         File(bank).file('flapsrc', bytes32(bytes20(address(mdn))));
         File(bank).file('floppep', bytes32(args.floppep));
+        File(bank).file('floppop', bytes32(args.floppop));
         File(bank).file('floptag', RISK_RICO_TAG);
         File(bank).file('flopsrc', bytes32(bytes20(address(mdn))));
 
