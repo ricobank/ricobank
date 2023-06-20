@@ -199,9 +199,7 @@ contract Vat is Bank {
         ));
     }
 
-    function drip(bytes32 i)
-      _ward_ _flog_ external
-    {
+    function drip(bytes32 i) _flog_ external {
         VatStorage storage vs = getVatStorage();
         // multiply rack by fee every second
         if (block.timestamp == vs.ilks[i].rho) return;
@@ -216,7 +214,7 @@ contract Vat is Bank {
         vs.debt         = vs.debt + all / RAY;
         // tart * rack is a rad, interest is a wad, rest is the change
         vs.rest         = all % RAY;
-        // optimistically mint the interest to the vow
+        // optimistically mint the interest
         getBankStorage().rico.mint(address(this), all / RAY);
     }
 

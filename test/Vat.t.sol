@@ -84,14 +84,14 @@ contract VatTest is Test, RicoSetUp {
     function test_drip_gas() public {
         uint gas = gasleft();
         Vat(bank).drip(gilk);
-        check_gas(gas, 18175);
+        check_gas(gas, 15331);
 
         Vat(bank).filk(gilk, 'fee', 2 * RAY);
         skip(1);
         Vat(bank).frob(gilk, self, abi.encodePacked(100 * WAD), int(50 * WAD));
         gas = gasleft();
         Vat(bank).drip(gilk);
-        check_gas(gas, 38594);
+        check_gas(gas, 37750);
     }
 
     function test_ilk_reset() public {
