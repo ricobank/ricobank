@@ -127,6 +127,7 @@ contract Ball is Math, Ward {
         uniadapt = new UniswapV3Adapter(Feedbase(args.feedbase), IUniWrapper(args.uniwrapper));
         cladapt = new ChainlinkAdapter(args.feedbase);
         divider = new Divider(args.feedbase);
+        nfthook = new UniNFTHook();
     }
 
     function setup(BallArgs memory args) _ward_ public payable {
@@ -142,6 +143,8 @@ contract Ball is Math, Ward {
         singleCut(address(file), File.link.selector);
         singleCut(address(file), File.fb.selector);
         singleCut(address(file), File.rico.selector);
+        singleCut(address(file), File.ward.selector);
+        singleCut(address(file), File.wards.selector);
         singleCut(address(vat), Vat.filk.selector);
         singleCut(address(vat), Vat.filh.selector);
         singleCut(address(vat), Vat.filhi.selector);
@@ -162,6 +165,9 @@ contract Ball is Math, Ward {
         singleCut(address(vat), Vat.MINT.selector);
         singleCut(address(vat), Vat.ink.selector);
         singleCut(address(vat), Vat.flash.selector);
+        singleCut(address(vat), Vat.geth.selector);
+        singleCut(address(vat), Vat.gethi.selector);
+        singleCut(address(vat), Vat.gethi2.selector);
 
         singleCut(address(vow), Vow.keep.selector);
         singleCut(address(vow), Vow.bail.selector);
@@ -330,8 +336,7 @@ contract Ball is Math, Ward {
     }
 
     function makeuni(UniParams calldata ups) _ward_ public {
-        if (address(nfthook) != address(0)) return;
-        nfthook = new UniNFTHook();
+        if (Vat(bank).ilks(UNI_NFT_ILK).rack != 0) return;
         // initialize uni ilk
         Vat(bank).init(ups.ilk, address(nfthook));
         Vat(bank).filh(UNI_NFT_ILK, 'nfpm', bytes32(bytes20(address(ups.nfpm))));

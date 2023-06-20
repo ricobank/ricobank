@@ -130,7 +130,8 @@ contract ERC20Hook is Hook, Bank {
         hs.lock = UNLOCKED;
     }
 
-    function fili(bytes32 key, bytes32 idx, bytes32 val) _flog_ external {
+    function fili(bytes32 key, bytes32 idx, bytes32 val)
+      _flog_ external {
         ERC20HookStorage storage hs = getStorage();
         if (key == 'gem') {
             hs.items[idx].gem = address(bytes20(val));
@@ -143,4 +144,16 @@ contract ERC20Hook is Hook, Bank {
         } else { revert ErrWrongKey(); }
     }
 
+    function geti(bytes32 key, bytes32 idx) _flog_ external returns (bytes32) {
+        ERC20HookStorage storage hs = getStorage();
+        if (key == 'gem') {
+            return bytes32(bytes20(hs.items[idx].gem));
+        } else if (key == 'fsrc') {
+            return bytes32(bytes20(hs.items[idx].fsrc));
+        } else if (key == 'ftag') {
+            return hs.items[idx].ftag;
+        } else if (key == 'pass') {
+            return hs.pass[hs.items[idx].gem] ? bytes32(uint(1)) : bytes32(0);
+        } else { revert ErrWrongKey(); }
+    }
 }

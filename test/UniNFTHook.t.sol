@@ -16,6 +16,7 @@ import { OverrideableGem } from './mixin/OverrideableGem.sol';
 import { UniNFTHook } from '../src/hook/nfpm/UniV3NFTHook.sol';
 import { IERC721, INonfungiblePositionManager } from './Univ3Interface.sol';
 import { File } from '../src/file.sol';
+import { Bank } from '../src/bank.sol';
 
 contract NFTHookTest is Test, RicoSetUp {
     uint256 public init_join = 1000;
@@ -71,31 +72,31 @@ contract NFTHookTest is Test, RicoSetUp {
         bytes memory addgwpos = abi.encodePacked(int(1), goldwethtokid);
         uint ricobefore = rico.balanceOf(self);
         assertEq(nfpm.ownerOf(goldwethtokid), self);
-        Vat(bank).frob(':uninft', self, addgwpos, int(WAD));
+        Vat(bank).frob(uilk, self, addgwpos, int(WAD));
         assertGt(rico.balanceOf(self), ricobefore);
         assertEq(nfpm.ownerOf(goldwethtokid), bank);
     }
 
     function test_id_must_exist() public {
         bytes memory addgwpos = abi.encodePacked(int(1), goldwethtokid);
-        Vat(bank).frob(':uninft', self, addgwpos, int(WAD));
+        Vat(bank).frob(uilk, self, addgwpos, int(WAD));
         uint fake_id = 2 ** 100;
         bytes memory add_fake_pos = abi.encodePacked(int(1), fake_id);
         vm.expectRevert("ERC721: operator query for nonexistent token");
-        Vat(bank).frob(':uninft', self, add_fake_pos, int(0));
+        Vat(bank).frob(uilk, self, add_fake_pos, int(0));
     }
 
     function test_cant_add_multi_dups() public {
         bytes memory add_dup_pos = abi.encodePacked(int(1), goldwethtokid, goldwethtokid);
         vm.expectRevert("ERC721: transfer of token that is not own");
-        Vat(bank).frob(':uninft', self, add_dup_pos, int(WAD));
+        Vat(bank).frob(uilk, self, add_dup_pos, int(WAD));
     }
 
     function test_cant_add_dups() public {
         bytes memory add_gw_pos = abi.encodePacked(int(1), goldwethtokid);
-        Vat(bank).frob(':uninft', self, add_gw_pos, int(WAD));
+        Vat(bank).frob(uilk, self, add_gw_pos, int(WAD));
         vm.expectRevert("ERC721: transfer of token that is not own");
-        Vat(bank).frob(':uninft', self, add_gw_pos, int(WAD));
+        Vat(bank).frob(uilk, self, add_gw_pos, int(WAD));
     }
 
     function test_max_urn_nfts() public {
@@ -111,29 +112,29 @@ contract NFTHookTest is Test, RicoSetUp {
             IERC721(UNI_NFT_ADDR).approve(bank, nft_id);
             bytes memory add_pos = abi.encodePacked(int(1), nft_id);
             if(i == HOOK_ROOM) vm.expectRevert(UniNFTHook.ErrFull.selector);
-            Vat(bank).frob(':uninft', self, add_pos, int(0));
+            Vat(bank).frob(uilk, self, add_pos, int(0));
         }
     }
 
     function test_nft_bail() public {
         bytes memory addgwpos = abi.encodePacked(int(1), goldwethtokid);
-        Vat(bank).frob(':uninft', self, addgwpos, int(WAD));
+        Vat(bank).frob(uilk, self, addgwpos, int(WAD));
 
         // just gold dip can't make collateral worthless
         feedpush(grtag, bytes32(0 * RAY), type(uint).max);
         vm.expectRevert(Vow.ErrSafeBail.selector);
-        Vow(bank).bail(':uninft', self);
+        Vow(bank).bail(uilk, self);
         feedpush(grtag, bytes32(1900 * RAY), type(uint).max);
 
         // just weth dip can't make collateral worthless
         feedpush(wrtag, bytes32(0 * RAY), type(uint).max);
         vm.expectRevert(Vow.ErrSafeBail.selector);
-        Vow(bank).bail(':uninft', self);
+        Vow(bank).bail(uilk, self);
 
         // both dip, collateral is worthless
         feedpush(grtag, bytes32(0 * RAY), type(uint).max);
-        Vow(bank).bail(':uninft', self);
-        assertEq(Vat(bank).urns(':uninft', self), 0);
+        Vow(bank).bail(uilk, self);
+        assertEq(Vat(bank).urns(uilk, self), 0);
         // todo test successful swaps, compare to master
     }
 
@@ -141,12 +142,12 @@ contract NFTHookTest is Test, RicoSetUp {
         // the NFT has 1000 each of gold and weth, valued at 1900 and 1000
         // frob to max safe debt with double cratio, 1.45MM rico
         File(bank).file('ceil', bytes32(WAD * 1_000_000_000));
-        Vat(bank).filk(':uninft', 'line', RAD * 1_000_000_000);
+        Vat(bank).filk(uilk, 'line', RAD * 1_000_000_000);
         Vat(bank).filk(gilk,      'line', RAD * 1_000_000_000);
         bytes memory addgwpos = abi.encodePacked(int(1), goldwethtokid);
         uint borrow = WAD * uint(2_900_000 - 1);
         assertEq(nfpm.ownerOf(goldwethtokid), self);
-        Vat(bank).frob(':uninft', self, addgwpos, int(borrow));
+        Vat(bank).frob(uilk, self, addgwpos, int(borrow));
         assertEq(nfpm.ownerOf(goldwethtokid), bank);
 
         // set prices to 75%
@@ -160,7 +161,7 @@ contract NFTHookTest is Test, RicoSetUp {
         rico_mint(expected, false);
         rico.transfer(address(guy), expected);
         guy.approve(arico, bank, expected);
-        guy.bail(':uninft', self);
+        guy.bail(uilk, self);
 
         // guy was given about exact amount, check almost all was spent
         assertLt(rico.balanceOf(address(guy)), borrow / 10_000);
@@ -171,12 +172,12 @@ contract NFTHookTest is Test, RicoSetUp {
         // the NFT has 1000 each of gold and weth, valued at 1900 and 1000
         // frob to max safe debt with double cratio, 1.45MM rico
         File(bank).file('ceil', bytes32(WAD * 1_000_000_000));
-        Vat(bank).filk(':uninft', 'line', RAD * 1_000_000_000);
+        Vat(bank).filk(uilk, 'line', RAD * 1_000_000_000);
         Vat(bank).filk(gilk,      'line', RAD * 1_000_000_000);
-        Vat(bank).filk(':uninft', 'liqr', RAY * 2);
+        Vat(bank).filk(uilk, 'liqr', RAY * 2);
         bytes memory addgwpos = abi.encodePacked(int(1), goldwethtokid);
         uint borrow = WAD * uint(1_450_000 - 1);
-        Vat(bank).frob(':uninft', self, addgwpos, int(borrow));
+        Vat(bank).frob(uilk, self, addgwpos, int(borrow));
 
         // set prices to 75%
         feedpush(wrtag, bytes32(750 * RAY), type(uint).max);
@@ -190,7 +191,7 @@ contract NFTHookTest is Test, RicoSetUp {
         rico.transfer(address(guy), expected_cost_for_keeper);
         guy.approve(arico, bank, expected_cost_for_keeper);
         uint self_pre_bail_rico = rico.balanceOf(self);
-        guy.bail(':uninft', self);
+        guy.bail(uilk, self);
 
         // although position was overcollateralised full expected amount should be taken
         assertLt(rico.balanceOf(address(guy)), borrow / 1_000);
@@ -205,17 +206,17 @@ contract NFTHookTest is Test, RicoSetUp {
     function test_multipos() public {
         // add goldwethtokid and golddaitokid at once
         bytes memory data = abi.encodePacked(int(1), goldwethtokid, golddaitokid);
-        Vat(bank).frob(':uninft', self, data, int(WAD));
+        Vat(bank).frob(uilk, self, data, int(WAD));
         assertEq(nfpm.ownerOf(goldwethtokid), bank);
         assertEq(nfpm.ownerOf(golddaitokid), bank);
 
         feedpush(grtag, bytes32(0 * RAY), type(uint).max);
         feedpush(wrtag, bytes32(0 * RAY), type(uint).max);
         vm.expectRevert(Vow.ErrSafeBail.selector);
-        Vow(bank).bail(':uninft', self);
+        Vow(bank).bail(uilk, self);
 
         feedpush(drtag, bytes32(RAY / uint(100_000)), type(uint).max);
-        (,uint rush, uint cut) = Vat(bank).safe(':uninft', self);
+        (,uint rush, uint cut) = Vat(bank).safe(uilk, self);
         uint wad_cost = cut / RAY * rush / RAY;
         rico_mint(wad_cost, true);
         rico.transfer(address(guy), wad_cost);
@@ -223,8 +224,8 @@ contract NFTHookTest is Test, RicoSetUp {
         uint guy_rico_before = rico.balanceOf(address(guy));
 
         uint gas = gasleft();
-        guy.bail(':uninft', self);
-        check_gas(gas, 268218);
+        guy.bail(uilk, self);
+        check_gas(gas, 268238);
 
         assertLt(rico.balanceOf(address(guy)), guy_rico_before);
         assertEq(nfpm.ownerOf(goldwethtokid), address(guy));
@@ -234,49 +235,49 @@ contract NFTHookTest is Test, RicoSetUp {
     function test_nft_frob_down() public {
         // add goldwethtokid and golddaitokid at once
         bytes memory data = abi.encodePacked(int(1), goldwethtokid, golddaitokid);
-        Vat(bank).frob(':uninft', self, data, int(WAD));
+        Vat(bank).frob(uilk, self, data, int(WAD));
         assertEq(nfpm.ownerOf(goldwethtokid), bank);
         assertEq(nfpm.ownerOf(golddaitokid), bank);
 
         // remove golddaitokid
         data = abi.encodePacked(-int(1), uint(1));
-        Vat(bank).frob(':uninft', self, data, 0);
+        Vat(bank).frob(uilk, self, data, 0);
         assertEq(nfpm.ownerOf(goldwethtokid), bank);
         assertEq(nfpm.ownerOf(golddaitokid), self);
-        (Vat.Spot spot,,) = Vat(bank).safe(':uninft', self);
+        (Vat.Spot spot,,) = Vat(bank).safe(uilk, self);
         assertTrue(spot == Vat.Spot.Safe);
 
         // put it back
         data = abi.encodePacked(int(1), golddaitokid);
         nfpm.approve(bank, golddaitokid);
-        Vat(bank).frob(':uninft', self, data, 0);
+        Vat(bank).frob(uilk, self, data, 0);
         assertEq(nfpm.ownerOf(goldwethtokid), bank);
         assertEq(nfpm.ownerOf(golddaitokid), bank);
-        (spot,,) = Vat(bank).safe(':uninft', self);
+        (spot,,) = Vat(bank).safe(uilk, self);
         assertTrue(spot == Vat.Spot.Safe);
 
         // remove goldwethtokid
         data = abi.encodePacked(-int(1), uint(0));
-        Vat(bank).frob(':uninft', self, data, 0);
+        Vat(bank).frob(uilk, self, data, 0);
         assertEq(nfpm.ownerOf(goldwethtokid), self);
         assertEq(nfpm.ownerOf(golddaitokid), bank);
-        (spot,,) = Vat(bank).safe(':uninft', self);
+        (spot,,) = Vat(bank).safe(uilk, self);
         assertTrue(spot == Vat.Spot.Safe);
 
         // put it back
         data = abi.encodePacked(int(1), goldwethtokid);
         nfpm.approve(bank, goldwethtokid);
-        Vat(bank).frob(':uninft', self, data, 0);
+        Vat(bank).frob(uilk, self, data, 0);
         assertEq(nfpm.ownerOf(goldwethtokid), bank);
         assertEq(nfpm.ownerOf(golddaitokid), bank);
 
         // remove both
         data = abi.encodePacked(-int(1), uint(0), uint(1));
         rico_mint(100, true); // rounding
-        Vat(bank).frob(':uninft', self, data, -int(WAD));
+        Vat(bank).frob(uilk, self, data, -int(WAD));
         assertEq(nfpm.ownerOf(goldwethtokid), self);
         assertEq(nfpm.ownerOf(golddaitokid), self);
-        assertEq(abi.decode(Vat(bank).ink(':uninft', self), (uint[])).length, 0);
+        assertEq(abi.decode(Vat(bank).ink(uilk, self), (uint[])).length, 0);
     }
 
     function test_nft_make_unsafe_by_rack() public {
@@ -285,26 +286,26 @@ contract NFTHookTest is Test, RicoSetUp {
         feedpush(wrtag, bytes32(RAY), type(uint).max);
         // add goldwethtokid and golddaitokid at once
         bytes memory data = abi.encodePacked(int(1), goldwethtokid, golddaitokid);
-        Vat(bank).frob(':uninft', self, data, int(900 * WAD));
+        Vat(bank).frob(uilk, self, data, int(900 * WAD));
 
         feedpush(drtag, bytes32(0), type(uint).max);
-        (Vat.Spot spot,,) = Vat(bank).safe(':uninft', self);
+        (Vat.Spot spot,,) = Vat(bank).safe(uilk, self);
         assertTrue(spot == Vat.Spot.Safe);
         feedpush(grtag, bytes32(0), type(uint).max);
-        (spot,,) = Vat(bank).safe(':uninft', self);
+        (spot,,) = Vat(bank).safe(uilk, self);
         assertTrue(spot == Vat.Spot.Safe);
 
         skip(BANKYEAR * 10);
-        Vat(bank).drip(':uninft');
-        (spot,,) = Vat(bank).safe(':uninft', self);
+        Vat(bank).drip(uilk);
+        (spot,,) = Vat(bank).safe(uilk, self);
         assertTrue(spot == Vat.Spot.Sunk);
 
-        (,uint cut, uint rush) = Vat(bank).safe(':uninft', self);
+        (,uint cut, uint rush) = Vat(bank).safe(uilk, self);
         uint wad_cost = cut / RAY * rush / RAY;
         rico_mint(wad_cost, true);
         rico.approve(bank, type(uint).max);
 
-        bytes memory res = Vow(bank).bail(':uninft', self);
+        bytes memory res = Vow(bank).bail(uilk, self);
 
         bytes memory ids = abi.decode(res, (bytes));
         uint256[] memory tok_ids = new uint256[](ids.length / 32);
@@ -325,18 +326,18 @@ contract NFTHookTest is Test, RicoSetUp {
         // add goldwethtokid and golddaitokid at once
         bytes memory data = abi.encodePacked(int(0));
         vm.expectRevert(UniNFTHook.ErrDir.selector);
-        Vat(bank).frob(':uninft', self, data, int(0));
+        Vat(bank).frob(uilk, self, data, int(0));
     }
 
     function test_frob_down_ooo() public {
         bytes memory data = abi.encodePacked(int(1), goldwethtokid, golddaitokid);
-        Vat(bank).frob(':uninft', self, data, int(WAD));
+        Vat(bank).frob(uilk, self, data, int(WAD));
 
         // remove both, but ooo
         data = abi.encodePacked(-int(1), uint(1), uint(0));
         rico_mint(100, true); // rounding
         vm.expectRevert(UniNFTHook.ErrIdx.selector);
-        Vat(bank).frob(':uninft', self, data, -int(WAD));
+        Vat(bank).frob(uilk, self, data, -int(WAD));
     }
 
     function test_frob_down_five() public {
@@ -357,7 +358,7 @@ contract NFTHookTest is Test, RicoSetUp {
             int(1), golddaitokid, goldwethtokids[0], goldwethtokids[1],
             goldwethtokids[2], goldwethtokids[3]
         );
-        Vat(bank).frob(':uninft', self, data, int(WAD));
+        Vat(bank).frob(uilk, self, data, int(WAD));
 
         assertEq(nfpm.ownerOf(golddaitokid), bank);
         for (uint i = 0; i < 4; i++) {
@@ -366,7 +367,7 @@ contract NFTHookTest is Test, RicoSetUp {
 
         data = abi.encodePacked(-int(1), uint(0), uint(1), uint(2), uint(3), uint(4));
         rico_mint(100, true); // rounding
-        Vat(bank).frob(':uninft', self, data, -int(WAD));
+        Vat(bank).frob(uilk, self, data, -int(WAD));
 
         assertEq(nfpm.ownerOf(golddaitokid), self);
         for (uint i = 0; i < 4; i++) {
@@ -381,10 +382,26 @@ contract NFTHookTest is Test, RicoSetUp {
             int(1), golddaitokid, goldwethtokids[0], goldwethtokids[1],
             goldwethtokids[2], goldwethtokids[3]
         );
-        Vat(bank).frob(':uninft', self, data, int(WAD));
+        Vat(bank).frob(uilk, self, data, int(WAD));
 
         data = abi.encodePacked(-int(1), uint(0), uint(2), uint(4));
-        Vat(bank).frob(':uninft', self, data, -int(WAD));
+        Vat(bank).frob(uilk, self, data, -int(WAD));
+    }
+
+    function test_geth() public {
+        assertEq(address(bytes20(Vat(bank).geth(uilk, 'nfpm'))), address(nfpm));
+        assertEq(uint(Vat(bank).geth(uilk, 'ROOM')), HOOK_ROOM);
+        assertEq(address(bytes20(Vat(bank).geth(uilk, 'wrap'))), uniwrapper);
+        vm.expectRevert(Bank.ErrWrongKey.selector);
+        Vat(bank).geth(uilk, 'oh');
+
+        bytes32 val;
+        val = Vat(bank).gethi2(uilk, 'fsrc', uilk, bytes32(bytes20(WETH)));
+        assertEq(address(bytes20(val)), address(mdn));
+        val = Vat(bank).gethi2(uilk, 'ftag', uilk, bytes32(bytes20(WETH)));
+        assertEq(val, wrtag);
+        vm.expectRevert(Bank.ErrWrongKey.selector);
+        Vat(bank).gethi2(uilk, 'oh', uilk, bytes32(bytes20(WETH)));
     }
 
 }

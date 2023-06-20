@@ -4,6 +4,7 @@ import { task } from 'hardhat/config'
 const dpack = require('@etherpacks/dpack')
 
 task('deploy-mock-dependencies', '')
+.addOptionalParam('gasLimit', 'per-tx gas limit')
 .setAction(async (args, hre) => {
   let weth_addr  // todo never set
   debug('deploying dependencies...')
@@ -12,9 +13,19 @@ task('deploy-mock-dependencies', '')
   debug('found uni pack')
   const fb_pack = await hre.run('deploy-mock-feedbase', {netname: args.netname})
   debug('deployed fb')
-  const gf_pack = await hre.run('deploy-mock-gemfab', {netname: args.netname})
+  const gf_pack = await hre.run('deploy-mock-gemfab', {netname: args.netname, gasLimit: args.gasLimit})
   debug('deployed gf')
-  const tokens_pack = await hre.run('deploy-mock-tokens', {gf_pack: gf_pack, uni_pack: uni_pack, tokens: args.tokens, weth: weth_addr, netname: args.netname})
+  const tokens_pack = await hre.run(
+      'deploy-mock-tokens',
+      {
+          gf_pack: gf_pack,
+          uni_pack: uni_pack,
+          tokens: args.tokens,
+          weth: weth_addr, 
+          netname: args.netname,
+          gasLimit: args.gasLimit
+      }
+  )
   debug('deployed (or loaded) tokens')
 
   const pb = new dpack.PackBuilder(hre.network.name)

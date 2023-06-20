@@ -16,6 +16,7 @@ import '../src/mixin/math.sol';
 import { ERC20Hook } from '../src/hook/ERC20hook.sol';
 import {File} from '../src/file.sol';
 import {BankDiamond} from '../src/diamond.sol';
+import {Bank} from '../src/bank.sol';
 
 contract VatTest is Test, RicoSetUp {
     uint256 public init_join = 1000;
@@ -67,7 +68,7 @@ contract VatTest is Test, RicoSetUp {
         Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(WAD));
         uint gas = gasleft();
         Vat(bank).grab(gilk, self, self, no_rush, NO_CUT);
-        check_gas(gas, 75590);
+        check_gas(gas, 75565);
     }
 
     function test_heal_gas() public {
@@ -78,20 +79,20 @@ contract VatTest is Test, RicoSetUp {
 
         uint gas = gasleft();
         Vat(bank).heal(1);
-        check_gas(gas, 10351);
+        check_gas(gas, 10396);
     }
 
     function test_drip_gas() public {
         uint gas = gasleft();
         Vat(bank).drip(gilk);
-        check_gas(gas, 15331);
+        check_gas(gas, 15309);
 
         Vat(bank).filk(gilk, 'fee', 2 * RAY);
         skip(1);
         Vat(bank).frob(gilk, self, abi.encodePacked(100 * WAD), int(50 * WAD));
         gas = gasleft();
         Vat(bank).drip(gilk);
-        check_gas(gas, 37750);
+        check_gas(gas, 37728);
     }
 
     function test_ilk_reset() public {
@@ -1023,6 +1024,19 @@ contract VatTest is Test, RicoSetUp {
         gold.mint(address(guy), 1000 * WAD);
         vm.expectRevert(Vat.ErrWrongUrn.selector);
         guy.frob(gilk, self, abi.encodePacked(int(0)), int(WAD));
+    }
+
+    function test_gethi() public {
+        bytes32 val;
+        val = Vat(bank).gethi(gilk, 'fsrc', gilk);
+        assertEq(address(bytes20(val)), self);
+        val = Vat(bank).gethi(gilk, 'ftag', gilk);
+        assertEq(val, grtag);
+        val = Vat(bank).gethi(gilk, 'pass', gilk);
+        assertEq(val, bytes32(uint(1)));
+ 
+        vm.expectRevert(Bank.ErrWrongKey.selector);
+        Vat(bank).gethi(gilk, 'oh', gilk);
     }
 
 }

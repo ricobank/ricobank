@@ -52,4 +52,11 @@ contract File is Bank {
 
     function rico() external view returns (Gem) {return getBankStorage().rico;}
     function fb() external view returns (Feedbase) {return getBankStorage().fb;}
+
+    function ward(address usr, bool can) external _ward_ {
+        getBankStorage().wards[usr] = can;
+    }
+    function wards(address usr) external view returns (bool) {
+        return getBankStorage().wards[usr];
+    }
 }

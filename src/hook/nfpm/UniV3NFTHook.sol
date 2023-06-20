@@ -224,4 +224,20 @@ contract UniNFTHook is Hook, Bank {
         }
     }
 
+    function get(bytes32 key) _flog_ external returns (bytes32) {
+        UniNFTHookStorage storage hs = getStorage();
+        if (key == 'nfpm') { return bytes32(bytes20(address(hs.nfpm)));
+        } else if (key == 'ROOM') { return bytes32(hs.ROOM);
+        } else if (key == 'wrap') { return bytes32(bytes20(address(hs.wrap)));
+        } else { revert ErrWrongKey(); }
+    }
+
+    function geti2(bytes32 key, bytes32 ilk, bytes32 _gem)
+      _flog_ external returns (bytes32) {
+        UniNFTHookStorage storage hs = getStorage();
+        address gem = address(bytes20(_gem));
+        if (key == 'fsrc') { return bytes32(bytes20(hs.sources[ilk][gem].fsrc));
+        } else if (key == 'ftag') { return hs.sources[ilk][gem].ftag;
+        } else { revert ErrWrongKey(); }
+    }
 }

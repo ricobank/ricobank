@@ -30,6 +30,7 @@ contract Bank is Math, Flog {
     struct BankStorage {
         Gem rico;
         Feedbase fb;
+        mapping(address=>bool) wards;
     }
 
     struct VatStorage {
@@ -80,7 +81,8 @@ contract Bank is Math, Flog {
 
     modifier _ward_ {
         if (msg.sender != IOwnable(address(this)).owner() &&
-            msg.sender != address(this)) {
+            msg.sender != address(this) &&
+            !getBankStorage().wards[msg.sender]) {
             revert ErrWard(msg.sender, address(this), msg.sig);
         }
         _;

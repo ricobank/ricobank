@@ -2,13 +2,11 @@ import { task } from 'hardhat/config'
 const debug = require('debug')('ricobank:task')
 const dpack = require('@etherpacks/dpack')
 import { b32, send } from 'minihat'
-const GASLIMIT = '1000000000000'
-
-
 
 task('deploy-mock-tokens', '')
 .addOptionalParam('tokens', 'JSON file with token addresses')
 .addOptionalParam('outfile', 'output JSON file')
+.addOptionalParam('gasLimit', 'per-tx gas limit')
 .setAction(async (args, hre) => {
   debug('deploy tokens')
 
@@ -22,12 +20,12 @@ task('deploy-mock-tokens', '')
     let pooladdr = await factory.getPool(token0, token1, fee)
 
     if (pooladdr == hre.ethers.constants.AddressZero) {
-      await send(factory.createPool, token0, token1, fee, {gasLimit: GASLIMIT})
+      await send(factory.createPool, token0, token1, fee, {gasLimit: args.gasLimit})
       pooladdr = await factory.getPool(token0, token1, fee)
       const uni_dapp = await dpack.load(args.uni_pack, hre.ethers, signer)
       const pool_artifact = await dpack.getIpfsJson(uni_dapp._types.UniswapV3Pool.artifact['/'])
       const pool = await hre.ethers.getContractAt(pool_artifact.abi, pooladdr, signer)
-      await send(pool.initialize, sqrtPriceX96 ? sqrtPriceX96 : '0x1' + '0'.repeat(96/4), {gasLimit: GASLIMIT});
+      await send(pool.initialize, sqrtPriceX96 ? sqrtPriceX96 : '0x1' + '0'.repeat(96/4), {gasLimit: args.gasLimit});
     }
 
     return pooladdr
@@ -48,7 +46,7 @@ task('deploy-mock-tokens', '')
     rico_addr = await gf_dapp.gemfab.callStatic.build(
       b32("Rico"), b32("RICO")
     );
-    await send(gf_dapp.gemfab.build, b32("Rico"), b32("RICO"))
+    await send(gf_dapp.gemfab.build, b32("Rico"), b32("RICO"), {gasLimit: args.gasLimit})
   }
 
   debug('deploy risk')
@@ -59,7 +57,7 @@ task('deploy-mock-tokens', '')
     risk_addr = await gf_dapp.gemfab.callStatic.build(
       b32("Rico Riskshare"), b32("RISK")
     )
-    await send(gf_dapp.gemfab.build, b32("Rico Riskshare"), b32("RISK"))
+    await send(gf_dapp.gemfab.build, b32("Rico Riskshare"), b32("RISK"), {gasLimit: args.gasLimit})
   }
 
   const uni_dapp = await dpack.load(args.uni_pack, hre.ethers, signer)
@@ -74,7 +72,7 @@ task('deploy-mock-tokens', '')
     dai_addr = await gf_dapp.gemfab.callStatic.build(
       b32("Dai Stablecoin"), b32("DAI")
     )
-    await send(gf_dapp.gemfab.build, b32("Dai Stablecoin"), b32("DAI"))
+    await send(gf_dapp.gemfab.build, b32("Dai Stablecoin"), b32("DAI"), {gasLimit: args.gasLimit})
   }
   ;[t0, t1] = [rico_addr, dai_addr]
   const ricodai_addr = await createAndInitializePoolIfNecessary(uni_dapp.uniswapV3Factory, t0, t1, 500)

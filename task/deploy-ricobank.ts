@@ -3,7 +3,6 @@ import { task } from 'hardhat/config'
 const debug = require('debug')('ricobank:task')
 const dpack = require('@etherpacks/dpack')
 import { b32, ray, rad, send, wad, BANKYEAR } from 'minihat'
-const GASLIMIT = '1000000000000'
 
 task('deploy-ricobank', '')
   .addOptionalParam('mock', 'Ignore dependency args and deploy new mock dependencies')
@@ -11,6 +10,7 @@ task('deploy-ricobank', '')
   .addOptionalParam('arb', 'Arbitrum deploy')
   .addOptionalParam('tokens', 'JSON file with token addresses')
   .addOptionalParam('writepack', 'write pack to pack dir')
+  .addOptionalParam('gasLimit', 'per-tx gas limit')
   .addParam('netname', 'network name to load packs from')
   .setAction(async (args, hre) => {
     debug('network name in task:', hre.network.name)
@@ -32,8 +32,8 @@ task('deploy-ricobank', '')
 
     const agg_artifact = require('../artifacts/src/test/MockChainlinkAggregator.sol/MockChainlinkAggregator.json')
     const agg_type = hre.ethers.ContractFactory.fromSolidity(agg_artifact, ali)
-    const agg_daiusd = await agg_type.deploy(deps.objects.feedbase.address, ali.address, b32('dai:usd'), 8, {gasLimit: GASLIMIT})
-    const agg_xauusd = await agg_type.deploy(deps.objects.feedbase.address, ali.address, b32('xau:usd'), 8, {gasLimit: GASLIMIT})
+    const agg_daiusd = await agg_type.deploy(deps.objects.feedbase.address, ali.address, b32('dai:usd'), 8, {gasLimit: args.gasLimit})
+    const agg_xauusd = await agg_type.deploy(deps.objects.feedbase.address, ali.address, b32('xau:usd'), 8, {gasLimit: args.gasLimit})
     let fb = await hre.ethers.getContractAt('Feedbase', deps.objects.feedbase.address);
     let timestamp = (await hre.ethers.provider.getBlock('latest')).timestamp
     const bn2b32 = (bn) => hre.ethers.utils.hexZeroPad(bn.toHexString(), 32)
@@ -47,14 +47,16 @@ task('deploy-ricobank', '')
 
 
     const diamond_type = hre.ethers.ContractFactory.fromSolidity(diamond_artifact, ali)
-    const diamond = await diamond_type.deploy()
+    debug('deploying diamond')
+    const diamond = await diamond_type.deploy({gasLimit: args.gasLimit})
     const ball_artifact = require('../artifacts/src/ball.sol/Ball.json')
     const ball_type = hre.ethers.ContractFactory.fromSolidity(ball_artifact, ali)
     timestamp = (await hre.ethers.provider.getBlock('latest')).timestamp
 
     const uniwrapper_artifact = require('../lib/feedbase/artifacts/src/adapters/UniWrapper.sol/UniWrapper.json')
     const uniwrapper_type = hre.ethers.ContractFactory.fromSolidity(uniwrapper_artifact, ali)
-    const uniwrapper = await uniwrapper_type.deploy({gasLimit: GASLIMIT});
+    debug('deploying uni wrapper')
+    const uniwrapper = await uniwrapper_type.deploy({gasLimit: args.gasLimit});
     // TODO uni debt ceil
     const ups = {
             nfpm: deps.objects.nonfungiblePositionManager.address,
@@ -111,14 +113,16 @@ task('deploy-ricobank', '')
         // create mock chainlink feed with price of 2000
         if (!params.gemusdagg) {
             await send(fb.push, b32(token + ':usd'), bn2b32(hre.ethers.BigNumber.from('200000000000')), timestamp * 2);
-            const agg_tokenusd = await agg_type.deploy(deps.objects.feedbase.address, ali.address, b32(token + ':usd'), 8, {gasLimit: GASLIMIT})
+            debug('deploying mock aggregator for token', token)
+            const agg_tokenusd = await agg_type.deploy(deps.objects.feedbase.address, ali.address, b32(token + ':usd'), 8, {gasLimit: args.gasLimit})
             ilk.gemusdagg = agg_tokenusd.address;
         }
         ilks.push(ilk)
     }
 
     debug('deploying ball...')
-    const ball = await ball_type.deploy(ballargs, {gasLimit: GASLIMIT})
+    const ball = await ball_type.deploy(ballargs, {gasLimit: args.gasLimit})
+    debug('transferring diamond to ball')
     await send(diamond.transferOwnership, ball.address)
     debug('running ball setup...')
 
@@ -131,12 +135,10 @@ task('deploy-ricobank', '')
     await send(ball.makeuni, ups);
     await send(ball.approve, ali.address);
     debug('done making uni hook')
-    const vat_addr = await ball.vat()
-    const vow_addr = await ball.vow()
     const deps_dapp = await dpack.load(deps, hre.ethers, ali)
     debug('ward rico and risk')
-    await send(deps_dapp.rico.ward, vat_addr, 1)
-    await send(deps_dapp.risk.ward, vow_addr, 1)
+    await send(deps_dapp.rico.ward, diamond.address, 1)
+    await send(deps_dapp.risk.ward, diamond.address, 1)
     debug('accept ownership')
     await send(diamond.acceptOwnership)
     debug('creating pack')

@@ -235,7 +235,13 @@ contract Vat is Bank {
         bool ok;
         getBankStorage().rico.mint(code, _MINT);
         (ok, result) = code.call(data);
-        require(ok, string(result));
+        if (!ok) {
+            // bubble up revert reason, first 32 bytes is bytes length
+            assembly {
+                let size := mload(result)
+                revert(add(32, result), size)
+            }
+        }
         getBankStorage().rico.burn(code, _MINT);
         vs.lock = UNLOCKED;
     }
@@ -259,21 +265,49 @@ contract Vat is Bank {
 
     function filh(bytes32 ilk, bytes32 key, bytes32 val)
       _ward_ _flog_ external {
-        hookcall(
-            ilk, abi.encodeWithSignature("file(bytes32,bytes32)", key, val)
-        );
+        hookcall(ilk, abi.encodeWithSignature(
+            "file(bytes32,bytes32)", key, val
+        ));
     }
 
     function filhi(bytes32 ilk, bytes32 key, bytes32 idx, bytes32 val)
       _ward_ _flog_ external {
-        hookcall(
-            ilk, abi.encodeWithSignature(
-                "fili(bytes32,bytes32,bytes32)", key, idx, val
+        hookcall(ilk, abi.encodeWithSignature(
+            "fili(bytes32,bytes32,bytes32)", key, idx, val
         ));
     }
 
     function filhi2(bytes32 ilk, bytes32 key, bytes32 idx0, bytes32 idx1, bytes32 val)
       _ward_ _flog_ external {
-        hookcall(ilk, abi.encodeWithSignature("fili2(bytes32,bytes32,bytes32,bytes32)", key, idx0, idx1, val));
+        hookcall(ilk, abi.encodeWithSignature(
+            "fili2(bytes32,bytes32,bytes32,bytes32)", key, idx0, idx1, val
+        ));
+    }
+
+    function geth(bytes32 ilk, bytes32 key)
+      _flog_ external returns (bytes32) {
+        return abi.decode(
+            hookcall(ilk, abi.encodeWithSignature(
+                "get(bytes32)", key
+            )), (bytes32)
+        );
+    }
+
+    function gethi(bytes32 ilk, bytes32 key, bytes32 idx)
+      _flog_ external returns (bytes32) {
+        return abi.decode(
+            hookcall(ilk, abi.encodeWithSignature(
+                "geti(bytes32,bytes32)", key, idx
+            )), (bytes32)
+        );
+    }
+
+    function gethi2(bytes32 ilk, bytes32 key, bytes32 idx0, bytes32 idx1)
+      _flog_ external returns (bytes32) {
+        return abi.decode(
+            hookcall(ilk, abi.encodeWithSignature(
+                "geti2(bytes32,bytes32,bytes32)", key, idx0, idx1
+            )), (bytes32)
+        );
     }
 }
