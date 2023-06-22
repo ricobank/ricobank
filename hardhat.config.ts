@@ -11,11 +11,17 @@ import './task/deploy-mock-tokens'
 
 import './task/deploy-mock-dependencies'
 import './task/deploy-ricobank'
+import 'hardhat-diamond-abi'
 
 /**
  * @type import('hardhat/config').HardhatUserConfig
  */
 export default {
+  diamondAbi: {
+      name: 'BankDiamond',
+      include: ['Vat', 'Vow', 'Vox', 'Bank', 'File', 'BankDiamond'],
+      strict: false
+  },
   solidity: {
     compilers: [
         {

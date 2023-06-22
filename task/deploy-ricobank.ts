@@ -41,11 +41,6 @@ task('deploy-ricobank', '')
     await send(fb.push, b32('xau:usd'), bn2b32(hre.ethers.BigNumber.from('190000000000')), timestamp * 2);
 
     const diamond_artifact = require('../artifacts/src/diamond.sol/BankDiamond.json')
-    diamond_artifact.abi = diamond_artifact.abi.filter(
-        (e, idx) => diamond_artifact.abi.findIndex(ee => ee.name == e.name) == idx
-    )
-
-
     const diamond_type = hre.ethers.ContractFactory.fromSolidity(diamond_artifact, ali)
     debug('deploying diamond')
     const diamond = await diamond_type.deploy({gasLimit: args.gasLimit})
@@ -190,14 +185,14 @@ task('deploy-ricobank', '')
     ]
 
     debug('packing Ricobank diamond')
-    let top_artifact = JSON.parse(JSON.stringify(diamond_artifact))
-    for (let dir of artifact_dirs) {
-        top_artifact.abi = top_artifact.abi.concat(
-            require(dir).abi.filter(item =>
-                top_artifact.abi.find(a => item.name == a.name) == undefined
-            )
-        )
-    }
+    let top_artifact = require('../artifacts/hardhat-diamond-abi/HardhatDiamondABI.sol/BankDiamond.json')
+    top_artifact.deployedBytecode = diamond_artifact.deployedBytecode
+    top_artifact.bytecode = diamond_artifact.bytecode
+    top_artifact.linkReferences = diamond_artifact.linkReferences
+    top_artifact.deployedLinkReferences = diamond_artifact.deployedLinkReferences
+    top_artifact.abi = top_artifact.abi.filter((item, idx) => {
+        return top_artifact.abi.findIndex(a => item.name == a.name) == idx
+    })
 
     await pb.packObject({
         objectname: 'bank',
