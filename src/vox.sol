@@ -38,6 +38,7 @@ contract Vox is Bank {
     function how() external view returns (uint) {return getVoxStorage().how;}
     function cap() external view returns (uint) {return getVoxStorage().cap;}
     function tip() external view returns (address) {return getVoxStorage().tip;}
+    function tau() external view returns (uint) {return getVoxStorage().tau;}
     function tag() external view returns (bytes32) {return getVoxStorage().tag;}
     function amp() external view returns (uint) {return AMP;}
 

@@ -282,7 +282,7 @@ contract Ball is Math, Ward {
         File(bank).link('fb',  feedbase);
         File(bank).link('tip', address(mdn));
         File(bank).file('tag', RICO_REF_TAG);
-        File(bank).file('how', bytes32(uint(1000000115170000000000000000)));
+        File(bank).file('how', bytes32(uint(1000000000000003600000000000)));
         File(bank).file('cap', bytes32(uint(1000000022000000000000000000)));
         File(bank).file('tau', bytes32(block.timestamp));
         File(bank).file('way', bytes32(RAY));

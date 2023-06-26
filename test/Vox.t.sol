@@ -115,6 +115,8 @@ contract VoxTest is Test, RicoSetUp {
     }
 
     function test_cap_min() public {
+        // set cap back to original value, otw it's too big to reasonably reach
+        File(bank).file(bytes32('cap'), bytes32(uint(1000000022000000000000000000)));
         Vox(bank).poke();
         skip(100000000);
         vm.startPrank(Vox(bank).tip());
@@ -125,6 +127,7 @@ contract VoxTest is Test, RicoSetUp {
     }
 
     function test_cap_max() public {
+        File(bank).file(bytes32('cap'), bytes32(uint(1000000022000000000000000000)));
         Vox(bank).poke();
         skip(100000000);
         vm.startPrank(Vox(bank).tip());
