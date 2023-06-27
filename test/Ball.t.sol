@@ -106,7 +106,7 @@ contract BallTest is Test, UniSetUp, Math {
         vm.stopPrank();
     }
 
-    function _ink(bytes32 ilk, address usr) internal returns (uint) {
+    function _ink(bytes32 ilk, address usr) internal view returns (uint) {
         return abi.decode(Vat(bank).ink(ilk, usr), (uint));
     }
 
@@ -212,7 +212,7 @@ contract BallTest is Test, UniSetUp, Math {
         BankDiamond(bank).acceptOwnership();
 
         uint usedgas     = gas - gasleft();
-        uint expectedgas = 23633732;
+        uint expectedgas = 23734650;
         if (usedgas < expectedgas) {
             console.log("ball saved %s gas...currently %s", expectedgas - usedgas, usedgas);
         }

@@ -12,5 +12,5 @@ interface Hook {
     function safehook(
         bytes32 i, address u
     ) view external returns (uint, uint);
-    function ink(bytes32 i, address u) external returns (bytes memory);
+    function ink(bytes32 i, address u) external view returns (bytes memory);
 }

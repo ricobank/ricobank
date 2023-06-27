@@ -168,6 +168,7 @@ contract Ball is Math, Ward {
         singleCut(address(vat), Vat.geth.selector);
         singleCut(address(vat), Vat.gethi.selector);
         singleCut(address(vat), Vat.gethi2.selector);
+        singleCut(address(vat), Vat.hookcallext.selector);
 
         singleCut(address(vow), Vow.keep.selector);
         singleCut(address(vow), Vow.bail.selector);

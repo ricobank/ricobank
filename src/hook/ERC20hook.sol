@@ -144,7 +144,7 @@ contract ERC20Hook is Hook, Bank {
         } else { revert ErrWrongKey(); }
     }
 
-    function geti(bytes32 key, bytes32 idx) _flog_ external returns (bytes32) {
+    function geti(bytes32 key, bytes32 idx) view external returns (bytes32) {
         ERC20HookStorage storage hs = getStorage();
         if (key == 'gem') {
             return bytes32(bytes20(hs.items[idx].gem));

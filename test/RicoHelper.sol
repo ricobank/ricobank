@@ -126,7 +126,7 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
         gold.burn(self, end_gold - start_gold);
     }
 
-    function _ink(bytes32 ilk, address usr) internal returns (uint) {
+    function _ink(bytes32 ilk, address usr) internal view returns (uint) {
         return abi.decode(Vat(bank).ink(ilk, usr), (uint));
     }
 

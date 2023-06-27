@@ -43,8 +43,8 @@ contract Vat is Bank {
     function debt() view external returns (uint) {return getVatStorage().debt;}
     function ceil() view external returns (uint) {return getVatStorage().ceil;}
     function par() view external returns (uint) {return getVatStorage().par;}
-    function ink(bytes32 i, address u) external returns (bytes memory data) {
-        data = abi.decode(hookcall(i, abi.encodeWithSelector(
+    function ink(bytes32 i, address u) external view returns (bytes memory data) {
+        data = abi.decode(_hookview(i, abi.encodeWithSelector(
             Hook.ink.selector, i, u
         )), (bytes));
     }
@@ -66,6 +66,7 @@ contract Vat is Bank {
     error ErrHookData();
     error ErrStatic();
     error ErrLock();
+    error ErrHookCallerNotBank();
 
     function init(bytes32 ilk, address hook)
       _ward_ _flog_ external
@@ -84,11 +85,11 @@ contract Vat is Bank {
     }
 
     function safe(bytes32 i, address u)
-      public returns (Spot, uint, uint)
+      public view returns (Spot, uint, uint)
     {
         VatStorage storage vs = getVatStorage();
         Ilk storage ilk = vs.ilks[i];
-        bytes memory data = hookcall(i, abi.encodeWithSelector(
+        bytes memory data = _hookview(i, abi.encodeWithSelector(
             Hook.safehook.selector, i, u
         ));
         if (data.length != 64) revert ErrHookData();
@@ -147,7 +148,7 @@ contract Vat is Bank {
         // safer if less/same art and more/same ink
         bool safer = dart <= 0;
         if (dink.length != 0) {
-            bytes memory data = hookcall(i, abi.encodeWithSelector(
+            bytes memory data = _hookcall(i, abi.encodeWithSelector(
                 Hook.frobhook.selector, msg.sender, i, u, dink, dart
             ));
             if (data.length != 32) revert ErrHookData();
@@ -161,7 +162,7 @@ contract Vat is Bank {
         if (!either(safer, u == msg.sender)) revert ErrWrongUrn();
     }
 
-    function hookcall(bytes32 i, bytes memory indata) internal returns (bytes memory outdata) {
+    function _hookcall(bytes32 i, bytes memory indata) internal returns (bytes memory outdata) {
         VatStorage storage vs = getVatStorage();
         bool success;
         (success, outdata) = vs.ilks[i].hook.delegatecall(indata);
@@ -172,6 +173,25 @@ contract Vat is Bank {
                 revert(add(32, outdata), size)
             }
         }
+    }
+
+    function _hookview(bytes32 i, bytes memory indata) internal view returns (bytes memory outdata) {
+        bool success;
+        (success, outdata) = address(this).staticcall(
+            abi.encodeWithSelector(Vat.hookcallext.selector, i, indata)
+        );
+        if (!success) {
+            assembly {
+                let size := mload(outdata)
+                revert(add(32, outdata), size)
+            }
+        }
+        outdata = abi.decode(outdata, (bytes));
+    }
+
+    function hookcallext(bytes32 i, bytes memory indata) external returns (bytes memory outdata) {
+        if (msg.sender != address(this)) revert ErrHookCallerNotBank();
+        return _hookcall(i, indata);
     }
 
     function grab(bytes32 i, address u, address k, uint rush, uint cut)
@@ -194,7 +214,7 @@ contract Vat is Bank {
         vs.sin += dtab;
 
         // ink auction
-        return hookcall(i, abi.encodeWithSelector(
+        return _hookcall(i, abi.encodeWithSelector(
             Hook.grabhook.selector, i, u, bill, k, rush, cut
         ));
     }
@@ -265,47 +285,47 @@ contract Vat is Bank {
 
     function filh(bytes32 ilk, bytes32 key, bytes32 val)
       _ward_ _flog_ external {
-        hookcall(ilk, abi.encodeWithSignature(
+        _hookcall(ilk, abi.encodeWithSignature(
             "file(bytes32,bytes32)", key, val
         ));
     }
 
     function filhi(bytes32 ilk, bytes32 key, bytes32 idx, bytes32 val)
       _ward_ _flog_ external {
-        hookcall(ilk, abi.encodeWithSignature(
+        _hookcall(ilk, abi.encodeWithSignature(
             "fili(bytes32,bytes32,bytes32)", key, idx, val
         ));
     }
 
     function filhi2(bytes32 ilk, bytes32 key, bytes32 idx0, bytes32 idx1, bytes32 val)
       _ward_ _flog_ external {
-        hookcall(ilk, abi.encodeWithSignature(
+        _hookcall(ilk, abi.encodeWithSignature(
             "fili2(bytes32,bytes32,bytes32,bytes32)", key, idx0, idx1, val
         ));
     }
 
     function geth(bytes32 ilk, bytes32 key)
-      _flog_ external returns (bytes32) {
+      external view returns (bytes32) {
         return abi.decode(
-            hookcall(ilk, abi.encodeWithSignature(
+            _hookview(ilk, abi.encodeWithSignature(
                 "get(bytes32)", key
             )), (bytes32)
         );
     }
 
     function gethi(bytes32 ilk, bytes32 key, bytes32 idx)
-      _flog_ external returns (bytes32) {
+      external view returns (bytes32) {
         return abi.decode(
-            hookcall(ilk, abi.encodeWithSignature(
+            _hookview(ilk, abi.encodeWithSignature(
                 "geti(bytes32,bytes32)", key, idx
             )), (bytes32)
         );
     }
 
     function gethi2(bytes32 ilk, bytes32 key, bytes32 idx0, bytes32 idx1)
-      _flog_ external returns (bytes32) {
+      external view returns (bytes32) {
         return abi.decode(
-            hookcall(ilk, abi.encodeWithSignature(
+            _hookview(ilk, abi.encodeWithSignature(
                 "geti2(bytes32,bytes32,bytes32)", key, idx0, idx1
             )), (bytes32)
         );
