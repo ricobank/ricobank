@@ -77,14 +77,14 @@ contract VatTest is Test, RicoSetUp {
     function test_drip_gas() public {
         uint gas = gasleft();
         Vat(bank).drip(gilk);
-        check_gas(gas, 15309);
+        check_gas(gas, 15338);
 
         Vat(bank).filk(gilk, 'fee', 2 * RAY);
         skip(1);
         Vat(bank).frob(gilk, self, abi.encodePacked(100 * WAD), int(50 * WAD));
         gas = gasleft();
         Vat(bank).drip(gilk);
-        check_gas(gas, 37728);
+        check_gas(gas, 37756);
     }
 
     function test_ilk_reset() public {
@@ -1034,6 +1034,17 @@ contract VatTest is Test, RicoSetUp {
  
         vm.expectRevert(Bank.ErrWrongKey.selector);
         Vat(bank).gethi(gilk, 'oh', gilk);
+    }
+
+    function test_bail_drips() public {
+        feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
+        Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(WAD));
+        skip(BANKYEAR);
+
+        uint prevrack = Vat(bank).ilks(gilk).rack;
+        feedpush(grtag, bytes32(0), type(uint).max);
+        Vat(bank).bail(gilk, self);
+        assertGt(Vat(bank).ilks(gilk).rack, prevrack);
     }
 
 }

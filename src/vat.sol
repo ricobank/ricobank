@@ -197,6 +197,7 @@ contract Vat is Bank {
 
     function bail(bytes32 i, address u) _flog_ external returns (bytes memory)
     {
+        _drip(i);
         (Spot spot, uint rush, uint cut) = safe(i, u);
         if (spot != Spot.Sunk) revert ErrSafeBail();
 
@@ -222,7 +223,10 @@ contract Vat is Bank {
         ));
     }
 
-    function drip(bytes32 i) _flog_ external {
+    function drip(bytes32 i) _flog_ external { _drip(i); }
+
+    // drip without flog
+    function _drip(bytes32 i) internal {
         VatStorage storage vs = getVatStorage();
         // multiply rack by fee every second
         if (block.timestamp == vs.ilks[i].rho) return;

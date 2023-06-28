@@ -752,7 +752,7 @@ contract DssClipTest is DssJsTest {
         uint gas = gasleft();
         vm.expectCall(address(hook), abi.encodePacked(hook.bailhook.selector));
         Vat(bank).bail(i0, me);
-        check_gas(gas, 85293);
+        check_gas(gas, 87718);
     }
 }
 

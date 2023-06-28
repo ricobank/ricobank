@@ -199,7 +199,7 @@ contract VowTest is Test, RicoSetUp {
         rico_mint(100 * WAD, false);
         uint gas = gasleft();
         Vow(bank).keep(gilks);
-        check_gas(gas, 141494);
+        check_gas(gas, 139552);
     }
 
     function test_keep_surplus_gas() public {
@@ -213,7 +213,7 @@ contract VowTest is Test, RicoSetUp {
         gilks[1] = gilk;
         uint gas = gasleft();
         Vow(bank).keep(gilks);
-        check_gas(gas, 134074);
+        check_gas(gas, 134131);
     }
 
     function test_bail_gas() public {
@@ -222,7 +222,7 @@ contract VowTest is Test, RicoSetUp {
         feedpush(grtag, bytes32(0), block.timestamp + 1000);
         uint gas = gasleft();
         Vat(bank).bail(gilk, self);
-        check_gas(gas, 44419);
+        check_gas(gas, 46844);
     }
 
     // goldusd, par, and liqr all = 1 after setup
