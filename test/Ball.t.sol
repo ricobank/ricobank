@@ -212,7 +212,7 @@ contract BallTest is Test, UniSetUp, Math {
         BankDiamond(bank).acceptOwnership();
 
         uint usedgas     = gas - gasleft();
-        uint expectedgas = 23734650;
+        uint expectedgas = 23383308;
         if (usedgas < expectedgas) {
             console.log("ball saved %s gas...currently %s", expectedgas - usedgas, usedgas);
         }
@@ -307,33 +307,33 @@ contract BallTest is Test, UniSetUp, Math {
 
     function test_fee_bail_flop() public _flop_after_ {
         Vat(bank).frob(WETH_ILK, me, abi.encodePacked(wethamt), dart);
-        vm.expectRevert(Vow.ErrSafeBail.selector);
-        Vow(bank).bail(WETH_ILK, me);
+        vm.expectRevert(Vat.ErrSafeBail.selector);
+        Vat(bank).bail(WETH_ILK, me);
         skip(BANKYEAR * 100);
         // revert bc feed data old
-        vm.expectRevert(Vow.ErrSafeBail.selector);
-        Vow(bank).bail(WETH_ILK, me);
+        vm.expectRevert(Vat.ErrSafeBail.selector);
+        Vat(bank).bail(WETH_ILK, me);
         look_poke();
         Vow(bank).keep(ilks);
         uint meweth = WethLike(WETH).balanceOf(me);
         Gem(rico).mint(me, 1000000 * WAD);
-        Vow(bank).bail(WETH_ILK, me);
+        Vat(bank).bail(WETH_ILK, me);
         assertGt(WethLike(WETH).balanceOf(me), meweth);
     }
 
 
     function test_ball_flap() public _flap_after_ {
         Vat(bank).frob(WETH_ILK, me, abi.encodePacked(wethamt), dart);
-        vm.expectRevert(Vow.ErrSafeBail.selector);
-        Vow(bank).bail(WETH_ILK, me);
+        vm.expectRevert(Vat.ErrSafeBail.selector);
+        Vat(bank).bail(WETH_ILK, me);
         skip(BANKYEAR * 100);
     }
 
     // user pays down the urn first, then try to flap
     function test_ball_pay_flap_1() public {
         Vat(bank).frob(WETH_ILK, me, abi.encodePacked(wethamt), dart);
-        vm.expectRevert(Vow.ErrSafeBail.selector);
-        Vow(bank).bail(WETH_ILK, me);
+        vm.expectRevert(Vat.ErrSafeBail.selector);
+        Vat(bank).bail(WETH_ILK, me);
         skip(BANKYEAR * 100); advance_chainlink(); look_poke();
 
         uint artleft = Vat(bank).urns(WETH_ILK, me);
@@ -355,8 +355,8 @@ contract BallTest is Test, UniSetUp, Math {
 
     function test_ball_pay_flap_success() public  _balanced_after_ {
         Vat(bank).frob(WETH_ILK, me, abi.encodePacked(wethamt), dart);
-        vm.expectRevert(Vow.ErrSafeBail.selector);
-        Vow(bank).bail(WETH_ILK, me);
+        vm.expectRevert(Vat.ErrSafeBail.selector);
+        Vat(bank).bail(WETH_ILK, me);
         skip(BANKYEAR * 100); look_poke();
 
         uint artleft = Vat(bank).urns(WETH_ILK, me);

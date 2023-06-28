@@ -33,7 +33,6 @@ contract Vow is Bank {
         return (getVowStorage().floppep, getVowStorage().floppop);
     }
 
-    error ErrSafeBail();
     error ErrReflop();
     error ErrOutDated();
     error ErrTransfer();
@@ -85,13 +84,6 @@ contract Vow is Bank {
         uint earn = cut / rush;
         if (!Gem(wag).transferFrom(msg.sender, address(this), earn)) revert ErrTransfer();
         if (!Gem(hag).transfer(msg.sender, ham)) revert ErrTransfer();
-    }
-
-    function bail(bytes32 i, address u) _flog_ external returns (bytes memory) {
-        Vat(address(this)).drip(i);
-        (Vat.Spot spot, uint rush, uint cut) = Vat(address(this)).safe(i, u);
-        if (spot != Vat.Spot.Sunk) revert ErrSafeBail();
-        return Vat(address(this)).grab(i, u, msg.sender, rush, cut);
     }
 
 }

@@ -191,7 +191,7 @@ contract VowTest is Test, RicoSetUp {
         feedpush(grtag, bytes32(1000 * RAY), block.timestamp + 1000);
         Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(WAD));
         feedpush(grtag, bytes32(RAY * 0), block.timestamp + 1000);
-        Vow(bank).bail(gilk, self);
+        Vat(bank).bail(gilk, self);
 
         bytes32[] memory gilks = new bytes32[](2);
         gilks[0] = gilk;
@@ -199,7 +199,7 @@ contract VowTest is Test, RicoSetUp {
         rico_mint(100 * WAD, false);
         uint gas = gasleft();
         Vow(bank).keep(gilks);
-        check_gas(gas, 134994);
+        check_gas(gas, 141494);
     }
 
     function test_keep_surplus_gas() public {
@@ -221,8 +221,8 @@ contract VowTest is Test, RicoSetUp {
         Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(WAD));
         feedpush(grtag, bytes32(0), block.timestamp + 1000);
         uint gas = gasleft();
-        Vow(bank).bail(gilk, self);
-        check_gas(gas, 69671);
+        Vat(bank).bail(gilk, self);
+        check_gas(gas, 44419);
     }
 
     // goldusd, par, and liqr all = 1 after setup
@@ -243,10 +243,10 @@ contract VowTest is Test, RicoSetUp {
 
         // create the sin and kick off risk sale
         uint supply = risk.totalSupply();
-        vm.expectCall(bank, abi.encodePacked(Vat.grab.selector));
-        Vow(bank).bail(gilk, self);
+        vm.expectCall(bank, abi.encodePacked(Vat.bail.selector));
+        Vat(bank).bail(gilk, self);
         feedpush(RISK_RICO_TAG, bytes32(10000 * RAY), block.timestamp + 1000);
-        vm.expectCall(ahook, abi.encodePacked(ERC20Hook.grabhook.selector));
+        vm.expectCall(ahook, abi.encodePacked(ERC20Hook.bailhook.selector));
         Vow(bank).keep(ilks);
         assertEq(risk.totalSupply(), supply + WAD);
 
@@ -281,8 +281,8 @@ contract VowTest is Test, RicoSetUp {
         rico_mint(100 * WAD, false);
         Vow(bank).keep(ilks);
         Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(WAD));
-        vm.expectRevert(Vow.ErrSafeBail.selector);
-        Vow(bank).bail(gilk, self);
+        vm.expectRevert(Vat.ErrSafeBail.selector);
+        Vat(bank).bail(gilk, self);
     }
 
     function test_drip() public {
@@ -375,8 +375,8 @@ contract VowTest is Test, RicoSetUp {
 
         ZeroHook zhook = new ZeroHook();
         Vat(bank).filk(gilk, 'hook', uint(bytes32(bytes20(address(zhook)))));
-        vm.expectCall(address(zhook), abi.encodePacked(zhook.grabhook.selector));
-        Vow(bank).bail(gilk, self);
+        vm.expectCall(address(zhook), abi.encodePacked(zhook.bailhook.selector));
+        Vat(bank).bail(gilk, self);
         assertEq(gold.balanceOf(bank), vowgoldbefore);
     }
 }
@@ -387,7 +387,7 @@ contract FrobHook is Hook {
     ) external pure returns (bool safer){
         return int(uint(bytes32(dink[:32]))) >= 0 && dart <= 0; 
     }
-    function grabhook(
+    function bailhook(
         bytes32 i, address u, uint bill, address keeper, uint rush, uint cut
     ) external returns (bytes memory) {}
     function safehook(
@@ -401,7 +401,7 @@ contract ZeroHook is Hook {
     function frobhook(
         address sender, bytes32 i, address u, bytes calldata dink, int dart
     ) external returns (bool safer) {}
-    function grabhook(
+    function bailhook(
         bytes32 i, address u, uint bill, address keeper, uint rush, uint cut
     ) external returns (bytes memory) {}
     function safehook(
@@ -532,9 +532,9 @@ contract VowJsTest is Test, RicoSetUp {
         rico_mint(1000 * WAD, false);
         rico.transfer(address(guy), 1000 * WAD);
         guy.approve(arico, ahook, UINT256_MAX);
-        vm.expectCall(address(hook), abi.encodePacked(ERC20Hook.grabhook.selector));
-        Vow(bank).bail(i0, me);
-        // urn should be grabbed
+        vm.expectCall(address(hook), abi.encodePacked(ERC20Hook.bailhook.selector));
+        Vat(bank).bail(i0, me);
+        // urn should be bailed
         uint ink = _ink(i0, me); uint art = _art(i0, me);
         assertEq(art, 0);
         assertLt(ink, start_ink);
@@ -547,17 +547,19 @@ contract VowJsTest is Test, RicoSetUp {
     }
 
     function test_bail_urns_when_safe() public {
-        vm.expectRevert(Vow.ErrSafeBail.selector);
-        Vow(bank).bail(i0, me);
+        vm.expectRevert(Vat.ErrSafeBail.selector);
+        Vat(bank).bail(i0, me);
 
         uint sin0 = Vat(bank).sin();
         assertEq(sin0 / RAY, 0);
 
         skip(BANKYEAR);
-        vm.expectCall(address(hook), abi.encodePacked(hook.grabhook.selector));
-        Vow(bank).bail(i0, me);
-        vm.expectRevert(Vow.ErrSafeBail.selector);
-        Vow(bank).bail(i0, me);
+        feedpush(wrtag, bytes32(0), UINT256_MAX);
+
+        vm.expectCall(address(hook), abi.encodePacked(hook.bailhook.selector));
+        Vat(bank).bail(i0, me);
+        vm.expectRevert(Vat.ErrSafeBail.selector);
+        Vat(bank).bail(i0, me);
     }
 
     function test_keep_vow_1yr_drip_flap() public {
@@ -577,15 +579,15 @@ contract VowJsTest is Test, RicoSetUp {
         // wait a year, bail the existing urns
         // bails should leave more sin than rico dripped
         skip(BANKYEAR);
-        vm.expectCall(address(hook), abi.encodePacked(hook.grabhook.selector));
-        Vow(bank).bail(i0, me);
+        feedpush(wrtag, bytes32(RAY / 2), UINT256_MAX);
+        vm.expectCall(address(hook), abi.encodePacked(hook.bailhook.selector));
+        Vat(bank).bail(i0, me);
         rico_mint(WAD * 5000, false);
-        Vow(bank).bail(i0, address(cat));
+        Vat(bank).bail(i0, address(cat));
 
         // more sin than rico, should flop
         feedpush(RISK_RICO_TAG, bytes32(RAY), UINT256_MAX);
         vm.expectCall(bank, abi.encodePacked(Vat.heal.selector));
-        //vm.expectCall(address(hook), abi.encodePacked(hook.flow.selector));
         Vow(bank).keep(ilks);
     }
 
@@ -637,8 +639,8 @@ contract VowJsTest is Test, RicoSetUp {
         // confirm bail trades the weth for rico
         uint vow_rico_0 = rico.balanceOf(bank);
         uint hook_weth_0 = weth.balanceOf(bank);
-        vm.expectCall(address(hook), abi.encodePacked(hook.grabhook.selector));
-        Vow(bank).bail(i0, me);
+        vm.expectCall(address(hook), abi.encodePacked(hook.bailhook.selector));
+        Vat(bank).bail(i0, me);
 
         uint vow_pre_flop_rico = rico.balanceOf(bank);
         feedpush(RISK_RICO_TAG, bytes32(10 * RAY), UINT256_MAX);

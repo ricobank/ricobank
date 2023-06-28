@@ -42,7 +42,7 @@ contract Guy {
         Gem(gem).transfer(dst, amt);
     }
     function bail(bytes32 i, address u) public returns (bytes memory) {
-        return Vow(bank).bail(i, u);
+        return Vat(bank).bail(i, u);
     }
     function keep(bytes32[] calldata ilks) public {
         Vow(bank).keep(ilks);
@@ -119,7 +119,7 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
         _bob.approve(agold, bank, amt);
         _bob.frob(gilk, address(_bob), abi.encodePacked(amt), int(amt));
         feedpush(grtag, bytes32(0), type(uint).max);
-        if (bail) Vow(bank).bail(gilk, address(_bob));
+        if (bail) Vat(bank).bail(gilk, address(_bob));
         _bob.transfer(arico, self, amt);
         feedpush(grtag, v, t);
         uint end_gold = gold.balanceOf(self);

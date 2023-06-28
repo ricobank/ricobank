@@ -66,6 +66,7 @@ contract Vat is Bank {
     error ErrHookData();
     error ErrStatic();
     error ErrLock();
+    error ErrSafeBail();
     error ErrHookCallerNotBank();
 
     function init(bytes32 ilk, address hook)
@@ -194,9 +195,11 @@ contract Vat is Bank {
         return _hookcall(i, indata);
     }
 
-    function grab(bytes32 i, address u, address k, uint rush, uint cut)
-        _ward_ _flog_ external returns (bytes memory)
+    function bail(bytes32 i, address u) _flog_ external returns (bytes memory)
     {
+        (Spot spot, uint rush, uint cut) = safe(i, u);
+        if (spot != Spot.Sunk) revert ErrSafeBail();
+
         VatStorage storage vs = getVatStorage();
         // liquidate the urn
         Ilk storage ilk = vs.ilks[i];
@@ -215,7 +218,7 @@ contract Vat is Bank {
 
         // ink auction
         return _hookcall(i, abi.encodeWithSelector(
-            Hook.grabhook.selector, i, u, bill, k, rush, cut
+            Hook.bailhook.selector, i, u, bill, msg.sender, rush, cut
         ));
     }
 

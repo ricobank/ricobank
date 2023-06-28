@@ -24,7 +24,7 @@ contract Usr {
         Vat(bank).frob(ilk, u, dink, dart);
     }
     function bail(bytes32 ilk, address usr) public {
-        Vow(bank).bail(ilk, usr);
+        Vat(bank).bail(ilk, usr);
     }
     function try_call(address addr, bytes calldata data) external returns (bool) {
         bytes memory _data = data;
@@ -430,7 +430,7 @@ contract DssBiteTest is DssVatTest {
 
         // dunk, litter N/A bail liquidates whole urn in one tx, no litterbox
         vm.expectRevert('ERR_SAFE');
-        Vow(bank).bail(i0, me);
+        Vat(bank).bail(i0, me);
     }
 
     function test_floppy_bite() public _bite_ {
@@ -443,7 +443,7 @@ contract DssBiteTest is DssVatTest {
         // vow.sin N/A no debt queue
         assertEq(Vat(bank).sin() / RAY, 0);
         assertEq(rico.balanceOf(bank), 0);
-        Vow(bank).bail(i0, me);
+        Vat(bank).bail(i0, me);
         assertEq(Vat(bank).sin() / RAY, ricoamt);
         // added 40, price is 2 and debt is 100, so earnings reduced 1.25 times
         uint earn = WAD * 80 * 4 / 5;
@@ -669,7 +669,7 @@ contract DssClipTest is DssJsTest {
     function testFail_kick_zero_price() public _clip_ {
         feedpush(grtag, bytes32(0), UINT256_MAX);
         vm.expectRevert(); // todo need error types for zero cases
-        Vow(bank).bail(i0, me);
+        Vat(bank).bail(i0, me);
     }
 
     // testFail_redo_zero_price
@@ -681,21 +681,21 @@ contract DssClipTest is DssJsTest {
 //        // vel/rel similar to dss lot
 //        curb(address(gem), 0, WAD, block.timestamp, 1);
 //        vm.expectRevert(); // todo need error types for zero cases
-//        Vow(bank).bail(i0, me);
+//        Vat(bank).bail(i0, me);
 //    }
 
     function test_kick_zero_usr() public _clip_ {
         // flow.flow (dss kick) actually uses msg.sender
         // so this is kind of N/A
         // but test bail's (dss bark) usr anyway
-        vm.expectRevert(Vow.ErrSafeBail.selector);
-        Vow(bank).bail(i0, address(0));
+        vm.expectRevert(Vat.ErrSafeBail.selector);
+        Vat(bank).bail(i0, address(0));
     }
 
     // opposite behavior, bail takes the whole urn
     // refunds later
     function test_bark_not_leaving_dust() public _clip_ {
-        Vow(bank).bail(i0, me);
+        Vat(bank).bail(i0, me);
 
         uint art = _art(i0, me);
         assertEq(art, 0);
@@ -750,9 +750,9 @@ contract DssClipTest is DssJsTest {
 
     function test_gas_bark_kick() public _clip_ {
         uint gas = gasleft();
-        vm.expectCall(address(hook), abi.encodePacked(hook.grabhook.selector));
-        Vow(bank).bail(i0, me);
-        check_gas(gas, 108545);
+        vm.expectCall(address(hook), abi.encodePacked(hook.bailhook.selector));
+        Vat(bank).bail(i0, me);
+        check_gas(gas, 85293);
     }
 }
 
@@ -789,7 +789,7 @@ contract DssVowTest is DssJsTest {
         // frob some, bail but don't glug
         Vat(bank).frob(i0, me, abi.encodePacked(amt), int(amt));
         feedpush(grtag, bytes32(0), UINT256_MAX);
-        Vow(bank).bail(i0, me); // lots of debt
+        Vat(bank).bail(i0, me); // lots of debt
 
         // keep, should be a flop
         uint rs1 = risk.totalSupply();
@@ -845,7 +845,7 @@ contract DssVowTest is DssJsTest {
     function test_no_surplus_after_good_flop() public _vow_ {
         Vat(bank).frob(i0, me, abi.encodePacked(int(100)), 100);
         feedpush(grtag, bytes32(0), UINT256_MAX);
-        Vow(bank).bail(i0, me); // lots of debt
+        Vat(bank).bail(i0, me); // lots of debt
         skip(1);
         rico_mint(50 * WAD, true);
         //give vow some rico to make sure it gets burnt healing
@@ -888,7 +888,7 @@ contract DssDogTest is DssJsTest {
         feedpush(grtag, bytes32(RAY / 1000), UINT256_MAX);
         uint init_ink = WAD;
         setUrn(init_ink, 2000 * WAD);
-        Vow(bank).bail(i0, me);
+        Vat(bank).bail(i0, me);
         uint art = _art(i0, me);
         uint ink = _ink(i0, me);
         assertLt(ink, init_ink);
@@ -897,8 +897,8 @@ contract DssDogTest is DssJsTest {
 
     function test_bark_not_unsafe() public _dog_ {
         setUrn(WAD, 500 * WAD);
-        vm.expectRevert(Vow.ErrSafeBail.selector);
-        Vow(bank).bail(i0, me);
+        vm.expectRevert(Vat.ErrSafeBail.selector);
+        Vat(bank).bail(i0, me);
     }
 
     function test_bark_dusty_vault() public {

@@ -63,19 +63,11 @@ contract VatTest is Test, RicoSetUp {
         check_gas(gas, 34462);
     }
 
-    function test_grab_gas() public {
-        feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
-        Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(WAD));
-        uint gas = gasleft();
-        Vat(bank).grab(gilk, self, self, no_rush, NO_CUT);
-        check_gas(gas, 75610);
-    }
-
     function test_heal_gas() public {
         feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
         Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(WAD));
         feedpush(grtag, bytes32(0), type(uint).max);
-        Vat(bank).grab(gilk, self, self, no_rush * 2, WAD);
+        Vat(bank).bail(gilk, self);
 
         uint gas = gasleft();
         Vat(bank).heal(1);
@@ -744,35 +736,39 @@ contract VatTest is Test, RicoSetUp {
         Vat(bank).frob(i, u, abi.encodePacked(dink), dart);
     }
 
-    function test_grab_reentrancy() public {
-        bytes32 grabtag = 'ggmrico';
-        bytes32 grabilk = 'ggm';
+    function test_bail_reentrancy() public {
+        // create a gem that re-bails on transfer
+        // the re-bail should fail, because the first bail
+        // wrote off the debt and an urn with 0 debt is safe
+        bytes32 bailtag = 'bgmrico';
+        bytes32 baililk = 'bgm';
         uint dink = WAD;
         uint dart = WAD;
-        Gem ggm = Gem(address(new GrabbyGem(Grabber(self), bank, "grabby gem", "GGM")));
-        GrabbyGem(address(ggm)).setargs(grabilk, self, -int(dink), -int(dart));
-        Vat(bank).init(grabilk, address(hook));
-        Vat(bank).filhi(grabilk, 'gem', grabilk, bytes32(bytes20(address(ggm))));
-        Vat(bank).filhi(grabilk, 'fsrc', grabilk, bytes32(bytes20(address(mdn))));
-        Vat(bank).filhi(grabilk, 'ftag', grabilk, grabtag);
+        Gem bgm = Gem(address(new BailyGem(Bailer(self), bank, "baily gem", "BGM")));
+        BailyGem(address(bgm)).setargs(baililk, self, -int(dink), -int(dart));
+        Vat(bank).init(baililk, address(hook));
+        Vat(bank).filhi(baililk, 'gem', baililk, bytes32(bytes20(address(bgm))));
+        Vat(bank).filhi(baililk, 'fsrc', baililk, bytes32(bytes20(address(mdn))));
+        Vat(bank).filhi(baililk, 'ftag', baililk, bailtag);
 
-        ggm.mint(self, dink * 1000);
-        ggm.approve(bank, type(uint).max);
-        Vat(bank).filk(grabilk, 'line', 100000000 * RAD);
+        bgm.mint(self, dink * 1000);
+        bgm.approve(bank, type(uint).max);
+        Vat(bank).filk(baililk, 'line', 100000000 * RAD);
         File(bank).file('par', bytes32(RAY));
-        make_feed(grabtag);
-        feedpush(grabtag, bytes32(RAY * 1000000), type(uint).max);
-        Vat(bank).filk(grabilk, 'chop', RAY);
+        make_feed(bailtag);
+        feedpush(bailtag, bytes32(RAY * 1000000), type(uint).max);
+        Vat(bank).filk(baililk, 'chop', RAY);
 
-        Vat(bank).frob(grabilk, self, abi.encodePacked(dink * 2), int(dart));
-        GrabbyGem(address(ggm)).setdepth(1);
-        // additional grab will not impact vat
-        Vat(bank).grab(grabilk, self, self, no_rush, NO_CUT);
-        assertEq(Vat(bank).sin(), WAD * RAY);
+        Vat(bank).frob(baililk, self, abi.encodePacked(dink * 2), int(dart));
+        BailyGem(address(bgm)).setdepth(1);
+        feedpush(bailtag, bytes32(0), UINT256_MAX);
+        // recursive call should be safe bail bc art == 0
+        vm.expectRevert(Vat.ErrSafeBail.selector);
+        Vat(bank).bail(baililk, self);
     }
 
-    function dograb(bytes32 i, address u) public {
-        Vat(bank).grab(i, u, self, no_rush, NO_CUT);
+    function dobail(bytes32 i, address u) public {
+        Vat(bank).bail(i, u);
     }
 
     function test_frob_hook() public {
@@ -804,7 +800,7 @@ contract VatTest is Test, RicoSetUp {
         assertEq(gold.balanceOf(self), goldbefore);
     }
 
-    function test_grab_hook_1() public {
+    function test_bail_hook_1() public {
         // FrobHook's safehook returns a high number, so frob is safe
         FrobHook hook = new FrobHook();
         Vat(bank).filk(gilk, 'hook', uint(bytes32(bytes20(address(hook)))));
@@ -816,13 +812,14 @@ contract VatTest is Test, RicoSetUp {
         ZeroHook zhook = new ZeroHook();
         Vat(bank).filk(gilk, 'hook', uint(bytes32(bytes20(address(zhook)))));
 
-        // check that grabhook called
+        // check that bailhook called
         bytes memory hookdata = abi.encodeCall(
-            zhook.grabhook,
-            (gilk, self, WAD, self, no_rush, NO_CUT)
+            zhook.bailhook,
+            (gilk, self, WAD, self, UINT256_MAX, 0)
         );
+        feedpush(grtag, bytes32(0), UINT256_MAX);
         vm.expectCall(address(zhook), hookdata);
-        Vat(bank).grab(gilk, self, self, no_rush, NO_CUT);
+        Vat(bank).bail(gilk, self);
         assertEq(gold.balanceOf(self), goldbefore);
     }
 
@@ -1047,7 +1044,7 @@ contract OnlyInkHook is Hook {
     ) pure external returns (bool safer) {
         return int(uint(bytes32(dink[:32]))) >= 0; 
     }
-    function grabhook(
+    function bailhook(
         bytes32 i, address u, uint bill, address keeper, uint rush, uint cut
     ) external returns (bytes memory) {}
     function safehook(
@@ -1064,7 +1061,7 @@ contract FrobHook is Hook {
     ) pure external returns (bool safer) {
         return int(uint(bytes32(dink[:32]))) >= 0 && dart <= 0; 
     }
-    function grabhook(
+    function bailhook(
         bytes32 i, address u, uint bill, address keeper, uint rush, uint cut
     ) external returns (bytes memory) {}
     function safehook(
@@ -1078,7 +1075,7 @@ contract ZeroHook is Hook {
     function frobhook(
         address sender, bytes32 i, address u, bytes calldata dink, int dart
     ) external returns (bool safer) {}
-    function grabhook(
+    function bailhook(
         bytes32 i, address u, uint bill, address keeper, uint rush, uint cut
     ) external returns (bytes memory) {}
     function safehook(
@@ -1148,22 +1145,22 @@ contract HackyGem is OverrideableGem {
     }
 }
 
-interface Grabber {
-    function dograb(bytes32 i, address u) external;
+interface Bailer {
+    function dobail(bytes32 i, address u) external;
 }
 
-contract GrabbyGem is OverrideableGem {
+contract BailyGem is OverrideableGem {
     address payable bank;
     uint depth;
     bytes32 i;
     address u;
     int dink;
     int dart;
-    Grabber grabber;
+    Bailer bailer;
 
-    constructor(Grabber _grabber, address payable _bank, bytes32 name, bytes32 symbol) OverrideableGem(name, symbol) {
+    constructor(Bailer _bailer, address payable _bank, bytes32 name, bytes32 symbol) OverrideableGem(name, symbol) {
         bank = _bank;
-        grabber = _grabber;
+        bailer = _bailer;
     }
 
     function setdepth(uint _depth) public {
@@ -1182,7 +1179,7 @@ contract GrabbyGem is OverrideableGem {
     {
         if (depth > 0) {
             depth--;
-            grabber.dograb(i, u);
+            bailer.dobail(i, u);
         }
 
         unchecked {

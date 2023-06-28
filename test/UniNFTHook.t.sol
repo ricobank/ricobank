@@ -122,18 +122,18 @@ contract NFTHookTest is Test, RicoSetUp {
 
         // just gold dip can't make collateral worthless
         feedpush(grtag, bytes32(0 * RAY), type(uint).max);
-        vm.expectRevert(Vow.ErrSafeBail.selector);
-        Vow(bank).bail(uilk, self);
+        vm.expectRevert(Vat.ErrSafeBail.selector);
+        Vat(bank).bail(uilk, self);
         feedpush(grtag, bytes32(1900 * RAY), type(uint).max);
 
         // just weth dip can't make collateral worthless
         feedpush(wrtag, bytes32(0 * RAY), type(uint).max);
-        vm.expectRevert(Vow.ErrSafeBail.selector);
-        Vow(bank).bail(uilk, self);
+        vm.expectRevert(Vat.ErrSafeBail.selector);
+        Vat(bank).bail(uilk, self);
 
         // both dip, collateral is worthless
         feedpush(grtag, bytes32(0 * RAY), type(uint).max);
-        Vow(bank).bail(uilk, self);
+        Vat(bank).bail(uilk, self);
         assertEq(Vat(bank).urns(uilk, self), 0);
         // todo test successful swaps, compare to master
     }
@@ -212,8 +212,8 @@ contract NFTHookTest is Test, RicoSetUp {
 
         feedpush(grtag, bytes32(0 * RAY), type(uint).max);
         feedpush(wrtag, bytes32(0 * RAY), type(uint).max);
-        vm.expectRevert(Vow.ErrSafeBail.selector);
-        Vow(bank).bail(uilk, self);
+        vm.expectRevert(Vat.ErrSafeBail.selector);
+        Vat(bank).bail(uilk, self);
 
         feedpush(drtag, bytes32(RAY / uint(100_000)), type(uint).max);
         (,uint rush, uint cut) = Vat(bank).safe(uilk, self);
@@ -225,7 +225,7 @@ contract NFTHookTest is Test, RicoSetUp {
 
         uint gas = gasleft();
         guy.bail(uilk, self);
-        check_gas(gas, 272390);
+        check_gas(gas, 257466);
 
         assertLt(rico.balanceOf(address(guy)), guy_rico_before);
         assertEq(nfpm.ownerOf(goldwethtokid), address(guy));
@@ -305,7 +305,7 @@ contract NFTHookTest is Test, RicoSetUp {
         rico_mint(wad_cost, true);
         rico.approve(bank, type(uint).max);
 
-        bytes memory res = Vow(bank).bail(uilk, self);
+        bytes memory res = Vat(bank).bail(uilk, self);
 
         bytes memory ids = abi.decode(res, (bytes));
         uint256[] memory tok_ids = new uint256[](ids.length / 32);

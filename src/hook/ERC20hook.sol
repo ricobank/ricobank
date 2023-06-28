@@ -73,7 +73,7 @@ contract ERC20Hook is Hook, Bank {
         return dink >= 0;
     }
 
-    function grabhook(
+    function bailhook(
         bytes32 i,
         address u,
         uint256 bill,

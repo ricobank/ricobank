@@ -6,7 +6,7 @@ interface Hook {
     function frobhook(
         address sender, bytes32 i, address u, bytes calldata dink, int dart
     ) external returns (bool safer);
-    function grabhook(
+    function bailhook(
         bytes32 i, address u, uint bill, address keeper, uint rush, uint cut
     ) external returns (bytes memory);
     function safehook(

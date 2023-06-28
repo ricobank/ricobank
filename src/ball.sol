@@ -151,7 +151,7 @@ contract Ball is Math, Ward {
         singleCut(address(vat), Vat.filhi2.selector);
         singleCut(address(vat), Vat.init.selector);
         singleCut(address(vat), Vat.frob.selector);
-        singleCut(address(vat), Vat.grab.selector);
+        singleCut(address(vat), Vat.bail.selector);
         singleCut(address(vat), Vat.safe.selector);
         singleCut(address(vat), Vat.heal.selector);
         singleCut(address(vat), Vat.sin.selector);
@@ -171,7 +171,6 @@ contract Ball is Math, Ward {
         singleCut(address(vat), Vat.hookcallext.selector);
 
         singleCut(address(vow), Vow.keep.selector);
-        singleCut(address(vow), Vow.bail.selector);
         singleCut(address(vow), Vow.RISK.selector);
         singleCut(address(vow), Vow.ramp.selector);
         singleCut(address(vow), Vow.flapfeed.selector);

@@ -112,7 +112,7 @@ contract UniNFTHook is Hook, Bank {
         }
     }
 
-    function grabhook(
+    function bailhook(
         bytes32 ilk,
         address urn,
         uint256 bill,
