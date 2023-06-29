@@ -1,5 +1,7 @@
 /// SPDX-License-Identifier: AGPL-3.0
 
+// Copyright (C) 2021-2023 halys
+
 pragma solidity ^0.8.19;
 
 abstract contract Flog {
