@@ -24,7 +24,7 @@
 
 ### developing
 
-You need `node`/`npm` and `ipfs`.
+You need `node`/`npm`, and you need `ipfs daemon` running.
 This repo uses submodules for managing some dependencies.
 
 - `npm run initialize` -- this will perform:
@@ -34,7 +34,7 @@ This repo uses submodules for managing some dependencies.
     - `npm run build:all`
 - `FOUNDRY_PROFILE=lite npm test`
 
-To run js tests, with ipfs daemon running:
+To run js tests with `ipfs daemon` running:
 - `npm run js-test`
 
 To deploy from hardhat console:
