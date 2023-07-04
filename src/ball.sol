@@ -298,11 +298,11 @@ contract Ball is Math, Ward {
         Vat(bank).filhi(ilk, 'fsrc', ilk, bytes32(bytes20(address(mdn))));
         Vat(bank).filhi(ilk, 'ftag', ilk, gemricotag);
         Vat(bank).filhi(ilk, 'pass', ilk, bytes32(uint(1)));
-        Vat(bank).filk(ilk, 'chop', ilkparams.chop);
-        Vat(bank).filk(ilk, 'dust', ilkparams.dust);
-        Vat(bank).filk(ilk, 'fee',  ilkparams.fee);  // 5%
-        Vat(bank).filk(ilk, 'line', ilkparams.line);
-        Vat(bank).filk(ilk, 'liqr', ilkparams.liqr);
+        Vat(bank).filk(ilk, 'chop', bytes32(ilkparams.chop));
+        Vat(bank).filk(ilk, 'dust', bytes32(ilkparams.dust));
+        Vat(bank).filk(ilk, 'fee', bytes32( ilkparams.fee));  // 5%
+        Vat(bank).filk(ilk, 'line', bytes32(ilkparams.line));
+        Vat(bank).filk(ilk, 'liqr', bytes32(ilkparams.liqr));
 
         address[] memory sources = new address[](2);
         bytes32[] memory tags    = new bytes32[](2);
@@ -345,8 +345,8 @@ contract Ball is Math, Ward {
         Vat(bank).filh(UNI_NFT_ILK, 'ROOM', bytes32(ups.room));
         Vat(bank).filh(UNI_NFT_ILK, 'wrap', bytes32(bytes20(address(ups.uniwrapper))));
 
-        Vat(bank).filk(ups.ilk, 'fee', ups.fee);
-        Vat(bank).filk(ups.ilk, 'chop', ups.chop);
+        Vat(bank).filk(ups.ilk, 'fee', bytes32(ups.fee));
+        Vat(bank).filk(ups.ilk, 'chop', bytes32(ups.chop));
     }
 
     function approve(address usr) _ward_ public {

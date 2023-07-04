@@ -161,7 +161,7 @@ contract VowTest is Test, RicoSetUp {
 
     function test_bail_refund() public {
         // set c ratio to double
-        Vat(bank).filk(gilk, "liqr", RAY * 2);
+        Vat(bank).filk(gilk, "liqr", bytes32(RAY * 2));
         uint borrow = WAD * 500;
         feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
         // frob to edge of safety
@@ -203,7 +203,7 @@ contract VowTest is Test, RicoSetUp {
     }
 
     function test_keep_surplus_gas() public {
-        Vat(bank).filk(gilk, 'fee', 2 * RAY);
+        Vat(bank).filk(gilk, 'fee', bytes32(2 * RAY));
         feedpush(grtag, bytes32(10000 * RAY), block.timestamp + 1000);
         Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(3000 * WAD));
         skip(1);
@@ -290,7 +290,7 @@ contract VowTest is Test, RicoSetUp {
         assertEq(rho, block.timestamp);
         assertEq(rico.balanceOf(self), 0);
 
-        Vat(bank).filk(gilk, 'fee', 2 * RAY);
+        Vat(bank).filk(gilk, 'fee', bytes32(2 * RAY));
         feedpush(grtag, bytes32(RAY * 1000), type(uint).max);
         Vat(bank).frob(gilk, address(this), abi.encodePacked(WAD), int(WAD));
         uint firstrico = rico.balanceOf(self);
@@ -312,7 +312,7 @@ contract VowTest is Test, RicoSetUp {
     }
 
     function test_keep_balanced() public {
-        Vat(bank).filk(gilk, 'fee', 2 * RAY);
+        Vat(bank).filk(gilk, 'fee', bytes32(2 * RAY));
 
         feedpush(grtag, bytes32(RAY * 1000), block.timestamp + 1000);
         uint amt = Vat(bank).sin() / RAY;
@@ -327,7 +327,7 @@ contract VowTest is Test, RicoSetUp {
     }
 
     function test_keep_unbalanced_slightly_more_rico() public {
-        Vat(bank).filk(gilk, 'fee', 2 * RAY);
+        Vat(bank).filk(gilk, 'fee', bytes32(2 * RAY));
 
         feedpush(grtag, bytes32(RAY * 1000), block.timestamp + 1000);
         uint amt = Vat(bank).sin() / RAY + 1;
@@ -346,7 +346,7 @@ contract VowTest is Test, RicoSetUp {
     }
 
     function test_keep_unbalanced_slightly_more_sin() public {
-        Vat(bank).filk(gilk, 'fee', 2 * RAY);
+        Vat(bank).filk(gilk, 'fee', bytes32(2 * RAY));
 
         feedpush(grtag, bytes32(RAY * 1000), block.timestamp + 1000);
         uint amt = Vat(bank).sin() / RAY - 1;
@@ -369,12 +369,12 @@ contract VowTest is Test, RicoSetUp {
 
     function test_bail_hook() public {
         FrobHook hook = new FrobHook();
-        Vat(bank).filk(gilk, 'hook', uint(bytes32(bytes20(address(hook)))));
+        Vat(bank).filk(gilk, 'hook', bytes32(uint(bytes32(bytes20(address(hook))))));
         Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(WAD));
         uint vowgoldbefore = gold.balanceOf(bank);
 
         ZeroHook zhook = new ZeroHook();
-        Vat(bank).filk(gilk, 'hook', uint(bytes32(bytes20(address(zhook)))));
+        Vat(bank).filk(gilk, 'hook', bytes32(uint(bytes32(bytes20(address(zhook))))));
         vm.expectCall(address(zhook), abi.encodePacked(zhook.bailhook.selector));
         Vat(bank).bail(gilk, self);
         assertEq(gold.balanceOf(bank), vowgoldbefore);
@@ -464,8 +464,8 @@ contract VowJsTest is Test, RicoSetUp {
         weth.approve(bank, UINT256_MAX);
 
         File(bank).file('ceil', bytes32(uint(10000 * RAD)));
-        Vat(bank).filk(i0, 'line', 10000 * RAD);
-        Vat(bank).filk(i0, 'chop', RAY * 11 / 10);
+        Vat(bank).filk(i0, 'line', bytes32(10000 * RAD));
+        Vat(bank).filk(i0, 'chop', bytes32(RAY * 11 / 10));
 
         File(bank).file('vel', bytes32(uint(WAD)));
         File(bank).file('rel', bytes32(uint(WAD / 10000)));
@@ -475,7 +475,7 @@ contract VowJsTest is Test, RicoSetUp {
         feedpush(wrtag, bytes32(RAY), block.timestamp + 2 * BANKYEAR);
         feedpush(grtag, bytes32(RAY), block.timestamp + 2 * BANKYEAR);
         uint fee = 1000000001546067052200000000; // == ray(1.05 ** (1/BANKYEAR))
-        Vat(bank).filk(i0, 'fee', fee);
+        Vat(bank).filk(i0, 'fee', bytes32(fee));
         Vat(bank).frob(i0, me, abi.encodePacked(100 * WAD), 0);
         Vat(bank).frob(i0, me, abi.encodePacked(int(0)), int(99 * WAD));
 
@@ -593,7 +593,7 @@ contract VowJsTest is Test, RicoSetUp {
 
     function test_keep_rate_limiting_flop_absolute_rate() public {
         File(bank).file('ceil', bytes32(uint(100000 * RAD)));
-        Vat(bank).filk(i0, 'line', 100000 * RAD);
+        Vat(bank).filk(i0, 'line', bytes32(100000 * RAD));
         File(bank).file('vel', bytes32(uint(WAD)));
         File(bank).file('rel', bytes32(uint(WAD)));
         File(bank).file('bel', bytes32(uint(block.timestamp - 1)));
@@ -606,7 +606,7 @@ contract VowJsTest is Test, RicoSetUp {
 
     function test_keep_rate_limiting_flop_relative_rate() public {
         File(bank).file('ceil', bytes32(uint(100000 * RAD)));
-        Vat(bank).filk(i0, 'line', uint(100000 * RAD));
+        Vat(bank).filk(i0, 'line', bytes32(uint(100000 * RAD)));
         File(bank).file('rel', bytes32(uint(WAD)));
         File(bank).file('vel', bytes32(uint(risk.totalSupply() * 2)));
         File(bank).file('bel', bytes32(uint(block.timestamp - 1)));

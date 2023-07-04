@@ -288,10 +288,10 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
         Vat(bank).filhi(dilk, 'gem', dilk, bytes32(bytes20(address(dai))));
         Vat(bank).filhi(dilk, 'fsrc', dilk, bytes32(bytes20(self)));
         Vat(bank).filhi(dilk, 'ftag', dilk, drtag);
-        Vat(bank).filk(dilk, 'hook', uint(bytes32(bytes20(address(hook)))));
-        Vat(bank).filk(dilk, bytes32('chop'), RAD);
-        Vat(bank).filk(dilk, bytes32('line'), init_mint * 10 * RAD);
-        Vat(bank).filk(dilk, bytes32('fee'),  1000000001546067052200000000);  // 5%
+        Vat(bank).filk(dilk, 'hook', bytes32(uint(bytes32(bytes20(address(hook))))));
+        Vat(bank).filk(dilk, bytes32('chop'), bytes32(RAD));
+        Vat(bank).filk(dilk, bytes32('line'), bytes32(init_mint * 10 * RAD));
+        Vat(bank).filk(dilk, bytes32('fee'), bytes32(uint(1000000001546067052200000000)));  // 5%
         // feedpush(dutag, bytes32(RAY), block.timestamp + 1000);
         Vat(bank).filhi(dilk, 'pass', dilk, bytes32(uint(1)));
         make_feed(drtag);
@@ -306,11 +306,11 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
         Vat(bank).filhi(gilk, 'fsrc', gilk, bytes32(bytes20(self)));
         Vat(bank).filhi(gilk, 'ftag', gilk, grtag);
  
-        Vat(bank).filk(gilk, 'hook', uint(bytes32(bytes20(address(hook)))));
+        Vat(bank).filk(gilk, 'hook', bytes32(uint(bytes32(bytes20(address(hook))))));
         // todo fix other chops, should be rays
-        Vat(bank).filk(gilk, bytes32('chop'), RAY);
-        Vat(bank).filk(gilk, bytes32('line'), init_mint * 10 * RAD);
-        Vat(bank).filk(gilk, bytes32('fee'),  1000000001546067052200000000);  // 5%
+        Vat(bank).filk(gilk, bytes32('chop'), bytes32(RAY));
+        Vat(bank).filk(gilk, bytes32('line'), bytes32(init_mint * 10 * RAD));
+        Vat(bank).filk(gilk, bytes32('fee'), bytes32(uint(1000000001546067052200000000)));  // 5%
         feedpush(grtag, bytes32(RAY), block.timestamp + 1000);
         agold = address(gold);
         Vat(bank).filhi(gilk, 'pass', gilk, bytes32(uint(1)));
@@ -325,10 +325,10 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
         Vat(bank).filhi(rilk, 'fsrc', rilk, bytes32(bytes20(self)));
         Vat(bank).filhi(rilk, 'ftag', rilk, rtag);
  
-        Vat(bank).filk(rilk, 'hook', uint(bytes32(bytes20(address(hook)))));
-        Vat(bank).filk(rilk, bytes32('chop'), RAD);
-        Vat(bank).filk(rilk, bytes32('line'), init_mint * 10 * RAD);
-        Vat(bank).filk(rilk, bytes32('fee'),  1000000001546067052200000000);  // 5%
+        Vat(bank).filk(rilk, 'hook', bytes32(uint(bytes32(bytes20(address(hook))))));
+        Vat(bank).filk(rilk, bytes32('chop'), bytes32(RAD));
+        Vat(bank).filk(rilk, bytes32('line'), bytes32(init_mint * 10 * RAD));
+        Vat(bank).filk(rilk, bytes32('fee'), bytes32(uint(1000000001546067052200000000)));  // 5%
         feedpush(rtag, bytes32(RAY), block.timestamp + 1000);
         Vat(bank).filhi(rilk, 'pass', rilk, bytes32(uint(1)));
         aruby = address(ruby);

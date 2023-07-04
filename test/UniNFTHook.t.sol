@@ -64,7 +64,7 @@ contract NFTHookTest is Test, RicoSetUp {
  
         feedpush(drtag, bytes32(RAY), type(uint).max);
 
-        Vat(bank).filk(uilk, 'line', 100000 * RAD);
+        Vat(bank).filk(uilk, 'line', bytes32(100000 * RAD));
         guy = new Guy(bank);
     }
 
@@ -142,8 +142,8 @@ contract NFTHookTest is Test, RicoSetUp {
         // the NFT has 1000 each of gold and weth, valued at 1900 and 1000
         // frob to max safe debt with double cratio, 1.45MM rico
         File(bank).file('ceil', bytes32(WAD * 1_000_000_000));
-        Vat(bank).filk(uilk, 'line', RAD * 1_000_000_000);
-        Vat(bank).filk(gilk,      'line', RAD * 1_000_000_000);
+        Vat(bank).filk(uilk, 'line', bytes32(RAD * 1_000_000_000));
+        Vat(bank).filk(gilk,      'line', bytes32(RAD * 1_000_000_000));
         bytes memory addgwpos = abi.encodePacked(int(1), goldwethtokid);
         uint borrow = WAD * uint(2_900_000 - 1);
         assertEq(nfpm.ownerOf(goldwethtokid), self);
@@ -172,9 +172,9 @@ contract NFTHookTest is Test, RicoSetUp {
         // the NFT has 1000 each of gold and weth, valued at 1900 and 1000
         // frob to max safe debt with double cratio, 1.45MM rico
         File(bank).file('ceil', bytes32(WAD * 1_000_000_000));
-        Vat(bank).filk(uilk, 'line', RAD * 1_000_000_000);
-        Vat(bank).filk(gilk,      'line', RAD * 1_000_000_000);
-        Vat(bank).filk(uilk, 'liqr', RAY * 2);
+        Vat(bank).filk(uilk, 'line', bytes32(RAD * 1_000_000_000));
+        Vat(bank).filk(gilk,      'line', bytes32(RAD * 1_000_000_000));
+        Vat(bank).filk(uilk, 'liqr', bytes32(RAY * 2));
         bytes memory addgwpos = abi.encodePacked(int(1), goldwethtokid);
         uint borrow = WAD * uint(1_450_000 - 1);
         Vat(bank).frob(uilk, self, addgwpos, int(borrow));

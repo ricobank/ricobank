@@ -271,20 +271,21 @@ contract Vat is Bank {
         vs.lock = UNLOCKED;
     }
 
-    function filk(bytes32 ilk, bytes32 key, uint val)
+    function filk(bytes32 ilk, bytes32 key, bytes32 val)
       _ward_ _flog_ external
     {
+        uint _val = uint(val);
         VatStorage storage vs = getVatStorage();
         Ilk storage i = vs.ilks[ilk];
-               if (key == "line") { i.line = val;
-        } else if (key == "dust") { i.dust = val;
-        } else if (key == "hook") { i.hook = address(bytes20(bytes32(val)));
-        } else if (key == "liqr") { i.liqr = val;
-        } else if (key == "chop") { i.chop = val;
+               if (key == "line") { i.line = _val;
+        } else if (key == "dust") { i.dust = _val;
+        } else if (key == "hook") { i.hook = address(bytes20(val));
+        } else if (key == "liqr") { i.liqr = _val;
+        } else if (key == "chop") { i.chop = _val;
         } else if (key == "fee") {
-            if (val < RAY)                revert ErrFeeMin();
+            if (_val < RAY)                revert ErrFeeMin();
             if (block.timestamp != i.rho) revert ErrFeeRho();
-            i.fee = val;
+            i.fee = _val;
         } else { revert ErrWrongKey(); }
     }
 

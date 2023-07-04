@@ -87,9 +87,9 @@ contract DssJsTest is Test, RicoSetUp {
         Vat(bank).filhi(gilk, 'fsrc', gilk, bytes32(bytes20(address(mdn))));
         Vat(bank).filhi(gilk, 'ftag', gilk, grtag);
  
-        Vat(bank).filk(gilk, bytes32('chop'), RAY);
-        Vat(bank).filk(gilk, bytes32("line"), init_mint * 10 * RAY);
-        //Vat(bank).filk(gilk, bytes32('fee'), 1000000001546067052200000000);  // 5%
+        Vat(bank).filk(gilk, bytes32('chop'), bytes32(RAY));
+        Vat(bank).filk(gilk, bytes32("line"), bytes32(init_mint * 10 * RAY));
+        //Vat(bank).filk(gilk, bytes32('fee'), bytes32(1000000001546067052200000000));  // 5%
         feedpush(grtag, bytes32(RAY), block.timestamp + 1000);
     }
 
@@ -111,7 +111,7 @@ contract DssJsTest is Test, RicoSetUp {
 
         // vat init
         File(bank).file('ceil', bytes32(ceil * RAD));
-        Vat(bank).filk(i0, 'line', 1000 * RAD);
+        Vat(bank).filk(i0, 'line', bytes32(1000 * RAD));
 
         feedpush(grtag, bytes32(RAY), block.timestamp + 1000);
 
@@ -165,7 +165,7 @@ contract DssFrobTest is DssVatTest {
         assertEq(Gem(gem).balanceOf(me), 0);
         gem.mint(me, 1000 * WAD);
         feedpush(grtag, bytes32(RAY), block.timestamp + 1000);
-        Vat(bank).filk(i0, 'line', 1000 * RAD);
+        Vat(bank).filk(i0, 'line', bytes32(1000 * RAD));
     }
     modifier _frob_ { _frob_setUp(); _; }
 
@@ -188,7 +188,7 @@ contract DssFrobTest is DssVatTest {
     function test_calm() public _frob_ {
         // calm means that the debt ceiling is not exceeded
         // it's ok to increase debt as long as you remain calm
-        Vat(bank).filk(i0, 'line', 10 * RAD);
+        Vat(bank).filk(i0, 'line', bytes32(10 * RAD));
         Vat(bank).frob(i0, me, abi.encodePacked(10 * WAD), int(9 * WAD));
         // only if under debt ceiling
         vm.expectRevert(Vat.ErrDebtCeil.selector);
@@ -198,9 +198,9 @@ contract DssFrobTest is DssVatTest {
     function test_cool() public _frob_ {
         // cool means that the debt has decreased
         // it's ok to be over the debt ceiling as long as you're cool
-        Vat(bank).filk(i0, 'line', 10 * RAD);
+        Vat(bank).filk(i0, 'line', bytes32(10 * RAD));
         Vat(bank).frob(i0, me, abi.encodePacked(10 * WAD), int(8 * WAD));
-        Vat(bank).filk(i0, 'line', 5 * RAD);
+        Vat(bank).filk(i0, 'line', bytes32(5 * RAD));
         // can decrease debt when over ceiling
         Vat(bank).frob(i0, me, abi.encodePacked(int(0)), -int(WAD));
     }
@@ -306,7 +306,7 @@ contract DssFrobTest is DssVatTest {
     function test_dust() public _frob_ {
         rico_mint(1, true); // +1 for rounding in system's favour
         Vat(bank).frob(i0, me, abi.encodePacked(9 * WAD), int(WAD));
-        Vat(bank).filk(i0, 'dust', 5 * RAD);
+        Vat(bank).filk(i0, 'dust', bytes32(5 * RAD));
         vm.expectRevert(Vat.ErrUrnDust.selector);
         Vat(bank).frob(i0, me, abi.encodePacked(5 * WAD), int(2 * WAD));
         Vat(bank).frob(i0, me, abi.encodePacked(int(0)), int(5 * WAD));
@@ -331,9 +331,9 @@ contract DssBiteTest is DssVatTest {
         gold.mint(me, 1000 * WAD);
 
         feedpush(grtag, bytes32(RAY), block.timestamp + 1000);
-        Vat(bank).filk(i0, 'line', 1000 * RAD);
+        Vat(bank).filk(i0, 'line', bytes32(1000 * RAD));
         // cat.box N/A bail liquidates entire urn
-        Vat(bank).filk(i0, 'chop', RAY);
+        Vat(bank).filk(i0, 'chop', bytes32(RAY));
 
         gold.approve(bank, UINT256_MAX);
         // gov approve flap N/A not sure what to do with gov atm...
@@ -368,8 +368,8 @@ contract DssBiteTest is DssVatTest {
         // tag=4, mat=2
         // make urn unsafe, set liquidation penalty
         feedpush(grtag, bytes32(RAY * 49 / 10), block.timestamp + 1000);
-        Vat(bank).filk(i0, 'liqr', RAY * 2);
-        Vat(bank).filk(i0, 'chop', RAY * 11 / 10);
+        Vat(bank).filk(i0, 'liqr', bytes32(RAY * 2));
+        Vat(bank).filk(i0, 'chop', bytes32(RAY * 11 / 10));
 
         assertEq(_ink(i0, me), 40 * WAD);
         assertEq(_art(i0, me), 100 * WAD);
@@ -487,14 +487,14 @@ contract DssFoldTest is DssVatTest {
     function _fold_setup() internal {
         _vat_setUp();
         File(bank).file('ceil', bytes32(100 * RAD));
-        Vat(bank).filk(i0, 'line', 100 * RAD);
+        Vat(bank).filk(i0, 'line', bytes32(100 * RAD));
     }
 
     modifier _fold_ { _fold_setup(); _; }
 
     function draw(bytes32 ilk, uint joy) internal {
         File(bank).file('ceil', bytes32(joy * RAD + total_pool_rico * RAY));
-        Vat(bank).filk(ilk, 'line', joy * RAD);
+        Vat(bank).filk(ilk, 'line', bytes32(joy * RAD));
         feedpush(grtag, bytes32(RAY), block.timestamp + 1000);
 
         _slip(gem, me, WAD);
@@ -512,7 +512,7 @@ contract DssFoldTest is DssVatTest {
         uint fee = Vat(bank).ilks(i0).fee;
         assertEq(fee, RAY);
         draw(i0, 1);
-        Vat(bank).filk(i0, 'fee', RAY * 21 / 20);
+        Vat(bank).filk(i0, 'fee', bytes32(RAY * 21 / 20));
         assertEq(tab(i0, me), RAD);
 
         skip(1);
@@ -578,17 +578,17 @@ contract DssClipTest is DssJsTest {
         _slip(gold, me, 1000 * WAD);
         // no need to join
 
-        Vat(bank).filk(i0, 'liqr', 2 * RAY); // dss mat
+        Vat(bank).filk(i0, 'liqr', bytes32(2 * RAY)); // dss mat
 
         feedpush(grtag, bytes32(goldprice), block.timestamp + 1000);
 
-        Vat(bank).filk(i0, 'dust', 20 * RAD);
-        Vat(bank).filk(i0, 'line', 10000 * RAD);
+        Vat(bank).filk(i0, 'dust', bytes32(20 * RAD));
+        Vat(bank).filk(i0, 'line', bytes32(10000 * RAD));
 
         // rico has uni pools, dss doesn't
         File(bank).file('ceil', bytes32((10000 + total_pool_rico) * RAD));
 
-        Vat(bank).filk(i0, 'chop', 11 * RAY / 10); // dss uses wad, rico uses ray
+        Vat(bank).filk(i0, 'chop', bytes32(11 * RAY / 10)); // dss uses wad, rico uses ray
         // hole, Hole N/A (similar to cat.box), no rico equivalent, rico bails entire urn
         // dss clipper <-> rico flower (flip)
 
@@ -802,7 +802,7 @@ contract DssVowTest is DssJsTest {
         Vow(bank).keep(ilks);
 
         // create a surplus then keep
-        Vat(bank).filk(gilk, "line",  10_000 * RAD);
+        Vat(bank).filk(gilk, "line", bytes32( 10_000 * RAD));
         rico_mint(amt, false);
         rico.transfer(bank, amt);
         feedpush(RISK_RICO_TAG, bytes32(1000 * RAY), UINT256_MAX);
@@ -817,8 +817,8 @@ contract DssVowTest is DssJsTest {
 
     function test_flap() public _vow_ {
         Vat(bank).drip(i0);
-        Vat(bank).filk(gilk, bytes32('chop'), RAY * 11 / 10);
-        Vat(bank).filk(i0, 'fee', RAY * 15 / 10);
+        Vat(bank).filk(gilk, bytes32('chop'), bytes32(RAY * 11 / 10));
+        Vat(bank).filk(i0, 'fee', bytes32(RAY * 15 / 10));
         Vat(bank).frob(i0, me, abi.encodePacked(200 * WAD), int(100 * WAD));
         skip(10);
 
@@ -868,7 +868,7 @@ contract DssDogTest is DssJsTest {
 
     function _dog_setUp() internal {
         File(bank).file('ceil', bytes32(10000 * RAD));
-        Vat(bank).filk(i0, 'line', 10000 * RAD);
+        Vat(bank).filk(i0, 'line', bytes32(10000 * RAD));
         gem.mint(me, 100000 * WAD);
         gem.approve(bank, UINT256_MAX);
         Vow(bank).keep(ilks);
@@ -904,7 +904,7 @@ contract DssDogTest is DssJsTest {
     function test_bark_dusty_vault() public {
         // difference from dss: error on dust
         uint dust = 200;
-        Vat(bank).filk(i0, 'dust', dust * RAD);
+        Vat(bank).filk(i0, 'dust', bytes32(dust * RAD));
         vm.expectRevert(Vat.ErrUrnDust.selector);
         Vat(bank).frob(i0, me, abi.encodePacked(200000 * WAD), int(199 * WAD));
     }
