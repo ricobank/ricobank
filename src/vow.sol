@@ -43,43 +43,64 @@ contract Vow is Bank {
         for (uint256 i = 0; i < ilks.length; i++) {
             Vat(address(this)).drip(ilks[i]);
         }
-        uint rico = bankS.rico.balanceOf(address(this));
-        uint risk = vowS.RISK.balanceOf(address(this));
-        vowS.RISK.burn(address(this), risk);
+
+        Gem rico = bankS.rico;
+        Gem risk = vowS.RISK;
+        uint ricobal = rico.balanceOf(address(this));
+        uint riskbal = risk.balanceOf(address(this));
+        risk.burn(address(this), riskbal);
 
         // rico is a wad, sin is a rad
         uint sin = vatS.sin / RAY;
-        if (rico > sin) {
+        if (ricobal > sin) {
             // pay down sin, then auction off surplus RICO for RISK
             if (sin > 1) Vat(address(this)).heal(sin - 1);
-            // buy-and-burn risk with remaining rico
-            uint flap = rico - sin;
+
+            // buy-and-burn risk with remaining (`over`) rico
+            uint over = ricobal - sin;
+
+            // rush increases as surplus increases, i.e. if there's a massive
+            // surplus the system deduces that it's overpricing rico
             uint debt = vatS.debt;
-            uint rush = (flap * vowS.flappep + debt * vowS.flappop) / debt;
-            flow(vowS.flapsrc, vowS.flaptag, address(bankS.rico), flap, address(vowS.RISK), rush);
-        } else if (sin > rico) {
+            uint rush = (over * vowS.flappep + debt * vowS.flappop) / debt;
+
+            // swap the surplus for RISK
+            flow(vowS.flapsrc, vowS.flaptag, rico, over, risk, rush);
+        } else if (sin > ricobal) {
             // pay down as much sin as possible
-            if (rico > 1) Vat(address(this)).heal(rico - 1);
-            uint debt = vatS.debt;
-            uint rush = ((sin - rico) * vowS.floppep + debt * vowS.floppop) / debt;
-            uint slope = min(vowS.ramp.vel, wmul(vowS.ramp.rel, vowS.RISK.totalSupply()));
+            if (ricobal > 1) Vat(address(this)).heal(ricobal - 1);
+
+            // mint-and-sell risk to cover `under`
+            uint under = sin - ricobal;
+
+            // rush increases as system becomes undercollateralized
+            // i.e. if it's very undercollateralized then bank deduces
+            // that it's overpricing RISK
+            uint debt  = vatS.debt;
+            uint rush  = (under * vowS.floppep + debt * vowS.floppop) / debt;
+
+            // rate-limit flop
+            uint slope = min(vowS.ramp.vel, wmul(vowS.ramp.rel, risk.totalSupply()));
             uint flop  = slope * min(block.timestamp - vowS.ramp.bel, vowS.ramp.cel);
             if (0 == flop) revert ErrReflop();
             vowS.ramp.bel = block.timestamp;
-            // mint-and-sell risk to cover remaining sin
-            vowS.RISK.mint(address(this), flop);
-            flow(vowS.flopsrc, vowS.floptag, address(vowS.RISK), flop, address(bankS.rico), rush);
+
+            // swap RISK for rico to cover sin
+            risk.mint(address(this), flop);
+            flow(vowS.flopsrc, vowS.floptag, risk, flop, rico, rush);
         }
     }
 
     function flow(
-        address src, bytes32 tag, address hag, uint ham, address wag, uint rush
+        address src, bytes32 tag, Gem hag, uint ham, Gem wag, uint rush
     ) internal {
+        // pull the feed to get the earn (in rico for flop, risk for flap)
+        // if rush was 1.0
         (bytes32 val, uint ttl) = getBankStorage().fb.pull(src, tag);
         if (ttl < block.timestamp) revert ErrOutDated();
         uint cut = ham * uint(val);
 
-        // cut is RAD, rush is RAY, so vow earns a WAD
+        // cut is RAD, rush is RAY, so bank earns a WAD
         uint earn = cut / rush;
         if (!Gem(wag).transferFrom(msg.sender, address(this), earn)) revert ErrTransfer();
         if (!Gem(hag).transfer(msg.sender, ham)) revert ErrTransfer();

@@ -46,17 +46,19 @@ contract Vox is Bank {
     constructor(uint256 _AMP) { AMP = _AMP; }
 
     function poke() _flog_ external {
-        VoxStorage storage voxS = getVoxStorage();
-        VatStorage storage vatS = getVatStorage();
+        VoxStorage storage voxS   = getVoxStorage();
+        VatStorage storage vatS   = getVatStorage();
+        BankStorage storage bankS = getBankStorage();
         if (voxS.tau == block.timestamp) { return; }
+
         uint256 dt = block.timestamp - voxS.tau;
-        voxS.tau = block.timestamp;
+        voxS.tau   = block.timestamp;
 
         // use previous `way` to grow `par` to keep par updates predictable
         uint256 par = grow(vatS.par, voxS.way, dt);
-        vatS.par = par;
+        vatS.par    = par;
 
-        (bytes32 mar_, uint256 ttl) = getBankStorage().fb.pull(voxS.tip, voxS.tag);
+        (bytes32 mar_, uint256 ttl) = bankS.fb.pull(voxS.tip, voxS.tag);
         uint256 mar = rmul(uint256(mar_), AMP);
         if (block.timestamp > ttl) { return; }
 

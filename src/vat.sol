@@ -41,8 +41,8 @@ contract Vat is Bank {
     function debt() view external returns (uint) {return getVatStorage().debt;}
     function ceil() view external returns (uint) {return getVatStorage().ceil;}
     function par() view external returns (uint) {return getVatStorage().par;}
-    function ink(bytes32 i, address u) external view returns (bytes memory data) {
-        data = abi.decode(_hookview(i, abi.encodeWithSelector(
+    function ink(bytes32 i, address u) external view returns (bytes memory) {
+        return abi.decode(_hookview(i, abi.encodeWithSelector(
             Hook.ink.selector, i, u
         )), (bytes));
     }
@@ -141,6 +141,7 @@ contract Vat is Bank {
 
         // either debt has decreased, or debt ceilings are not exceeded
         if (both(dart > 0, either(ilk.tart * ilk.rack > ilk.line, vs.debt > vs.ceil))) revert ErrDebtCeil();
+
         // urn has no debt, or a non-dusty amount
         if (both(art != 0, tab < ilk.dust)) revert ErrUrnDust();
 
@@ -159,38 +160,6 @@ contract Vat is Bank {
         if (!either(safer, spot == Spot.Safe)) revert ErrNotSafe();
         // urn is safer, or urn is caller
         if (!either(safer, u == msg.sender)) revert ErrWrongUrn();
-    }
-
-    function _hookcall(bytes32 i, bytes memory indata) internal returns (bytes memory outdata) {
-        VatStorage storage vs = getVatStorage();
-        bool success;
-        (success, outdata) = vs.ilks[i].hook.delegatecall(indata);
-        if (!success) {
-            // bubble up revert reason, first 32 bytes is bytes length
-            assembly {
-                let size := mload(outdata)
-                revert(add(32, outdata), size)
-            }
-        }
-    }
-
-    function _hookview(bytes32 i, bytes memory indata) internal view returns (bytes memory outdata) {
-        bool success;
-        (success, outdata) = address(this).staticcall(
-            abi.encodeWithSelector(Vat.hookcallext.selector, i, indata)
-        );
-        if (!success) {
-            assembly {
-                let size := mload(outdata)
-                revert(add(32, outdata), size)
-            }
-        }
-        outdata = abi.decode(outdata, (bytes));
-    }
-
-    function hookcallext(bytes32 i, bytes memory indata) external returns (bytes memory outdata) {
-        if (msg.sender != address(this)) revert ErrHookCallerNotBank();
-        return _hookcall(i, indata);
     }
 
     function bail(bytes32 i, address u) _flog_ external returns (bytes memory)
@@ -226,19 +195,24 @@ contract Vat is Bank {
     // drip without flog
     function _drip(bytes32 i) internal {
         VatStorage storage vs = getVatStorage();
+        Ilk storage ilk       = vs.ilks[i];
+        if (block.timestamp == ilk.rho) return;
+
         // multiply rack by fee every second
-        if (block.timestamp == vs.ilks[i].rho) return;
-        uint256 prev = vs.ilks[i].rack;
-        uint256 rack = grow(prev, vs.ilks[i].fee, block.timestamp - vs.ilks[i].rho);
+        uint prev = ilk.rack;
+        uint rack = grow(prev, ilk.fee, block.timestamp - ilk.rho);
+
         // difference between current and previous rack determines interest
         uint256 delt = rack - prev;
-        uint256 rad  = vs.ilks[i].tart * delt;
+        uint256 rad  = ilk.tart * delt;
         uint256 all  = vs.rest + rad;
-        vs.ilks[i].rho  = block.timestamp;
-        vs.ilks[i].rack = rack;
-        vs.debt         = vs.debt + all / RAY;
+        ilk.rho      = block.timestamp;
+        ilk.rack     = rack;
+        vs.debt      = vs.debt + all / RAY;
+
         // tart * rack is a rad, interest is a wad, rest is the change
-        vs.rest         = all % RAY;
+        vs.rest      = all % RAY;
+
         // optimistically mint the interest
         getBankStorage().rico.mint(address(this), all / RAY);
     }
@@ -247,27 +221,24 @@ contract Vat is Bank {
         VatStorage storage vs = getVatStorage();
         // burn rico to pay down sin
         uint256 rad = wad * RAY;
-        vs.sin = vs.sin - rad;
-        vs.debt   = vs.debt   - wad;
+        vs.sin      = vs.sin - rad;
+        vs.debt     = vs.debt - wad;
         getBankStorage().rico.burn(msg.sender, wad);
     }
 
     function flash(address code, bytes calldata data)
       external returns (bytes memory result) {
+        // lock->mint->call->burn->unlock
         VatStorage storage vs = getVatStorage();
         if (vs.lock == LOCKED) revert ErrLock();
         vs.lock = LOCKED;
-        bool ok;
+
         getBankStorage().rico.mint(code, _MINT);
+        bool ok;
         (ok, result) = code.call(data);
-        if (!ok) {
-            // bubble up revert reason, first 32 bytes is bytes length
-            assembly {
-                let size := mload(result)
-                revert(add(32, result), size)
-            }
-        }
+        if (!ok) bubble(result);
         getBankStorage().rico.burn(code, _MINT);
+
         vs.lock = UNLOCKED;
     }
 
@@ -287,6 +258,29 @@ contract Vat is Bank {
             if (block.timestamp != i.rho) revert ErrFeeRho();
             i.fee = _val;
         } else { revert ErrWrongKey(); }
+    }
+
+    function _hookcall(bytes32 i, bytes memory indata)
+      internal returns (bytes memory outdata) {
+        bool ok;
+        (ok, outdata) = getVatStorage().ilks[i].hook.delegatecall(indata);
+        if (!ok) bubble(outdata);
+    }
+
+    function _hookview(bytes32 i, bytes memory indata)
+      internal view returns (bytes memory outdata) {
+        bool ok;
+        (ok, outdata) = address(this).staticcall(
+            abi.encodeWithSelector(Vat.hookcallext.selector, i, indata)
+        );
+        if (!ok) bubble(outdata);
+        outdata = abi.decode(outdata, (bytes));
+    }
+
+    function hookcallext(bytes32 i, bytes memory indata)
+      external returns (bytes memory) {
+        if (msg.sender != address(this)) revert ErrHookCallerNotBank();
+        return _hookcall(i, indata);
     }
 
     function filh(bytes32 ilk, bytes32 key, bytes32 val)

@@ -114,4 +114,12 @@ contract Bank is Math, Flog {
     function getBankStorage() internal pure returns (BankStorage storage bs) {
         bytes32 pos = BANK_POS; assembly { bs.slot := pos }
     }
+
+    // bubble up error code from a reverted call
+    function bubble(bytes memory data) internal pure {
+        assembly {
+            let size := mload(data)
+            revert(add(32, data), size)
+        }
+    }
 }
