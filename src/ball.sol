@@ -38,6 +38,7 @@ contract Ball is Math, Ward {
     bytes32 internal constant RICO_RISK_TAG  = "rico:risk";
     bytes32 internal constant RISK_RICO_TAG  = "risk:rico";
     bytes32 internal constant UNI_NFT_ILK = ":uninft";
+    IDiamondCuttable.FacetCutAction internal constant ADD = IDiamondCuttable.FacetCutAction.ADD;
 
     Vat public vat;
     Vow public vow;
@@ -107,17 +108,6 @@ contract Ball is Math, Ward {
 
     Ploker public ploker;
 
-    function singleCut(address facet, bytes4 sel) internal {
-        bytes4[] memory sels = new bytes4[](1);
-        sels[0] = sel;
-        IDiamondCuttable.FacetCut[] memory cuts = new IDiamondCuttable.FacetCut[](1);
-        cuts[0] = IDiamondCuttable.FacetCut(
-            facet, IDiamondCuttable.FacetCutAction.ADD, sels
-        );
-
-        Diamond(bank).diamondCut(cuts, address(0), bytes(''));
-    }
-
     constructor(BallArgs memory args) {
         file = new File();
         vat  = new Vat();
@@ -130,9 +120,7 @@ contract Ball is Math, Ward {
         cladapt = new ChainlinkAdapter(args.feedbase);
         divider = new Divider(args.feedbase);
         nfthook = new UniNFTHook();
-    }
 
-    function setup(BallArgs memory args) _ward_ public payable {
         bank = args.bank;
         rico = args.rico;
         risk = args.risk;
@@ -140,67 +128,16 @@ contract Ball is Math, Ward {
         feedbase  = args.feedbase;
         daiusdagg = args.DAI_USD_AGG;
 
-        Diamond(bank).acceptOwnership();
-        singleCut(address(file), File.file.selector);
-        singleCut(address(file), File.link.selector);
-        singleCut(address(file), File.fb.selector);
-        singleCut(address(file), File.rico.selector);
-        singleCut(address(file), File.ward.selector);
-        singleCut(address(file), File.wards.selector);
-        singleCut(address(vat), Vat.filk.selector);
-        singleCut(address(vat), Vat.filh.selector);
-        singleCut(address(vat), Vat.filhi.selector);
-        singleCut(address(vat), Vat.filhi2.selector);
-        singleCut(address(vat), Vat.init.selector);
-        singleCut(address(vat), Vat.frob.selector);
-        singleCut(address(vat), Vat.bail.selector);
-        singleCut(address(vat), Vat.safe.selector);
-        singleCut(address(vat), Vat.heal.selector);
-        singleCut(address(vat), Vat.sin.selector);
-        singleCut(address(vat), Vat.ilks.selector);
-        singleCut(address(vat), Vat.urns.selector);
-        singleCut(address(vat), Vat.rest.selector);
-        singleCut(address(vat), Vat.debt.selector);
-        singleCut(address(vat), Vat.ceil.selector);
-        singleCut(address(vat), Vat.par.selector);
-        singleCut(address(vat), Vat.drip.selector);
-        singleCut(address(vat), Vat.MINT.selector);
-        singleCut(address(vat), Vat.ink.selector);
-        singleCut(address(vat), Vat.flash.selector);
-        singleCut(address(vat), Vat.geth.selector);
-        singleCut(address(vat), Vat.gethi.selector);
-        singleCut(address(vat), Vat.gethi2.selector);
-        singleCut(address(vat), Vat.hookcallext.selector);
-
-        singleCut(address(vow), Vow.keep.selector);
-        singleCut(address(vow), Vow.RISK.selector);
-        singleCut(address(vow), Vow.ramp.selector);
-        singleCut(address(vow), Vow.flapfeed.selector);
-        singleCut(address(vow), Vow.flopfeed.selector);
-        singleCut(address(vow), Vow.flapplot.selector);
-        singleCut(address(vow), Vow.flopplot.selector);
-
-        singleCut(address(hook), ERC20Hook.erc20flash.selector);
-        File(bank).file('par', bytes32(args.par));
-
-        File(bank).link('rico', rico);
-        File(bank).link('risk', risk);
-
-        File(bank).file('ceil', bytes32(args.ceil));
-
-        File(bank).file('flappep', bytes32(args.flappep));
-        File(bank).file('flappop', bytes32(args.flappop));
-        File(bank).file('flaptag', RICO_RISK_TAG);
-        File(bank).file('flapsrc', bytes32(bytes20(address(mdn))));
-        File(bank).file('floppep', bytes32(args.floppep));
-        File(bank).file('floppop', bytes32(args.floppop));
-        File(bank).file('floptag', RISK_RICO_TAG);
-        File(bank).file('flopsrc', bytes32(bytes20(address(mdn))));
-
-        File(bank).file("vel", bytes32(args.mintramp.vel));
-        File(bank).file("rel", bytes32(args.mintramp.vel));
-        File(bank).file("bel", bytes32(args.mintramp.bel));
-        File(bank).file("cel", bytes32(args.mintramp.cel));
+        // rico/usd, rico/ref
+        cladapt.setConfig(
+            XAU_USD_TAG, ChainlinkAdapter.Config(args.XAU_USD_AGG, args.xauusdttl, RAY)
+        );
+        cladapt.setConfig(
+            DAI_USD_TAG, ChainlinkAdapter.Config(args.DAI_USD_AGG, args.daiusdttl, RAY)
+        );
+        cladapt.look(XAU_USD_TAG);
+        (bytes32 ref,) = Feedbase(feedbase).pull(address(cladapt), XAU_USD_TAG);
+        vox = new Vox(uint256(ref));
 
         // rico/dai, dai/rico (== 1 / (rico/dai))
         uniadapt.setConfig(
@@ -213,16 +150,6 @@ contract Ball is Math, Ward {
         sources[0] = address(this);     tags[0] = bytes32("ONE");
         sources[1] = address(uniadapt); tags[1] = RICO_DAI_TAG;
         divider.setConfig(DAI_RICO_TAG, Divider.Config(sources, tags));
-
-        //
-        // rico/usd, rico/ref
-        //
-        cladapt.setConfig(
-            XAU_USD_TAG, ChainlinkAdapter.Config(args.XAU_USD_AGG, args.xauusdttl, RAY)
-        );
-        cladapt.setConfig(
-            DAI_USD_TAG, ChainlinkAdapter.Config(args.DAI_USD_AGG, args.daiusdttl, RAY)
-        );
 
         sources[0] = address(cladapt); tags[0] = DAI_USD_TAG;
         sources[1] = address(divider); tags[1] = DAI_RICO_TAG;
@@ -270,17 +197,92 @@ contract Ball is Math, Ward {
         ploker.setConfig(RISK_RICO_TAG, plokerconf);
         plokerconf.combinators[0] = address(mdn); plokerconf.combinatortags[0] = RICO_RISK_TAG;
         ploker.setConfig(RICO_RISK_TAG, plokerconf);
+    }
 
-        cladapt.look(XAU_USD_TAG);
-        (bytes32 ref,) = Feedbase(feedbase).pull(address(cladapt), XAU_USD_TAG);
-        vox = new Vox(uint256(ref));
-        singleCut(address(vox), Vox.poke.selector);
-        singleCut(address(vox), Vox.way.selector);
-        singleCut(address(vox), Vox.how.selector);
-        singleCut(address(vox), Vox.cap.selector);
-        singleCut(address(vox), Vox.tip.selector);
-        singleCut(address(vox), Vox.tag.selector);
-        singleCut(address(vox), Vox.amp.selector);
+    function setup(BallArgs calldata args) _ward_ external payable {
+        {
+            IDiamondCuttable.FacetCut[] memory facetCuts = new IDiamondCuttable.FacetCut[](5);
+            bytes4[] memory filesels = new bytes4[](6);
+            bytes4[] memory hooksels = new bytes4[](1);
+            bytes4[] memory vatsels  = new bytes4[](24);
+            bytes4[] memory vowsels  = new bytes4[](7);
+            bytes4[] memory voxsels  = new bytes4[](7);
+
+            filesels[0] = File.file.selector;
+            filesels[1] = File.link.selector;
+            filesels[2] = File.fb.selector;
+            filesels[3] = File.rico.selector;
+            filesels[4] = File.ward.selector;
+            filesels[5] = File.wards.selector;
+            hooksels[0] = ERC20Hook.erc20flash.selector;
+            vatsels[0]  = Vat.filk.selector;
+            vatsels[1]  = Vat.filh.selector;
+            vatsels[2]  = Vat.filhi.selector;
+            vatsels[3]  = Vat.filhi2.selector;
+            vatsels[4]  = Vat.init.selector;
+            vatsels[5]  = Vat.frob.selector;
+            vatsels[6]  = Vat.bail.selector;
+            vatsels[7]  = Vat.safe.selector;
+            vatsels[8]  = Vat.heal.selector;
+            vatsels[9]  = Vat.sin.selector;
+            vatsels[10] = Vat.ilks.selector;
+            vatsels[11] = Vat.urns.selector;
+            vatsels[12] = Vat.rest.selector;
+            vatsels[13] = Vat.debt.selector;
+            vatsels[14] = Vat.ceil.selector;
+            vatsels[15] = Vat.par.selector;
+            vatsels[16] = Vat.drip.selector;
+            vatsels[17] = Vat.MINT.selector;
+            vatsels[18] = Vat.ink.selector;
+            vatsels[19] = Vat.flash.selector;
+            vatsels[20] = Vat.geth.selector;
+            vatsels[21] = Vat.gethi.selector;
+            vatsels[22] = Vat.gethi2.selector;
+            vatsels[23] = Vat.hookcallext.selector;
+            vowsels[0]  = Vow.keep.selector;
+            vowsels[1]  = Vow.RISK.selector;
+            vowsels[2]  = Vow.ramp.selector;
+            vowsels[3]  = Vow.flapfeed.selector;
+            vowsels[4]  = Vow.flopfeed.selector;
+            vowsels[5]  = Vow.flapplot.selector;
+            vowsels[6]  = Vow.flopplot.selector;
+            voxsels[0]  = Vox.poke.selector;
+            voxsels[1]  = Vox.way.selector;
+            voxsels[2]  = Vox.how.selector;
+            voxsels[3]  = Vox.cap.selector;
+            voxsels[4]  = Vox.tip.selector;
+            voxsels[5]  = Vox.tag.selector;
+            voxsels[6]  = Vox.amp.selector;
+
+            facetCuts[0] = IDiamondCuttable.FacetCut(address(file), ADD, filesels);
+            facetCuts[1] = IDiamondCuttable.FacetCut(address(hook), ADD, hooksels);
+            facetCuts[2] = IDiamondCuttable.FacetCut(address(vat),  ADD, vatsels);
+            facetCuts[3] = IDiamondCuttable.FacetCut(address(vow),  ADD, vowsels);
+            facetCuts[4] = IDiamondCuttable.FacetCut(address(vox),  ADD, voxsels);
+            Diamond(bank).acceptOwnership();
+            Diamond(bank).diamondCut(facetCuts, address(0), bytes(''));
+        }
+        File(bank).file('par', bytes32(args.par));
+
+        File(bank).link('rico', rico);
+        File(bank).link('risk', risk);
+
+        File(bank).file('ceil', bytes32(args.ceil));
+
+        File(bank).file('flappep', bytes32(args.flappep));
+        File(bank).file('flappop', bytes32(args.flappop));
+        File(bank).file('flaptag', RICO_RISK_TAG);
+        File(bank).file('flapsrc', bytes32(bytes20(address(mdn))));
+        File(bank).file('floppep', bytes32(args.floppep));
+        File(bank).file('floppop', bytes32(args.floppop));
+        File(bank).file('floptag', RISK_RICO_TAG);
+        File(bank).file('flopsrc', bytes32(bytes20(address(mdn))));
+
+        File(bank).file("vel", bytes32(args.mintramp.vel));
+        File(bank).file("rel", bytes32(args.mintramp.vel));
+        File(bank).file("bel", bytes32(args.mintramp.bel));
+        File(bank).file("cel", bytes32(args.mintramp.cel));
+
         File(bank).link('fb',  feedbase);
         File(bank).link('tip', address(mdn));
         File(bank).file('tag', RICO_REF_TAG);
@@ -290,7 +292,7 @@ contract Ball is Math, Ward {
         File(bank).file('way', bytes32(RAY));
     }
 
-    function makeilk(IlkParams calldata ilkparams) _ward_ public {
+    function makeilk(IlkParams calldata ilkparams) _ward_ external {
         bytes32 ilk = ilkparams.ilk;
         bytes32 gemricotag = concat(ilk, ':rico');
         Vat(bank).init(ilk, address(hook));
@@ -337,7 +339,7 @@ contract Ball is Math, Ward {
         }
     }
 
-    function makeuni(UniParams calldata ups) _ward_ public {
+    function makeuni(UniParams calldata ups) _ward_ external {
         if (Vat(bank).ilks(UNI_NFT_ILK).rack != 0) return;
         // initialize uni ilk
         Vat(bank).init(ups.ilk, address(nfthook));
@@ -349,7 +351,7 @@ contract Ball is Math, Ward {
         Vat(bank).filk(ups.ilk, 'chop', bytes32(ups.chop));
     }
 
-    function approve(address usr) _ward_ public {
+    function approve(address usr) _ward_ external {
         mdn.give(usr);
         divider.give(usr);
         uniadapt.give(usr);
