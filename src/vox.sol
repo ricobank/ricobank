@@ -52,11 +52,13 @@ contract Vox is Bank {
         if (voxS.tau == block.timestamp) { return; }
 
         uint256 dt = block.timestamp - voxS.tau;
-        voxS.tau   = block.timestamp;
+        voxS.tau = block.timestamp;
+        emit NewPalm0('tau', bytes32(block.timestamp));
 
         // use previous `way` to grow `par` to keep par updates predictable
         uint256 par = grow(vatS.par, voxS.way, dt);
-        vatS.par    = par;
+        vatS.par = par;
+        emit NewPalm0('par', bytes32(par));
 
         (bytes32 mar_, uint256 ttl) = bankS.fb.pull(voxS.tip, voxS.tag);
         uint256 mar = rmul(uint256(mar_), AMP);
@@ -66,8 +68,11 @@ contract Vox is Bank {
         // this is how mar tracks par
         if (mar < par) {
             voxS.way = min(voxS.cap, grow(voxS.way, voxS.how, dt));
+            emit NewPalm0('way', bytes32(voxS.way));
         } else if (mar > par) {
             voxS.way = max(rinv(voxS.cap), grow(voxS.way, rinv(voxS.how), dt));
+            emit NewPalm0('way', bytes32(voxS.way));
         }
+
     }
 }

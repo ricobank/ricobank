@@ -38,6 +38,7 @@ contract File is Bank {
         else if (key == "tau") { voxS.tau = uint256(val); }
         else if (key == "way") { voxS.way = uint256(val); }
         else revert ErrWrongKey();
+        emit NewPalm0(key, val);
     }
 
     function link(bytes32 key, address val) _ward_ _flog_ external {
@@ -51,6 +52,7 @@ contract File is Bank {
             bankS.fb = Feedbase(val);
         } else if (key == 'tip') { voxS.tip = val;
         } else { revert ErrWrongKey(); }
+        emit NewPalm0(key, bytes32(bytes20(val)));
     }
 
     function rico() external view returns (Gem) {return getBankStorage().rico;}

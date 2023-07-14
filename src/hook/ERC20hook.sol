@@ -60,7 +60,9 @@ contract ERC20Hook is Hook, Bank {
         address gem = hs.items[i].gem;
         if (_dink.length != 32) revert ErrDinkSize();
         int dink = int(uint(bytes32(_dink)));
-        hs.inks[i][u] = add(hs.inks[i][u], dink);
+        uint _ink = add(hs.inks[i][u], dink);
+        hs.inks[i][u] = _ink;
+        emit NewPalmBytes2('ink', i, bytes32(bytes20(u)), abi.encodePacked(_ink));
         if (sender != address(this)) {
             if (dink > 0) {
                 if (!Gem(gem).transferFrom(sender, address(this), uint(dink))) {
@@ -93,7 +95,9 @@ contract ERC20Hook is Hook, Bank {
             sell = bill * ham / earn;
             earn = bill;
         }
-        hs.inks[i][u] -= sell;
+        uint _ink = hs.inks[i][u] - sell;
+        hs.inks[i][u] = _ink;
+        emit NewPalmBytes2('ink', i, bytes32(bytes20(u)), abi.encodePacked(_ink));
 
         Gem gem  = Gem(hs.items[i].gem);
         Gem rico = getBankStorage().rico;

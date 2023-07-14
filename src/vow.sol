@@ -83,7 +83,9 @@ contract Vow is Bank {
             uint slope = min(vowS.ramp.vel, wmul(vowS.ramp.rel, risk.totalSupply()));
             uint flop  = slope * min(block.timestamp - vowS.ramp.bel, vowS.ramp.cel);
             if (0 == flop) revert ErrReflop();
+
             vowS.ramp.bel = block.timestamp;
+            emit NewPalm0('bel', bytes32(vowS.ramp.bel));
 
             // swap RISK for rico to cover sin
             risk.mint(address(this), flop);

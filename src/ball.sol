@@ -206,7 +206,7 @@ contract Ball is Math, Ward {
             bytes4[] memory hooksels = new bytes4[](1);
             bytes4[] memory vatsels  = new bytes4[](24);
             bytes4[] memory vowsels  = new bytes4[](7);
-            bytes4[] memory voxsels  = new bytes4[](7);
+            bytes4[] memory voxsels  = new bytes4[](8);
 
             filesels[0] = File.file.selector;
             filesels[1] = File.link.selector;
@@ -253,6 +253,7 @@ contract Ball is Math, Ward {
             voxsels[4]  = Vox.tip.selector;
             voxsels[5]  = Vox.tag.selector;
             voxsels[6]  = Vox.amp.selector;
+            voxsels[7]  = Vox.tau.selector;
 
             facetCuts[0] = IDiamondCuttable.FacetCut(address(file), ADD, filesels);
             facetCuts[1] = IDiamondCuttable.FacetCut(address(hook), ADD, hooksels);

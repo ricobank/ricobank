@@ -81,6 +81,14 @@ contract Vat is Bank {
             tart: 0,
             chop: 0, line: 0, dust: 0
         });
+        emit NewPalm1('rack', ilk, bytes32(RAY));
+        emit NewPalm1('fee', ilk, bytes32(RAY));
+        emit NewPalm1('hook', ilk, bytes32(bytes20(hook)));
+        emit NewPalm1('rho', ilk, bytes32(block.timestamp));
+        emit NewPalm1('tart', ilk, bytes32(uint(0)));
+        emit NewPalm1('chop', ilk, bytes32(uint(0)));
+        emit NewPalm1('line', ilk, bytes32(uint(0)));
+        emit NewPalm1('dust', ilk, bytes32(uint(0)));
     }
 
     function safe(bytes32 i, address u)
@@ -118,9 +126,12 @@ contract Vat is Bank {
 
         if (ilk.rack == 0) revert ErrIlkInit();
 
-        vs.urns[i][u] = add(vs.urns[i][u], dart);
-        uint art   = vs.urns[i][u];
+        uint art   = add(vs.urns[i][u], dart);
+        vs.urns[i][u] = art;
+        emit NewPalm2('art', i, bytes32(bytes20(u)), bytes32(art));
+
         ilk.tart   = add(ilk.tart, dart);
+        emit NewPalm1('tart', i, bytes32(ilk.tart));
 
         // rico mint/burn amount increases with rack
         int dtab = mul(ilk.rack, dart);
@@ -129,13 +140,17 @@ contract Vat is Bank {
         if (dtab > 0) {
             uint wad = uint(dtab) / RAY;
             vs.debt += wad;
+            emit NewPalm0('debt', bytes32(vs.debt));
             vs.rest += uint(dtab) % RAY;
+            emit NewPalm0('rest', bytes32(vs.rest));
             getBankStorage().rico.mint(msg.sender, wad);
         } else if (dtab < 0) {
             // dtab is a rad, so burn one extra to round in system's favor
             uint wad = uint(-dtab) / RAY + 1;
             vs.rest += add(wad * RAY, dtab);
+            emit NewPalm0('rest', bytes32(vs.rest));
             vs.debt -= wad;
+            emit NewPalm0('debt', bytes32(vs.debt));
             getBankStorage().rico.burn(msg.sender, wad);
         }
 
@@ -173,16 +188,19 @@ contract Vat is Bank {
         Ilk storage ilk = vs.ilks[i];
         uint art = vs.urns[i][u];
         vs.urns[i][u] = 0;
+        emit NewPalm2('art', i, bytes32(bytes20(u)), bytes32(uint(0)));
 
         // bill is the debt hook will attempt to cover when auctioning ink
         // todo maybe make this +1?
         uint bill = rmul(ilk.chop, rmul(art, ilk.rack));
 
         ilk.tart -= art;
+        emit NewPalm1('tart', i, bytes32(ilk.tart));
 
         // record the bad debt for vow to heal
         uint dtab = art * ilk.rack;
         vs.sin += dtab;
+        emit NewPalm0('sin', bytes32(vs.sin));
 
         // ink auction
         return _hookcall(i, abi.encodeWithSelector(
@@ -206,12 +224,19 @@ contract Vat is Bank {
         uint256 delt = rack - prev;
         uint256 rad  = ilk.tart * delt;
         uint256 all  = vs.rest + rad;
+
         ilk.rho      = block.timestamp;
+        emit NewPalm1('rho', i, bytes32(block.timestamp));
+
         ilk.rack     = rack;
+        emit NewPalm1('rack', i, bytes32(rack));
+
         vs.debt      = vs.debt + all / RAY;
+        emit NewPalm0('debt', bytes32(vs.debt));
 
         // tart * rack is a rad, interest is a wad, rest is the change
         vs.rest      = all % RAY;
+        emit NewPalm0('rest', bytes32(vs.rest));
 
         // optimistically mint the interest
         getBankStorage().rico.mint(address(this), all / RAY);
@@ -221,8 +246,13 @@ contract Vat is Bank {
         VatStorage storage vs = getVatStorage();
         // burn rico to pay down sin
         uint256 rad = wad * RAY;
-        vs.sin      = vs.sin - rad;
-        vs.debt     = vs.debt - wad;
+
+        vs.sin  = vs.sin - rad;
+        emit NewPalm0('sin', bytes32(vs.sin));
+
+        vs.debt = vs.debt   - wad;
+        emit NewPalm0('debt', bytes32(vs.debt));
+
         getBankStorage().rico.burn(msg.sender, wad);
     }
 
@@ -258,6 +288,7 @@ contract Vat is Bank {
             if (block.timestamp != i.rho) revert ErrFeeRho();
             i.fee = _val;
         } else { revert ErrWrongKey(); }
+        emit NewPalm1(key, ilk, bytes32(val));
     }
 
     function _hookcall(bytes32 i, bytes memory indata)

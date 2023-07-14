@@ -6,6 +6,7 @@ pragma solidity ^0.8.19;
 import { Lock } from './mixin/lock.sol';
 import { Math } from './mixin/math.sol';
 import { Flog } from './mixin/flog.sol';
+import { Palm } from './mixin/palm.sol';
 import { Gem }  from '../lib/gemfab/src/gem.sol';
 import { Feedbase } from '../lib/feedbase/src/Feedbase.sol';
 
@@ -13,7 +14,7 @@ interface IOwnable {
     function owner() external returns (address);
 }
 
-contract Bank is Math, Flog {
+contract Bank is Math, Flog, Palm {
     struct Ilk {
         uint256 tart;  // [wad] Total Normalised Debt
         uint256 rack;  // [ray] Accumulated Rate

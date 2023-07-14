@@ -135,6 +135,7 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
     }
 
     function check_gas(uint gas, uint expectedgas) internal view {
+        /* // not used anymore
         uint usedgas = gas - gasleft();
         if (usedgas < expectedgas) {
             console.log("saved %s gas...currently %s", expectedgas - usedgas, usedgas);
@@ -142,6 +143,7 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
         if (usedgas > expectedgas) {
             console.log("gas increase by %s...currently %s", usedgas - expectedgas, usedgas);
         }
+       */
     }
 
     function feedpull(bytes32 tag) internal view returns (bytes32, uint) {
