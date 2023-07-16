@@ -10,7 +10,6 @@ import "./UniHelper.sol";
 import { Gem } from '../lib/gemfab/src/gem.sol';
 import { Vat } from '../src/vat.sol';
 import { Vow } from '../src/vow.sol';
-import '../src/mixin/lock.sol';
 import '../src/mixin/math.sol';
 import { OverrideableGem } from './mixin/OverrideableGem.sol';
 import { UniNFTHook } from '../src/hook/nfpm/UniV3NFTHook.sol';

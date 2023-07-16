@@ -3,7 +3,6 @@
 // Copyright (C) 2021-2023 halys
 
 pragma solidity ^0.8.19;
-import { Lock } from './mixin/lock.sol';
 import { Math } from './mixin/math.sol';
 import { Flog } from './mixin/flog.sol';
 import { Gem }  from '../lib/gemfab/src/gem.sol';

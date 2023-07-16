@@ -6,7 +6,6 @@ pragma solidity ^0.8.19;
 
 import { Math } from '../mixin/math.sol';
 import { Flog } from '../mixin/flog.sol';
-import { Lock } from '../mixin/lock.sol';
 import { Ward } from '../../lib/feedbase/src/mixin/ward.sol';
 import { Gem } from '../../lib/gemfab/src/gem.sol';
 import { Feedbase } from '../../lib/feedbase/src/Feedbase.sol';

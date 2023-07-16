@@ -11,7 +11,6 @@ import { Gem } from '../lib/gemfab/src/gem.sol';
 import { Vat }  from '../src/vat.sol';
 import { Vow }  from '../src/vow.sol';
 import { Hook } from '../src/hook/hook.sol';
-import '../src/mixin/lock.sol';
 import '../src/mixin/math.sol';
 import { ERC20Hook } from '../src/hook/ERC20hook.sol';
 import {File} from '../src/file.sol';
@@ -318,7 +317,7 @@ contract VatTest is Test, RicoSetUp {
 
     function test_rico_reentry() public _chap_ {
         bytes memory data = abi.encodeWithSelector(chap.reenter.selector, arico, flash_size * WAD);
-        vm.expectRevert(Lock.ErrLock.selector);
+        vm.expectRevert(Vat.ErrLock.selector);
         Vat(bank).flash(achap, data);
     }
 
@@ -478,7 +477,7 @@ contract VatTest is Test, RicoSetUp {
         bytes memory data = abi.encodeWithSelector(chap.reenter.selector, agold, flash_size * WAD);
         gems.push(agold);
         wads.push(init_join * WAD);
-        vm.expectRevert(Lock.ErrLock.selector);
+        vm.expectRevert(Vat.ErrLock.selector);
         ERC20Hook(bank).erc20flash(gems, wads, achap, data);
     }
 
