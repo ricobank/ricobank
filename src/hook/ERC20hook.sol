@@ -22,22 +22,17 @@ contract ERC20Hook is Hook, Bank {
     }
 
     struct ERC20HookStorage {
-        mapping (address gem => bool flashable) pass;
         mapping (bytes32 ilk => Item) items;
         // collateral amounts
         mapping (bytes32 ilk => mapping(address usr => uint)) inks;
-        uint lock;
     }
 
     function ink(bytes32 i, address u) external view returns (bytes memory data) {
         data = abi.encodePacked(getStorage().inks[i][u]);
     }
 
-    error ErrOutDated();
-    error ErrLoanArgs();
     error ErrTransfer();
     error ErrDinkSize();
-    error ErrLock();
 
     bytes32 constant POSITION = keccak256('erc20hook');
     function getStorage() internal pure returns (ERC20HookStorage storage hs) {
@@ -113,28 +108,6 @@ contract ERC20Hook is Hook, Bank {
         return (uint(val) * hs.inks[i][u], ttl);
     }
 
-    function erc20flash(address[] calldata gems, uint[] calldata wads, address code, bytes calldata data)
-      _flog_ external returns (bytes memory result) {
-        ERC20HookStorage storage hs = getStorage();
-        if (hs.lock == LOCKED) revert ErrLock();
-        hs.lock = LOCKED;
-        if (gems.length != wads.length) revert ErrLoanArgs();
-
-        for(uint i = 0; i < gems.length; i++) {
-            if (!hs.pass[gems[i]]) revert ErrLoanArgs();
-            if (!Gem(gems[i]).transfer(code, wads[i])) revert ErrTransfer();
-        }
-
-        bool ok;
-        (ok, result) = code.call(data);
-        require(ok, string(result));
-
-        for(uint i = 0; i < gems.length; i++) {
-            if (!Gem(gems[i]).transferFrom(code, address(this), wads[i])) revert ErrTransfer();
-        }
-        hs.lock = UNLOCKED;
-    }
-
     function fili(bytes32 key, bytes32 idx, bytes32 val)
       _flog_ external {
         ERC20HookStorage storage hs = getStorage();
@@ -144,8 +117,6 @@ contract ERC20Hook is Hook, Bank {
             hs.items[idx].fsrc = address(bytes20(val));
         } else if (key == 'ftag') {
             hs.items[idx].ftag = val;
-        } else if (key == 'pass') {
-            hs.pass[hs.items[idx].gem] = bytes32(0) == val ? false : true;
         } else { revert ErrWrongKey(); }
     }
 
@@ -157,8 +128,6 @@ contract ERC20Hook is Hook, Bank {
             return bytes32(bytes20(hs.items[idx].fsrc));
         } else if (key == 'ftag') {
             return hs.items[idx].ftag;
-        } else if (key == 'pass') {
-            return hs.pass[hs.items[idx].gem] ? bytes32(uint(1)) : bytes32(0);
         } else { revert ErrWrongKey(); }
     }
 }

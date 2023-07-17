@@ -295,7 +295,6 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
         Vat(bank).filk(dilk, bytes32('line'), bytes32(init_mint * 10 * RAD));
         Vat(bank).filk(dilk, bytes32('fee'), bytes32(uint(1000000001546067052200000000)));  // 5%
         // feedpush(dutag, bytes32(RAY), block.timestamp + 1000);
-        Vat(bank).filhi(dilk, 'pass', dilk, bytes32(uint(1)));
         make_feed(drtag);
     }
 
@@ -315,7 +314,6 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
         Vat(bank).filk(gilk, bytes32('fee'), bytes32(uint(1000000001546067052200000000)));  // 5%
         feedpush(grtag, bytes32(RAY), block.timestamp + 1000);
         agold = address(gold);
-        Vat(bank).filhi(gilk, 'pass', gilk, bytes32(uint(1)));
     }
 
     function init_ruby() public {
@@ -332,7 +330,6 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
         Vat(bank).filk(rilk, bytes32('line'), bytes32(init_mint * 10 * RAD));
         Vat(bank).filk(rilk, bytes32('fee'), bytes32(uint(1000000001546067052200000000)));  // 5%
         feedpush(rtag, bytes32(RAY), block.timestamp + 1000);
-        Vat(bank).filhi(rilk, 'pass', rilk, bytes32(uint(1)));
         aruby = address(ruby);
     }
 

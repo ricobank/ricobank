@@ -201,9 +201,8 @@ contract Ball is Math, Ward {
 
     function setup(BallArgs calldata args) _ward_ external payable {
         {
-            IDiamondCuttable.FacetCut[] memory facetCuts = new IDiamondCuttable.FacetCut[](5);
+            IDiamondCuttable.FacetCut[] memory facetCuts = new IDiamondCuttable.FacetCut[](4);
             bytes4[] memory filesels = new bytes4[](6);
-            bytes4[] memory hooksels = new bytes4[](1);
             bytes4[] memory vatsels  = new bytes4[](24);
             bytes4[] memory vowsels  = new bytes4[](7);
             bytes4[] memory voxsels  = new bytes4[](8);
@@ -214,7 +213,6 @@ contract Ball is Math, Ward {
             filesels[3] = File.rico.selector;
             filesels[4] = File.ward.selector;
             filesels[5] = File.wards.selector;
-            hooksels[0] = ERC20Hook.erc20flash.selector;
             vatsels[0]  = Vat.filk.selector;
             vatsels[1]  = Vat.filh.selector;
             vatsels[2]  = Vat.filhi.selector;
@@ -256,10 +254,9 @@ contract Ball is Math, Ward {
             voxsels[7]  = Vox.tau.selector;
 
             facetCuts[0] = IDiamondCuttable.FacetCut(address(file), ADD, filesels);
-            facetCuts[1] = IDiamondCuttable.FacetCut(address(hook), ADD, hooksels);
-            facetCuts[2] = IDiamondCuttable.FacetCut(address(vat),  ADD, vatsels);
-            facetCuts[3] = IDiamondCuttable.FacetCut(address(vow),  ADD, vowsels);
-            facetCuts[4] = IDiamondCuttable.FacetCut(address(vox),  ADD, voxsels);
+            facetCuts[1] = IDiamondCuttable.FacetCut(address(vat),  ADD, vatsels);
+            facetCuts[2] = IDiamondCuttable.FacetCut(address(vow),  ADD, vowsels);
+            facetCuts[3] = IDiamondCuttable.FacetCut(address(vox),  ADD, voxsels);
             Diamond(bank).acceptOwnership();
             Diamond(bank).diamondCut(facetCuts, address(0), bytes(''));
         }
@@ -300,7 +297,6 @@ contract Ball is Math, Ward {
         Vat(bank).filhi(ilk, 'gem', ilk, bytes32(bytes20(ilkparams.gem)));
         Vat(bank).filhi(ilk, 'fsrc', ilk, bytes32(bytes20(address(mdn))));
         Vat(bank).filhi(ilk, 'ftag', ilk, gemricotag);
-        Vat(bank).filhi(ilk, 'pass', ilk, bytes32(uint(1)));
         Vat(bank).filk(ilk, 'chop', bytes32(ilkparams.chop));
         Vat(bank).filk(ilk, 'dust', bytes32(ilkparams.dust));
         Vat(bank).filk(ilk, 'fee', bytes32( ilkparams.fee));  // 5%

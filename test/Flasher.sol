@@ -51,25 +51,8 @@ contract Flasher {
         uint256[] memory wads = new uint256[](1);
         gems[0] = gem;
         wads[0] = wad;
-        if (gem == address(rico)) Vat(bank).flash(address(this), data);
-        else ERC20Hook(bank).erc20flash(gems, wads, address(this), data);
+        Vat(bank).flash(address(this), data);
         approve_hook(gem, wad);
-    }
-
-    function borrow_gem_after_rico(address gem, uint256 wad) public {
-        bytes memory data = abi.encodeCall(this.approve_hook, (gem, wad));
-        require(rico.balanceOf(address(this)) >= Vat(bank).MINT(), "missing borrowed rico");
-        address[] memory gems = new address[](1);
-        uint256[] memory wads = new uint256[](1);
-        gems[0] = gem;
-        wads[0] = wad;
-        ERC20Hook(bank).erc20flash(gems, wads, address(this), data);
-    }
-    function multi_borrow(address gem1, uint256 bal1, address gem2, uint256 bal2) public {
-        require(Gem(gem1).balanceOf(address(this)) >= bal1, 'missing borrowed tokens 1');
-        require(Gem(gem2).balanceOf(address(this)) >= bal2, 'missing borrowed tokens 2');
-        approve_hook(gem1, bal1);
-        approve_hook(gem2, bal2);
     }
 
     function rico_lever(address gem, uint256 lock_amt, uint256 draw_amt) public {
@@ -81,19 +64,6 @@ contract Flasher {
     function rico_release(address gem, uint256 free_amt, uint256 wipe_amt) public {
         Vat(bank).frob(ilk0, address(this), abi.encodePacked(-int(free_amt)), -int(wipe_amt));
         _sell_gem(gem, wipe_amt);
-    }
-
-    function gem_lever(address gem, uint256 lock_amt, uint256 draw_amt) public {
-        approve_hook(gem, lock_amt);
-        Vat(bank).frob(ilk0, address(this), abi.encodePacked(lock_amt), int(draw_amt));
-        _buy_gem(gem, draw_amt);
-        approve_hook(gem, lock_amt);
-    }
-
-    function gem_release(address gem, uint256 free_amt, uint256 wipe_amt) public {
-        _sell_gem(gem, wipe_amt);
-        Vat(bank).frob(ilk0, address(this), abi.encodePacked(-int(free_amt)), -int(wipe_amt));
-        approve_hook(gem, wipe_amt);
     }
 
     function _buy_gem(address gem, uint256 amount) internal {

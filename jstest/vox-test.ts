@@ -171,13 +171,13 @@ describe('Vox', () => {
     })
 
     it('deploy gas', async () => {
-      await check(ethers.BigNumber.from(deploygas), 41337749)
+      await check(ethers.BigNumber.from(deploygas), 40773899)
     })
 
     it('frob cold gas', async () => {
       let dink = ethers.utils.solidityPack(['int'], [wad(5)])
       let gas = await bank.estimateGas.frob(b32('weth'), ALI, dink, wad(5000))
-      await check(gas, 280334)
+      await check(gas, 280209)
     })
 
     it('frob hot gas', async () => {
@@ -186,7 +186,7 @@ describe('Vox', () => {
       let gas = await bank.estimateGas.frob(
         b32('weth'), ALI, ethers.utils.solidityPack(['int'], [wad(5)]), wad(5000)
       )
-      await check(gas, 158624)
+      await check(gas, 158495)
     })
 
     it('bail gas', async () => {
@@ -196,7 +196,7 @@ describe('Vox', () => {
       await send(fb.push, b32('weth:rico'), bn2b32(ray(800)), constants.MaxUint256)
       debug('bail')
       let gas = await bank.estimateGas.bail(b32('weth'), ALI)
-      await check(gas, 238239, 238349)
+      await check(gas, 238070, 238081)
     })
 
     it('keep surplus gas', async () => {
@@ -224,7 +224,7 @@ describe('Vox', () => {
       await mine(hh, 100)
       await send(fb.push, TAG, bn2b32(ray(0.5)), constants.MaxUint256)
       let gas = await bank.estimateGas.poke()
-      await check(gas, 69874, 70125)
+      await check(gas, 69853, 70125)
     })
 
     it('poke down gas', async () => {
@@ -239,7 +239,7 @@ describe('Vox', () => {
       await send(bank.frob, b32('weth'), ALI, dink, wad(5000))
       await mine(hh, BANKYEAR)
       let gas = await bank.estimateGas.drip(b32('weth'))
-      await check(gas, 123324, 123334)
+      await check(gas, 123324, 124375)
     })
   })
 })

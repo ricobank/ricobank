@@ -12,7 +12,6 @@ import { Vat }  from '../src/vat.sol';
 import { Vow }  from '../src/vow.sol';
 import { Hook } from '../src/hook/hook.sol';
 import '../src/mixin/math.sol';
-import { ERC20Hook } from '../src/hook/ERC20hook.sol';
 import {File} from '../src/file.sol';
 import {BankDiamond} from '../src/diamond.sol';
 import {Bank} from '../src/bank.sol';
@@ -321,24 +320,6 @@ contract VatTest is Test, RicoSetUp {
         Vat(bank).flash(achap, data);
     }
 
-    function test_borrow_gem_after_rico() public _chap_ {
-        uint flash_gold1 = gold.balanceOf(achap);
-        uint flash_rico1 = rico.balanceOf(achap);
-        uint hook_gold1  = gold.balanceOf(bank);
-        uint vat_rico1   = rico.balanceOf(bank);
-        uint rico_supply = rico.totalSupply();
-
-        bytes memory data = abi.encodeWithSelector(chap.borrow_gem_after_rico.selector, agold, stack);
-        Vat(bank).flash(achap, data);
-
-        assertEq(flash_gold1, gold.balanceOf(achap));
-        assertEq(flash_rico1, rico.balanceOf(achap));
-        assertEq(hook_gold1,  gold.balanceOf(bank));
-        assertEq(vat_rico1,   rico.balanceOf(bank));
-        assertEq(rico_supply, rico.totalSupply());
-    }
-
-
     function test_rico_flash_over_max_supply_reverts() public _chap_ {
         rico.mint(self, type(uint256).max - stack - rico.totalSupply());
         bytes memory data = abi.encodeWithSelector(chap.nop.selector);
@@ -355,46 +336,20 @@ contract VatTest is Test, RicoSetUp {
         gold.transferFrom(achap, self, chap_gold);
         rico.transferFrom(achap, self, chap_rico);
 
-        // add gold and ensure fail if welching
-        gems.push(agold);
+        // add rico and ensure fail if welching
         wads.push(init_join * WAD);
+        gems.push(arico);
         bytes memory data0 = abi.encodeWithSelector(chap.welch.selector, gems, wads, 0);
         bytes memory data1 = abi.encodeWithSelector(chap.welch.selector, gems, wads, 1);
         vm.expectRevert(Gem.ErrUnderflow.selector);
-        ERC20Hook(bank).erc20flash(gems, wads, achap, data0);
-        // not welching should pass
-        ERC20Hook(bank).erc20flash(gems, wads, achap, data1);
-
-        // and rico
-        gems.pop();
-        gems.push(arico);
-        data0 = abi.encodeWithSelector(chap.welch.selector, gems, wads, 0);
-        data1 = abi.encodeWithSelector(chap.welch.selector, gems, wads, 1);
-        vm.expectRevert(Gem.ErrUnderflow.selector);
         Vat(bank).flash(achap, data0);
         Vat(bank).flash(achap, data1);
-    }
-
-    function test_revert_wrong_joy() public _chap_ {
-        bytes memory data = abi.encodeWithSelector(chap.nop.selector);
-        gems.push(arisk);
-        wads.push(stack);
-        vm.expectRevert(ERC20Hook.ErrLoanArgs.selector);
-        ERC20Hook(bank).erc20flash(gems, wads, achap, data);
     }
 
     function test_rico_handler_error() public _chap_ {
         bytes memory data = abi.encodeWithSelector(chap.failure.selector);
         vm.expectRevert(bytes4(keccak256(bytes('ErrBroken()'))));
         Vat(bank).flash(achap, data);
-    }
-
-    function test_gem_handler_error() public _chap_ {
-        bytes memory data = abi.encodeWithSelector(chap.failure.selector);
-        gems.push(agold);
-        wads.push(stack);
-        vm.expectRevert(bytes4(keccak256(bytes('ErrBroken()'))));
-        ERC20Hook(bank).erc20flash(gems, wads, achap, data);
     }
 
     function test_rico_wind_up_and_release() public _chap_ {
@@ -421,90 +376,6 @@ contract VatTest is Test, RicoSetUp {
         assertEq(flash_rico1, rico.balanceOf(achap) + 1);
         assertEq(hook_gold1,  gold.balanceOf(address(hook)));
         assertEq(hook_rico1,  rico.balanceOf(address(hook)));
-    }
-
-    function test_gem_simple_flash() public _chap_ {
-        uint chap_gold1 = gold.balanceOf(achap);
-        uint vat_gold1 = gold.balanceOf(bank);
-
-        bytes memory data = abi.encodeWithSelector(chap.approve_hook.selector, agold, flash_size * WAD);
-        gems.push(agold);
-        wads.push(flash_size * WAD);
-        ERC20Hook(bank).erc20flash(gems, wads, achap, data);
-
-        assertEq(gold.balanceOf(achap), chap_gold1);
-        assertEq(gold.balanceOf(bank), vat_gold1);
-    }
-
-    function test_gem_flash_insufficient_approval() public _chap_ {
-        bytes memory data = abi.encodeWithSelector(chap.approve_hook.selector, agold, flash_size * WAD - 1);
-        gems.push(agold);
-        wads.push(flash_size * WAD);
-        vm.expectRevert(Gem.ErrUnderflow.selector);
-        ERC20Hook(bank).erc20flash(gems, wads, achap, data);
-    }
-
-    function test_gem_flash_insufficient_assets() public _chap_ {
-        bytes memory data = abi.encodeWithSelector(chap.approve_hook.selector, agold, type(uint256).max);
-        gems.push(agold);
-        wads.push(init_join * WAD);
-        ERC20Hook(bank).erc20flash(gems, wads, achap, data);
-        wads.pop();
-        wads.push(init_join * WAD + 1);
-        vm.expectRevert(Gem.ErrUnderflow.selector);
-        ERC20Hook(bank).erc20flash(gems, wads, achap, data);
-    }
-
-    function test_gem_flash_unsupported_gem() public _chap_ {
-        bytes memory data = abi.encodeWithSelector(chap.approve_hook.selector, agold, type(uint256).max);
-        gems.push(agold);
-        wads.push(init_join * WAD);
-        ERC20Hook(bank).erc20flash(gems, wads, achap, data);
-        Vat(bank).filhi(gilk, 'pass', gilk, bytes32(0));
-        vm.expectRevert(ERC20Hook.ErrLoanArgs.selector);
-        ERC20Hook(bank).erc20flash(gems, wads, achap, data);
-    }
-
-    function test_gem_flasher_failure() public _chap_ {
-        bytes memory data = abi.encodeWithSelector(chap.failure.selector);
-        gems.push(agold);
-        wads.push(init_join * WAD);
-        vm.expectRevert(bytes4(keccak256(bytes('ErrBroken()'))));
-        ERC20Hook(bank).erc20flash(gems, wads, achap, data);
-    }
-
-    function test_gem_flash_reentry() public _chap_ {
-        bytes memory data = abi.encodeWithSelector(chap.reenter.selector, agold, flash_size * WAD);
-        gems.push(agold);
-        wads.push(init_join * WAD);
-        vm.expectRevert(Vat.ErrLock.selector);
-        ERC20Hook(bank).erc20flash(gems, wads, achap, data);
-    }
-
-    function test_gem_jump_wind_up_and_release() public _chap_ {
-        uint lock = 1000 * WAD;
-        uint draw = 500 * WAD;
-        uint chap_gold1 = gold.balanceOf(achap);
-        uint chap_rico1 = rico.balanceOf(achap);
-        uint hook_gold1 = gold.balanceOf(address(hook));
-        uint hook_rico1 = rico.balanceOf(address(hook));
-
-        // chap had 500 gold, double it with 500 loan repaid by buying with borrowed rico
-        bytes memory data = abi.encodeWithSelector(chap.gem_lever.selector, agold, lock, draw);
-        gems.push(agold);
-        wads.push(draw);
-        ERC20Hook(bank).erc20flash(gems, wads, achap, data);
-        uint ink = _ink(gilk, achap);
-        uint art = _art(gilk, achap);
-        assertEq(ink, lock);
-        assertEq(art, draw);
-
-        data = abi.encodeWithSelector(chap.gem_release.selector, agold, lock, draw);
-        ERC20Hook(bank).erc20flash(gems, wads, achap, data);
-        assertEq(gold.balanceOf(achap), chap_gold1);
-        assertEq(rico.balanceOf(achap) + 1, chap_rico1);
-        assertEq(gold.balanceOf(address(hook)), hook_gold1);
-        assertEq(rico.balanceOf(address(hook)), hook_rico1);
     }
 
     function test_init_conditions() public {
@@ -1028,8 +899,6 @@ contract VatTest is Test, RicoSetUp {
         assertEq(address(bytes20(val)), self);
         val = Vat(bank).gethi(gilk, 'ftag', gilk);
         assertEq(val, grtag);
-        val = Vat(bank).gethi(gilk, 'pass', gilk);
-        assertEq(val, bytes32(uint(1)));
  
         vm.expectRevert(Bank.ErrWrongKey.selector);
         Vat(bank).gethi(gilk, 'oh', gilk);
