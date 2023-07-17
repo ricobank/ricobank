@@ -34,7 +34,8 @@ contract ERC20Hook is Hook, Bank {
     error ErrTransfer();
     error ErrDinkSize();
 
-    bytes32 constant POSITION = keccak256('erc20hook');
+    bytes32 constant public   INFO     = bytes32(abi.encodePacked('erc20hook.0'));
+    bytes32 constant internal POSITION = keccak256(abi.encodePacked(INFO));
     function getStorage() internal pure returns (ERC20HookStorage storage hs) {
         bytes32 pos = POSITION;
         assembly {
@@ -48,7 +49,7 @@ contract ERC20Hook is Hook, Bank {
         address u,
         bytes calldata _dink,
         int  // dart
-    ) _flog_ external returns (bool safer) {
+    ) external returns (bool safer) {
         ERC20HookStorage storage hs = getStorage();
         // read dink as a single uint
         address gem = hs.items[i].gem;
@@ -78,7 +79,7 @@ contract ERC20Hook is Hook, Bank {
         address keeper,
         uint256 rush,
         uint256 cut
-    ) _flog_ external returns (bytes memory) {
+    ) external returns (bytes memory) {
         ERC20HookStorage storage hs = getStorage();
         // try to take enough ink to cover the debt
         // cut is RAD, rush is RAY, so bank earns a WAD
@@ -109,7 +110,7 @@ contract ERC20Hook is Hook, Bank {
     }
 
     function fili(bytes32 key, bytes32 idx, bytes32 val)
-      _flog_ external {
+      external {
         ERC20HookStorage storage hs = getStorage();
         if (key == 'gem') {
             hs.items[idx].gem = address(bytes20(val));
@@ -118,6 +119,7 @@ contract ERC20Hook is Hook, Bank {
         } else if (key == 'ftag') {
             hs.items[idx].ftag = val;
         } else { revert ErrWrongKey(); }
+        emit NewPalm1(concat(INFO, '.', key), idx, val);
     }
 
     function geti(bytes32 key, bytes32 idx) view external returns (bytes32) {

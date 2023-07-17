@@ -48,7 +48,8 @@ contract UniNFTHook is Hook, Bank {
     error ErrDir();
     error ErrFull();
 
-    bytes32 constant public POSITION = keccak256('uninfthook.0');
+    bytes32 constant public   INFO     = bytes32(abi.encodePacked('uninfthook.0'));
+    bytes32 constant internal POSITION = keccak256(abi.encodePacked(INFO));
     function getStorage() internal pure returns (UniNFTHookStorage storage hs) {
         bytes32 pos = POSITION;
         assembly {
@@ -62,7 +63,7 @@ contract UniNFTHook is Hook, Bank {
         address urn,
         bytes calldata dink,
         int  // dart
-    ) _flog_ external returns (bool safer) {
+    ) external returns (bool safer) {
         UniNFTHookStorage storage hs = getStorage();
         if (dink.length < 32 || dink.length % 32 != 0) revert ErrDinkLength();
         {
@@ -121,7 +122,7 @@ contract UniNFTHook is Hook, Bank {
         address keeper,
         uint256 rush,
         uint256 cut
-    ) _flog_ external returns (bytes memory) {
+    ) external returns (bytes memory) {
         UniNFTHookStorage storage hs = getStorage();
         uint[] memory ids = hs.inks[ilk][urn];
         delete hs.inks[ilk][urn];
@@ -201,7 +202,7 @@ contract UniNFTHook is Hook, Bank {
     }
 
     function fili2(bytes32 key, bytes32 ilk, bytes32 _gem, bytes32 val)
-      _flog_ external {
+      external {
         UniNFTHookStorage storage hs = getStorage();
         address gem = address(bytes20(_gem));
         if (key == 'fsrc') {
@@ -211,9 +212,10 @@ contract UniNFTHook is Hook, Bank {
         } else {
             revert ErrWrongKey();
         }
+        emit NewPalm2(concat(INFO, '.', key), ilk, _gem, val);
     }
 
-    function file(bytes32 key, bytes32 val) _flog_ external {
+    function file(bytes32 key, bytes32 val) external {
         UniNFTHookStorage storage hs = getStorage();
         if (key == 'nfpm') {
             hs.nfpm = INonfungiblePositionManager(address(bytes20(val)));
@@ -224,6 +226,7 @@ contract UniNFTHook is Hook, Bank {
         } else {
             revert ErrWrongKey();
         }
+        emit NewPalm0(concat(INFO, '.', key), val);
     }
 
     function get(bytes32 key) view external returns (bytes32) {
