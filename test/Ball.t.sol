@@ -7,6 +7,7 @@ import { Ball } from '../src/ball.sol';
 import { INonfungiblePositionManager } from './Univ3Interface.sol';
 import { Gem, GemFab } from '../lib/gemfab/src/gem.sol';
 import { Feedbase } from '../lib/feedbase/src/Feedbase.sol';
+import { Ploker } from '../lib/feedbase/src/Ploker.sol';
 import { Divider } from '../lib/feedbase/src/combinators/Divider.sol';
 import { Medianizer } from '../lib/feedbase/src/Medianizer.sol';
 import { UniswapV3Adapter } from "../lib/feedbase/src/adapters/UniswapV3Adapter.sol";
@@ -22,7 +23,6 @@ import { Vox } from "../src/vox.sol";
 import { Bank } from '../src/bank.sol';
 import { File } from '../src/file.sol';
 import { BankDiamond } from '../src/diamond.sol';
-import {Ploker} from '../src/test/Ploker.sol';
 
 contract BallTest is Test, UniSetUp, Math {
     bytes32 internal constant WILK = "weth";

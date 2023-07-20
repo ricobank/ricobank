@@ -13,6 +13,7 @@ import {Vat} from './vat.sol';
 import {Vow} from './vow.sol';
 import {Vox} from './vox.sol';
 import {Feedbase} from "../lib/feedbase/src/Feedbase.sol";
+import {Ploker} from "../lib/feedbase/src/Ploker.sol";
 import {Gem} from "../lib/gemfab/src/gem.sol";
 import {Ward} from "../lib/feedbase/src/mixin/ward.sol";
 import {Divider} from "../lib/feedbase/src/combinators/Divider.sol";
@@ -22,7 +23,6 @@ import {ChainlinkAdapter} from "../lib/feedbase/src/adapters/ChainlinkAdapter.so
 import {Math} from '../src/mixin/math.sol';
 import {ERC20Hook} from './hook/ERC20hook.sol';
 import {UniNFTHook} from './hook/nfpm/UniV3NFTHook.sol';
-import {Ploker} from './test/Ploker.sol';
 import {Bank} from './bank.sol';
 import {File} from './file.sol';
 import {Diamond, IDiamondCuttable} from '../lib/solidstate-solidity/contracts/proxy/diamond/Diamond.sol';

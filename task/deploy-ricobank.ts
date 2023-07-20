@@ -150,15 +150,15 @@ task('deploy-ricobank', '')
         ['divider', 'Divider', await getartifact('Divider')],
         ['uniadapt', 'UniswapV3Adapter', await getartifact('UniswapV3Adapter')],
         ['cladapt', 'ChainlinkAdapter', await getartifact('ChainlinkAdapter')],
+        ['ploker', 'Ploker', await getartifact('Ploker')],
         ['hook', 'ERC20Hook', require('../artifacts/src/hook/ERC20hook.sol/ERC20Hook.json')],
-        ['nfthook', 'UniNFTHook', require('../artifacts/src/hook/nfpm/UniV3NFTHook.sol/UniNFTHook.json')],
-        ['ploker', 'Ploker', require('../artifacts/src/test/Ploker.sol/Ploker.json')]
+        ['nfthook', 'UniNFTHook', require('../artifacts/src/hook/nfpm/UniV3NFTHook.sol/UniNFTHook.json')]
     ]
 
     for await (const [state_var, typename, artifact] of contracts) {
       const pack_type = [
           'Gem', 'Divider', 'Medianizer', 'TWAP', 'UniswapV3Adapter',
-          'ChainlinkAdapter'
+          'ChainlinkAdapter', 'Ploker'
       ].indexOf(typename) == -1
       await pb.packObject({
         objectname: state_var,
