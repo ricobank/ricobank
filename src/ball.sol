@@ -28,16 +28,18 @@ import {File} from './file.sol';
 import {Diamond, IDiamondCuttable} from '../lib/solidstate-solidity/contracts/proxy/diamond/Diamond.sol';
 
 contract Ball is Math, Ward {
-    bytes32 internal constant RICO_DAI_TAG = "rico:dai";
-    bytes32 internal constant DAI_RICO_TAG = "dai:rico";
-    bytes32 internal constant RICO_USD_TAG = "rico:usd";
-    bytes32 internal constant XAU_USD_TAG = "xau:usd";
-    bytes32 internal constant DAI_USD_TAG = "dai:usd";
-    bytes32 internal constant RICO_XAU_TAG = "rico:xau";
-    bytes32 internal constant RICO_REF_TAG = "rico:ref";
-    bytes32 internal constant RICO_RISK_TAG  = "rico:risk";
-    bytes32 internal constant RISK_RICO_TAG  = "risk:rico";
-    bytes32 internal constant UNI_NFT_ILK = ":uninft";
+    bytes32 internal constant RICO_DAI_TAG  = "rico:dai";
+    bytes32 internal constant DAI_RICO_TAG  = "dai:rico";
+    bytes32 internal constant RICO_USD_TAG  = "rico:usd";
+    bytes32 internal constant XAU_USD_TAG   = "xau:usd";
+    bytes32 internal constant DAI_USD_TAG   = "dai:usd";
+    bytes32 internal constant RICO_XAU_TAG  = "rico:xau";
+    bytes32 internal constant RICO_REF_TAG  = "rico:ref";
+    bytes32 internal constant RICO_RISK_TAG = "rico:risk";
+    bytes32 internal constant RISK_RICO_TAG = "risk:rico";
+    bytes32 internal constant UNI_NFT_ILK   = ":uninft";
+    bytes32 internal constant HOW = bytes32(uint(1000000000000003652500000000));
+    bytes32 internal constant CAP = bytes32(uint(1000000021970000000000000000));
     IDiamondCuttable.FacetCutAction internal constant ADD = IDiamondCuttable.FacetCutAction.ADD;
 
     Vat public vat;
@@ -284,8 +286,8 @@ contract Ball is Math, Ward {
         File(bank).link('fb',  feedbase);
         File(bank).link('tip', address(mdn));
         File(bank).file('tag', RICO_REF_TAG);
-        File(bank).file('how', bytes32(uint(1000000000000003600000000000)));
-        File(bank).file('cap', bytes32(uint(1000000022000000000000000000)));
+        File(bank).file('how', HOW);
+        File(bank).file('cap', CAP);
         File(bank).file('tau', bytes32(block.timestamp));
         File(bank).file('way', bytes32(RAY));
     }

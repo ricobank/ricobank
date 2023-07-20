@@ -14,9 +14,7 @@ import { b32, snapshot, revert } from './helpers'
 const dpack = require('@etherpacks/dpack')
 
 const bn2b32 = (bn) => hexZeroPad(bn.toHexString(), 32)
-const i0 = Buffer.alloc(32) // ilk 0 id
 const TAG = Buffer.from('feed'.repeat(16), 'hex')
-const GASLIMIT = 100000000
 
 describe('Vox', () => {
   let ali, bob, cat
