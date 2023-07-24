@@ -23,7 +23,6 @@ pragma solidity ^0.8.19;
 import { Math } from './mixin/math.sol';
 import { Flog } from './mixin/flog.sol';
 
-import { Ward } from '../lib/feedbase/src/mixin/ward.sol';
 import { Gem }  from '../lib/gemfab/src/gem.sol';
 import { Hook } from './hook/hook.sol';
 import { Bank } from './bank.sol';
@@ -67,7 +66,7 @@ contract Vat is Bank {
     error ErrHookCallerNotBank();
 
     function init(bytes32 ilk, address hook)
-      _ward_ _flog_ external
+      onlyOwner _flog_ external
     {
         VatStorage storage vs = getVatStorage();
         if (vs.ilks[ilk].rack != 0) revert ErrMultiIlk();
@@ -272,7 +271,7 @@ contract Vat is Bank {
     }
 
     function filk(bytes32 ilk, bytes32 key, bytes32 val)
-      _ward_ _flog_ external
+      onlyOwner _flog_ external
     {
         uint _val = uint(val);
         VatStorage storage vs = getVatStorage();
@@ -314,21 +313,21 @@ contract Vat is Bank {
     }
 
     function filh(bytes32 ilk, bytes32 key, bytes32 val)
-      _ward_ _flog_ external {
+      onlyOwner _flog_ external {
         _hookcall(ilk, abi.encodeWithSignature(
             "file(bytes32,bytes32)", key, val
         ));
     }
 
     function filhi(bytes32 ilk, bytes32 key, bytes32 idx, bytes32 val)
-      _ward_ _flog_ external {
+      onlyOwner _flog_ external {
         _hookcall(ilk, abi.encodeWithSignature(
             "fili(bytes32,bytes32,bytes32)", key, idx, val
         ));
     }
 
     function filhi2(bytes32 ilk, bytes32 key, bytes32 idx0, bytes32 idx1, bytes32 val)
-      _ward_ _flog_ external {
+      onlyOwner _flog_ external {
         _hookcall(ilk, abi.encodeWithSignature(
             "fili2(bytes32,bytes32,bytes32,bytes32)", key, idx0, idx1, val
         ));

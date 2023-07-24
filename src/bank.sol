@@ -3,17 +3,15 @@
 // Copyright (C) 2021-2023 halys
 
 pragma solidity ^0.8.19;
+
+import { OwnableInternal } from 'lib/solidstate-solidity/contracts/access/OwnableInternal.sol';
 import { Math } from './mixin/math.sol';
 import { Flog } from './mixin/flog.sol';
 import { Palm } from './mixin/palm.sol';
 import { Gem }  from '../lib/gemfab/src/gem.sol';
 import { Feedbase } from '../lib/feedbase/src/Feedbase.sol';
 
-interface IOwnable {
-    function owner() external returns (address);
-}
-
-contract Bank is Math, Flog, Palm {
+abstract contract Bank is Math, Flog, Palm, OwnableInternal{
     struct Ilk {
         uint256 tart;  // [wad] Total Normalised Debt
         uint256 rack;  // [ray] Accumulated Rate
@@ -33,7 +31,6 @@ contract Bank is Math, Flog, Palm {
     struct BankStorage {
         Gem rico;
         Feedbase fb;
-        mapping(address=>bool) wards;
     }
 
     struct VatStorage {
@@ -50,7 +47,7 @@ contract Bank is Math, Flog, Palm {
     uint constant UNLOCKED = 2;
     uint constant LOCKED = 1;
 
-    // RISK mint rate
+    // RISK mint rate. Used in struct, never extend in upgrade
     // flop uses min(vel rate, rel rate)
     struct Ramp {
         uint vel; // [wad] RISK/s
@@ -82,16 +79,6 @@ contract Bank is Math, Flog, Palm {
         uint256 cap;  // [ray] `way` bound
     }
 
-    modifier _ward_ {
-        if (msg.sender != IOwnable(address(this)).owner() &&
-            msg.sender != address(this) &&
-            !getBankStorage().wards[msg.sender]) {
-            revert ErrWard(msg.sender, address(this), msg.sig);
-        }
-        _;
-    }
-
-    error ErrWard(address caller, address object, bytes4 sig);
     error ErrWrongKey();
 
     bytes32 constant VAT_INFO = 'vat.0';

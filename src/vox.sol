@@ -21,7 +21,6 @@ import { Math } from './mixin/math.sol';
 import { Flog } from './mixin/flog.sol';
 
 import { Feedbase } from '../lib/feedbase/src/Feedbase.sol';
-import { Ward } from '../lib/feedbase/src/mixin/ward.sol';
 
 import { Vat } from './vat.sol';
 import { Bank } from './bank.sol';

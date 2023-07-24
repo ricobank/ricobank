@@ -169,13 +169,13 @@ describe('Vox', () => {
     })
 
     it('deploy gas', async () => {
-      await check(ethers.BigNumber.from(deploygas), 40737321)
+      await check(ethers.BigNumber.from(deploygas), 40284673)
     })
 
     it('frob cold gas', async () => {
       let dink = ethers.utils.solidityPack(['int'], [wad(5)])
       let gas = await bank.estimateGas.frob(b32('weth'), ALI, dink, wad(5000))
-      await check(gas, 276664)
+      await check(gas, 276647)
     })
 
     it('frob hot gas', async () => {
@@ -184,7 +184,7 @@ describe('Vox', () => {
       let gas = await bank.estimateGas.frob(
         b32('weth'), ALI, ethers.utils.solidityPack(['int'], [wad(5)]), wad(5000)
       )
-      await check(gas, 154841)
+      await check(gas, 154823)
     })
 
     it('bail gas', async () => {
@@ -194,7 +194,7 @@ describe('Vox', () => {
       await send(fb.push, b32('weth:rico'), bn2b32(ray(800)), constants.MaxUint256)
       debug('bail')
       let gas = await bank.estimateGas.bail(b32('weth'), ALI)
-      await check(gas, 235361, 235372)
+      await check(gas, 235141, 235353)
     })
 
     it('keep surplus gas', async () => {
@@ -205,7 +205,7 @@ describe('Vox', () => {
       await send(bank.drip, b32('weth'))
 
       let gas = await bank.estimateGas.keep([])
-      await check(gas, 119989)
+      await check(gas, 119980)
     })
 
     it('keep deficit gas', async() => {
@@ -215,7 +215,7 @@ describe('Vox', () => {
       await send(bank.bail, b32('weth'), ALI)
 
       let gas = await bank.estimateGas.keep([])
-      await check(gas, 168848)
+      await check(gas, 168803)
     })
 
     it('poke up gas', async () => {
@@ -229,7 +229,7 @@ describe('Vox', () => {
       await mine(hh, 100)
       await send(fb.push, TAG, bn2b32(ray(2)), constants.MaxUint256)
       let gas = await bank.estimateGas.poke()
-      await check(gas, 69874, 70105)
+      await check(gas, 69853, 70084)
     })
 
     it('drip gas', async () => {
@@ -237,7 +237,7 @@ describe('Vox', () => {
       await send(bank.frob, b32('weth'), ALI, dink, wad(5000))
       await mine(hh, BANKYEAR)
       let gas = await bank.estimateGas.drip(b32('weth'))
-      await check(gas, 123324, 124375)
+      await check(gas, 123311, 124375)
     })
   })
 })

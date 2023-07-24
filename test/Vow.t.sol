@@ -262,29 +262,6 @@ contract VowTest is Test, RicoSetUp {
         assertEq(risk.balanceOf(bank), vowrisk);
     }
 
-    function test_wards() public {
-        File(bank).file('vel', bytes32(uint(WAD)));
-        vm.prank(bank);
-        File(bank).file('vel', bytes32(uint(WAD)));
-
-        vm.startPrank(arico);
-        vm.expectRevert(abi.encodeWithSelector(
-            Ward.ErrWard.selector, arico, bank, File.file.selector
-        ));
-        File(bank).file('vel', bytes32(uint(WAD)));
-        vm.expectRevert(abi.encodeWithSelector(
-            Ward.ErrWard.selector, arico, bank, File.link.selector
-        ));
-        File(bank).link('tip', address(hook));
-        vm.stopPrank();
-
-        rico_mint(100 * WAD, false);
-        Vow(bank).keep(ilks);
-        Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(WAD));
-        vm.expectRevert(Vat.ErrSafeBail.selector);
-        Vat(bank).bail(gilk, self);
-    }
-
     function test_drip() public {
         uint rho = Vat(bank).ilks(gilk).rho;
         assertEq(rho, block.timestamp);

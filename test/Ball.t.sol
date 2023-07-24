@@ -212,7 +212,7 @@ contract BallTest is Test, UniSetUp, Math {
         BankDiamond(bank).acceptOwnership();
 
         uint usedgas     = gas - gasleft();
-        uint expectedgas = 21569204;
+        uint expectedgas = 21208084;
         if (usedgas < expectedgas) {
             console.log("ball saved %s gas...currently %s", expectedgas - usedgas, usedgas);
         }
@@ -375,44 +375,31 @@ contract BallTest is Test, UniSetUp, Math {
     }
 
     function test_ward() public {
-        vm.prank(VAULT);
-        vm.expectRevert(abi.encodeWithSelector(
-            Bank.ErrWard.selector, VAULT, bank, File.file.selector
-        ));
         File(bank).file('ceil', bytes32(WAD));
-        File(bank).ward(VAULT, true);
-        vm.prank(VAULT);
-        File(bank).file('ceil', bytes32(WAD));
-        File(bank).ward(VAULT, false);
-        File(bank).file('ceil', bytes32(WAD));
-
+        assertEq(BankDiamond(bank).owner(), address(this));
 
         vm.prank(VAULT);
-        vm.expectRevert(abi.encodeWithSelector(
-            Bank.ErrWard.selector, VAULT, bank, File.file.selector
-        ));
+        vm.expectRevert("Ownable: sender must be owner");
         File(bank).file('ceil', bytes32(WAD));
-
 
         BankDiamond(bank).transferOwnership(VAULT);
+        assertEq(BankDiamond(bank).owner(), address(this));
+
+        vm.prank(VAULT);
+        vm.expectRevert("Ownable: sender must be owner");
+        File(bank).file('ceil', bytes32(WAD));
+
+        File(bank).file('ceil', bytes32(WAD));
+
         vm.prank(VAULT);
         BankDiamond(bank).acceptOwnership();
+        assertEq(BankDiamond(bank).owner(), VAULT);
 
-        vm.expectRevert(abi.encodeWithSelector(
-            Bank.ErrWard.selector, me, bank, File.file.selector
-        ));
+        vm.expectRevert("Ownable: sender must be owner");
         File(bank).file('ceil', bytes32(WAD));
 
-        // bank always wards itself
-        vm.prank(bank);
+        vm.prank(VAULT);
         File(bank).file('ceil', bytes32(WAD));
-        assertFalse(File(bank).wards(bank));
-
-        // ward is warded
-        vm.expectRevert(abi.encodeWithSelector(
-            Bank.ErrWard.selector, me, bank, File.ward.selector
-        ));
-        File(bank).ward(me, true);
     }
 
 }

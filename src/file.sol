@@ -10,7 +10,7 @@ import { Feedbase } from '../lib/feedbase/src/Feedbase.sol';
 import { Bank } from './bank.sol';
 
 contract File is Bank {
-    function file(bytes32 key, bytes32 val) _ward_ _flog_ external {
+    function file(bytes32 key, bytes32 val) onlyOwner _flog_ external {
         VatStorage storage vatS = getVatStorage();
         VowStorage storage vowS = getVowStorage();
         VoxStorage storage voxS = getVoxStorage();
@@ -40,7 +40,7 @@ contract File is Bank {
         emit NewPalm0(key, val);
     }
 
-    function link(bytes32 key, address val) _ward_ _flog_ external {
+    function link(bytes32 key, address val) onlyOwner _flog_ external {
         VowStorage storage vowS = getVowStorage();
         VoxStorage storage voxS = getVoxStorage();
         BankStorage storage bankS = getBankStorage();
@@ -56,11 +56,4 @@ contract File is Bank {
 
     function rico() external view returns (Gem) {return getBankStorage().rico;}
     function fb() external view returns (Feedbase) {return getBankStorage().fb;}
-
-    function ward(address usr, bool can) external _ward_ {
-        getBankStorage().wards[usr] = can;
-    }
-    function wards(address usr) external view returns (bool) {
-        return getBankStorage().wards[usr];
-    }
 }
