@@ -7,7 +7,7 @@ import * as hh from 'hardhat'
 import { ethers } from 'hardhat'
 import { constants } from 'ethers'
 
-import { send, fail, N, wad, ray, rad, BANKYEAR, wait, warp, mine } from 'minihat'
+import { send, fail, wad, ray, BANKYEAR, warp, mine } from 'minihat'
 const { hexZeroPad } = ethers.utils
 
 import { b32, snapshot, revert } from './helpers'
@@ -169,7 +169,12 @@ describe('Vox', () => {
     })
 
     it('deploy gas', async () => {
-      await check(ethers.BigNumber.from(deploygas), 40284673)
+      await check(ethers.BigNumber.from(deploygas), 41160698)
+    })
+
+    it('ploke gas', async () => {
+      let gas = await ploker.estimateGas.ploke(b32('weth:rico'))
+      await check(gas, 389568)
     })
 
     it('frob cold gas', async () => {
@@ -237,7 +242,7 @@ describe('Vox', () => {
       await send(bank.frob, b32('weth'), ALI, dink, wad(5000))
       await mine(hh, BANKYEAR)
       let gas = await bank.estimateGas.drip(b32('weth'))
-      await check(gas, 123311, 124375)
+      await check(gas, 123301, 124365)
     })
   })
 })

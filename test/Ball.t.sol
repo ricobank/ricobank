@@ -30,16 +30,21 @@ contract BallTest is Test, UniSetUp, Math {
     uint8   public immutable EXACT_OUT = 1;
     address internal constant DAI   = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
     address internal constant VAULT = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;
+    address internal constant RAI   = 0x03ab458634910AaD20eF5f1C8ee96F1D6ac54919;
     address internal constant WETH  = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
-    address internal constant WETH_USD_AGG  = 0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419;
+    address internal constant RAI_ETH_AGG  = 0x4ad7B025127e89263242aB68F0f9c4E5C033B489;
+    address internal constant WETH_USD_AGG = 0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419;
+    bytes32 internal constant RAI_ILK = "rai";
     bytes32 internal constant WETH_ILK = "weth";
     bytes32 internal constant WETH_DAI_TAG = "weth:dai";
     bytes32 internal constant WETH_RICO_TAG = "weth:rico";
     bytes32 internal constant WETH_USD_TAG = "weth:usd";
+    bytes32 internal constant RAI_ETH_TAG  = "rai:eth";
+    bytes32 internal constant RAI_RICO_TAG = "rai:rico";
     bytes32 internal constant RICO_DAI_TAG = "rico:dai";
     bytes32 internal constant DAI_RICO_TAG = "dai:rico";
-    bytes32 internal constant XAU_USD_TAG = "xau:usd";
-    bytes32 internal constant DAI_USD_TAG = "dai:usd";
+    bytes32 internal constant XAU_USD_TAG  = "xau:usd";
+    bytes32 internal constant DAI_USD_TAG  = "dai:usd";
     bytes32 internal constant RICO_XAU_TAG = "rico:xau";
     bytes32 internal constant REF_RICO_TAG = "ref:rico";
     bytes32 internal constant RICO_REF_TAG = "rico:ref";
@@ -93,6 +98,8 @@ contract BallTest is Test, UniSetUp, Math {
         fb.push(DAI_USD_TAG,  v, block.timestamp + 100_000);
         (v,) = fb.pull(address(cladapt), WETH_USD_TAG);
         fb.push(WETH_USD_TAG, v, block.timestamp + 100_000);
+        (v,) = fb.pull(address(cladapt), RAI_ETH_TAG);
+        fb.push(RAI_ETH_TAG, v, block.timestamp + 100_000);
         vm.stopPrank();
     }
 
@@ -115,6 +122,7 @@ contract BallTest is Test, UniSetUp, Math {
         ploker.ploke(RISK_RICO_TAG);
 
         cladapt.look(WETH_USD_TAG);
+        cladapt.look(RAI_ETH_TAG);
         cladapt.look(DAI_USD_TAG);
         cladapt.look(XAU_USD_TAG);
         uniadapt.look(RICO_DAI_TAG);
@@ -122,6 +130,7 @@ contract BallTest is Test, UniSetUp, Math {
         advance_uni();
 
         mdn.poke(WETH_RICO_TAG);
+        mdn.poke(RAI_RICO_TAG);
         mdn.poke(RICO_REF_TAG);
     }
 
@@ -149,14 +158,28 @@ contract BallTest is Test, UniSetUp, Math {
         ricodai = create_pool(rico, DAI, 500, sqrtparx96);
         ricorisk = create_pool(rico, risk, RISK_FEE, risk_price);
 
-        Ball.IlkParams[] memory ips = new Ball.IlkParams[](1);
-        ilks = new bytes32[](1);
+        Ball.IlkParams[] memory ips = new Ball.IlkParams[](2);
+        ilks = new bytes32[](2);
         ilks[0] = WETH_ILK;
-        assertEq(ilks.length, 1);
+        ilks[1] = RAI_ILK;
         ips[0] = Ball.IlkParams(
             'weth',
             WETH,
+            address(0),
             WETH_USD_AGG,
+            RAY, // chop
+            DUST, // dust
+            1000000001546067052200000000, // fee
+            100000 * RAD, // line
+            RAY, // liqr
+            20000, // ttl
+            1 // range
+        );
+        ips[1] = Ball.IlkParams(
+            'rai',
+            RAI,
+            RAI_ETH_AGG,
+            address(0),
             RAY, // chop
             DUST, // dust
             1000000001546067052200000000, // fee
@@ -207,12 +230,13 @@ contract BallTest is Test, UniSetUp, Math {
         BankDiamond(bank).transferOwnership(address(ball));
         ball.setup(bargs);
         ball.makeilk(ips[0]);
+        ball.makeilk(ips[1]);
         ball.makeuni(ups);
         ball.approve(me);
         BankDiamond(bank).acceptOwnership();
 
         uint usedgas     = gas - gasleft();
-        uint expectedgas = 21208084;
+        uint expectedgas = 23222557;
         if (usedgas < expectedgas) {
             console.log("ball saved %s gas...currently %s", expectedgas - usedgas, usedgas);
         }
@@ -297,6 +321,14 @@ contract BallTest is Test, UniSetUp, Math {
         // ether price about 1600 rn
         assertGt(uint(price) / RAY, 1000 * RAY / INIT_PAR);
         assertLt(uint(price) / RAY, 2000 * RAY / INIT_PAR);
+    }
+
+    function test_eth_denominated_ilks_feed() public {
+        look_poke();
+        (bytes32 rai_rico_price,)  = fb.pull(address(mdn), RAI_RICO_TAG);
+        (bytes32 weth_rico_price,) = fb.pull(address(mdn), WETH_RICO_TAG);
+        (bytes32 rai_weth_price,)  = fb.pull(address(cladapt), RAI_ETH_TAG);
+        assertClose(rdiv(uint(rai_rico_price), uint(weth_rico_price)), uint(rai_weth_price), 1000);
     }
 
     function test_ball_1() public {
@@ -402,4 +434,9 @@ contract BallTest is Test, UniSetUp, Math {
         File(bank).file('ceil', bytes32(WAD));
     }
 
+    function assertClose(uint v1, uint v2, uint rel) internal {
+        uint abs = v1 / rel;
+        assertGt(v1 + abs, v2);
+        assertLt(v1 - abs, v2);
+    }
 }

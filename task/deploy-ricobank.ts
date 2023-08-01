@@ -92,10 +92,11 @@ task('deploy-ricobank', '')
     let ilks = []
     const tokens = args.tokens ? require(args.tokens)[args.netname] : {}
     for (let token in tokens) {
-        const params = tokens[token];
+        const params = tokens[token];  
         let ilk = {
             ilk: b32(params.ilk),
             gem: deps.objects[token].address,
+            gemethagg: params.gemethagg,
             gemusdagg: params.gemusdagg,
             chop: ray(params.chop),
             dust: rad(params.dust),
@@ -107,10 +108,14 @@ task('deploy-ricobank', '')
         }
         // create mock chainlink feed with price of 2000
         if (!params.gemusdagg) {
-            await send(fb.push, b32(token + ':usd'), bn2b32(hre.ethers.BigNumber.from('200000000000')), timestamp * 2);
-            debug('deploying mock aggregator for token', token)
-            const agg_tokenusd = await agg_type.deploy(deps.objects.feedbase.address, ali.address, b32(token + ':usd'), 8, {gasLimit: args.gasLimit})
-            ilk.gemusdagg = agg_tokenusd.address;
+            if(params.gemethagg == '0x' + '00'.repeat(20)){
+                await send(fb.push, b32(token + ':usd'), bn2b32(hre.ethers.BigNumber.from('200000000000')), timestamp * 2);
+                debug('deploying mock aggregator for token', token)
+                const agg_tokenusd = await agg_type.deploy(deps.objects.feedbase.address, ali.address, b32(token + ':usd'), 8, {gasLimit: args.gasLimit})
+                ilk.gemusdagg = agg_tokenusd.address;
+            } else {
+                ilk.gemusdagg = '0x' + '00'.repeat(20);
+            }
         }
         ilks.push(ilk)
     }

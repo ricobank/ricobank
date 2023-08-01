@@ -5,7 +5,9 @@ import 'forge-std/Test.sol';
 
 import '../src/mixin/math.sol';
 import { Feedbase } from '../lib/feedbase/src/Feedbase.sol';
+import { Block } from '../lib/feedbase/src/mixin/Block.sol';
 import { Divider } from '../lib/feedbase/src/combinators/Divider.sol';
+import { Multiplier } from '../lib/feedbase/src/combinators/Multiplier.sol';
 import { Medianizer } from '../lib/feedbase/src/Medianizer.sol';
 import { GemFab, Gem } from '../lib/gemfab/src/gem.sol';
 import { Ball } from '../src/ball.sol';
@@ -83,27 +85,28 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
     address public immutable azero     = address(0);
     address public immutable self = payable(address(this));
 
-    ERC20Hook   public hook;
-    UniNFTHook  public nfthook;
-    Medianizer  public mdn;
-    Ball     public ball;
-    Divider  public divider;
-    Feedbase public feed;
-    Gem      public dai;
-    Gem      public gold;
-    Gem      public ruby;
-    Gem      public rico;
-    Gem      public risk;
-    GemFab   public gemfab;
-    address  public ricodai;
-    address  public ricorisk;
-    address  public arico;
-    address  public arisk;
-    address  public agold;
-    address  public aruby;
-    address  payable public ahook;
-    address  public uniwrapper;
-    address payable public bank;
+    ERC20Hook  public hook;
+    UniNFTHook public nfthook;
+    Medianizer public mdn;
+    Ball       public ball;
+    Divider    public divider;
+    Multiplier public multiplier;
+    Feedbase   public feed;
+    Gem        public dai;
+    Gem        public gold;
+    Gem        public ruby;
+    Gem        public rico;
+    Gem        public risk;
+    GemFab     public gemfab;
+    address    public ricodai;
+    address    public ricorisk;
+    address    public arico;
+    address    public arisk;
+    address    public agold;
+    address    public aruby;
+    address    payable public ahook;
+    address    public uniwrapper;
+    address    payable public bank;
 
     Guy _bob;
     Guy guy;
@@ -161,7 +164,7 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
         uint256[] memory scales  = new uint256[](2);
         sources[0] = address(this); tags[0] = bytes32(tag);   scales[0] = RAY;
         sources[1] = address(this); tags[1] = bytes32("ONE"); scales[1] = RAY;
-        divider.setConfig(tag, Divider.Config(sources, tags));
+        divider.setConfig(tag, Block.Config(sources, tags));
         // todo quorum?
         Medianizer.Config memory mdnconf =
             Medianizer.Config(new address[](1), new bytes32[](1), 0);
@@ -202,6 +205,7 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
         ips[0] = Ball.IlkParams(
             'weth',
             WETH,
+            address(0),
             WETH_USD_AGG,
             RAY, // chop
             90 * RAD, // dust
