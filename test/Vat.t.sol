@@ -915,6 +915,23 @@ contract VatTest is Test, RicoSetUp {
         assertGt(Vat(bank).ilks(gilk).rack, prevrack);
     }
 
+
+    // make sure ink and bail decode properly
+    function test_bail_return_value() public {
+        feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
+        Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(WAD));
+        feedpush(grtag, bytes32(0), type(uint).max);
+        bytes memory sold = Vat(bank).bail(gilk, self);
+        assertEq(sold.length, 32);
+    }
+
+    function test_ink_return_value() public {
+        feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
+        Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(WAD));
+        bytes memory ink = Vat(bank).ink(gilk, self);
+        assertEq(ink.length, 32);
+    }
+
 }
 
 contract OnlyInkHook is Hook {

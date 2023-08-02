@@ -149,7 +149,7 @@ contract VowTest is Test, RicoSetUp {
         guy.approve(address(rico), bank, expected);
         bytes memory data = guy.bail(gilk, self);
 
-        uint earn = uint(bytes32(abi.decode(data, (bytes))));
+        uint earn = uint(bytes32(data));
 
         // check returned bytes represent quantity of tokens received
         assertEq(earn, WAD);

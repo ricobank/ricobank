@@ -201,9 +201,9 @@ contract Vat is Bank {
         emit NewPalm0('sin', bytes32(vs.sin));
 
         // ink auction
-        return _hookcall(i, abi.encodeWithSelector(
+        return abi.decode(_hookcall(i, abi.encodeWithSelector(
             Hook.bailhook.selector, i, u, bill, msg.sender, rush, cut
-        ));
+        )), (bytes));
     }
 
     function drip(bytes32 i) _flog_ external { _drip(i); }

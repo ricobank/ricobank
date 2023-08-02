@@ -304,9 +304,7 @@ contract NFTHookTest is Test, RicoSetUp {
         rico_mint(wad_cost, true);
         rico.approve(bank, type(uint).max);
 
-        bytes memory res = Vat(bank).bail(uilk, self);
-
-        bytes memory ids = abi.decode(res, (bytes));
+        bytes memory ids = Vat(bank).bail(uilk, self);
         uint256[] memory tok_ids = new uint256[](ids.length / 32);
         // convert bytes to uints by putting bytes mem into uint array
         for (uint i = 32; i <= ids.length; i += 32) {
