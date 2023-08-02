@@ -112,6 +112,9 @@ contract UniNFTHook is Hook, Bank {
                 unchecked {rm--;}
             }
         }
+        emit NewPalmBytes2(
+            'uninfthook.0.ink', ilk, bytes32(bytes20(urn)), abi.encodePacked(tokenIds)
+        );
     }
 
     function bailhook(
@@ -131,6 +134,7 @@ contract UniNFTHook is Hook, Bank {
         Gem rico = getBankStorage().rico;
         rico.transferFrom(keeper, address(this), earn - over);
         rico.transferFrom(keeper, urn, over);
+        emit NewPalmBytes2('uninfthook.0.ink', ilk, bytes32(bytes20(urn)), '');
 
         uint len = ids.length;
         uint idx;

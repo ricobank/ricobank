@@ -69,7 +69,7 @@ task('deploy-ricobank', '')
         risk: deps.objects.risk.address,
         ricodai: deps.objects.ricodai.address,
         ricorisk: deps.objects.ricorisk.address,
-        router: deps.objects.swapRouter.address,
+        router: hre.ethers.constants.AddressZero, // todo remove
         uniwrapper: uniwrapper.address,
         par: ray(1),
         ceil: wad(100000),
@@ -172,6 +172,13 @@ task('deploy-ricobank', '')
         artifact: artifact
       }, pack_type)
     }
+
+    await pb.packObject({
+        objectname: 'uniswapV3Wrapper',
+        address: uniwrapper.address,
+        typename: 'UniWrapper',
+        artifact: uniwrapper_artifact
+    })
 
     debug('packing ball')
     await pb.packObject({

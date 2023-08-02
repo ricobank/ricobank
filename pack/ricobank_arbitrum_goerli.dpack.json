@@ -56,6 +56,12 @@
         "/": "bafkreihifi6scj7hjyyhvvh6qxvzow3zpijbugveepskqm2nil2vxrl5oe"
       }
     },
+    "UniversalRouter": {
+      "typename": "UniversalRouter",
+      "artifact": {
+        "/": "bafkreibw4lo6gxpsqboulpxcsfjsbvkmwearhcaitsk2v34bte2i3mjnoi"
+      }
+    },
     "Feedbase": {
       "typename": "Feedbase",
       "artifact": {
@@ -201,6 +207,14 @@
       "artifact": {
         "/": "bafkreidrlo6gimuqdguz7jbdh5zjkzkljx5p3nrgkk5vg4oqxr6oha6czu"
       }
+    },
+    "universalRouter": {
+      "objectname": "universalRouter",
+      "typename": "UniversalRouter",
+      "artifact": {
+        "/": "bafkreibw4lo6gxpsqboulpxcsfjsbvkmwearhcaitsk2v34bte2i3mjnoi"
+      },
+      "address": "0x3fC91A3afd70395Cd496C647d5a6CC9D4B2b7FAD"
     },
     "feedbase": {
       "objectname": "feedbase",

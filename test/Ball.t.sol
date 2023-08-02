@@ -236,7 +236,7 @@ contract BallTest is Test, UniSetUp, Math {
         BankDiamond(bank).acceptOwnership();
 
         uint usedgas     = gas - gasleft();
-        uint expectedgas = 23222557;
+        uint expectedgas = 23289649;
         if (usedgas < expectedgas) {
             console.log("ball saved %s gas...currently %s", expectedgas - usedgas, usedgas);
         }
