@@ -294,29 +294,22 @@ contract Ball is Math, Ward {
 
     function makeilk(IlkParams calldata ilkparams) _ward_ external {
         bytes32 ilk = ilkparams.ilk;
-        bytes32 gemricotag = concat(ilk, ':rico');
+        bytes32 gemreftag = concat(ilk, ':ref');
         Vat(bank).init(ilk, address(hook));
-        Vat(bank).filhi(ilk, 'gem',  ilk, bytes32(bytes20(ilkparams.gem)));
-        Vat(bank).filhi(ilk, 'fsrc', ilk, bytes32(bytes20(address(mdn))));
-        Vat(bank).filhi(ilk, 'ftag', ilk, gemricotag);
         Vat(bank).filk(ilk, 'chop', bytes32(ilkparams.chop));
         Vat(bank).filk(ilk, 'dust', bytes32(ilkparams.dust));
         Vat(bank).filk(ilk, 'fee',  bytes32(ilkparams.fee));
         Vat(bank).filk(ilk, 'line', bytes32(ilkparams.line));
         Vat(bank).filk(ilk, 'liqr', bytes32(ilkparams.liqr));
+        Vat(bank).filhi(ilk, 'gem',  ilk, bytes32(bytes20(ilkparams.gem)));
+        Vat(bank).filhi(ilk, 'fsrc', ilk, bytes32(bytes20(address(mdn))));
+        Vat(bank).filhi(ilk, 'ftag', ilk, gemreftag);
         {
             Medianizer.Config memory mdnconf = Medianizer.Config(new address[](1), new bytes32[](1), 1);
-            mdnconf.srcs[0] = address(divider); mdnconf.tags[0] = gemricotag;
-            mdn.setConfig(gemricotag, mdnconf);
+            mdnconf.srcs[0] = address(divider); mdnconf.tags[0] = gemreftag;
+            mdn.setConfig(gemreftag, mdnconf);
         }
         Ploker.Config memory pconf;
-        if (ilkparams.gem == dai) {
-            pconf = Ploker.Config(new address[](1), new bytes32[](1), new address[](1), new bytes32[](1));
-            pconf.adapters[0]    = address(uniadapt); pconf.adaptertags[0]    = RICO_DAI_TAG;
-            pconf.combinators[0] = address(mdn);      pconf.combinatortags[0] = gemricotag;
-            ploker.setConfig(gemricotag, pconf);
-            return;
-        }
         address[] memory sources = new address[](2);
         bytes32[] memory tags    = new bytes32[](2);
         bytes32 gemusdtag = concat(ilk, ':usd');
@@ -341,15 +334,15 @@ contract Ball is Math, Ward {
             gemclatag = gemethtag;
             pconf.adapters[3] = address(cladapt); pconf.adaptertags[3] = WETH_USD_TAG;
         }
-        sources[0] = address(gemusdsrc);  tags[0] = gemusdtag;
-        sources[1] = address(multiplier); tags[1] = RICO_USD_TAG;
-        divider.setConfig(gemricotag, Block.Config(sources, tags));
+        sources[0] = address(gemusdsrc); tags[0] = gemusdtag;
+        sources[1] = address(cladapt);   tags[1] = XAU_USD_TAG;
+        divider.setConfig(gemreftag, Block.Config(sources, tags));
 
         pconf.adapters[0] = address(uniadapt); pconf.adaptertags[0] = RICO_DAI_TAG;
         pconf.adapters[1] = address(cladapt);  pconf.adaptertags[1] = DAI_USD_TAG;
         pconf.adapters[2] = address(cladapt);  pconf.adaptertags[2] = gemclatag;
-        pconf.combinators[0] = address(mdn); pconf.combinatortags[0] = gemricotag;
-        ploker.setConfig(gemricotag, pconf);
+        pconf.combinators[0] = address(mdn); pconf.combinatortags[0] = gemreftag;
+        ploker.setConfig(gemreftag, pconf);
     }
 
     function makeuni(UniParams calldata ups) _ward_ external {

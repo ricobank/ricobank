@@ -47,8 +47,8 @@ describe('Vox', () => {
     await send(bank.file, b32('par'), b32(wad(7)))
 
     await send(bank.filhi, b32('weth'), b32('fsrc'), b32('weth'), ALI + '00'.repeat(12))
-    await send(bank.filhi, b32('weth'), b32('ftag'), b32('weth'), b32('weth:rico'))
-    await send(fb.push, b32('weth:rico'), bn2b32(ray(2000)), constants.MaxUint256);
+    await send(bank.filhi, b32('weth'), b32('ftag'), b32('weth'), b32('weth:ref'))
+    await send(fb.push, b32('weth:ref'), bn2b32(ray(0.8)), constants.MaxUint256);
 
     await send(bank.file, b32('flopsrc'), ALI + '00'.repeat(12))
     await send(bank.file, b32('floptag'), b32('risk:rico'))
@@ -79,7 +79,7 @@ describe('Vox', () => {
   }
 
   it('ploke', async () => {
-    for (const tag of ['weth:rico', 'rico:risk', 'risk:rico', 'rico:ref']) {
+    for (const tag of ['weth:ref', 'rico:risk', 'risk:rico', 'rico:ref']) {
         debug(`ploking ${tag}`)
         await ploker.ploke(b32(tag))
     }
@@ -169,80 +169,80 @@ describe('Vox', () => {
     })
 
     it('deploy gas', async () => {
-      await check(ethers.BigNumber.from(deploygas), 41233878)
+      await check(ethers.BigNumber.from(deploygas), 43301725)
     })
 
     it('ploke gas', async () => {
-      let gas = await ploker.estimateGas.ploke(b32('weth:rico'))
-      await check(gas, 389568)
+      let gas = await ploker.estimateGas.ploke(b32('weth:ref'))
+      await check(gas, 372026)
     })
 
     it('frob cold gas', async () => {
       let dink = ethers.utils.solidityPack(['int'], [wad(5)])
-      let gas = await bank.estimateGas.frob(b32('weth'), ALI, dink, wad(5000))
-      await check(gas, 276670)
+      let gas = await bank.estimateGas.frob(b32('weth'), ALI, dink, wad(2))
+      await check(gas, 276144)
     })
 
     it('frob hot gas', async () => {
       let dink = ethers.utils.solidityPack(['int'], [wad(5)])
-      await send(bank.frob, b32('weth'), ALI, dink, wad(5000))
+      await send(bank.frob, b32('weth'), ALI, dink, wad(2))
       let gas = await bank.estimateGas.frob(
-        b32('weth'), ALI, ethers.utils.solidityPack(['int'], [wad(5)]), wad(5000)
+        b32('weth'), ALI, ethers.utils.solidityPack(['int'], [wad(5)]), wad(2)
       )
-      await check(gas, 154847)
+      await check(gas, 154305)
     })
 
     it('bail gas', async () => {
       let dink = ethers.utils.solidityPack(['int'], [wad(5)])
-      await send(bank.frob, b32('weth'), ALI, dink, wad(5000))
+      await send(bank.frob, b32('weth'), ALI, dink, wad(2))
 
-      await send(fb.push, b32('weth:rico'), bn2b32(ray(800)), constants.MaxUint256)
+      await send(fb.push, b32('weth:ref'), bn2b32(ray(0.1)), constants.MaxUint256)
       debug('bail')
       let gas = await bank.estimateGas.bail(b32('weth'), ALI)
-      await check(gas, 235161, 235373)
+      await check(gas, 234781, 235353)
     })
 
     it('keep surplus gas', async () => {
       let dink = ethers.utils.solidityPack(['int'], [wad(5)])
-      await send(bank.frob, b32('weth'), ALI, dink, wad(5000))
+      await send(bank.frob, b32('weth'), ALI, dink, wad(2))
 
       await mine(hh, BANKYEAR)
       await send(bank.drip, b32('weth'))
 
       let gas = await bank.estimateGas.keep([])
-      await check(gas, 119989)
+      await check(gas, 119834)
     })
 
     it('keep deficit gas', async() => {
       let dink = ethers.utils.solidityPack(['int'], [wad(5)])
-      await send(bank.frob, b32('weth'), ALI, dink, wad(5000))
-      await send(fb.push, b32('weth:rico'), bn2b32(ray(800)), constants.MaxUint256)
+      await send(bank.frob, b32('weth'), ALI, dink, wad(2))
+      await send(fb.push, b32('weth:ref'), bn2b32(ray(0.1)), constants.MaxUint256)
       await send(bank.bail, b32('weth'), ALI)
 
       let gas = await bank.estimateGas.keep([])
-      await check(gas, 168848)
+      await check(gas, 168513)
     })
 
     it('poke up gas', async () => {
       await mine(hh, 100)
       await send(fb.push, TAG, bn2b32(ray(0.5)), constants.MaxUint256)
       let gas = await bank.estimateGas.poke()
-      await check(gas, 69853, 70125)
+      await check(gas, 69814, 70125)
     })
 
     it('poke down gas', async () => {
       await mine(hh, 100)
       await send(fb.push, TAG, bn2b32(ray(2)), constants.MaxUint256)
       let gas = await bank.estimateGas.poke()
-      await check(gas, 69853, 70084)
+      await check(gas, 69814, 70084)
     })
 
     it('drip gas', async () => {
       let dink = ethers.utils.solidityPack(['int'], [wad(5)])
-      await send(bank.frob, b32('weth'), ALI, dink, wad(5000))
+      await send(bank.frob, b32('weth'), ALI, dink, wad(2))
       await mine(hh, BANKYEAR)
       let gas = await bank.estimateGas.drip(b32('weth'))
-      await check(gas, 123301, 124365)
+      await check(gas, 123181, 124365)
     })
   })
 })

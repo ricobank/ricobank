@@ -25,9 +25,6 @@ import { File } from '../src/file.sol';
 import { BankDiamond } from '../src/diamond.sol';
 
 contract BallTest is Test, UniSetUp, Math {
-    bytes32 internal constant WILK = "weth";
-    uint8   public immutable EXACT_IN  = 0;
-    uint8   public immutable EXACT_OUT = 1;
     address internal constant DAI   = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
     address internal constant VAULT = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;
     address internal constant RAI   = 0x03ab458634910AaD20eF5f1C8ee96F1D6ac54919;
@@ -36,17 +33,13 @@ contract BallTest is Test, UniSetUp, Math {
     address internal constant WETH_USD_AGG = 0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419;
     bytes32 internal constant RAI_ILK = "rai";
     bytes32 internal constant WETH_ILK = "weth";
-    bytes32 internal constant WETH_DAI_TAG = "weth:dai";
-    bytes32 internal constant WETH_RICO_TAG = "weth:rico";
+    bytes32 internal constant WETH_REF_TAG = "weth:ref";
     bytes32 internal constant WETH_USD_TAG = "weth:usd";
     bytes32 internal constant RAI_ETH_TAG  = "rai:eth";
-    bytes32 internal constant RAI_RICO_TAG = "rai:rico";
+    bytes32 internal constant RAI_REF_TAG  = "rai:ref";
     bytes32 internal constant RICO_DAI_TAG = "rico:dai";
-    bytes32 internal constant DAI_RICO_TAG = "dai:rico";
     bytes32 internal constant XAU_USD_TAG  = "xau:usd";
     bytes32 internal constant DAI_USD_TAG  = "dai:usd";
-    bytes32 internal constant RICO_XAU_TAG = "rico:xau";
-    bytes32 internal constant REF_RICO_TAG = "ref:rico";
     bytes32 internal constant RICO_REF_TAG = "rico:ref";
     bytes32 constant public RICO_RISK_TAG  = "rico:risk";
     bytes32 constant public RISK_RICO_TAG  = "risk:rico";
@@ -74,12 +67,11 @@ contract BallTest is Test, UniSetUp, Math {
     uint160 constant public risk_price = 2 ** 96;
     uint256 constant INIT_SQRTPAR = RAY * 2;
     uint256 constant INIT_PAR = (INIT_SQRTPAR ** 2) / RAY;
-    uint256 constant wethricoprice = 1500 * RAY * RAY / INIT_PAR;
     uint256 constant wethamt = WAD;
-    int256  constant dart = int(wethamt * wethricoprice / INIT_PAR);
+    int256  safedart;
     bytes32[] ilks;
     uint DEV_FUND_RISK = 1000000 * WAD;
-    uint DUST = 90 * RAD;
+    uint DUST = 90 * RAD / 2000;
 
     ERC20Hook hook;
     Vat vat;
@@ -129,8 +121,8 @@ contract BallTest is Test, UniSetUp, Math {
         advance_chainlink();
         advance_uni();
 
-        mdn.poke(WETH_RICO_TAG);
-        mdn.poke(RAI_RICO_TAG);
+        mdn.poke(WETH_REF_TAG);
+        mdn.poke(RAI_REF_TAG);
         mdn.poke(RICO_REF_TAG);
     }
 
@@ -236,7 +228,7 @@ contract BallTest is Test, UniSetUp, Math {
         BankDiamond(bank).acceptOwnership();
 
         uint usedgas     = gas - gasleft();
-        uint expectedgas = 23289649;
+        uint expectedgas = 23175919;
         if (usedgas < expectedgas) {
             console.log("ball saved %s gas...currently %s", expectedgas - usedgas, usedgas);
         }
@@ -279,6 +271,11 @@ contract BallTest is Test, UniSetUp, Math {
         Gem(risk).mint(address(this), DEV_FUND_RISK);
         Gem(rico).approve(bank, type(uint256).max);
         Gem(risk).approve(bank, type(uint256).max);
+
+        // find a rico borrow amount which will be safe by about 10%
+        (bytes32 val,) = fb.pull(address(mdn), WETH_REF_TAG);
+        // weth * wethref = art * par
+        safedart = int(wethamt * uint(val) / INIT_PAR * 10 / 11);
     }
 
     modifier _flap_after_ {
@@ -317,28 +314,28 @@ contract BallTest is Test, UniSetUp, Math {
         uint vox_price = rmul(uint(price), Vox(bank).amp());
         assertGt(uint(vox_price), INIT_PAR * 99 / 100);
         assertLt(uint(vox_price), INIT_PAR * 100 / 99);
-        (price, ttl) = fb.pull(address(mdn), WETH_RICO_TAG);
-        // ether price about 1600 rn
-        assertGt(uint(price) / RAY, 1000 * RAY / INIT_PAR);
-        assertLt(uint(price) / RAY, 2000 * RAY / INIT_PAR);
+
+        // at block 16445606 ethusd about 1554, xau  about 1925
+        (price, ttl) = fb.pull(address(mdn), WETH_REF_TAG);
+        assertClose(uint(price), 1554 * RAY / 1925, 100);
     }
 
     function test_eth_denominated_ilks_feed() public {
         look_poke();
-        (bytes32 rai_rico_price,)  = fb.pull(address(mdn), RAI_RICO_TAG);
-        (bytes32 weth_rico_price,) = fb.pull(address(mdn), WETH_RICO_TAG);
+        (bytes32 rai_ref_price,)  = fb.pull(address(mdn), RAI_REF_TAG);
+        (bytes32 weth_ref_price,) = fb.pull(address(mdn), WETH_REF_TAG);
         (bytes32 rai_weth_price,)  = fb.pull(address(cladapt), RAI_ETH_TAG);
-        assertClose(rdiv(uint(rai_rico_price), uint(weth_rico_price)), uint(rai_weth_price), 1000);
+        assertClose(rdiv(uint(rai_ref_price), uint(weth_ref_price)), uint(rai_weth_price), 1000);
     }
 
     function test_ball_1() public {
-        Vat(bank).frob(WETH_ILK, me, abi.encodePacked(wethamt), dart);
+        Vat(bank).frob(WETH_ILK, me, abi.encodePacked(wethamt), safedart);
         vm.expectRevert(Vat.ErrNotSafe.selector);
-        Vat(bank).frob(WETH_ILK, me, abi.encodePacked(int(0)), dart);
+        Vat(bank).frob(WETH_ILK, me, abi.encodePacked(int(0)), safedart);
     }
 
     function test_fee_bail_flop() public _flop_after_ {
-        Vat(bank).frob(WETH_ILK, me, abi.encodePacked(wethamt), dart);
+        Vat(bank).frob(WETH_ILK, me, abi.encodePacked(wethamt), safedart);
         vm.expectRevert(Vat.ErrSafeBail.selector);
         Vat(bank).bail(WETH_ILK, me);
         skip(BANKYEAR * 100);
@@ -355,7 +352,7 @@ contract BallTest is Test, UniSetUp, Math {
 
 
     function test_ball_flap() public _flap_after_ {
-        Vat(bank).frob(WETH_ILK, me, abi.encodePacked(wethamt), dart);
+        Vat(bank).frob(WETH_ILK, me, abi.encodePacked(wethamt), safedart);
         vm.expectRevert(Vat.ErrSafeBail.selector);
         Vat(bank).bail(WETH_ILK, me);
         skip(BANKYEAR * 100);
@@ -363,7 +360,7 @@ contract BallTest is Test, UniSetUp, Math {
 
     // user pays down the urn first, then try to flap
     function test_ball_pay_flap_1() public {
-        Vat(bank).frob(WETH_ILK, me, abi.encodePacked(wethamt), dart);
+        Vat(bank).frob(WETH_ILK, me, abi.encodePacked(wethamt), safedart);
         vm.expectRevert(Vat.ErrSafeBail.selector);
         Vat(bank).bail(WETH_ILK, me);
         skip(BANKYEAR * 100); advance_chainlink(); look_poke();
@@ -386,7 +383,7 @@ contract BallTest is Test, UniSetUp, Math {
     }
 
     function test_ball_pay_flap_success() public  _balanced_after_ {
-        Vat(bank).frob(WETH_ILK, me, abi.encodePacked(wethamt), dart);
+        Vat(bank).frob(WETH_ILK, me, abi.encodePacked(wethamt), safedart);
         vm.expectRevert(Vat.ErrSafeBail.selector);
         Vat(bank).bail(WETH_ILK, me);
         skip(BANKYEAR * 100); look_poke();

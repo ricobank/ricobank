@@ -29,7 +29,7 @@ export default {
             settings: {
               optimizer: {
                 enabled: true,
-                runs: 2000
+                runs: 10000
               },
               outputSelection: {
                 "*": {

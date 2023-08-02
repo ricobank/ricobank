@@ -55,7 +55,6 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
     address constant public DAI  = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
     address constant public WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
     address constant public WETH_USD_AGG  = 0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419;
-    bytes32 constant public WETH_RICO_TAG = "weth:rico";
     bytes32 constant public RICO_RISK_TAG = "rico:risk";
     bytes32 constant public RISK_RICO_TAG = "risk:rico";
 
@@ -66,9 +65,9 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
     bytes32 constant public rilk  = "ruby";
     bytes32 constant public uilk  = ":uninft";
     bytes32 constant public dutag = "dai:usd";
-    bytes32 constant public grtag = "gold:rico";
-    bytes32 constant public wrtag = "weth:rico";
-    bytes32 constant public drtag = "dai:rico";
+    bytes32 constant public grtag = "gold:ref";
+    bytes32 constant public wrtag = "weth:ref";
+    bytes32 constant public drtag = "dai:ref";
 
     bytes32 constant public rtag       = "rico:usd";
     uint160 constant public risk_price = 2 ** 96;
