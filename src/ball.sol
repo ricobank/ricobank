@@ -9,32 +9,32 @@
 
 pragma solidity ^0.8.19;
 
+import {Diamond, IDiamondCuttable} from '../lib/solidstate-solidity/contracts/proxy/diamond/Diamond.sol';
+import {Block} from "../lib/feedbase/src/mixin/Block.sol";
+import {ChainlinkAdapter} from "../lib/feedbase/src/adapters/ChainlinkAdapter.sol";
+import {Divider} from "../lib/feedbase/src/combinators/Divider.sol";
+import {Feedbase} from "../lib/feedbase/src/Feedbase.sol";
+import {Medianizer} from "../lib/feedbase/src/Medianizer.sol";
+import {Multiplier} from "../lib/feedbase/src/combinators/Multiplier.sol";
+import {Ploker} from "../lib/feedbase/src/Ploker.sol";
+import {UniswapV3Adapter, IUniWrapper} from "../lib/feedbase/src/adapters/UniswapV3Adapter.sol";
+import {Ward} from "../lib/feedbase/src/mixin/ward.sol";
+import {Gem} from "../lib/gemfab/src/gem.sol";
+
 import {Vat} from './vat.sol';
 import {Vow} from './vow.sol';
 import {Vox} from './vox.sol';
-import {Feedbase} from "../lib/feedbase/src/Feedbase.sol";
-import {Ploker} from "../lib/feedbase/src/Ploker.sol";
-import {Gem} from "../lib/gemfab/src/gem.sol";
-import {Ward} from "../lib/feedbase/src/mixin/ward.sol";
-import {Block} from "../lib/feedbase/src/mixin/Block.sol";
-import {Divider} from "../lib/feedbase/src/combinators/Divider.sol";
-import {Multiplier} from "../lib/feedbase/src/combinators/Multiplier.sol";
-import {UniswapV3Adapter, IUniWrapper} from "../lib/feedbase/src/adapters/UniswapV3Adapter.sol";
-import {Medianizer} from "../lib/feedbase/src/Medianizer.sol";
-import {ChainlinkAdapter} from "../lib/feedbase/src/adapters/ChainlinkAdapter.sol";
-import {Math} from '../src/mixin/math.sol';
-import {ERC20Hook} from './hook/ERC20hook.sol';
-import {UniNFTHook} from './hook/nfpm/UniV3NFTHook.sol';
 import {Bank} from './bank.sol';
 import {File} from './file.sol';
-import {Diamond, IDiamondCuttable} from '../lib/solidstate-solidity/contracts/proxy/diamond/Diamond.sol';
+import {Math} from './mixin/math.sol';
+import {ERC20Hook} from './hook/ERC20hook.sol';
+import {UniNFTHook} from './hook/nfpm/UniV3NFTHook.sol';
 
 contract Ball is Math, Ward {
     bytes32 internal constant RICO_DAI_TAG  = "rico:dai";
     bytes32 internal constant RICO_USD_TAG  = "rico:usd";
     bytes32 internal constant XAU_USD_TAG   = "xau:usd";
     bytes32 internal constant DAI_USD_TAG   = "dai:usd";
-    bytes32 internal constant RICO_XAU_TAG  = "rico:xau";
     bytes32 internal constant RICO_REF_TAG  = "rico:ref";
     bytes32 internal constant RICO_RISK_TAG = "rico:risk";
     bytes32 internal constant RISK_RICO_TAG = "risk:rico";
@@ -109,10 +109,7 @@ contract Ball is Math, Ward {
 
     address public rico;
     address public risk;
-    address public dai;
-    address public daiusdagg;
-
-    Ploker public ploker;
+    Ploker  public ploker;
 
     constructor(BallArgs memory args) {
         file = new File();
@@ -131,17 +128,11 @@ contract Ball is Math, Ward {
         bank = args.bank;
         rico = args.rico;
         risk = args.risk;
-        dai  = args.DAI;
-        feedbase  = args.feedbase;
-        daiusdagg = args.DAI_USD_AGG;
+        feedbase = args.feedbase;
 
         // rico/usd, rico/ref
-        cladapt.setConfig(
-            XAU_USD_TAG, ChainlinkAdapter.Config(args.XAU_USD_AGG, args.xauusdttl, RAY)
-        );
-        cladapt.setConfig(
-            DAI_USD_TAG, ChainlinkAdapter.Config(args.DAI_USD_AGG, args.daiusdttl, RAY)
-        );
+        cladapt.setConfig(XAU_USD_TAG, ChainlinkAdapter.Config(args.XAU_USD_AGG, args.xauusdttl, RAY));
+        cladapt.setConfig(DAI_USD_TAG, ChainlinkAdapter.Config(args.DAI_USD_AGG, args.daiusdttl, RAY));
         cladapt.look(XAU_USD_TAG);
         (bytes32 ref,) = Feedbase(feedbase).pull(address(cladapt), XAU_USD_TAG);
         vox = new Vox(uint256(ref));
@@ -149,25 +140,22 @@ contract Ball is Math, Ward {
         // rico/dai, dai/rico (== 1 / (rico/dai))
         uniadapt.setConfig(
             RICO_DAI_TAG,
-            UniswapV3Adapter.Config(args.ricodai, args.adaptrange, args.adaptttl, args.DAI < rico)
+            UniswapV3Adapter.Config(args.ricodai, args.adaptrange, args.adaptttl, args.DAI < args.rico)
         );
-        address[] memory sources = new address[](2);
-        bytes32[] memory tags    = new bytes32[](2);
         Feedbase(feedbase).push(bytes32("ONE"), bytes32(RAY), type(uint).max);
 
-        sources[0] = address(cladapt); tags[0] = DAI_USD_TAG;
-        sources[1] = address(uniadapt); tags[1] = RICO_DAI_TAG;
-        multiplier.setConfig(RICO_USD_TAG, Block.Config(sources, tags));
-
-        sources[0] = address(multiplier); tags[0] = RICO_USD_TAG;
-        sources[1] = address(cladapt); tags[1] = XAU_USD_TAG;
-        divider.setConfig(RICO_XAU_TAG, Block.Config(sources, tags));
+        _configureBlock(multiplier, RICO_USD_TAG,
+                       address(cladapt),  DAI_USD_TAG,
+                       address(uniadapt), RICO_DAI_TAG);
+        _configureBlock(divider, RICO_REF_TAG,
+                       address(multiplier), RICO_USD_TAG,
+                       address(cladapt),    XAU_USD_TAG);
 
         Medianizer.Config memory mdnconf = Medianizer.Config(new address[](1), new bytes32[](1), 1);
-        mdnconf.srcs[0] = address(divider); mdnconf.tags[0] = RICO_XAU_TAG;
+        mdnconf.srcs[0] = address(divider); mdnconf.tags[0] = RICO_REF_TAG;
         mdn.setConfig(RICO_REF_TAG, mdnconf);
 
-        // need four plokers: rico/ref, rico/risk, risk/rico, collateral/rico
+        // need four plokers: rico/ref, rico/risk, risk/rico, collateral/ref
         Ploker.Config memory plokerconf = Ploker.Config(
             new address[](3), new bytes32[](3), new address[](1), new bytes32[](1)
         );
@@ -176,26 +164,23 @@ contract Ball is Math, Ward {
         plokerconf.adapters[2] = address(uniadapt); plokerconf.adaptertags[2] = RICO_DAI_TAG;
         plokerconf.combinators[0] = address(mdn); plokerconf.combinatortags[0] = RICO_REF_TAG;
         ploker.setConfig(RICO_REF_TAG, plokerconf);
-        ploker.setConfig(RICO_XAU_TAG, plokerconf);
 
         //
         // rico/risk, risk/rico
         //
         uniadapt.setConfig(
             RICO_RISK_TAG,
-            UniswapV3Adapter.Config(args.ricorisk, args.adaptrange, args.adaptttl, rico < risk)
+            UniswapV3Adapter.Config(args.ricorisk, args.adaptrange, args.adaptttl, args.rico < args.risk)
         );
-        sources[0] = address(this);     tags[0] = bytes32("ONE");
-        sources[1] = address(uniadapt); tags[1] = RICO_RISK_TAG;
-        divider.setConfig(RISK_RICO_TAG, Block.Config(sources, tags));
+        _configureBlock(divider, RISK_RICO_TAG,
+                       address(this),     bytes32("ONE"),
+                       address(uniadapt), RICO_RISK_TAG);
         mdnconf.srcs[0] = address(divider); mdnconf.tags[0] = RISK_RICO_TAG;
         mdn.setConfig(RISK_RICO_TAG, mdnconf);
         mdnconf.srcs[0] = address(uniadapt); mdnconf.tags[0] = RICO_RISK_TAG;
         mdn.setConfig(RICO_RISK_TAG, mdnconf);
 
-        plokerconf = Ploker.Config(
-            new address[](1), new bytes32[](1), new address[](1), new bytes32[](1)
-        );
+        plokerconf = Ploker.Config(new address[](1), new bytes32[](1), new address[](1), new bytes32[](1));
         plokerconf.adapters[0] = address(uniadapt); plokerconf.adaptertags[0] = RICO_RISK_TAG;
         plokerconf.combinators[0] = address(mdn); plokerconf.combinatortags[0] = RISK_RICO_TAG;
         ploker.setConfig(RISK_RICO_TAG, plokerconf);
@@ -204,92 +189,90 @@ contract Ball is Math, Ward {
     }
 
     function setup(BallArgs calldata args) _ward_ external payable {
-        {
-            IDiamondCuttable.FacetCut[] memory facetCuts = new IDiamondCuttable.FacetCut[](4);
-            bytes4[] memory filesels = new bytes4[](4);
-            bytes4[] memory vatsels  = new bytes4[](24);
-            bytes4[] memory vowsels  = new bytes4[](7);
-            bytes4[] memory voxsels  = new bytes4[](8);
+        IDiamondCuttable.FacetCut[] memory facetCuts = new IDiamondCuttable.FacetCut[](4);
+        bytes4[] memory filesels = new bytes4[](4);
+        bytes4[] memory vatsels  = new bytes4[](24);
+        bytes4[] memory vowsels  = new bytes4[](7);
+        bytes4[] memory voxsels  = new bytes4[](8);
+        File fbank = File(bank);
 
-            filesels[0] = File.file.selector;
-            filesels[1] = File.link.selector;
-            filesels[2] = File.fb.selector;
-            filesels[3] = File.rico.selector;
-            vatsels[0]  = Vat.filk.selector;
-            vatsels[1]  = Vat.filh.selector;
-            vatsels[2]  = Vat.filhi.selector;
-            vatsels[3]  = Vat.filhi2.selector;
-            vatsels[4]  = Vat.init.selector;
-            vatsels[5]  = Vat.frob.selector;
-            vatsels[6]  = Vat.bail.selector;
-            vatsels[7]  = Vat.safe.selector;
-            vatsels[8]  = Vat.heal.selector;
-            vatsels[9]  = Vat.sin.selector;
-            vatsels[10] = Vat.ilks.selector;
-            vatsels[11] = Vat.urns.selector;
-            vatsels[12] = Vat.rest.selector;
-            vatsels[13] = Vat.debt.selector;
-            vatsels[14] = Vat.ceil.selector;
-            vatsels[15] = Vat.par.selector;
-            vatsels[16] = Vat.drip.selector;
-            vatsels[17] = Vat.MINT.selector;
-            vatsels[18] = Vat.ink.selector;
-            vatsels[19] = Vat.flash.selector;
-            vatsels[20] = Vat.geth.selector;
-            vatsels[21] = Vat.gethi.selector;
-            vatsels[22] = Vat.gethi2.selector;
-            vatsels[23] = Vat.hookcallext.selector;
-            vowsels[0]  = Vow.keep.selector;
-            vowsels[1]  = Vow.RISK.selector;
-            vowsels[2]  = Vow.ramp.selector;
-            vowsels[3]  = Vow.flapfeed.selector;
-            vowsels[4]  = Vow.flopfeed.selector;
-            vowsels[5]  = Vow.flapplot.selector;
-            vowsels[6]  = Vow.flopplot.selector;
-            voxsels[0]  = Vox.poke.selector;
-            voxsels[1]  = Vox.way.selector;
-            voxsels[2]  = Vox.how.selector;
-            voxsels[3]  = Vox.cap.selector;
-            voxsels[4]  = Vox.tip.selector;
-            voxsels[5]  = Vox.tag.selector;
-            voxsels[6]  = Vox.amp.selector;
-            voxsels[7]  = Vox.tau.selector;
+        filesels[0] = File.file.selector;
+        filesels[1] = File.link.selector;
+        filesels[2] = File.fb.selector;
+        filesels[3] = File.rico.selector;
+        vatsels[0]  = Vat.filk.selector;
+        vatsels[1]  = Vat.filh.selector;
+        vatsels[2]  = Vat.filhi.selector;
+        vatsels[3]  = Vat.filhi2.selector;
+        vatsels[4]  = Vat.init.selector;
+        vatsels[5]  = Vat.frob.selector;
+        vatsels[6]  = Vat.bail.selector;
+        vatsels[7]  = Vat.safe.selector;
+        vatsels[8]  = Vat.heal.selector;
+        vatsels[9]  = Vat.sin.selector;
+        vatsels[10] = Vat.ilks.selector;
+        vatsels[11] = Vat.urns.selector;
+        vatsels[12] = Vat.rest.selector;
+        vatsels[13] = Vat.debt.selector;
+        vatsels[14] = Vat.ceil.selector;
+        vatsels[15] = Vat.par.selector;
+        vatsels[16] = Vat.drip.selector;
+        vatsels[17] = Vat.MINT.selector;
+        vatsels[18] = Vat.ink.selector;
+        vatsels[19] = Vat.flash.selector;
+        vatsels[20] = Vat.geth.selector;
+        vatsels[21] = Vat.gethi.selector;
+        vatsels[22] = Vat.gethi2.selector;
+        vatsels[23] = Vat.hookcallext.selector;
+        vowsels[0]  = Vow.keep.selector;
+        vowsels[1]  = Vow.RISK.selector;
+        vowsels[2]  = Vow.ramp.selector;
+        vowsels[3]  = Vow.flapfeed.selector;
+        vowsels[4]  = Vow.flopfeed.selector;
+        vowsels[5]  = Vow.flapplot.selector;
+        vowsels[6]  = Vow.flopplot.selector;
+        voxsels[0]  = Vox.poke.selector;
+        voxsels[1]  = Vox.way.selector;
+        voxsels[2]  = Vox.how.selector;
+        voxsels[3]  = Vox.cap.selector;
+        voxsels[4]  = Vox.tip.selector;
+        voxsels[5]  = Vox.tag.selector;
+        voxsels[6]  = Vox.amp.selector;
+        voxsels[7]  = Vox.tau.selector;
 
-            facetCuts[0] = IDiamondCuttable.FacetCut(address(file), ADD, filesels);
-            facetCuts[1] = IDiamondCuttable.FacetCut(address(vat),  ADD, vatsels);
-            facetCuts[2] = IDiamondCuttable.FacetCut(address(vow),  ADD, vowsels);
-            facetCuts[3] = IDiamondCuttable.FacetCut(address(vox),  ADD, voxsels);
-            Diamond(bank).acceptOwnership();
-            Diamond(bank).diamondCut(facetCuts, address(0), bytes(''));
-        }
-        File(bank).file('par', bytes32(args.par));
+        facetCuts[0] = IDiamondCuttable.FacetCut(address(file), ADD, filesels);
+        facetCuts[1] = IDiamondCuttable.FacetCut(address(vat),  ADD, vatsels);
+        facetCuts[2] = IDiamondCuttable.FacetCut(address(vow),  ADD, vowsels);
+        facetCuts[3] = IDiamondCuttable.FacetCut(address(vox),  ADD, voxsels);
+        Diamond(payable(address(fbank))).acceptOwnership();
+        Diamond(payable(address(fbank))).diamondCut(facetCuts, address(0), bytes(''));
 
-        File(bank).link('rico', rico);
-        File(bank).link('risk', risk);
+        fbank.link('rico', rico);
+        fbank.link('risk', risk);
+        fbank.link('fb',  feedbase);
+        fbank.link('tip', address(mdn));
 
-        File(bank).file('ceil', bytes32(args.ceil));
+        fbank.file('par',  bytes32(args.par));
+        fbank.file('ceil', bytes32(args.ceil));
 
-        File(bank).file('flappep', bytes32(args.flappep));
-        File(bank).file('flappop', bytes32(args.flappop));
-        File(bank).file('flaptag', RICO_RISK_TAG);
-        File(bank).file('flapsrc', bytes32(bytes20(address(mdn))));
-        File(bank).file('floppep', bytes32(args.floppep));
-        File(bank).file('floppop', bytes32(args.floppop));
-        File(bank).file('floptag', RISK_RICO_TAG);
-        File(bank).file('flopsrc', bytes32(bytes20(address(mdn))));
+        fbank.file('flappep', bytes32(args.flappep));
+        fbank.file('flappop', bytes32(args.flappop));
+        fbank.file('flaptag', RICO_RISK_TAG);
+        fbank.file('flapsrc', bytes32(bytes20(address(mdn))));
+        fbank.file('floppep', bytes32(args.floppep));
+        fbank.file('floppop', bytes32(args.floppop));
+        fbank.file('floptag', RISK_RICO_TAG);
+        fbank.file('flopsrc', bytes32(bytes20(address(mdn))));
+        fbank.file("vel", bytes32(args.mintramp.vel));
+        fbank.file("rel", bytes32(args.mintramp.vel));
+        fbank.file("bel", bytes32(args.mintramp.bel));
+        fbank.file("cel", bytes32(args.mintramp.cel));
 
-        File(bank).file("vel", bytes32(args.mintramp.vel));
-        File(bank).file("rel", bytes32(args.mintramp.vel));
-        File(bank).file("bel", bytes32(args.mintramp.bel));
-        File(bank).file("cel", bytes32(args.mintramp.cel));
-
-        File(bank).link('fb',  feedbase);
-        File(bank).link('tip', address(mdn));
-        File(bank).file('tag', RICO_REF_TAG);
-        File(bank).file('how', HOW);
-        File(bank).file('cap', CAP);
-        File(bank).file('tau', bytes32(block.timestamp));
-        File(bank).file('way', bytes32(RAY));
+        fbank.file('tag', RICO_REF_TAG);
+        fbank.file('how', HOW);
+        fbank.file('cap', CAP);
+        fbank.file('tau', bytes32(block.timestamp));
+        fbank.file('way', bytes32(RAY));
     }
 
     function makeilk(IlkParams calldata ilkparams) _ward_ external {
@@ -310,8 +293,6 @@ contract Ball is Math, Ward {
             mdn.setConfig(gemreftag, mdnconf);
         }
         Ploker.Config memory pconf;
-        address[] memory sources = new address[](2);
-        bytes32[] memory tags    = new bytes32[](2);
         bytes32 gemusdtag = concat(ilk, ':usd');
         bytes32 gemclatag;
         address gemusdsrc;
@@ -327,17 +308,16 @@ contract Ball is Math, Ward {
             bytes32 gemethtag = concat(ilk, ':eth');
             cladapt.setConfig(gemethtag, ChainlinkAdapter.Config(ilkparams.gemethagg, ilkparams.ttl, RAY));
             // add a multiplier config which reads gem/usd. Relies on weth ilk existing for weth:usd cladapter
-            sources[0] = address(cladapt); tags[0] = gemethtag;
-            sources[1] = address(cladapt); tags[1] = WETH_USD_TAG;
-            multiplier.setConfig(gemusdtag, Block.Config(sources, tags));
+            _configureBlock(multiplier, gemusdtag,
+                            address(cladapt), gemethtag,
+                            address(cladapt), WETH_USD_TAG);
             gemusdsrc = address(multiplier);
             gemclatag = gemethtag;
             pconf.adapters[3] = address(cladapt); pconf.adaptertags[3] = WETH_USD_TAG;
         }
-        sources[0] = address(gemusdsrc); tags[0] = gemusdtag;
-        sources[1] = address(cladapt);   tags[1] = XAU_USD_TAG;
-        divider.setConfig(gemreftag, Block.Config(sources, tags));
-
+        _configureBlock(divider, gemreftag,
+                        address(gemusdsrc), gemusdtag,
+                        address(cladapt),   XAU_USD_TAG);
         pconf.adapters[0] = address(uniadapt); pconf.adaptertags[0] = RICO_DAI_TAG;
         pconf.adapters[1] = address(cladapt);  pconf.adaptertags[1] = DAI_USD_TAG;
         pconf.adapters[2] = address(cladapt);  pconf.adaptertags[2] = gemclatag;
@@ -368,4 +348,11 @@ contract Ball is Math, Ward {
         Diamond(bank).transferOwnership(usr);
     }
 
+    function _configureBlock(Block b, bytes32 tag, address s1, bytes32 t1, address s2, bytes32 t2) internal {
+        address[] memory sources = new address[](2);
+        bytes32[] memory tags    = new bytes32[](2);
+        sources[0] = s1; tags[0] = t1;
+        sources[1] = s2; tags[1] = t2;
+        b.setConfig(tag, Block.Config(sources, tags));
+    }
 }

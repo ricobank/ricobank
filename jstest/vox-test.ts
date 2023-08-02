@@ -169,7 +169,7 @@ describe('Vox', () => {
     })
 
     it('deploy gas', async () => {
-      await check(ethers.BigNumber.from(deploygas), 43313808)
+      await check(ethers.BigNumber.from(deploygas), 42856503)
     })
 
     it('ploke gas', async () => {
@@ -180,7 +180,7 @@ describe('Vox', () => {
     it('frob cold gas', async () => {
       let dink = ethers.utils.solidityPack(['int'], [wad(5)])
       let gas = await bank.estimateGas.frob(b32('weth'), ALI, dink, wad(2))
-      await check(gas, 276167)
+      await check(gas, 276144)
     })
 
     it('frob hot gas', async () => {
@@ -189,7 +189,7 @@ describe('Vox', () => {
       let gas = await bank.estimateGas.frob(
         b32('weth'), ALI, ethers.utils.solidityPack(['int'], [wad(5)]), wad(2)
       )
-      await check(gas, 154328)
+      await check(gas, 154305)
     })
 
     it('bail gas', async () => {
@@ -210,7 +210,7 @@ describe('Vox', () => {
       await send(bank.drip, b32('weth'))
 
       let gas = await bank.estimateGas.keep([])
-      await check(gas, 119842)
+      await check(gas, 119834)
     })
 
     it('keep deficit gas', async() => {
@@ -220,7 +220,7 @@ describe('Vox', () => {
       await send(bank.bail, b32('weth'), ALI)
 
       let gas = await bank.estimateGas.keep([])
-      await check(gas, 168558)
+      await check(gas, 168513)
     })
 
     it('poke up gas', async () => {
