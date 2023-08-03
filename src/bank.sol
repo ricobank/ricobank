@@ -4,7 +4,7 @@
 
 pragma solidity ^0.8.19;
 
-import { OwnableInternal } from 'lib/solidstate-solidity/contracts/access/OwnableInternal.sol';
+import { OwnableInternal } from '../lib/solidstate-solidity/contracts/access/OwnableInternal.sol';
 import { Math } from './mixin/math.sol';
 import { Flog } from './mixin/flog.sol';
 import { Palm } from './mixin/palm.sol';
