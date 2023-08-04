@@ -112,10 +112,12 @@ contract Ball is Math, Ward {
     Ploker  public ploker;
 
     constructor(BallArgs memory args) {
-        file = new File();
         vat  = new Vat();
         vow  = new Vow();
+        vox  = new Vox();
+        file = new File();
         hook = new ERC20Hook();
+        nfthook = new UniNFTHook();
         ploker = new Ploker();
 
         mdn = new Medianizer(args.feedbase);
@@ -123,7 +125,6 @@ contract Ball is Math, Ward {
         cladapt = new ChainlinkAdapter(args.feedbase);
         divider = new Divider(args.feedbase);
         multiplier = new Multiplier(args.feedbase);
-        nfthook = new UniNFTHook();
 
         bank = args.bank;
         rico = args.rico;
@@ -133,10 +134,6 @@ contract Ball is Math, Ward {
         // rico/usd, rico/ref
         cladapt.setConfig(XAU_USD_TAG, ChainlinkAdapter.Config(args.XAU_USD_AGG, args.xauusdttl, RAY));
         cladapt.setConfig(DAI_USD_TAG, ChainlinkAdapter.Config(args.DAI_USD_AGG, args.daiusdttl, RAY));
-        cladapt.look(XAU_USD_TAG);
-        (bytes32 ref,) = Feedbase(feedbase).pull(address(cladapt), XAU_USD_TAG);
-        vox = new Vox(uint256(ref));
-
         // rico/dai, dai/rico (== 1 / (rico/dai))
         uniadapt.setConfig(
             RICO_DAI_TAG,
@@ -193,7 +190,7 @@ contract Ball is Math, Ward {
         bytes4[] memory filesels = new bytes4[](4);
         bytes4[] memory vatsels  = new bytes4[](24);
         bytes4[] memory vowsels  = new bytes4[](7);
-        bytes4[] memory voxsels  = new bytes4[](8);
+        bytes4[] memory voxsels  = new bytes4[](7);
         File fbank = File(bank);
 
         filesels[0] = File.file.selector;
@@ -237,8 +234,7 @@ contract Ball is Math, Ward {
         voxsels[3]  = Vox.cap.selector;
         voxsels[4]  = Vox.tip.selector;
         voxsels[5]  = Vox.tag.selector;
-        voxsels[6]  = Vox.amp.selector;
-        voxsels[7]  = Vox.tau.selector;
+        voxsels[6]  = Vox.tau.selector;
 
         facetCuts[0] = IDiamondCuttable.FacetCut(address(file), ADD, filesels);
         facetCuts[1] = IDiamondCuttable.FacetCut(address(vat),  ADD, vatsels);
@@ -296,7 +292,7 @@ contract Ball is Math, Ward {
         bytes32 gemusdtag = concat(ilk, ':usd');
         bytes32 gemclatag;
         address gemusdsrc;
-        uint256 plokesize = (ilkparams.gemethagg == address(0)) ? 3 : 4;
+        uint256 plokesize = (ilkparams.gemethagg == address(0)) ? 4 : 5;
         pconf = Ploker.Config(new address[](plokesize), new bytes32[](plokesize), new address[](1), new bytes32[](1));
         if (ilkparams.gemethagg == address(0)) {
             // ilk has feed sequence of gem/usd / rico/usd
@@ -313,14 +309,15 @@ contract Ball is Math, Ward {
                             address(cladapt), WETH_USD_TAG);
             gemusdsrc = address(multiplier);
             gemclatag = gemethtag;
-            pconf.adapters[3] = address(cladapt); pconf.adaptertags[3] = WETH_USD_TAG;
+            pconf.adapters[4] = address(cladapt); pconf.adaptertags[3] = WETH_USD_TAG;
         }
         _configureBlock(divider, gemreftag,
                         address(gemusdsrc), gemusdtag,
                         address(cladapt),   XAU_USD_TAG);
         pconf.adapters[0] = address(uniadapt); pconf.adaptertags[0] = RICO_DAI_TAG;
         pconf.adapters[1] = address(cladapt);  pconf.adaptertags[1] = DAI_USD_TAG;
-        pconf.adapters[2] = address(cladapt);  pconf.adaptertags[2] = gemclatag;
+        pconf.adapters[2] = address(cladapt);  pconf.adaptertags[2] = XAU_USD_TAG;
+        pconf.adapters[3] = address(cladapt);  pconf.adaptertags[3] = gemclatag;
         pconf.combinators[0] = address(mdn); pconf.combinatortags[0] = gemreftag;
         ploker.setConfig(gemreftag, pconf);
     }

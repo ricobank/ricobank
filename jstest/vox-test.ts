@@ -169,12 +169,12 @@ describe('Vox', () => {
     })
 
     it('deploy gas', async () => {
-      await check(ethers.BigNumber.from(deploygas), 42856503)
+      await check(ethers.BigNumber.from(deploygas), 42877929)
     })
 
     it('ploke gas', async () => {
       let gas = await ploker.estimateGas.ploke(b32('weth:ref'))
-      await check(gas, 372026)
+      await check(gas, 444893)
     })
 
     it('frob cold gas', async () => {
@@ -227,14 +227,14 @@ describe('Vox', () => {
       await mine(hh, 100)
       await send(fb.push, TAG, bn2b32(ray(0.5)), constants.MaxUint256)
       let gas = await bank.estimateGas.poke()
-      await check(gas, 69814, 70125)
+      await check(gas, 69113, 70125)
     })
 
     it('poke down gas', async () => {
       await mine(hh, 100)
       await send(fb.push, TAG, bn2b32(ray(2)), constants.MaxUint256)
       let gas = await bank.estimateGas.poke()
-      await check(gas, 69814, 70084)
+      await check(gas, 69606, 70084)
     })
 
     it('drip gas', async () => {

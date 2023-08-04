@@ -12,11 +12,10 @@ import { Divider } from '../lib/feedbase/src/combinators/Divider.sol';
 import { Medianizer } from '../lib/feedbase/src/Medianizer.sol';
 import { UniswapV3Adapter } from "../lib/feedbase/src/adapters/UniswapV3Adapter.sol";
 import { Vat } from '../src/vat.sol';
-import { Math } from '../src/mixin/math.sol';
-import { WethLike } from '../test/RicoHelper.sol';
-import {ChainlinkAdapter} from "../lib/feedbase/src/adapters/ChainlinkAdapter.sol";
-import {TWAP} from "../lib/feedbase/src/combinators/TWAP.sol";
-import {Progression} from "../lib/feedbase/src/combinators/Progression.sol";
+import { BaseHelper, WethLike } from './BaseHelper.sol';
+import { ChainlinkAdapter } from "../lib/feedbase/src/adapters/ChainlinkAdapter.sol";
+import { TWAP } from "../lib/feedbase/src/combinators/TWAP.sol";
+import { Progression } from "../lib/feedbase/src/combinators/Progression.sol";
 import { Vow } from "../src/vow.sol";
 import { ERC20Hook } from '../src/hook/ERC20hook.sol';
 import { Vox } from "../src/vox.sol";
@@ -24,15 +23,7 @@ import { Bank } from '../src/bank.sol';
 import { File } from '../src/file.sol';
 import { BankDiamond } from '../src/diamond.sol';
 
-contract BallTest is Test, UniSetUp, Math {
-    address internal constant DAI   = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
-    address internal constant VAULT = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;
-    address internal constant RAI   = 0x03ab458634910AaD20eF5f1C8ee96F1D6ac54919;
-    address internal constant WETH  = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
-    address internal constant RAI_ETH_AGG  = 0x4ad7B025127e89263242aB68F0f9c4E5C033B489;
-    address internal constant WETH_USD_AGG = 0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419;
-    bytes32 internal constant RAI_ILK = "rai";
-    bytes32 internal constant WETH_ILK = "weth";
+contract BallTest is BaseHelper {
     bytes32 internal constant WETH_REF_TAG = "weth:ref";
     bytes32 internal constant WETH_USD_TAG = "weth:usd";
     bytes32 internal constant RAI_ETH_TAG  = "rai:eth";
@@ -41,8 +32,12 @@ contract BallTest is Test, UniSetUp, Math {
     bytes32 internal constant XAU_USD_TAG  = "xau:usd";
     bytes32 internal constant DAI_USD_TAG  = "dai:usd";
     bytes32 internal constant RICO_REF_TAG = "rico:ref";
-    bytes32 constant public RICO_RISK_TAG  = "rico:risk";
-    bytes32 constant public RISK_RICO_TAG  = "risk:rico";
+
+    uint160 constant risk_price = 2 ** 96;
+    uint256 constant INIT_SQRTPAR = RAY * 2;
+    uint256 constant INIT_PAR = (INIT_SQRTPAR ** 2) / RAY;
+    uint256 constant wethamt = WAD;
+    
     Ploker ploker;
     ChainlinkAdapter cladapt;
     UniswapV3Adapter uniadapt;
@@ -50,24 +45,13 @@ contract BallTest is Test, UniSetUp, Math {
     Medianizer mdn;
     Feedbase fb;
     GemFab gf;
-    address payable bank;
     address me;
-    INonfungiblePositionManager npfm = INonfungiblePositionManager(
-        0xC36442b4a4522E871399CD717aBDD847Ab11FE88
-    );
-    address COMPOUND_CDAI = 0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643;
+    INonfungiblePositionManager npfm = INonfungiblePositionManager(NFPM);
 
-    uint256 constant public BANKYEAR = (365 * 24 + 6) * 3600;
     address rico;
     address risk;
     address ricodai;
     address ricorisk;
-    uint24  constant public RICO_FEE = 500;
-    uint24  constant public RISK_FEE = 3000;
-    uint160 constant public risk_price = 2 ** 96;
-    uint256 constant INIT_SQRTPAR = RAY * 2;
-    uint256 constant INIT_PAR = (INIT_SQRTPAR ** 2) / RAY;
-    uint256 constant wethamt = WAD;
     int256  safedart;
     bytes32[] ilks;
     uint DEV_FUND_RISK = 1000000 * WAD;
@@ -77,8 +61,6 @@ contract BallTest is Test, UniSetUp, Math {
     Vat vat;
     Vow vow;
     Vox vox;
-
-    receive () payable external {}
 
     function advance_chainlink() internal {
         // chainlink adapter advances from chainlink time
@@ -105,10 +87,6 @@ contract BallTest is Test, UniSetUp, Math {
         vm.stopPrank();
     }
 
-    function _ink(bytes32 ilk, address usr) internal view returns (uint) {
-        return abi.decode(Vat(bank).ink(ilk, usr), (uint));
-    }
-
     function look_poke() internal {
         ploker.ploke(RICO_RISK_TAG);
         ploker.ploke(RISK_RICO_TAG);
@@ -126,28 +104,14 @@ contract BallTest is Test, UniSetUp, Math {
         mdn.poke(RICO_REF_TAG);
     }
 
-    function make_uniwrapper() internal returns (address deployed) {
-        bytes memory args = abi.encode('');
-        bytes memory bytecode = abi.encodePacked(vm.getCode(
-            "../lib/feedbase/artifacts/src/adapters/UniWrapper.sol:UniWrapper"
-        ), args);
-        assembly {
-            deployed := create(0, add(bytecode, 0x20), mload(bytecode))
-        }
-    }
-
-    function make_diamond() internal returns (address payable deployed) {
-        return payable(address(new BankDiamond()));
-    }
-
     function setUp() public {
         me = address(this);
         gf = new GemFab();
         fb = new Feedbase();
         rico = address(gf.build(bytes32("Rico"), bytes32("RICO")));
         risk = address(gf.build(bytes32("Rico Riskshare"), bytes32("RISK")));
-        uint160 sqrtparx96 = uint160(INIT_SQRTPAR * (2 ** 96) / RAY);
-        ricodai = create_pool(rico, DAI, 500, sqrtparx96);
+        uint160 sqrt_ratio_x96 = get_rico_sqrtx96(INIT_PAR);
+        ricodai = create_pool(rico, DAI, 500, sqrt_ratio_x96);
         ricorisk = create_pool(rico, risk, RISK_FEE, risk_price);
 
         Ball.IlkParams[] memory ips = new Ball.IlkParams[](2);
@@ -184,7 +148,7 @@ contract BallTest is Test, UniSetUp, Math {
         address uniwrapper = make_uniwrapper();
         bank = make_diamond();
         Ball.UniParams memory ups = Ball.UniParams(
-            0xC36442b4a4522E871399CD717aBDD847Ab11FE88,
+            NFPM,
             ':uninft',
             1000000001546067052200000000,
             RAY,
@@ -212,9 +176,9 @@ contract BallTest is Test, UniSetUp, Math {
             RAY,  // floppep
             RAY,  // floppop
             Bank.Ramp(WAD, WAD, block.timestamp, 1),
-            0x6B175474E89094C44Da98b954EedeAC495271d0F,
-            0xAed0c38402a5d19df6E4c03F4E2DceD6e29c1ee9,
-            0x214eD9Da11D2fbe465a6fc601a91E62EbEc1a0D6
+            DAI,
+            DAI_USD_AGG,
+            XAU_USD_AGG
         );
 
         uint gas = gasleft();
@@ -228,7 +192,7 @@ contract BallTest is Test, UniSetUp, Math {
         BankDiamond(bank).acceptOwnership();
 
         uint usedgas     = gas - gasleft();
-        uint expectedgas = 22749547;
+        uint expectedgas = 22709140;
         if (usedgas < expectedgas) {
             console.log("ball saved %s gas...currently %s", expectedgas - usedgas, usedgas);
         }
@@ -309,15 +273,17 @@ contract BallTest is Test, UniSetUp, Math {
     }
 
     function test_basic() public {
+        // at block 16445606 ethusd about 1554, xau  about 1925
+        // initial par is 4, so ricousd should be 1925*4
+
         ploker.ploke(RICO_REF_TAG);
-        (bytes32 price, uint ttl) = fb.pull(address(mdn), RICO_REF_TAG);
-        uint vox_price = rmul(uint(price), Vox(bank).amp());
+        (bytes32 val,) = fb.pull(address(mdn), RICO_REF_TAG);
+        uint vox_price = uint(val);
         assertGt(uint(vox_price), INIT_PAR * 99 / 100);
         assertLt(uint(vox_price), INIT_PAR * 100 / 99);
 
-        // at block 16445606 ethusd about 1554, xau  about 1925
-        (price, ttl) = fb.pull(address(mdn), WETH_REF_TAG);
-        assertClose(uint(price), 1554 * RAY / 1925, 100);
+        (val,) = fb.pull(address(mdn), WETH_REF_TAG);
+        assertClose(uint(val), 1554 * RAY / 1925, 100);
     }
 
     function test_eth_denominated_ilks_feed() public {
@@ -429,11 +395,5 @@ contract BallTest is Test, UniSetUp, Math {
 
         vm.prank(VAULT);
         File(bank).file('ceil', bytes32(WAD));
-    }
-
-    function assertClose(uint v1, uint v2, uint rel) internal {
-        uint abs = v1 / rel;
-        assertGt(v1 + abs, v2);
-        assertLt(v1 - abs, v2);
     }
 }

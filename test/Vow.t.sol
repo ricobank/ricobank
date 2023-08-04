@@ -433,7 +433,7 @@ contract VowJsTest is Test, RicoSetUp {
         cat = new Usr(bank, weth);
         b = address(bob);
         c = address(cat);
-        i0 = wilk;
+        i0 = WETH_ILK;
         ilks.push(i0);
 
         weth.deposit{value: 6000 * WAD}();

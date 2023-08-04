@@ -16,17 +16,10 @@ import { Vow } from '../src/vow.sol';
 import { Vox } from '../src/vox.sol';
 import { ERC20Hook } from '../src/hook/ERC20hook.sol';
 import { UniNFTHook } from '../src/hook/nfpm/UniV3NFTHook.sol';
-import { UniSetUp } from "./UniHelper.sol";
+import { BaseHelper, WethLike } from './BaseHelper.sol';
 import { Bank } from '../src/bank.sol';
 import { File } from '../src/file.sol';
 import { BankDiamond } from '../src/diamond.sol';
-
-interface WethLike {
-    function deposit() external payable;
-    function approve(address, uint) external;
-    function allowance(address, address) external returns (uint);
-    function balanceOf(address) external returns (uint);
-}
 
 contract Guy {
     address payable bank;
@@ -51,17 +44,9 @@ contract Guy {
     }
 }
 
-abstract contract RicoSetUp is UniSetUp, Math, Test {
-    address constant public DAI  = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
-    address constant public WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
-    address constant public WETH_USD_AGG  = 0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419;
-    bytes32 constant public RICO_RISK_TAG = "rico:risk";
-    bytes32 constant public RISK_RICO_TAG = "risk:rico";
-
-    address constant public VAULT = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;
+abstract contract RicoSetUp is BaseHelper {
     bytes32 constant public dilk  = "dai";
     bytes32 constant public gilk  = "gold";
-    bytes32 constant public wilk  = "weth";
     bytes32 constant public rilk  = "ruby";
     bytes32 constant public uilk  = ":uninft";
     bytes32 constant public dutag = "dai:usd";
@@ -71,11 +56,8 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
 
     bytes32 constant public rtag       = "rico:usd";
     uint160 constant public risk_price = 2 ** 96;
-    uint24  constant public RICO_FEE   = 500;
-    uint24  constant public RISK_FEE   = 3000;
-    uint256 constant public HOOK_ROOM  = 8;
+    uint256 constant public INIT_PAR   = RAY;
     uint256 constant public init_mint  = 10000;
-    uint256 constant public BANKYEAR   = (365 * 24 + 6) * 3600;
     uint256 constant public no_rush    = RAY;
     uint256 constant public flappep    = RAY;
     uint256 constant public flappop    = RAY;
@@ -105,12 +87,9 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
     address    public aruby;
     address    payable public ahook;
     address    public uniwrapper;
-    address    payable public bank;
 
     Guy _bob;
     Guy guy;
-
-    receive () external payable {}
 
     function rico_mint(uint amt, bool bail) internal {
         uint start_gold = gold.balanceOf(self);
@@ -126,10 +105,6 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
         feedpush(grtag, v, t);
         uint end_gold = gold.balanceOf(self);
         gold.burn(self, end_gold - start_gold);
-    }
-
-    function _ink(bytes32 ilk, address usr) internal view returns (uint) {
-        return abi.decode(Vat(bank).ink(ilk, usr), (uint));
     }
 
     function _art(bytes32 ilk, address usr) internal view returns (uint art) {
@@ -172,20 +147,6 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
         mdn.setConfig(tag, mdnconf);
     }
 
-    function make_uniwrapper() internal returns (address deployed) {
-        bytes memory args = abi.encode('');
-        bytes memory bytecode = abi.encodePacked(vm.getCode(
-            "../lib/feedbase/artifacts/src/adapters/UniWrapper.sol:UniWrapper"
-        ), args);
-        assembly {
-            deployed := create(0, add(bytecode, 0x20), mload(bytecode))
-        }
-    }
-
-    function make_diamond() internal returns (address payable deployed) {
-        return payable(address(new BankDiamond()));
-    }
-
     function make_bank() public {
         feed   = new Feedbase();
         gemfab = new GemFab();
@@ -193,8 +154,8 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
         risk  = gemfab.build(bytes32("Rico Riskshare"), bytes32("RISK"));
         arico = address(rico);
         arisk = address(risk);
-        uint160 sqrtparx96 = uint160(2 ** 96);
-        ricodai  = create_pool(arico, DAI, 500, sqrtparx96);
+        uint160 sqrt_ratio_x96 = get_rico_sqrtx96(INIT_PAR);
+        ricodai  = create_pool(arico, DAI,   RICO_FEE, sqrt_ratio_x96);
         ricorisk = create_pool(arico, arisk, RISK_FEE, risk_price);
 
         uniwrapper = make_uniwrapper();
@@ -207,7 +168,7 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
             address(0),
             WETH_USD_AGG,
             RAY, // chop
-            90 * RAD, // dust
+            RAD / 10, // dust
             1000000001546067052200000000, // fee
             100000 * RAD, // line
             RAY, // liqr
@@ -215,7 +176,7 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
             BANKYEAR / 4 // range
         );
         Ball.UniParams memory ups = Ball.UniParams(
-            0xC36442b4a4522E871399CD717aBDD847Ab11FE88,
+            NFPM,
             ':uninft',
             1000000001546067052200000000,
             RAY,
@@ -231,7 +192,7 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
             ricorisk,
             router,
             uniwrapper,
-            RAY,
+            INIT_PAR,
             100000 * WAD,
             20000, // ricodai
             BANKYEAR / 4,
@@ -242,9 +203,9 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
             floppep,
             floppop,
             Bank.Ramp(WAD, WAD, block.timestamp, 1),
-            0x6B175474E89094C44Da98b954EedeAC495271d0F,
-            0xAed0c38402a5d19df6E4c03F4E2DceD6e29c1ee9,
-            0x214eD9Da11D2fbe465a6fc601a91E62EbEc1a0D6
+            DAI,
+            DAI_USD_AGG,
+            XAU_USD_AGG
         );
 
         ball = new Ball(bargs);
@@ -341,11 +302,4 @@ abstract contract RicoSetUp is UniSetUp, Math, Test {
         rico.transfer(address(guy), amt);
         guy.approve(arico, bank, UINT256_MAX);
     }
-
-    function assertClose(uint v1, uint v2, uint rel) internal {
-        uint abs = v1 / rel;
-        assertGt(v1 + abs, v2);
-        assertLt(v1 - abs, v2);
-    }
-
 }

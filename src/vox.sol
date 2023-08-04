@@ -38,11 +38,6 @@ contract Vox is Bank {
     function tip() external view returns (address) {return getVoxStorage().tip;}
     function tau() external view returns (uint) {return getVoxStorage().tau;}
     function tag() external view returns (bytes32) {return getVoxStorage().tag;}
-    function amp() external view returns (uint) {return AMP;}
-
-    uint256 immutable AMP;
-
-    constructor(uint256 _AMP) { AMP = _AMP; }
 
     function poke() _flog_ external {
         VoxStorage storage voxS   = getVoxStorage();
@@ -60,7 +55,7 @@ contract Vox is Bank {
         emit NewPalm0('par', bytes32(par));
 
         (bytes32 mar_, uint256 ttl) = bankS.fb.pull(voxS.tip, voxS.tag);
-        uint256 mar = rmul(uint256(mar_), AMP);
+        uint256 mar = uint256(mar_);
         if (block.timestamp > ttl) { return; }
 
         // raise the price rate (way) when mar < par, lower when mar > par
