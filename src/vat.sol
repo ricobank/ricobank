@@ -245,10 +245,10 @@ contract Vat is Bank {
         // burn rico to pay down sin
         uint256 rad = wad * RAY;
 
-        vs.sin  = vs.sin - rad;
+        vs.sin  = vs.sin  - rad;
         emit NewPalm0('sin', bytes32(vs.sin));
 
-        vs.debt = vs.debt   - wad;
+        vs.debt = vs.debt - wad;
         emit NewPalm0('debt', bytes32(vs.debt));
 
         getBankStorage().rico.burn(msg.sender, wad);

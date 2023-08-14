@@ -138,6 +138,47 @@ contract VoxTest is Test, RicoSetUp {
         assertEq(Vox(bank).way(), rinv(Vox(bank).cap()));
     }
 
+    function test_par_grows_with_stale_tip() public _orig_ {
+        // set rico market feed low and fresh
+        feedpush(rtag, bytes32(WAD), block.timestamp + 10000);
+        skip(10);
+        Vox(bank).poke();
+
+        uint way0 = Vox(bank).way();
+        uint par0 = Vat(bank).par();
+
+        // set rico market feed low and stale
+        feedpush(rtag, bytes32(WAD), block.timestamp);
+        skip(10);
+        Vox(bank).poke();
+
+        // without market price sense par should progress but not way
+        uint way1 = Vox(bank).way();
+        uint par1 = Vat(bank).par();
+        assertEq(way1, way0);
+        assertGt(par1, par0);
+
+        // set rico market feed low and fresh, without progressing time
+        feedpush(rtag, bytes32(WAD), block.timestamp + 10000);
+        Vox(bank).poke();
+
+        // no delayed way change after feed refreshed
+        uint way2 = Vox(bank).way();
+        uint par2 = Vat(bank).par();
+        assertEq(way2, way1);
+        assertEq(par2, par1);
+
+        // with fresh rico market feed both should progress
+        feedpush(rtag, bytes32(WAD), block.timestamp + 10000);
+        skip(10);
+        Vox(bank).poke();
+
+        uint way3 = Vox(bank).way();
+        uint par3 = Vat(bank).par();
+        assertGt(way3, way2);
+        assertGt(par3, par2);
+    }
+
 // Sanity test that release constants behave as expected
     function test_release_how_day() public _orig_ {
         Vox(bank).poke();
@@ -194,6 +235,7 @@ contract VoxTest is Test, RicoSetUp {
         uint par1 = Vat(bank).par();
         uint incr = rdiv(par1, par0);
 
+        // at max growth par should should double in one year
         assertClose(incr, RAY * 2, 1_000);
     }
 

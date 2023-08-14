@@ -169,7 +169,7 @@ describe('Vox', () => {
     })
 
     it('deploy gas', async () => {
-      await check(ethers.BigNumber.from(deploygas), 42877929)
+      await check(ethers.BigNumber.from(deploygas), 42854931)
     })
 
     it('ploke gas', async () => {
@@ -227,14 +227,14 @@ describe('Vox', () => {
       await mine(hh, 100)
       await send(fb.push, TAG, bn2b32(ray(0.5)), constants.MaxUint256)
       let gas = await bank.estimateGas.poke()
-      await check(gas, 69113, 70125)
+      await check(gas, 68862, 68885)
     })
 
     it('poke down gas', async () => {
       await mine(hh, 100)
       await send(fb.push, TAG, bn2b32(ray(2)), constants.MaxUint256)
       let gas = await bank.estimateGas.poke()
-      await check(gas, 69606, 70084)
+      await check(gas, 69355, 69378)
     })
 
     it('drip gas', async () => {
