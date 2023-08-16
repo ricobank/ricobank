@@ -20,7 +20,7 @@ describe('Vox', () => {
   let ali, bob, cat
   let ALI, BOB, CAT
   let fb
-  let bank
+  let bank, ball
   let ploker, weth, rico, risk
   let pack
   let deploygas
@@ -34,6 +34,7 @@ describe('Vox', () => {
 
     fb = dapp.feedbase
     bank = dapp.bank
+    ball = dapp.ball
     ploker = dapp.ploker
     weth = dapp.weth
     rico = dapp.rico
@@ -169,12 +170,23 @@ describe('Vox', () => {
     })
 
     it('deploy gas', async () => {
-      await check(ethers.BigNumber.from(deploygas), 42854931)
+      await check(ethers.BigNumber.from(deploygas), 42519981)
     })
 
     it('ploke gas', async () => {
+      // impersonate adapters to set different non zero values
+      // 'weth:ref' has only two relevant chain link tags
+      let cladapt = await ball.cladapt()
+      let mdnaddr = await ball.mdn()
+      let mdn = await ethers.getContractAt('Medianizer', mdnaddr)
+      await hh.network.provider.send("hardhat_setBalance", [cladapt, "0x100000000000000000000"]);
+      const cladapterSigner = await ethers.getImpersonatedSigner(cladapt);
+      await send(fb.connect(cladapterSigner).push, b32('weth:usd'), b32(ray(1)), ray(1))
+      await send(fb.connect(cladapterSigner).push, b32('xau:usd'),  b32(ray(1)), ray(1))
+      await send(mdn.poke, b32('weth:ref'))
+      // measure gas for ploking non zero to non zero slots
       let gas = await ploker.estimateGas.ploke(b32('weth:ref'))
-      await check(gas, 444893)
+      await check(gas, 178809)
     })
 
     it('frob cold gas', async () => {
@@ -227,14 +239,14 @@ describe('Vox', () => {
       await mine(hh, 100)
       await send(fb.push, TAG, bn2b32(ray(0.5)), constants.MaxUint256)
       let gas = await bank.estimateGas.poke()
-      await check(gas, 68862, 68885)
+      await check(gas, 68862, 69111)
     })
 
     it('poke down gas', async () => {
       await mine(hh, 100)
       await send(fb.push, TAG, bn2b32(ray(2)), constants.MaxUint256)
       let gas = await bank.estimateGas.poke()
-      await check(gas, 69355, 69378)
+      await check(gas, 69355, 69603)
     })
 
     it('drip gas', async () => {

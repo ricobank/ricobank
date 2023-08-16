@@ -42,6 +42,8 @@ contract Ball is Math, Ward {
     bytes32 internal constant UNI_NFT_ILK   = ":uninft";
     bytes32 internal constant HOW = bytes32(uint(1000000000000003652500000000));
     bytes32 internal constant CAP = bytes32(uint(1000000021970000000000000000));
+    uint256 internal constant MIN_P_SIZE    = 2;
+    uint256 internal constant MAX_P_SIZE    = 3;
     IDiamondCuttable.FacetCutAction internal constant ADD = IDiamondCuttable.FacetCutAction.ADD;
 
     Vat public vat;
@@ -292,7 +294,7 @@ contract Ball is Math, Ward {
         bytes32 gemusdtag = concat(ilk, ':usd');
         bytes32 gemclatag;
         address gemusdsrc;
-        uint256 plokesize = (ilkparams.gemethagg == address(0)) ? 4 : 5;
+        uint256 plokesize = (ilkparams.gemethagg == address(0)) ? MIN_P_SIZE : MAX_P_SIZE;
         pconf = Ploker.Config(new address[](plokesize), new bytes32[](plokesize), new address[](1), new bytes32[](1));
         if (ilkparams.gemethagg == address(0)) {
             // ilk has feed sequence of gem/usd / rico/usd
@@ -309,15 +311,13 @@ contract Ball is Math, Ward {
                             address(cladapt), WETH_USD_TAG);
             gemusdsrc = address(multiplier);
             gemclatag = gemethtag;
-            pconf.adapters[4] = address(cladapt); pconf.adaptertags[3] = WETH_USD_TAG;
+            pconf.adapters[MIN_P_SIZE] = address(cladapt); pconf.adaptertags[MIN_P_SIZE] = WETH_USD_TAG;
         }
         _configureBlock(divider, gemreftag,
                         address(gemusdsrc), gemusdtag,
                         address(cladapt),   XAU_USD_TAG);
-        pconf.adapters[0] = address(uniadapt); pconf.adaptertags[0] = RICO_DAI_TAG;
-        pconf.adapters[1] = address(cladapt);  pconf.adaptertags[1] = DAI_USD_TAG;
-        pconf.adapters[2] = address(cladapt);  pconf.adaptertags[2] = XAU_USD_TAG;
-        pconf.adapters[3] = address(cladapt);  pconf.adaptertags[3] = gemclatag;
+        pconf.adapters[0] = address(cladapt);  pconf.adaptertags[0] = XAU_USD_TAG;
+        pconf.adapters[1] = address(cladapt);  pconf.adaptertags[1] = gemclatag;
         pconf.combinators[0] = address(mdn); pconf.combinatortags[0] = gemreftag;
         ploker.setConfig(gemreftag, pconf);
     }
