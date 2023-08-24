@@ -45,32 +45,39 @@ contract Vow is Bank {
 
         Gem rico = bankS.rico;
         Gem risk = vowS.RISK;
-        uint ricobal = rico.balanceOf(address(this));
-        uint riskbal = risk.balanceOf(address(this));
-        risk.burn(address(this), riskbal);
+        uint joy = vatS.joy;
 
-        // rico is a wad, sin is a rad
+        // use equal scales for sin and joy
         uint sin = vatS.sin / RAY;
-        if (ricobal > sin) {
+        if (joy > sin) {
             // pay down sin, then auction off surplus RICO for RISK
-            if (sin > 1) Vat(address(this)).heal(sin - 1);
-
-            // buy-and-burn risk with remaining (`over`) rico
-            uint over = ricobal - sin;
+            uint over = joy - sin;
+            if (sin > 1) {
+                Vat(address(this)).heal(sin - 1);
+                joy -= sin - 1;
+            } else {
+                over -= 1;
+            }
 
             // rush increases as surplus increases, i.e. if there's a massive
             // surplus the system deduces that it's overpricing rico
             uint debt = vatS.debt;
             uint rush = (over * vowS.flappep + debt * vowS.flappop) / debt;
 
-            // swap the surplus for RISK
+            // buy-and-burn risk with remaining (`over`) rico
+            joy -= over;
+            vatS.joy = joy;
+            emit NewPalm0('joy', bytes32(joy));
             flow(vowS.flapsrc, vowS.flaptag, rico, over, risk, rush);
-        } else if (sin > ricobal) {
+        } else if (sin > joy) {
             // pay down as much sin as possible
-            if (ricobal > 1) Vat(address(this)).heal(ricobal - 1);
+            if (joy > 1) {
+                Vat(address(this)).heal(joy - 1);
+                joy = 1;
+            }
 
             // mint-and-sell risk to cover `under`
-            uint under = sin - ricobal;
+            uint under = sin - joy;
 
             // rush increases as system becomes undercollateralized
             // i.e. if it's very undercollateralized then bank deduces
@@ -87,14 +94,15 @@ contract Vow is Bank {
             emit NewPalm0('bel', bytes32(vowS.ramp.bel));
 
             // swap RISK for rico to cover sin
-            risk.mint(address(this), flop);
-            flow(vowS.flopsrc, vowS.floptag, risk, flop, rico, rush);
+            joy += flow(vowS.flopsrc, vowS.floptag, risk, flop, rico, rush);
+            vatS.joy = joy;
+            emit NewPalm0('joy', bytes32(joy));
         }
     }
 
     function flow(
         address src, bytes32 tag, Gem hag, uint ham, Gem wag, uint rush
-    ) internal {
+    ) internal returns (uint earn){
         // pull the feed to get the earn (in rico for flop, risk for flap)
         // if rush was 1.0
         (bytes32 val, uint ttl) = getBankStorage().fb.pull(src, tag);
@@ -102,9 +110,8 @@ contract Vow is Bank {
         uint cut = ham * uint(val);
 
         // cut is RAD, rush is RAY, so bank earns a WAD
-        uint earn = cut / rush;
-        if (!Gem(wag).transferFrom(msg.sender, address(this), earn)) revert ErrTransfer();
-        if (!Gem(hag).transfer(msg.sender, ham)) revert ErrTransfer();
+        earn = cut / rush;
+        Gem(wag).burn(msg.sender, earn);
+        Gem(hag).mint(msg.sender, ham);
     }
-
 }

@@ -34,6 +34,7 @@ contract Vat is Bank {
     function urns(bytes32 i, address u) view external returns (uint) {
         return getVatStorage().urns[i][u];
     }
+    function joy() view external returns (uint) {return getVatStorage().joy;}
     function sin() view external returns (uint) {return getVatStorage().sin;}
     function rest() view external returns (uint) {return getVatStorage().rest;}
     function debt() view external returns (uint) {return getVatStorage().debt;}
@@ -236,22 +237,21 @@ contract Vat is Bank {
         vs.rest      = all % RAY;
         emit NewPalm0('rest', bytes32(vs.rest));
 
-        // optimistically mint the interest
-        getBankStorage().rico.mint(address(this), all / RAY);
+        vs.joy       = vs.joy + all / RAY;
+        emit NewPalm0('joy', bytes32(vs.joy));
     }
 
     function heal(uint wad) _flog_ external {
         VatStorage storage vs = getVatStorage();
-        // burn rico to pay down sin
-        uint256 rad = wad * RAY;
 
-        vs.sin  = vs.sin  - rad;
+        vs.sin  = vs.sin  - (wad * RAY);
         emit NewPalm0('sin', bytes32(vs.sin));
 
+        vs.joy  = vs.joy  - wad;
+        emit NewPalm0('joy', bytes32(vs.joy));
+        
         vs.debt = vs.debt - wad;
         emit NewPalm0('debt', bytes32(vs.debt));
-
-        getBankStorage().rico.burn(msg.sender, wad);
     }
 
     function flash(address code, bytes calldata data)

@@ -25,7 +25,6 @@ contract VatTest is Test, RicoSetUp {
     Flasher public chap;
     address public achap;
     uint public constant flash_size = 100;
-    uint public constant NO_CUT = type(uint256).max;
 
     function setUp() public {
         make_bank();
@@ -64,6 +63,7 @@ contract VatTest is Test, RicoSetUp {
     function test_heal_gas() public {
         feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
         Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(WAD));
+        skip(1);
         feedpush(grtag, bytes32(0), type(uint).max);
         Vat(bank).bail(gilk, self);
 
@@ -857,7 +857,7 @@ contract VatTest is Test, RicoSetUp {
         Vat(bank).filk(gilk, 'fee', bytes32(RAY * 3 / 2));
         // raise rack to 1.5
         skip(1);
-        // now frob 1, so debt is 1 * RAY
+        // now frob 1, so debt is 1
         // and rest is 0.5 * RAY
         Vat(bank).drip(gilk);
         Vat(bank).frob(gilk, self, abi.encodePacked(int(1)), int(1));
@@ -879,7 +879,9 @@ contract VatTest is Test, RicoSetUp {
         Vat(bank).drip(gilk);
         assertEq(Vat(bank).debt(), 3);
         assertEq(Vat(bank).rest(), 0);
-        assertEq(rico.totalSupply(), 3);
+        assertEq(rico.totalSupply(), 2);
+        assertEq(Vat(bank).joy(), 1);
+        assertEq(Vat(bank).joy() + rico.totalSupply(), Vat(bank).debt());
     }
 
     function test_frobhook_only_checks_dink() public {

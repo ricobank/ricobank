@@ -378,7 +378,7 @@ contract DssBiteTest is DssVatTest {
 
         // => bite everything
         // dss checks joy 0 before tend, rico checks before bail
-        assertEq(rico.balanceOf(bank), 0);
+        assertEq(Vat(bank).joy(), 0);
         // cat.file dunk N/A vow always bails whole urn
         // cat.litter N/A vow always bails urn immediately
         prepguyrico(200 * WAD, true);
@@ -387,9 +387,9 @@ contract DssBiteTest is DssVatTest {
         assertGt(_ink(i0, me), 0);
         skip(1);
         prepguyrico(550 * WAD, true);
-        uint vowrico = rico.balanceOf(bank);
+        uint joy_0 = Vat(bank).joy();
         guy.keep(ilks);
-        assertGt(rico.balanceOf(bank), vowrico);
+        assertGt(Vat(bank).joy(), joy_0);
     }
 
     // test_partial_litterbox
@@ -442,22 +442,20 @@ contract DssBiteTest is DssVatTest {
         // dunk N/A bail always liquidates whole urn
         // vow.sin N/A no debt queue
         assertEq(Vat(bank).sin() / RAY, 0);
-        assertEq(rico.balanceOf(bank), 0);
+        assertEq(Vat(bank).joy(), 0);
         Vat(bank).bail(i0, me);
         assertEq(Vat(bank).sin() / RAY, ricoamt);
         // added 40, price is 2 and debt is 100, so earnings reduced 1.25 times
         uint earn = WAD * 80 * 4 / 5;
-        assertEq(rico.balanceOf(bank), earn);
+        assertEq(Vat(bank).joy(), earn);
         assertEq(Vat(bank).sin() / RAY, ricoamt);
     }
 
     // todo maybe a similar test but get the surplus using frob/bail?
     function test_flappy_bite() public _bite_ {
-        uint ricoamt = 100 * WAD;
-        rico_mint(ricoamt, false);
-        rico.transfer(bank, ricoamt);
-        assertEq(rico.balanceOf(bank), ricoamt);
-        assertEq(gov.balanceOf(me), 100 * WAD);
+        uint amt = 100 * WAD;
+        force_fees(amt);
+        assertEq(gov.balanceOf(me), amt);
         assertEq(vow_Awe() / RAY, 0);
 
         feedpush(RICO_RISK_TAG, bytes32(RAY), UINT256_MAX);
@@ -468,9 +466,9 @@ contract DssBiteTest is DssVatTest {
         assertEq(rico.balanceOf(bank), 0);
         assertEq(vow_Awe() / RAY, 0);
 
-        // all rico in existence is in vow, so rush factor will be (x + x) / x = 2 wad
+        // all joy & debt in existence are in vow, so rush factor will be (x + x) / x = 2 wad
         // feeds are at equal prices so rico will be sold for half price
-        assertEq(gov.balanceOf(bank), ricoamt / 2);
+        assertClose(gov.balanceOf(me), amt / 2, gov.balanceOf(me) / 2);
 
         skip(1);
 
@@ -516,9 +514,9 @@ contract DssFoldTest is DssVatTest {
         assertEq(tab(i0, me), RAD);
 
         skip(1);
-        uint mejoy0 = rico.balanceOf(bank) * RAY; // rad
+        uint mejoy0 = Vat(bank).joy() * RAY; // rad
         Vat(bank).drip(i0);
-        uint djoy = rico.balanceOf(bank) * RAY - mejoy0;
+        uint djoy = Vat(bank).joy() * RAY - mejoy0;
         uint tol = RAD / 1000;
 
         uint actual = RAD * 21 / 20;
@@ -801,12 +799,16 @@ contract DssVowTest is DssJsTest {
         vm.expectRevert(Vow.ErrReflop.selector);
         Vow(bank).keep(ilks);
 
-        // create a surplus then keep
-        Vat(bank).filk(gilk, "line", bytes32( 10_000 * RAD));
-        rico_mint(amt, false);
-        rico.transfer(bank, amt);
-        feedpush(RISK_RICO_TAG, bytes32(1000 * RAY), UINT256_MAX);
-        prepguyrico(1000 * WAD, false);
+        // create a surplus
+        Vat(bank).drip(gilk);
+        Vat(bank).filk(gilk, 'fee',  bytes32(RAY * 15 / 10));
+        Vat(bank).filk(gilk, 'line', bytes32(10_000 * RAD));
+        rico_mint(1000 * WAD, false);
+        skip(1);
+
+        // get ready to call keep
+        feedpush(RISK_RICO_TAG, bytes32(10 * RAY), UINT256_MAX);
+        risk.mint(me, 10000 * WAD);
 
         // should be a flap this time
         uint sr1 = rico.balanceOf(self);
@@ -823,7 +825,6 @@ contract DssVowTest is DssJsTest {
         skip(10);
 
         risk.mint(me, 10000 * WAD);
-        risk.approve(ahook, type(uint256).max);
 
         uint sr1 = rico.balanceOf(self);
         Vow(bank).keep(ilks);
@@ -843,20 +844,24 @@ contract DssVowTest is DssJsTest {
     //   uses ramps to rate limit both
 
     function test_no_surplus_after_good_flop() public _vow_ {
+        Vat(bank).filk(i0, 'fee', bytes32(RAY * 21 / 20));
         Vat(bank).frob(i0, me, abi.encodePacked(int(100)), 100);
         feedpush(grtag, bytes32(0), UINT256_MAX);
+        
+        // accrue some interest so vat has some joy
+        skip(1);
+        Vat(bank).drip(i0);
+        
         Vat(bank).bail(i0, me); // lots of debt
         skip(1);
         rico_mint(50 * WAD, true);
-        //give vow some rico to make sure it gets burnt healing
-        rico.transfer(bank, 10);
         uint self_rico1 = rico.balanceOf(self);
         vm.expectCall(bank, abi.encodePacked(Vat(bank).heal.selector));
         Vow(bank).keep(ilks);
         uint self_rico2 = rico.balanceOf(self);
         // should only have some rico from instant risk sale +1 extra which wasn't spent healing
         uint vows_expected_rico = self_rico1 - self_rico2 + 1;
-        assertEq(rico.balanceOf(bank), vows_expected_rico);
+        assertEq(Vat(bank).joy(), vows_expected_rico);
     }
 
     // test_multiple_flop_dents

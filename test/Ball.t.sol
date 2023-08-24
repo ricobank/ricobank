@@ -192,7 +192,7 @@ contract BallTest is BaseHelper {
         BankDiamond(bank).acceptOwnership();
 
         uint usedgas     = gas - gasleft();
-        uint expectedgas = 22472161;
+        uint expectedgas = 22465789;
         if (usedgas < expectedgas) {
             console.log("ball saved %s gas...currently %s", expectedgas - usedgas, usedgas);
         }
@@ -244,11 +244,37 @@ contract BallTest is BaseHelper {
 
     modifier _flap_after_ {
         _;
-        uint vow_risk_before = Gem(risk).balanceOf(bank);
         Gem(risk).mint(me, 10000 * WAD);
+        for(uint i; i < ilks.length; ++i) {
+            Vat(bank).drip(ilks[i]);
+        }
+
+        uint pre_bank_risk = Gem(risk).balanceOf(bank);
+        uint pre_bank_rico = Gem(rico).balanceOf(bank);
+        uint pre_bank_joy  = Vat(bank).joy();
+        uint pre_user_risk = Gem(risk).balanceOf(me);
+        uint pre_user_rico = Gem(rico).balanceOf(me);
+        uint pre_risk_sup  = Gem(risk).totalSupply();
+
         Vow(bank).keep(ilks);
-        uint vow_risk_after = Gem(risk).balanceOf(bank);
-        assertGt(vow_risk_after, vow_risk_before);
+
+        uint aft_bank_risk = Gem(risk).balanceOf(bank);
+        uint aft_bank_rico = Gem(rico).balanceOf(bank);
+        uint aft_bank_joy  = Vat(bank).joy();
+        uint aft_user_risk = Gem(risk).balanceOf(me);
+        uint aft_user_rico = Gem(rico).balanceOf(me);
+        uint aft_risk_sup  = Gem(risk).totalSupply();
+
+        // user should lose risk and gain rico
+        // system should lose joy and decrease supply of risk
+        // system tokens should remain zero
+
+        assertEq(pre_bank_risk, aft_bank_risk);
+        assertEq(pre_bank_rico, aft_bank_rico);
+        assertGt(pre_bank_joy,  aft_bank_joy);
+        assertGt(pre_user_risk, aft_user_risk);
+        assertLt(pre_user_rico, aft_user_rico);
+        assertGt(pre_risk_sup,  aft_risk_sup);
     }
 
     modifier _flop_after_ {

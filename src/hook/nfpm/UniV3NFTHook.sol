@@ -131,8 +131,15 @@ contract UniNFTHook is Hook, Bank {
         // cut is RAD, rush is RAY, so vow earns a WAD
         uint256 earn = cut / rush;
         uint256 over = earn > bill ? earn - bill : 0;
+        uint256 base = earn - over;
         Gem rico = getBankStorage().rico;
-        rico.transferFrom(keeper, address(this), earn - over);
+        rico.burn(keeper, base);
+        {
+            VatStorage storage vs = getVatStorage();
+            uint mood = vs.joy + base;
+            vs.joy = mood;
+            emit NewPalm0('joy', bytes32(mood));
+        }
         rico.transferFrom(keeper, urn, over);
         emit NewPalmBytes2('uninfthook.0.ink', ilk, bytes32(bytes20(urn)), '');
 

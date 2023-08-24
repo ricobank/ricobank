@@ -107,6 +107,23 @@ abstract contract RicoSetUp is BaseHelper {
         gold.burn(self, end_gold - start_gold);
     }
 
+    function force_fees(uint gain) public {
+        // Create imaginary fees, add to debt and joy
+        // Avoid manipulating vat like this usually
+        uint256 debt_0   = Vat(bank).debt();
+        uint256 joy_0    = Vat(bank).joy();
+
+        uint256 joy_idx  = 2;
+        uint256 debt_idx = 5;
+        bytes32 vat_info = 'vat.0';
+        bytes32 vat_pos  = keccak256(abi.encodePacked(vat_info));
+        bytes32 joy_pos  = bytes32(uint(vat_pos) + joy_idx);
+        bytes32 debt_pos = bytes32(uint(vat_pos) + debt_idx);
+
+        vm.store(bank, joy_pos,  bytes32(joy_0  + gain));
+        vm.store(bank, debt_pos, bytes32(debt_0 + gain));
+    }
+
     function _art(bytes32 ilk, address usr) internal view returns (uint art) {
         art = Vat(bank).urns(ilk, usr);
     }

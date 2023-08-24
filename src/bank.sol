@@ -36,6 +36,7 @@ abstract contract Bank is Math, Flog, Palm, OwnableInternal{
     struct VatStorage {
         mapping (bytes32 => Ilk) ilks;
         mapping (bytes32 => mapping (address => uint256)) urns;
+        uint joy;   // [wad]
         uint sin;   // [rad]
         uint rest;  // [rad] Remainder from
         uint debt;  // [wad] Total Rico Issued

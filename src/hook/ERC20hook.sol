@@ -80,6 +80,7 @@ contract ERC20Hook is Hook, Bank {
         uint256 cut
     ) external returns (bytes memory) {
         ERC20HookStorage storage hs = getStorage();
+        VatStorage       storage vs = getVatStorage();
         // try to take enough ink to cover the debt
         // cut is RAD, rush is RAY, so bank earns a WAD
         uint ham  = hs.inks[i][u];
@@ -93,10 +94,12 @@ contract ERC20Hook is Hook, Bank {
         hs.inks[i][u] = _ink;
         emit NewPalmBytes2('erc20hook.0.ink', i, bytes32(bytes20(u)), abi.encodePacked(_ink));
 
-        Gem gem  = Gem(hs.items[i].gem);
-        Gem rico = getBankStorage().rico;
-        if (!rico.transferFrom(keeper, address(this), earn)) revert ErrTransfer();
-        if (!gem.transfer(keeper, sell)) revert ErrTransfer();
+        uint mood = vs.joy + earn;
+        vs.joy = mood;
+        emit NewPalm0('joy', bytes32(mood));
+
+        getBankStorage().rico.burn(keeper, earn);
+        if (!Gem(hs.items[i].gem).transfer(keeper, sell)) revert ErrTransfer();
         return abi.encodePacked(sell);
     }
 
