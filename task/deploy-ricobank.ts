@@ -107,7 +107,7 @@ task('deploy-ricobank', '')
             range: params.range
         }
         // create mock chainlink feed with price of 2000
-        if (!params.gemusdagg) {
+        if (params.gemusdagg == '0x' + '00'.repeat(20)) {
             if(params.gemethagg == '0x' + '00'.repeat(20)){
                 await send(fb.push, b32(token + ':usd'), bn2b32(hre.ethers.BigNumber.from('200000000000')), timestamp * 2);
                 debug('deploying mock aggregator for token', token)
