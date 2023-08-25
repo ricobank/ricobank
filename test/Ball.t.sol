@@ -56,6 +56,7 @@ contract BallTest is BaseHelper {
     bytes32[] ilks;
     uint DEV_FUND_RISK = 1000000 * WAD;
     uint DUST = 90 * RAD / 2000;
+    uint start_time;
 
     ERC20Hook hook;
     Vat vat;
@@ -63,48 +64,27 @@ contract BallTest is BaseHelper {
     Vox vox;
 
     function advance_chainlink() internal {
-        // chainlink adapter advances from chainlink time
-        // a ploke will overwrite this back to chain time
-        vm.startPrank(address(cladapt));
-        (bytes32 v,) = fb.pull(address(cladapt), XAU_USD_TAG);
-        fb.push(XAU_USD_TAG,  v, block.timestamp + 100_000);
-        (v,) = fb.pull(address(cladapt), DAI_USD_TAG);
-        fb.push(DAI_USD_TAG,  v, block.timestamp + 100_000);
-        (v,) = fb.pull(address(cladapt), WETH_USD_TAG);
-        fb.push(WETH_USD_TAG, v, block.timestamp + 100_000);
-        (v,) = fb.pull(address(cladapt), RAI_ETH_TAG);
-        fb.push(RAI_ETH_TAG, v, block.timestamp + 100_000);
-        vm.stopPrank();
-    }
-
-    function advance_uni() internal {
-        // uni adapter advances from chainlink time
-        vm.startPrank(address(uniadapt));
-        (bytes32 v,) = fb.pull(address(uniadapt), RICO_DAI_TAG);
-        fb.push(RICO_DAI_TAG,  v, block.timestamp + 100_000);
-        (v,) = fb.pull(address(uniadapt), RICO_RISK_TAG);
-        fb.push(RICO_RISK_TAG, v, block.timestamp + 100_000);
-        vm.stopPrank();
+        // time has skipped ahead while forked chainlink static, give adapters extra ttl equal to skipped time
+        uint skipped = block.timestamp + 100_000 - start_time;
+        address agg; uint ttl; uint precision;
+        bytes32[4] memory tags = [XAU_USD_TAG, DAI_USD_TAG, WETH_USD_TAG, RAI_ETH_TAG];
+        for(uint i; i < tags.length; i++) {
+            (agg, ttl, precision) = cladapt.configs(tags[i]);
+            cladapt.setConfig(tags[i], ChainlinkAdapter.Config(agg, ttl + skipped, RAY));
+        }
     }
 
     function look_poke() internal {
         ploker.ploke(RICO_RISK_TAG);
         ploker.ploke(RISK_RICO_TAG);
-
-        cladapt.look(WETH_USD_TAG);
-        cladapt.look(RAI_ETH_TAG);
-        cladapt.look(DAI_USD_TAG);
-        cladapt.look(XAU_USD_TAG);
-        uniadapt.look(RICO_DAI_TAG);
         advance_chainlink();
-        advance_uni();
-
         mdn.poke(WETH_REF_TAG);
         mdn.poke(RAI_REF_TAG);
         mdn.poke(RICO_REF_TAG);
     }
 
     function setUp() public {
+        start_time = block.timestamp;
         me = address(this);
         gf = new GemFab();
         fb = new Feedbase();
@@ -192,7 +172,7 @@ contract BallTest is BaseHelper {
         BankDiamond(bank).acceptOwnership();
 
         uint usedgas     = gas - gasleft();
-        uint expectedgas = 22465789;
+        uint expectedgas = 21439139;
         if (usedgas < expectedgas) {
             console.log("ball saved %s gas...currently %s", expectedgas - usedgas, usedgas);
         }
@@ -209,14 +189,9 @@ contract BallTest is BaseHelper {
         divider = ball.divider();
         mdn = ball.mdn();
         ploker = ball.ploker();
-        skip(40000);
-        cladapt.look(XAU_USD_TAG);
-        cladapt.look(DAI_USD_TAG);
-        cladapt.look(WETH_USD_TAG);
-        uniadapt.look(RICO_DAI_TAG);
-        uniadapt.look(RICO_RISK_TAG);
-        look_poke();
+
         skip(BANKYEAR / 2);
+        look_poke();
 
         hook = ball.hook();
         vm.prank(VAULT);
@@ -224,17 +199,10 @@ contract BallTest is BaseHelper {
         Gem(WETH).approve(bank, type(uint).max);
         WethLike(WETH).deposit{value: wethamt * 100}();
 
-        cladapt.look(XAU_USD_TAG);
-        cladapt.look(DAI_USD_TAG);
-
-        look_poke();
-
         vow = ball.vow();
         vox = ball.vox();
 
         Gem(risk).mint(address(this), DEV_FUND_RISK);
-        Gem(rico).approve(bank, type(uint256).max);
-        Gem(risk).approve(bank, type(uint256).max);
 
         // find a rico borrow amount which will be safe by about 10%
         (bytes32 val,) = fb.pull(address(mdn), WETH_REF_TAG);
@@ -347,7 +315,6 @@ contract BallTest is BaseHelper {
         Vat(bank).frob(WETH_ILK, me, abi.encodePacked(wethamt), safedart);
         vm.expectRevert(Vat.ErrSafeBail.selector);
         Vat(bank).bail(WETH_ILK, me);
-        skip(BANKYEAR * 100);
     }
 
     // user pays down the urn first, then try to flap

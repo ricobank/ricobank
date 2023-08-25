@@ -10,7 +10,7 @@
 pragma solidity ^0.8.19;
 
 import {Diamond, IDiamondCuttable} from '../lib/solidstate-solidity/contracts/proxy/diamond/Diamond.sol';
-import {Block} from "../lib/feedbase/src/mixin/Block.sol";
+import {Block} from "../lib/feedbase/src/mixin/Read.sol";
 import {ChainlinkAdapter} from "../lib/feedbase/src/adapters/ChainlinkAdapter.sol";
 import {Divider} from "../lib/feedbase/src/combinators/Divider.sol";
 import {Feedbase} from "../lib/feedbase/src/Feedbase.sol";
@@ -156,11 +156,8 @@ contract Ball is Math, Ward {
 
         // need four plokers: rico/ref, rico/risk, risk/rico, collateral/ref
         Ploker.Config memory plokerconf = Ploker.Config(
-            new address[](3), new bytes32[](3), new address[](1), new bytes32[](1)
+            new address[](1), new bytes32[](1)
         );
-        plokerconf.adapters[0] = address(cladapt); plokerconf.adaptertags[0] = XAU_USD_TAG;
-        plokerconf.adapters[1] = address(cladapt); plokerconf.adaptertags[1] = DAI_USD_TAG;
-        plokerconf.adapters[2] = address(uniadapt); plokerconf.adaptertags[2] = RICO_DAI_TAG;
         plokerconf.combinators[0] = address(mdn); plokerconf.combinatortags[0] = RICO_REF_TAG;
         ploker.setConfig(RICO_REF_TAG, plokerconf);
 
@@ -179,8 +176,7 @@ contract Ball is Math, Ward {
         mdnconf.srcs[0] = address(uniadapt); mdnconf.tags[0] = RICO_RISK_TAG;
         mdn.setConfig(RICO_RISK_TAG, mdnconf);
 
-        plokerconf = Ploker.Config(new address[](1), new bytes32[](1), new address[](1), new bytes32[](1));
-        plokerconf.adapters[0] = address(uniadapt); plokerconf.adaptertags[0] = RICO_RISK_TAG;
+        plokerconf = Ploker.Config(new address[](1), new bytes32[](1));
         plokerconf.combinators[0] = address(mdn); plokerconf.combinatortags[0] = RISK_RICO_TAG;
         ploker.setConfig(RISK_RICO_TAG, plokerconf);
         plokerconf.combinators[0] = address(mdn); plokerconf.combinatortags[0] = RICO_RISK_TAG;
@@ -295,8 +291,7 @@ contract Ball is Math, Ward {
         bytes32 gemusdtag = concat(ilk, ':usd');
         bytes32 gemclatag;
         address gemusdsrc;
-        uint256 plokesize = (ilkparams.gemethagg == address(0)) ? MIN_P_SIZE : MAX_P_SIZE;
-        pconf = Ploker.Config(new address[](plokesize), new bytes32[](plokesize), new address[](1), new bytes32[](1));
+        pconf = Ploker.Config(new address[](1), new bytes32[](1));
         if (ilkparams.gemethagg == address(0)) {
             // ilk has feed sequence of gem/usd / rico/usd
             cladapt.setConfig(gemusdtag, ChainlinkAdapter.Config(ilkparams.gemusdagg, ilkparams.ttl, RAY));
@@ -312,13 +307,10 @@ contract Ball is Math, Ward {
                             address(cladapt), WETH_USD_TAG);
             gemusdsrc = address(multiplier);
             gemclatag = gemethtag;
-            pconf.adapters[MIN_P_SIZE] = address(cladapt); pconf.adaptertags[MIN_P_SIZE] = WETH_USD_TAG;
         }
         _configureBlock(divider, gemreftag,
                         address(gemusdsrc), gemusdtag,
                         address(cladapt),   XAU_USD_TAG);
-        pconf.adapters[0] = address(cladapt);  pconf.adaptertags[0] = XAU_USD_TAG;
-        pconf.adapters[1] = address(cladapt);  pconf.adaptertags[1] = gemclatag;
         pconf.combinators[0] = address(mdn); pconf.combinatortags[0] = gemreftag;
         ploker.setConfig(gemreftag, pconf);
     }

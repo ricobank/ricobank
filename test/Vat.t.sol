@@ -30,7 +30,6 @@ contract VatTest is Test, RicoSetUp {
         make_bank();
         init_gold();
         ilks.push(gilk);
-        rico.approve(bank, type(uint256).max);
         chap = new Flasher(bank, arico, gilk);
         achap = address(chap);
         gold.mint(achap, 500 * WAD);
@@ -594,7 +593,7 @@ contract VatTest is Test, RicoSetUp {
 
         // throw most out
         // minus one for rounding in system's favor
-        rico.transfer(azero, rico.balanceOf(self) - 1);
+        rico.transfer(address(1), rico.balanceOf(self) - 1);
         assertEq(rico.balanceOf(self), 1);
         HackyGem(address(hgm)).setdepth(1);
         // should fail because not enough left to send to vat

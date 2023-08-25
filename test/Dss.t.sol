@@ -118,11 +118,9 @@ contract DssJsTest is Test, RicoSetUp {
         gem.approve(router, UINT256_MAX);
         rico.approve(router, UINT256_MAX);
         risk.approve(router, UINT256_MAX);
-        rico.approve(bank, UINT256_MAX);
-        risk.approve(bank, UINT256_MAX);
 
         // mint some RISK so rates relative to total supply aren't zero
-        risk.mint(address(0), total_pool_risk);
+        risk.mint(address(1), total_pool_risk);
         gem.burn(me, gem.balanceOf(me));
 
         ali = new Usr(bank);

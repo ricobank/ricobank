@@ -28,7 +28,6 @@ contract VowTest is Test, RicoSetUp {
         make_bank();
         init_gold();
         ilks.push(gilk);
-        rico.approve(bank, type(uint256).max);
 
         File(bank).file('vel', bytes32(uint(1e18)));
         File(bank).file('rel', bytes32(uint(1e12)));
@@ -40,8 +39,6 @@ contract VowTest is Test, RicoSetUp {
         rico.approve(router, type(uint256).max);
         risk.approve(router, type(uint256).max);
         gold.approve(bank, type(uint256).max);
-        rico.approve(bank, type(uint256).max);
-        risk.approve(bank, type(uint256).max);
 
         rico_risk_pool = getPoolAddr(arico, arisk, 3000);
         rico_mint(2000 * WAD, true);
@@ -120,7 +117,6 @@ contract VowTest is Test, RicoSetUp {
         uint rush = wdiv((gain + init), debt);
         uint expected_rico_per_risk = wdiv(risk_price_in_rico, rush) / 10**9;
 
-        rico.approve(bank, type(uint).max);
         uint self_rico_1 = rico.balanceOf(self);
         uint self_risk_1 = risk.balanceOf(self);
 
@@ -170,7 +166,6 @@ contract VowTest is Test, RicoSetUp {
         // position is still overcollateralized, should get a refund and guy should only pay borrowed rico
         rico_mint(borrow, false);
         rico.transfer(address(guy), borrow);
-        guy.approve(address(rico), bank, borrow);
         // price should be 0.75**2, as 0.75 for oracle drop and 0.75 for rush factor
         guy.bail(gilk, self);
 
@@ -469,8 +464,6 @@ contract VowJsTest is Test, RicoSetUp {
         risk.approve(address(router), UINT256_MAX);
         dai.approve(address(router), UINT256_MAX);
         weth.approve(bank, UINT256_MAX);
-        rico.approve(bank, UINT256_MAX);
-        risk.approve(bank, UINT256_MAX);
         dai.approve(bank, UINT256_MAX);
 
         PoolArgs memory dai_rico_args = getArgs(DAI, 2000 * WAD, arico, 2000 * WAD, 500, x96(1));
@@ -600,7 +593,6 @@ contract VowJsTest is Test, RicoSetUp {
         skip(BANKYEAR);
         feedpush(RICO_RISK_TAG, bytes32(2 * RAY), UINT256_MAX);
         risk.mint(address(guy), 1000 * WAD);
-        guy.approve(arisk, bank, UINT256_MAX);
         guy.keep(ilks);
 
         skip(60);

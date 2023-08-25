@@ -36,7 +36,7 @@ contract Flasher {
         for (uint256 i = 0; i < gems.length; i++) {
             approve_hook(gems[i], wads[i]);
             if (i == welch_index) {
-                Gem(gems[i]).transfer(address(0), 1);
+                Gem(gems[i]).transfer(address(1), 1);
             }
         }
     }

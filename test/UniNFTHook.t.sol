@@ -159,7 +159,6 @@ contract NFTHookTest is Test, RicoSetUp {
         expected = expected * 10001 / 10000;
         rico_mint(expected, false);
         rico.transfer(address(guy), expected);
-        guy.approve(arico, bank, expected);
         guy.bail(uilk, self);
 
         // guy was given about exact amount, check almost all was spent
@@ -219,7 +218,6 @@ contract NFTHookTest is Test, RicoSetUp {
         uint wad_cost = cut / RAY * rush / RAY;
         rico_mint(wad_cost, true);
         rico.transfer(address(guy), wad_cost);
-        guy.approve(arico, bank, type(uint).max);
         uint guy_rico_before = rico.balanceOf(address(guy));
 
         uint gas = gasleft();
@@ -302,7 +300,6 @@ contract NFTHookTest is Test, RicoSetUp {
         (,uint cut, uint rush) = Vat(bank).safe(uilk, self);
         uint wad_cost = cut / RAY * rush / RAY;
         rico_mint(wad_cost, true);
-        rico.approve(bank, type(uint).max);
 
         bytes memory ids = Vat(bank).bail(uilk, self);
         uint256[] memory tok_ids = new uint256[](ids.length / 32);

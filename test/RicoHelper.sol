@@ -5,7 +5,7 @@ import 'forge-std/Test.sol';
 
 import '../src/mixin/math.sol';
 import { Feedbase } from '../lib/feedbase/src/Feedbase.sol';
-import { Block } from '../lib/feedbase/src/mixin/Block.sol';
+import { Block } from '../lib/feedbase/src/mixin/Read.sol';
 import { Divider } from '../lib/feedbase/src/combinators/Divider.sol';
 import { Multiplier } from '../lib/feedbase/src/combinators/Multiplier.sol';
 import { Medianizer } from '../lib/feedbase/src/Medianizer.sol';
@@ -63,7 +63,6 @@ abstract contract RicoSetUp is BaseHelper {
     uint256 constant public flappop    = RAY;
     uint256 constant public floppep    = RAY;
     uint256 constant public floppop    = RAY;
-    address public immutable azero     = address(0);
     address public immutable self = payable(address(this));
 
     ERC20Hook  public hook;
@@ -248,9 +247,6 @@ abstract contract RicoSetUp is BaseHelper {
 
         ahook = payable(address(hook));
 
-        rico.approve(bank, type(uint256).max);
-        rico.approve(bank, type(uint256).max);
-
         feed.push(bytes32("ONE"), bytes32(RAY), type(uint).max);
         make_feed(rtag);
         make_feed(wrtag);
@@ -317,6 +313,5 @@ abstract contract RicoSetUp is BaseHelper {
     function prepguyrico(uint amt, bool bail) internal {
         rico_mint(amt, bail);
         rico.transfer(address(guy), amt);
-        guy.approve(arico, bank, UINT256_MAX);
     }
 }
