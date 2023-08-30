@@ -78,7 +78,7 @@ describe('Vox', () => {
   }
 
   it('ploke', async () => {
-    for (const tag of ['weth:ref', 'rico:risk', 'risk:rico', 'rico:ref']) {
+    for (const tag of ['weth:ref', 'rico:risk', 'risk:rico']) {
         debug(`ploking ${tag}`)
         await ploker.ploke(b32(tag))
     }
@@ -168,7 +168,7 @@ describe('Vox', () => {
     })
 
     it('deploy gas', async () => {
-      await check(ethers.BigNumber.from(deploygas), 41009815)
+      await check(ethers.BigNumber.from(deploygas), 40797578)
     })
 
     it('ploke gas', async () => {
@@ -247,12 +247,19 @@ describe('Vox', () => {
       await check(gas, 69355, 69607)
     })
 
+    it('read mar gas', async () => {
+      let mar_tag = b32('rico:ref')
+      let divider = await ball.divider()
+      let mar_gas = await fb.estimateGas.pull(divider, mar_tag)
+      await check(mar_gas, 160902)
+    })
+
     it('drip gas', async () => {
       let dink = ethers.utils.solidityPack(['int'], [wad(5)])
       await send(bank.frob, b32('weth'), ALI, dink, wad(2))
       await mine(hh, BANKYEAR)
       let gas = await bank.estimateGas.drip(b32('weth'))
-      await check(gas, 108911, 109944)
+      await check(gas, 108911, 109954)
     })
   })
 })

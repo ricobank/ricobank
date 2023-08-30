@@ -80,7 +80,6 @@ contract BallTest is BaseHelper {
         advance_chainlink();
         mdn.poke(WETH_REF_TAG);
         mdn.poke(RAI_REF_TAG);
-        mdn.poke(RICO_REF_TAG);
     }
 
     function setUp() public {
@@ -172,7 +171,7 @@ contract BallTest is BaseHelper {
         BankDiamond(bank).acceptOwnership();
 
         uint usedgas     = gas - gasleft();
-        uint expectedgas = 21439139;
+        uint expectedgas = 21232410;
         if (usedgas < expectedgas) {
             console.log("ball saved %s gas...currently %s", expectedgas - usedgas, usedgas);
         }
@@ -270,8 +269,7 @@ contract BallTest is BaseHelper {
         // at block 16445606 ethusd about 1554, xau  about 1925
         // initial par is 4, so ricousd should be 1925*4
 
-        ploker.ploke(RICO_REF_TAG);
-        (bytes32 val,) = fb.pull(address(mdn), RICO_REF_TAG);
+        (bytes32 val,) = fb.pull(address(divider), RICO_REF_TAG);
         uint vox_price = uint(val);
         assertGt(uint(vox_price), INIT_PAR * 99 / 100);
         assertLt(uint(vox_price), INIT_PAR * 100 / 99);

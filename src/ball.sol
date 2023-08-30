@@ -150,17 +150,6 @@ contract Ball is Math, Ward {
                        address(multiplier), RICO_USD_TAG,
                        address(cladapt),    XAU_USD_TAG);
 
-        Medianizer.Config memory mdnconf = Medianizer.Config(new address[](1), new bytes32[](1), 1);
-        mdnconf.srcs[0] = address(divider); mdnconf.tags[0] = RICO_REF_TAG;
-        mdn.setConfig(RICO_REF_TAG, mdnconf);
-
-        // need four plokers: rico/ref, rico/risk, risk/rico, collateral/ref
-        Ploker.Config memory plokerconf = Ploker.Config(
-            new address[](1), new bytes32[](1)
-        );
-        plokerconf.combinators[0] = address(mdn); plokerconf.combinatortags[0] = RICO_REF_TAG;
-        ploker.setConfig(RICO_REF_TAG, plokerconf);
-
         //
         // rico/risk, risk/rico
         //
@@ -171,11 +160,13 @@ contract Ball is Math, Ward {
         _configureBlock(divider, RISK_RICO_TAG,
                        address(this),     bytes32("ONE"),
                        address(uniadapt), RICO_RISK_TAG);
+        Medianizer.Config memory mdnconf = Medianizer.Config(new address[](1), new bytes32[](1), 1);
         mdnconf.srcs[0] = address(divider); mdnconf.tags[0] = RISK_RICO_TAG;
         mdn.setConfig(RISK_RICO_TAG, mdnconf);
         mdnconf.srcs[0] = address(uniadapt); mdnconf.tags[0] = RICO_RISK_TAG;
         mdn.setConfig(RICO_RISK_TAG, mdnconf);
 
+        Ploker.Config memory plokerconf = Ploker.Config(new address[](1), new bytes32[](1));
         plokerconf = Ploker.Config(new address[](1), new bytes32[](1));
         plokerconf.combinators[0] = address(mdn); plokerconf.combinatortags[0] = RISK_RICO_TAG;
         ploker.setConfig(RISK_RICO_TAG, plokerconf);
@@ -245,7 +236,7 @@ contract Ball is Math, Ward {
         fbank.link('rico', rico);
         fbank.link('risk', risk);
         fbank.link('fb',  feedbase);
-        fbank.link('tip', address(mdn));
+        fbank.link('tip', address(divider));
 
         fbank.file('par',  bytes32(args.par));
         fbank.file('ceil', bytes32(args.ceil));
