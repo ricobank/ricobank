@@ -4,12 +4,8 @@
 
 pragma solidity ^0.8.19;
 
-import { Gem }  from '../lib/gemfab/src/gem.sol';
-import { Flog } from './mixin/flog.sol';
-import { Math } from './mixin/math.sol';
 import { Vat }  from './vat.sol';
-import { ERC20Hook } from '../src/hook/ERC20hook.sol';
-import { Bank } from './bank.sol';
+import { Bank, Gem } from './bank.sol';
 
 // accounting mechanism
 // triggers collateral (flip), surplus (flap), and deficit (flop) auctions
@@ -39,6 +35,7 @@ contract Vow is Bank {
         VowStorage storage  vowS  = getVowStorage();
         VatStorage storage  vatS  = getVatStorage();
         BankStorage storage bankS = getBankStorage();
+
         for (uint256 i = 0; i < ilks.length; i++) {
             Vat(address(this)).drip(ilks[i]);
         }
@@ -50,12 +47,15 @@ contract Vow is Bank {
         // use equal scales for sin and joy
         uint sin = vatS.sin / RAY;
         if (joy > sin) {
+
             // pay down sin, then auction off surplus RICO for RISK
             uint over = joy - sin;
             if (sin > 1) {
+                // gas - don't zero sin
                 Vat(address(this)).heal(sin - 1);
                 joy -= sin - 1;
             } else {
+                // gas - don't zero joy
                 over -= 1;
             }
 
@@ -65,13 +65,17 @@ contract Vow is Bank {
             uint rush = (over * vowS.flappep + debt * vowS.flappop) / debt;
 
             // buy-and-burn risk with remaining (`over`) rico
-            joy -= over;
+            joy     -= over;
             vatS.joy = joy;
             emit NewPalm0('joy', bytes32(joy));
+
             flow(vowS.flapsrc, vowS.flaptag, rico, over, risk, rush);
+
         } else if (sin > joy) {
+
             // pay down as much sin as possible
             if (joy > 1) {
+                // gas - don't zero joy
                 Vat(address(this)).heal(joy - 1);
                 joy = 1;
             }
@@ -90,13 +94,16 @@ contract Vow is Bank {
             uint flop  = slope * min(block.timestamp - vowS.ramp.bel, vowS.ramp.cel);
             if (0 == flop) revert ErrReflop();
 
+            // update last flop stamp
             vowS.ramp.bel = block.timestamp;
             emit NewPalm0('bel', bytes32(vowS.ramp.bel));
 
             // swap RISK for rico to cover sin
-            joy += flow(vowS.flopsrc, vowS.floptag, risk, flop, rico, rush);
+            // new joy will heal some sin in next flop
+            joy     += flow(vowS.flopsrc, vowS.floptag, risk, flop, rico, rush);
             vatS.joy = joy;
             emit NewPalm0('joy', bytes32(joy));
+
         }
     }
 

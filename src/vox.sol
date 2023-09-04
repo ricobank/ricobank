@@ -17,9 +17,6 @@
 
 pragma solidity ^0.8.19;
 
-import { Feedbase } from '../lib/feedbase/src/Feedbase.sol';
-import { Flog } from './mixin/flog.sol';
-import { Math } from './mixin/math.sol';
 import { Bank } from './bank.sol';
 import { Vat }  from './vat.sol';
 
@@ -37,24 +34,28 @@ contract Vox is Bank {
     function tip() external view returns (address) {return getVoxStorage().tip;}
     function tag() external view returns (bytes32) {return getVoxStorage().tag;}
 
+    // poke par and way
     function poke() _flog_ external {
         VatStorage storage vatS = getVatStorage();
         VoxStorage storage voxS = getVoxStorage();
+
+        // get time diff, update tau
         uint tau_ = voxS.tau;
         if (tau_ == block.timestamp) return;
         uint dt   = block.timestamp - tau_;
-        uint par_ = vatS.par;
-        uint way_ = voxS.way;
-
-        // use previous `way` to grow `par` to keep par updates predictable
-        par_ = grow(par_, way_, dt);
-        vatS.par = par_;
-        voxS.tau = block.timestamp;
-        emit NewPalm0('par', bytes32(par_));
+        voxS.tau  = block.timestamp;
         emit NewPalm0('tau', bytes32(block.timestamp));
 
-        (bytes32 mar, uint ttl) = getBankStorage().fb.pull(voxS.tip, voxS.tag);
+        // use previous `way` to grow `par` to keep par updates predictable
+        uint par_ = vatS.par;
+        uint way_ = voxS.way;
+        par_      = grow(par_, way_, dt);
+        vatS.par  = par_;
+        emit NewPalm0('par', bytes32(par_));
+
+        // pull mar
         // forgo way updates if the feed can't be sensed
+        (bytes32 mar, uint ttl) = getBankStorage().fb.pull(voxS.tip, voxS.tag);
         if (block.timestamp > ttl) { return; }
 
         // raise the price rate (way) when mar < par, lower when mar > par

@@ -459,7 +459,6 @@ contract DssBiteTest is DssVatTest {
         feedpush(RICO_RISK_TAG, bytes32(RAY), UINT256_MAX);
         feedpush(RISK_RICO_TAG, bytes32(RAY), UINT256_MAX);
         gov.mint(address(guy), 100 * WAD);
-        guy.approve(address(gov), ahook, UINT256_MAX);
         Vow(bank).keep(ilks);
         assertEq(rico.balanceOf(bank), 0);
         assertEq(vow_Awe() / RAY, 0);

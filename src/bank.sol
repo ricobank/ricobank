@@ -12,6 +12,8 @@ import { Gem }  from '../lib/gemfab/src/gem.sol';
 import { Feedbase } from '../lib/feedbase/src/Feedbase.sol';
 
 abstract contract Bank is Math, Flog, Palm, OwnableInternal{
+
+    // per-collateral type accounting
     struct Ilk {
         uint256 tart;  // [wad] Total Normalised Debt
         uint256 rack;  // [ray] Accumulated Rate
@@ -29,13 +31,13 @@ abstract contract Bank is Math, Flog, Palm, OwnableInternal{
     }
 
     struct BankStorage {
-        Gem rico;
+        Gem      rico;
         Feedbase fb;
     }
 
     struct VatStorage {
-        mapping (bytes32 => Ilk) ilks;
-        mapping (bytes32 => mapping (address => uint256)) urns;
+        mapping (bytes32 => Ilk) ilks;                          // collaterals
+        mapping (bytes32 => mapping (address => uint256)) urns; // CDPs
         uint joy;   // [wad]
         uint sin;   // [rad]
         uint rest;  // [rad] Remainder from
@@ -62,11 +64,11 @@ abstract contract Bank is Math, Flog, Palm, OwnableInternal{
         Ramp    ramp;
         uint256 flappep;  // [ray] rush gradient
         uint256 flappop;  // [ray] rush offset
-        address flapsrc;
+        address flapsrc;  // flap feed
         bytes32 flaptag;
         uint256 floppep;  // [ray] rush gradient
         uint256 floppop;  // [ray] rush offset
-        address flopsrc;
+        address flopsrc;  // flop feed
         bytes32 floptag;
     }
 
@@ -74,13 +76,11 @@ abstract contract Bank is Math, Flog, Palm, OwnableInternal{
         address tip; // feedbase `src` address
         bytes32 tag; // feedbase `tag` bytes32
 
-        uint256 way;  // [ray] System Rate (SP growth rate)
-        uint256 how;  // [ray] sensitivity paramater
-        uint256 tau;  // [sec] last poke
-        uint256 cap;  // [ray] `way` bound
+        uint256 way; // [ray] System Rate (SP growth rate)
+        uint256 how; // [ray] sensitivity paramater
+        uint256 tau; // [sec] last poke
+        uint256 cap; // [ray] `way` bound
     }
-
-    error ErrWrongKey();
 
     bytes32 constant VAT_INFO = 'vat.0';
     bytes32 constant VAT_POS  = keccak256(abi.encodePacked(VAT_INFO));
@@ -91,17 +91,19 @@ abstract contract Bank is Math, Flog, Palm, OwnableInternal{
     bytes32 constant BANK_INFO = 'ricobank.0';
     bytes32 constant BANK_POS  = keccak256(abi.encodePacked(BANK_INFO));
     function getVowStorage() internal pure returns (VowStorage storage vs) {
-        bytes32 pos = VOW_POS; assembly { vs.slot := pos }
+        bytes32 pos = VOW_POS;  assembly { vs.slot := pos }
     }
     function getVoxStorage() internal pure returns (VoxStorage storage vs) {
-        bytes32 pos = VOX_POS; assembly { vs.slot := pos }
+        bytes32 pos = VOX_POS;  assembly { vs.slot := pos }
     }
     function getVatStorage() internal pure returns (VatStorage storage vs) {
-        bytes32 pos = VAT_POS; assembly { vs.slot := pos }
+        bytes32 pos = VAT_POS;  assembly { vs.slot := pos }
     }
     function getBankStorage() internal pure returns (BankStorage storage bs) {
         bytes32 pos = BANK_POS; assembly { bs.slot := pos }
     }
+
+    error ErrWrongKey();
 
     // bubble up error code from a reverted call
     function bubble(bytes memory data) internal pure {
@@ -110,4 +112,5 @@ abstract contract Bank is Math, Flog, Palm, OwnableInternal{
             revert(add(32, data), size)
         }
     }
+
 }

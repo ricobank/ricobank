@@ -20,12 +20,8 @@
 
 pragma solidity ^0.8.19;
 
-import { Math } from './mixin/math.sol';
-import { Flog } from './mixin/flog.sol';
-
-import { Gem }  from '../lib/gemfab/src/gem.sol';
+import { Bank, Gem } from './bank.sol';
 import { Hook } from './hook/hook.sol';
-import { Bank } from './bank.sol';
 
 contract Vat is Bank {
     function ilks(bytes32 i) view external returns (Ilk memory) {
@@ -81,9 +77,10 @@ contract Vat is Bank {
             chop: 0, line: 0, dust: 0
         });
         emit NewPalm1('rack', ilk, bytes32(RAY));
-        emit NewPalm1('fee', ilk, bytes32(RAY));
+        emit NewPalm1('fee',  ilk, bytes32(RAY));
+        emit NewPalm1('liqr', ilk, bytes32(RAY));
         emit NewPalm1('hook', ilk, bytes32(bytes20(hook)));
-        emit NewPalm1('rho', ilk, bytes32(block.timestamp));
+        emit NewPalm1('rho',  ilk, bytes32(block.timestamp));
         emit NewPalm1('tart', ilk, bytes32(uint(0)));
         emit NewPalm1('chop', ilk, bytes32(uint(0)));
         emit NewPalm1('line', ilk, bytes32(uint(0)));
@@ -101,9 +98,8 @@ contract Vat is Bank {
         if (data.length != 64) revert ErrHookData();
  
         (uint cut, uint ttl) = abi.decode(data, (uint, uint));
-        if (block.timestamp > ttl) {
-            return (Spot.Iffy, 0, 0);
-        }
+        if (block.timestamp > ttl) return (Spot.Iffy, 0, 0);
+
         // par acts as a multiplier for collateral requirements
         // par increase has same effect on cut as fee accumulation through rack
         // par decrease acts like a negative fee
@@ -137,19 +133,27 @@ contract Vat is Bank {
         uint tab = ilk.rack * art;
 
         if (dtab > 0) {
+            // borrow
             uint wad = uint(dtab) / RAY;
+
             vs.debt += wad;
             emit NewPalm0('debt', bytes32(vs.debt));
+
             vs.rest += uint(dtab) % RAY;
             emit NewPalm0('rest', bytes32(vs.rest));
+
             getBankStorage().rico.mint(msg.sender, wad);
         } else if (dtab < 0) {
+            // paydown
             // dtab is a rad, so burn one extra to round in system's favor
             uint wad = uint(-dtab) / RAY + 1;
+
             vs.rest += add(wad * RAY, dtab);
             emit NewPalm0('rest', bytes32(vs.rest));
+
             vs.debt -= wad;
             emit NewPalm0('debt', bytes32(vs.debt));
+
             getBankStorage().rico.burn(msg.sender, wad);
         }
 
@@ -185,6 +189,7 @@ contract Vat is Bank {
         VatStorage storage vs = getVatStorage();
         // liquidate the urn
         Ilk storage ilk = vs.ilks[i];
+
         uint art = vs.urns[i][u];
         vs.urns[i][u] = 0;
         emit NewPalm2('art', i, bytes32(bytes20(u)), bytes32(uint(0)));

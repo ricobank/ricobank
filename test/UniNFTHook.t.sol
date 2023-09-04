@@ -187,7 +187,6 @@ contract NFTHookTest is Test, RicoSetUp {
         expected_cost_for_keeper = expected_cost_for_keeper * 10001 / 10000;
         rico_mint(expected_cost_for_keeper, false);
         rico.transfer(address(guy), expected_cost_for_keeper);
-        guy.approve(arico, bank, expected_cost_for_keeper);
         uint self_pre_bail_rico = rico.balanceOf(self);
         guy.bail(uilk, self);
 

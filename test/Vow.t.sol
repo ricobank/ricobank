@@ -84,7 +84,6 @@ contract VowTest is Test, RicoSetUp {
         uint expected_risk_cost = wdiv(surplus * rico_price_in_risk, rush);
 
         risk.mint(self, WAD * 1_000);
-        risk.approve(bank, type(uint).max);
         uint self_rico_1 = rico.balanceOf(self);
         uint self_risk_1 = risk.balanceOf(self);
 
@@ -140,7 +139,6 @@ contract VowTest is Test, RicoSetUp {
         uint expected = wmul(borrow, wmul(WAD * 75 / 100, WAD * 75 / 100));
         rico_mint(expected, false);
         rico.transfer(address(guy), expected);
-        guy.approve(address(rico), bank, expected);
         bytes memory data = guy.bail(gilk, self);
 
         uint earn = uint(bytes32(data));
@@ -245,7 +243,6 @@ contract VowTest is Test, RicoSetUp {
 
         rico_mint(10000 * WAD, true);
         rico.transfer(address(guy), 10000 * WAD);
-        guy.approve(arico, bank, UINT256_MAX);
 
         rico_mint(10000 * WAD, true);
         rico.transfer(address(guy), 10000 * WAD);
@@ -499,7 +496,6 @@ contract VowJsTest is Test, RicoSetUp {
         // bail the urn frobbed in setup
         rico_mint(1000 * WAD, false);
         rico.transfer(address(guy), 1000 * WAD);
-        guy.approve(arico, ahook, UINT256_MAX);
         vm.expectCall(address(hook), abi.encodePacked(ERC20Hook.bailhook.selector));
         Vat(bank).bail(i0, me);
         // urn should be bailed
