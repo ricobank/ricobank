@@ -50,16 +50,16 @@ contract NFTHookTest is Test, RicoSetUp {
         IERC721(UNI_NFT_ADDR).approve(bank, goldwethtokid);
         IERC721(UNI_NFT_ADDR).approve(bank, golddaitokid);
 
-        Vat(bank).filhi2(uilk, 'fsrc', uilk, bytes32(bytes20(WETH)), bytes32(bytes20(address(mdn))));
-        Vat(bank).filhi2(uilk, 'ftag', uilk, bytes32(bytes20(WETH)), wrtag);
+        Vat(bank).filh(uilk, 'fsrc', single(bytes32(bytes20(WETH))), bytes32(bytes20(address(mdn))));
+        Vat(bank).filh(uilk, 'ftag', single(bytes32(bytes20(WETH))), wrtag);
  
         feedpush(wrtag, bytes32(1000 * RAY), type(uint).max);
-        Vat(bank).filhi2(uilk, 'fsrc', uilk, bytes32(bytes20(agold)), bytes32(bytes20(address(mdn))));
-        Vat(bank).filhi2(uilk, 'ftag', uilk, bytes32(bytes20(agold)), grtag);
+        Vat(bank).filh(uilk, 'fsrc', single(bytes32(bytes20(agold))), bytes32(bytes20(address(mdn))));
+        Vat(bank).filh(uilk, 'ftag', single(bytes32(bytes20(agold))), grtag);
  
         feedpush(grtag, bytes32(1900 * RAY), type(uint).max);
-        Vat(bank).filhi2(uilk, 'fsrc', uilk, bytes32(bytes20(DAI)), bytes32(bytes20(address(mdn))));
-        Vat(bank).filhi2(uilk, 'ftag', uilk, bytes32(bytes20(DAI)), drtag);
+        Vat(bank).filh(uilk, 'fsrc', single(bytes32(bytes20(DAI))), bytes32(bytes20(address(mdn))));
+        Vat(bank).filh(uilk, 'ftag', single(bytes32(bytes20(DAI))), drtag);
  
         feedpush(drtag, bytes32(RAY), type(uint).max);
 
@@ -382,19 +382,53 @@ contract NFTHookTest is Test, RicoSetUp {
     }
 
     function test_geth() public {
-        assertEq(address(bytes20(Vat(bank).geth(uilk, 'nfpm'))), address(nfpm));
-        assertEq(uint(Vat(bank).geth(uilk, 'ROOM')), HOOK_ROOM);
-        assertEq(address(bytes20(Vat(bank).geth(uilk, 'wrap'))), uniwrapper);
+        assertEq(address(bytes20(Vat(bank).geth(uilk, 'nfpm', empty))), address(nfpm));
+        assertEq(uint(Vat(bank).geth(uilk, 'ROOM', empty)), HOOK_ROOM);
+        assertEq(address(bytes20(Vat(bank).geth(uilk, 'wrap', empty))), uniwrapper);
         vm.expectRevert(Bank.ErrWrongKey.selector);
-        Vat(bank).geth(uilk, 'oh');
+        Vat(bank).geth(uilk, 'oh', empty);
 
         bytes32 val;
-        val = Vat(bank).gethi2(uilk, 'fsrc', uilk, bytes32(bytes20(WETH)));
+        val = Vat(bank).geth(uilk, 'fsrc', single(bytes32(bytes20(WETH))));
         assertEq(address(bytes20(val)), address(mdn));
-        val = Vat(bank).gethi2(uilk, 'ftag', uilk, bytes32(bytes20(WETH)));
+        val = Vat(bank).geth(uilk, 'ftag', single(bytes32(bytes20(WETH))));
         assertEq(val, wrtag);
+
+        // wrong key
         vm.expectRevert(Bank.ErrWrongKey.selector);
-        Vat(bank).gethi2(uilk, 'oh', uilk, bytes32(bytes20(WETH)));
+        Vat(bank).geth(uilk, 'oh', single(bytes32(bytes20(WETH))));
+
+        // wrong xs length
+        vm.expectRevert(Bank.ErrWrongKey.selector);
+        Vat(bank).geth(uilk, 'oh', new bytes32[](2));
+        vm.expectRevert(Bank.ErrWrongKey.selector);
+        Vat(bank).geth(uilk, 'fsrc', new bytes32[](0));
+    }
+
+    function test_filh() public {
+        // wrong key
+        vm.expectRevert(Bank.ErrWrongKey.selector);
+        Vat(bank).filh(uilk, 'blah', empty, bytes32(bytes20(address(nfpm))));
+        // wrong xs length
+        vm.expectRevert(Bank.ErrWrongKey.selector);
+        Vat(bank).filh(uilk, 'ROOM', new bytes32[](1), bytes32(uint(6)));
+
+        Vat(bank).filh(uilk, 'ROOM', empty, bytes32(uint(5)));
+        Vat(bank).filh(uilk, 'nfpm', empty, bytes32(bytes20(address(nfpm))));
+        Vat(bank).filh(uilk, 'wrap', empty, bytes32(bytes20(self)));
+
+
+        // wrong key
+        vm.expectRevert(Bank.ErrWrongKey.selector);
+        Vat(bank).filh(uilk, 'blah', single(bytes32(bytes20(self))), bytes32(uint(5)));
+        // wrong xs length
+        vm.expectRevert(Bank.ErrWrongKey.selector);
+        Vat(bank).filh(uilk, 'fsrc', empty, bytes32(uint(5)));
+        vm.expectRevert(Bank.ErrWrongKey.selector);
+        Vat(bank).filh(uilk, 'fsrc', new bytes32[](2), bytes32(uint(5)));
+
+        Vat(bank).filh(uilk, 'fsrc', single(bytes32(bytes20(self))), bytes32(uint(10)));
+        Vat(bank).filh(uilk, 'ftag', single(bytes32(bytes20(self))), bytes32(uint(100)));
     }
 
 }

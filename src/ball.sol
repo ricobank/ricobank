@@ -44,6 +44,7 @@ contract Ball is Math, Ward {
     bytes32 internal constant CAP = bytes32(uint(1000000021970000000000000000));
     uint256 internal constant MIN_P_SIZE    = 2;
     uint256 internal constant MAX_P_SIZE    = 3;
+    bytes32[] internal empty = new bytes32[](0);
     IDiamondCuttable.FacetCutAction internal constant ADD = IDiamondCuttable.FacetCutAction.ADD;
 
     Vat public vat;
@@ -177,7 +178,7 @@ contract Ball is Math, Ward {
     function setup(BallArgs calldata args) _ward_ external payable {
         IDiamondCuttable.FacetCut[] memory facetCuts = new IDiamondCuttable.FacetCut[](4);
         bytes4[] memory filesels = new bytes4[](4);
-        bytes4[] memory vatsels  = new bytes4[](25);
+        bytes4[] memory vatsels  = new bytes4[](21);
         bytes4[] memory vowsels  = new bytes4[](7);
         bytes4[] memory voxsels  = new bytes4[](7);
         File fbank = File(bank);
@@ -188,29 +189,25 @@ contract Ball is Math, Ward {
         filesels[3] = File.rico.selector;
         vatsels[0]  = Vat.filk.selector;
         vatsels[1]  = Vat.filh.selector;
-        vatsels[2]  = Vat.filhi.selector;
-        vatsels[3]  = Vat.filhi2.selector;
-        vatsels[4]  = Vat.init.selector;
-        vatsels[5]  = Vat.frob.selector;
-        vatsels[6]  = Vat.bail.selector;
-        vatsels[7]  = Vat.safe.selector;
-        vatsels[8]  = Vat.heal.selector;
-        vatsels[9]  = Vat.joy.selector;
-        vatsels[10] = Vat.sin.selector;
-        vatsels[11] = Vat.ilks.selector;
-        vatsels[12] = Vat.urns.selector;
-        vatsels[13] = Vat.rest.selector;
-        vatsels[14] = Vat.debt.selector;
-        vatsels[15] = Vat.ceil.selector;
-        vatsels[16] = Vat.par.selector;
-        vatsels[17] = Vat.drip.selector;
-        vatsels[18] = Vat.MINT.selector;
-        vatsels[19] = Vat.ink.selector;
-        vatsels[20] = Vat.flash.selector;
-        vatsels[21] = Vat.geth.selector;
-        vatsels[22] = Vat.gethi.selector;
-        vatsels[23] = Vat.gethi2.selector;
-        vatsels[24] = Vat.hookcallext.selector;
+        vatsels[2]  = Vat.init.selector;
+        vatsels[3]  = Vat.frob.selector;
+        vatsels[4]  = Vat.bail.selector;
+        vatsels[5]  = Vat.safe.selector;
+        vatsels[6]  = Vat.heal.selector;
+        vatsels[7]  = Vat.joy.selector;
+        vatsels[8] = Vat.sin.selector;
+        vatsels[9] = Vat.ilks.selector;
+        vatsels[10] = Vat.urns.selector;
+        vatsels[11] = Vat.rest.selector;
+        vatsels[12] = Vat.debt.selector;
+        vatsels[13] = Vat.ceil.selector;
+        vatsels[14] = Vat.par.selector;
+        vatsels[15] = Vat.drip.selector;
+        vatsels[16] = Vat.MINT.selector;
+        vatsels[17] = Vat.ink.selector;
+        vatsels[18] = Vat.flash.selector;
+        vatsels[19] = Vat.geth.selector;
+        vatsels[20] = Vat.hookcallext.selector;
         vowsels[0]  = Vow.keep.selector;
         vowsels[1]  = Vow.RISK.selector;
         vowsels[2]  = Vow.ramp.selector;
@@ -270,9 +267,9 @@ contract Ball is Math, Ward {
         Vat(bank).filk(ilk, 'fee',  bytes32(ilkparams.fee));
         Vat(bank).filk(ilk, 'line', bytes32(ilkparams.line));
         Vat(bank).filk(ilk, 'liqr', bytes32(ilkparams.liqr));
-        Vat(bank).filhi(ilk, 'gem',  ilk, bytes32(bytes20(ilkparams.gem)));
-        Vat(bank).filhi(ilk, 'fsrc', ilk, bytes32(bytes20(address(mdn))));
-        Vat(bank).filhi(ilk, 'ftag', ilk, gemreftag);
+        Vat(bank).filh(ilk, 'gem', empty, bytes32(bytes20(ilkparams.gem)));
+        Vat(bank).filh(ilk, 'fsrc', empty, bytes32(bytes20(address(mdn))));
+        Vat(bank).filh(ilk, 'ftag', empty, gemreftag);
         {
             Medianizer.Config memory mdnconf = Medianizer.Config(new address[](1), new bytes32[](1), 1);
             mdnconf.srcs[0] = address(divider); mdnconf.tags[0] = gemreftag;
@@ -310,9 +307,9 @@ contract Ball is Math, Ward {
         if (Vat(bank).ilks(UNI_NFT_ILK).rack != 0) return;
         // initialize uni ilk
         Vat(bank).init(ups.ilk, address(nfthook));
-        Vat(bank).filh(UNI_NFT_ILK, 'nfpm', bytes32(bytes20(address(ups.nfpm))));
-        Vat(bank).filh(UNI_NFT_ILK, 'ROOM', bytes32(ups.room));
-        Vat(bank).filh(UNI_NFT_ILK, 'wrap', bytes32(bytes20(address(ups.uniwrapper))));
+        Vat(bank).filh(UNI_NFT_ILK, 'nfpm', empty, bytes32(bytes20(address(ups.nfpm))));
+        Vat(bank).filh(UNI_NFT_ILK, 'ROOM', empty, bytes32(ups.room));
+        Vat(bank).filh(UNI_NFT_ILK, 'wrap', empty, bytes32(bytes20(address(ups.uniwrapper))));
 
         Vat(bank).filk(ups.ilk, 'fee', bytes32(ups.fee));
         Vat(bank).filk(ups.ilk, 'chop', bytes32(ups.chop));

@@ -47,8 +47,8 @@ describe('Vox', () => {
 
     await send(bank.file, b32('par'), b32(wad(7)))
 
-    await send(bank.filhi, b32('weth'), b32('fsrc'), b32('weth'), ALI + '00'.repeat(12))
-    await send(bank.filhi, b32('weth'), b32('ftag'), b32('weth'), b32('weth:ref'))
+    await send(bank.filh, b32('weth'), b32('fsrc'), [], ALI + '00'.repeat(12))
+    await send(bank.filh, b32('weth'), b32('ftag'), [], b32('weth:ref'))
     await send(fb.push, b32('weth:ref'), bn2b32(ray(0.8)), constants.MaxUint256);
 
     await send(bank.file, b32('flopsrc'), ALI + '00'.repeat(12))
@@ -168,7 +168,7 @@ describe('Vox', () => {
     })
 
     it('deploy gas', async () => {
-      await check(ethers.BigNumber.from(deploygas), 40493959)
+      await check(ethers.BigNumber.from(deploygas), 40260023)
     })
 
     it('ploke gas', async () => {
@@ -190,7 +190,7 @@ describe('Vox', () => {
     it('frob cold gas', async () => {
       let dink = ethers.utils.solidityPack(['int'], [wad(5)])
       let gas = await bank.estimateGas.frob(b32('weth'), ALI, dink, wad(2))
-      await check(gas, 276104)
+      await check(gas, 276019)
     })
 
     it('frob hot gas', async () => {
@@ -199,7 +199,7 @@ describe('Vox', () => {
       let gas = await bank.estimateGas.frob(
         b32('weth'), ALI, ethers.utils.solidityPack(['int'], [wad(5)]), wad(2)
       )
-      await check(gas, 154263)
+      await check(gas, 154176)
     })
 
     it('bail gas', async () => {
@@ -230,7 +230,7 @@ describe('Vox', () => {
       await send(bank.bail, b32('weth'), ALI)
 
       let gas = await bank.estimateGas.keep([])
-      await check(gas, 136078)
+      await check(gas, 136100)
     })
 
     it('poke up gas', async () => {

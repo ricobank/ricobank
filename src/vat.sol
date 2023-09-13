@@ -317,51 +317,20 @@ contract Vat is Bank {
         return _hookcall(i, indata);
     }
 
-    function filh(bytes32 ilk, bytes32 key, bytes32 val)
+    function filh(bytes32 ilk, bytes32 key, bytes32[] calldata xs, bytes32 val)
       onlyOwner _flog_ external {
         _hookcall(ilk, abi.encodeWithSignature(
-            "file(bytes32,bytes32)", key, val
+            "file(bytes32,bytes32,bytes32[],bytes32)", key, ilk, xs, val
         ));
     }
 
-    function filhi(bytes32 ilk, bytes32 key, bytes32 idx, bytes32 val)
-      onlyOwner _flog_ external {
-        _hookcall(ilk, abi.encodeWithSignature(
-            "fili(bytes32,bytes32,bytes32)", key, idx, val
-        ));
-    }
-
-    function filhi2(bytes32 ilk, bytes32 key, bytes32 idx0, bytes32 idx1, bytes32 val)
-      onlyOwner _flog_ external {
-        _hookcall(ilk, abi.encodeWithSignature(
-            "fili2(bytes32,bytes32,bytes32,bytes32)", key, idx0, idx1, val
-        ));
-    }
-
-    function geth(bytes32 ilk, bytes32 key)
+    function geth(bytes32 ilk, bytes32 key, bytes32[] calldata xs)
       external view returns (bytes32) {
         return abi.decode(
             _hookview(ilk, abi.encodeWithSignature(
-                "get(bytes32)", key
+                "get(bytes32,bytes32,bytes32[])", key, ilk, xs
             )), (bytes32)
         );
     }
 
-    function gethi(bytes32 ilk, bytes32 key, bytes32 idx)
-      external view returns (bytes32) {
-        return abi.decode(
-            _hookview(ilk, abi.encodeWithSignature(
-                "geti(bytes32,bytes32)", key, idx
-            )), (bytes32)
-        );
-    }
-
-    function gethi2(bytes32 ilk, bytes32 key, bytes32 idx0, bytes32 idx1)
-      external view returns (bytes32) {
-        return abi.decode(
-            _hookview(ilk, abi.encodeWithSignature(
-                "geti2(bytes32,bytes32,bytes32)", key, idx0, idx1
-            )), (bytes32)
-        );
-    }
 }

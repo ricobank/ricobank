@@ -535,9 +535,9 @@ contract VatTest is Test, RicoSetUp {
         HackyGem(address(hgm)).setargs(hilk, self, int(dink), int(dart));
         HackyGem(address(hgm)).setdepth(1);
         Vat(bank).init(hilk, address(hook));
-        Vat(bank).filhi(hilk, 'gem', hilk, bytes32(bytes20(address(hgm))));
-        Vat(bank).filhi(hilk, 'fsrc', hilk, bytes32(bytes20(address(mdn))));
-        Vat(bank).filhi(hilk, 'ftag', hilk, htag);
+        Vat(bank).filh(hilk, 'gem', empty, bytes32(bytes20(address(hgm))));
+        Vat(bank).filh(hilk, 'fsrc', empty, bytes32(bytes20(address(mdn))));
+        Vat(bank).filh(hilk, 'ftag', empty, htag);
  
         uint amt = WAD;
 
@@ -568,9 +568,9 @@ contract VatTest is Test, RicoSetUp {
         HackyGem(address(hgm)).setargs(hilk, self, int(dink), int(dart));
         HackyGem(address(hgm)).setdepth(1);
         Vat(bank).init(hilk, address(hook));
-        Vat(bank).filhi(hilk, 'gem', hilk, bytes32(bytes20(address(hgm))));
-        Vat(bank).filhi(hilk, 'fsrc', hilk, bytes32(bytes20(address(mdn))));
-        Vat(bank).filhi(hilk, 'ftag', hilk, htag);
+        Vat(bank).filh(hilk, 'gem', empty, bytes32(bytes20(address(hgm))));
+        Vat(bank).filh(hilk, 'fsrc', empty, bytes32(bytes20(address(mdn))));
+        Vat(bank).filh(hilk, 'ftag', empty, htag);
 
         hgm.mint(self, dink * 1000);
         hgm.approve(bank, type(uint).max);
@@ -616,9 +616,9 @@ contract VatTest is Test, RicoSetUp {
         Gem bgm = Gem(address(new BailyGem(Bailer(self), bank, "baily gem", "BGM")));
         BailyGem(address(bgm)).setargs(baililk, self, -int(dink), -int(dart));
         Vat(bank).init(baililk, address(hook));
-        Vat(bank).filhi(baililk, 'gem', baililk, bytes32(bytes20(address(bgm))));
-        Vat(bank).filhi(baililk, 'fsrc', baililk, bytes32(bytes20(address(mdn))));
-        Vat(bank).filhi(baililk, 'ftag', baililk, bailtag);
+        Vat(bank).filh(baililk, 'gem', empty, bytes32(bytes20(address(bgm))));
+        Vat(bank).filh(baililk, 'fsrc', empty, bytes32(bytes20(address(mdn))));
+        Vat(bank).filh(baililk, 'ftag', empty, bailtag);
 
         bgm.mint(self, dink * 1000);
         bgm.approve(bank, type(uint).max);
@@ -894,15 +894,40 @@ contract VatTest is Test, RicoSetUp {
         guy.frob(gilk, self, abi.encodePacked(int(0)), int(WAD));
     }
 
-    function test_gethi() public {
+    function test_geth() public {
         bytes32 val;
-        val = Vat(bank).gethi(gilk, 'fsrc', gilk);
+        val = Vat(bank).geth(gilk, 'fsrc', empty);
         assertEq(address(bytes20(val)), self);
-        val = Vat(bank).gethi(gilk, 'ftag', gilk);
+        val = Vat(bank).geth(gilk, 'ftag', empty);
         assertEq(val, grtag);
  
+        // wrong key
         vm.expectRevert(Bank.ErrWrongKey.selector);
-        Vat(bank).gethi(gilk, 'oh', gilk);
+        Vat(bank).geth(gilk, 'oh', empty);
+
+        // should only work with empty xs
+        vm.expectRevert(Bank.ErrWrongKey.selector);
+        Vat(bank).geth(gilk, 'ftag', new bytes32[](1));
+    }
+
+    function test_filh() public {
+        bytes32 val;
+        val = Vat(bank).geth(gilk, 'fsrc', empty);
+        assertEq(address(bytes20(val)), self);
+        Vat(bank).filh(gilk, 'fsrc', empty, bytes32(bytes20(0)));
+        val = Vat(bank).geth(gilk, 'fsrc', empty);
+        assertEq(address(bytes20(val)), address(0));
+
+        // wrong key
+        vm.expectRevert(Bank.ErrWrongKey.selector);
+        Vat(bank).filh(gilk, 'ok', empty, bytes32(bytes20(self)));
+
+        // should only work with empty xs
+        vm.expectRevert(Bank.ErrWrongKey.selector);
+        Vat(bank).filh(gilk, 'fsrc', new bytes32[](1), bytes32(bytes20(self)));
+
+        vm.expectRevert(Bank.ErrWrongKey.selector);
+        Vat(bank).filh(gilk, 'ftag', new bytes32[](1), bytes32(bytes20(self)));
     }
 
     function test_bail_drips() public {

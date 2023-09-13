@@ -64,6 +64,7 @@ abstract contract RicoSetUp is BaseHelper {
     uint256 constant public floppep    = RAY;
     uint256 constant public floppop    = RAY;
     address public immutable self = payable(address(this));
+    bytes32[] public empty = new bytes32[](0);
 
     ERC20Hook  public hook;
     UniNFTHook public nfthook;
@@ -89,6 +90,11 @@ abstract contract RicoSetUp is BaseHelper {
 
     Guy _bob;
     Guy guy;
+
+    function single(bytes32 x) internal pure returns (bytes32[] memory res) {
+        res = new bytes32[](1);
+        res[0] = x;
+    }
 
     function rico_mint(uint amt, bool bail) internal {
         uint start_gold = gold.balanceOf(self);
@@ -264,9 +270,9 @@ abstract contract RicoSetUp is BaseHelper {
         dai.transfer(address(this), 10000 * WAD);
         dai.approve(bank, type(uint256).max);
         Vat(bank).init(dilk, address(hook));
-        Vat(bank).filhi(dilk, 'gem', dilk, bytes32(bytes20(address(dai))));
-        Vat(bank).filhi(dilk, 'fsrc', dilk, bytes32(bytes20(self)));
-        Vat(bank).filhi(dilk, 'ftag', dilk, drtag);
+        Vat(bank).filh(dilk, 'gem', empty, bytes32(bytes20(address(dai))));
+        Vat(bank).filh(dilk, 'fsrc', empty, bytes32(bytes20(self)));
+        Vat(bank).filh(dilk, 'ftag', empty, drtag);
         Vat(bank).filk(dilk, 'hook', bytes32(uint(bytes32(bytes20(address(hook))))));
         Vat(bank).filk(dilk, bytes32('chop'), bytes32(RAD));
         Vat(bank).filk(dilk, bytes32('line'), bytes32(init_mint * 10 * RAD));
@@ -280,9 +286,9 @@ abstract contract RicoSetUp is BaseHelper {
         gold.mint(self, init_mint * WAD);
         gold.approve(bank, type(uint256).max);
         Vat(bank).init(gilk, address(hook));
-        Vat(bank).filhi(gilk, 'gem', gilk, bytes32(bytes20(address(gold))));
-        Vat(bank).filhi(gilk, 'fsrc', gilk, bytes32(bytes20(self)));
-        Vat(bank).filhi(gilk, 'ftag', gilk, grtag);
+        Vat(bank).filh(gilk, 'gem', empty, bytes32(bytes20(address(gold))));
+        Vat(bank).filh(gilk, 'fsrc', empty, bytes32(bytes20(self)));
+        Vat(bank).filh(gilk, 'ftag', empty, grtag);
  
         Vat(bank).filk(gilk, 'hook', bytes32(uint(bytes32(bytes20(address(hook))))));
         // todo fix other chops, should be rays
@@ -298,9 +304,9 @@ abstract contract RicoSetUp is BaseHelper {
         ruby.mint(self, init_mint * WAD);
         ruby.approve(bank, type(uint256).max);
         Vat(bank).init(rilk, address(hook));
-        Vat(bank).filhi(rilk, 'gem', rilk, bytes32(bytes20(address(ruby))));
-        Vat(bank).filhi(rilk, 'fsrc', rilk, bytes32(bytes20(self)));
-        Vat(bank).filhi(rilk, 'ftag', rilk, rtag);
+        Vat(bank).filh(rilk, 'gem', empty, bytes32(bytes20(address(ruby))));
+        Vat(bank).filh(rilk, 'fsrc', empty, bytes32(bytes20(self)));
+        Vat(bank).filh(rilk, 'ftag', empty, rtag);
  
         Vat(bank).filk(rilk, 'hook', bytes32(uint(bytes32(bytes20(address(hook))))));
         Vat(bank).filk(rilk, bytes32('chop'), bytes32(RAD));

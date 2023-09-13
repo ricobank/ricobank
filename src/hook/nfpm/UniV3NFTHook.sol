@@ -228,48 +228,46 @@ contract UniNFTHook is Hook, Bank {
         }
     }
 
-    function fili2(bytes32 key, bytes32 i, bytes32 _gem, bytes32 val)
+    function file(bytes32 key, bytes32 i, bytes32[] calldata xs, bytes32 val)
       external {
         UniNFTHookStorage storage hs = getStorage();
-        address gem = address(bytes20(_gem));
-        if (key == 'fsrc') {
-            hs.sources[i][gem].fsrc = address(bytes20(val));
-        } else if (key == 'ftag') {
-            hs.sources[i][gem].ftag = val;
+
+        if (xs.length == 0) {
+            if (key == 'nfpm') { hs.nfpm = INonfungiblePositionManager(address(bytes20(val)));
+            } else if (key == 'ROOM') { hs.ROOM = uint(val);
+            } else if (key == 'wrap') { hs.wrap = IUniWrapper(address(bytes20(val)));
+            } else { revert ErrWrongKey(); }
+            emit NewPalm0(concat(INFO, '.', key), val);
+        } else if (xs.length == 1) {
+            address gem = address(bytes20(xs[0]));
+
+            if (key == 'fsrc') { hs.sources[i][gem].fsrc = address(bytes20(val));
+            } else if (key == 'ftag') { hs.sources[i][gem].ftag = val;
+            } else { revert ErrWrongKey(); }
+            emit NewPalm2(concat(INFO, '.', key), i, xs[0], val);
         } else {
             revert ErrWrongKey();
         }
-        emit NewPalm2(concat(INFO, '.', key), i, _gem, val);
     }
 
-    function file(bytes32 key, bytes32 val) external {
-        UniNFTHookStorage storage hs = getStorage();
-        if (key == 'nfpm') {
-            hs.nfpm = INonfungiblePositionManager(address(bytes20(val)));
-        } else if (key == 'ROOM') {
-            hs.ROOM = uint(val);
-        } else if (key == 'wrap') {
-            hs.wrap = IUniWrapper(address(bytes20(val)));
-        } else {
-            revert ErrWrongKey();
-        }
-        emit NewPalm0(concat(INFO, '.', key), val);
-    }
-
-    function get(bytes32 key) view external returns (bytes32) {
-        UniNFTHookStorage storage hs = getStorage();
-        if (key == 'nfpm') { return bytes32(bytes20(address(hs.nfpm)));
-        } else if (key == 'ROOM') { return bytes32(hs.ROOM);
-        } else if (key == 'wrap') { return bytes32(bytes20(address(hs.wrap)));
-        } else { revert ErrWrongKey(); }
-    }
-
-    function geti2(bytes32 key, bytes32 i, bytes32 _gem)
+    function get(bytes32 key, bytes32 i, bytes32[] calldata xs)
       view external returns (bytes32) {
         UniNFTHookStorage storage hs = getStorage();
-        address gem = address(bytes20(_gem));
-        if (key == 'fsrc') { return bytes32(bytes20(hs.sources[i][gem].fsrc));
-        } else if (key == 'ftag') { return hs.sources[i][gem].ftag;
-        } else { revert ErrWrongKey(); }
+
+        if (xs.length == 0) {
+            if (key == 'nfpm') { return bytes32(bytes20(address(hs.nfpm)));
+            } else if (key == 'ROOM') { return bytes32(hs.ROOM);
+            } else if (key == 'wrap') { return bytes32(bytes20(address(hs.wrap)));
+            } else { revert ErrWrongKey(); }
+        } else if (xs.length == 1) {
+            address gem = address(bytes20(xs[0]));
+
+            if (key == 'fsrc') { return bytes32(bytes20(hs.sources[i][gem].fsrc));
+            } else if (key == 'ftag') { return hs.sources[i][gem].ftag;
+            } else { revert ErrWrongKey(); }
+        } else {
+            revert ErrWrongKey();
+        }
     }
+
 }

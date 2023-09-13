@@ -119,27 +119,38 @@ contract ERC20Hook is Hook, Bank {
         return (uint(val) * hs.inks[i][u], ttl);
     }
 
-    function fili(bytes32 key, bytes32 idx, bytes32 val)
+    function file(bytes32 key, bytes32 i, bytes32[] calldata xs, bytes32 val)
       external {
         ERC20HookStorage storage hs = getStorage();
-        if (key == 'gem') {
-            hs.items[idx].gem = address(bytes20(val));
-        } else if (key == 'fsrc') {
-            hs.items[idx].fsrc = address(bytes20(val));
-        } else if (key == 'ftag') {
-            hs.items[idx].ftag = val;
-        } else { revert ErrWrongKey(); }
-        emit NewPalm1(concat(INFO, '.', key), idx, val);
+
+        if (xs.length == 0) {
+            if (key == 'gem') {
+                hs.items[i].gem = address(bytes20(val));
+            } else if (key == 'fsrc') {
+                hs.items[i].fsrc = address(bytes20(val));
+            } else if (key == 'ftag') {
+                hs.items[i].ftag = val;
+            } else { revert ErrWrongKey(); }
+            emit NewPalm1(concat(INFO, '.', key), i, val);
+        } else {
+            revert ErrWrongKey();
+        }
     }
 
-    function geti(bytes32 key, bytes32 idx) view external returns (bytes32) {
+    function get(bytes32 key, bytes32 i, bytes32[] calldata xs)
+      view external returns (bytes32) {
         ERC20HookStorage storage hs = getStorage();
-        if (key == 'gem') {
-            return bytes32(bytes20(hs.items[idx].gem));
-        } else if (key == 'fsrc') {
-            return bytes32(bytes20(hs.items[idx].fsrc));
-        } else if (key == 'ftag') {
-            return hs.items[idx].ftag;
-        } else { revert ErrWrongKey(); }
+
+        if (xs.length == 0) {
+            if (key == 'gem') {
+                return bytes32(bytes20(hs.items[i].gem));
+            } else if (key == 'fsrc') {
+                return bytes32(bytes20(hs.items[i].fsrc));
+            } else if (key == 'ftag') {
+                return hs.items[i].ftag;
+            } else { revert ErrWrongKey(); }
+        } else {
+            revert ErrWrongKey();
+        }
     }
 }
