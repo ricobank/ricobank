@@ -216,7 +216,7 @@ describe('Vox', () => {
     })
 
     it('deploy gas', async () => {
-      await check(ethers.BigNumber.from(deploygas), 40252917)
+      await check(ethers.BigNumber.from(deploygas), 40563883)
     })
 
     it('ploke gas', async () => {
@@ -238,7 +238,7 @@ describe('Vox', () => {
     it('frob cold gas', async () => {
       let dink = ethers.utils.solidityPack(['int'], [wad(5)])
       let gas = await bank.estimateGas.frob(b32('weth'), ALI, dink, wad(2))
-      await check(gas, 276019)
+      await check(gas, 276042)
     })
 
     it('frob hot gas', async () => {
@@ -247,7 +247,7 @@ describe('Vox', () => {
       let gas = await bank.estimateGas.frob(
         b32('weth'), ALI, ethers.utils.solidityPack(['int'], [wad(5)]), wad(2)
       )
-      await check(gas, 154449)
+      await check(gas, 154472)
     })
 
     it('bail gas', async () => {
@@ -268,7 +268,7 @@ describe('Vox', () => {
       await send(bank.drip, b32('weth'))
 
       let gas = await bank.estimateGas.keep([])
-      await check(gas, 101237)
+      await check(gas, 101260)
     })
 
     it('keep deficit gas', async() => {
@@ -278,7 +278,7 @@ describe('Vox', () => {
       await send(bank.bail, b32('weth'), ALI)
 
       let gas = await bank.estimateGas.keep([])
-      await check(gas, 136100)
+      await check(gas, 136124)
     })
 
     it('poke up gas', async () => {
@@ -321,7 +321,7 @@ describe('Vox', () => {
             [dai.address + '00'.repeat(12)], b32('dai:ref')
         )
         await send(fb.push, b32('dai:ref'), bn2b32(ray(1)), constants.MaxUint256)
- 
+
         await send(
             bank.filh, b32(':uninft'), b32('fsrc'),
             [rico.address + '00'.repeat(12)], ALI + '00'.repeat(12)
@@ -341,7 +341,7 @@ describe('Vox', () => {
             '0x075e72a5eDf65F0A5f44699c7654C1a76941Ddc8'
         );
         await send(dai.connect(whale).transfer, ALI, amt.mul(3))
- 
+
         for (let i = 0; i < 3; i++) {
             let joinres = await join_pool({
                 nfpm: dapp.nonfungiblePositionManager, ethers, ali,
@@ -354,7 +354,7 @@ describe('Vox', () => {
             ricodaitokids.push(joinres.tokenId)
         }
 
-        let dink = ethers.utils.solidityPack(
+        dink = ethers.utils.solidityPack(
             ['int', 'uint', 'uint', 'uint'], [1].concat(ricodaitokids)
         )
         await send(bank.frob, b32(':uninft'), ALI, dink, wad(10))
@@ -364,7 +364,7 @@ describe('Vox', () => {
             ['int', 'uint', 'uint'], [-1, ricodaitokids[2], ricodaitokids[1]]
         )
         let gas = await bank.estimateGas.frob(b32(':uninft'), ALI, dink, wad(-9))
-        await check(gas, 443558)
+        await check(gas, 443270)
         await send(bank.frob, b32(':uninft'), ALI, dink, wad(-9))
     })
   })

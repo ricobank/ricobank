@@ -437,4 +437,21 @@ contract NFTHookTest is Test, RicoSetUp {
         data = abi.encodePacked(-int(1), golddaitokid);
     }
 
+    function test_no_feed() public {
+        // weth feed null...frob should fail
+        Vat(bank).filh(uilk, 'fsrc', single(bytes32(bytes20(WETH))), bytes32(uint(0)));
+        Vat(bank).filh(uilk, 'fsrc', single(bytes32(bytes20(agold))), bytes32(bytes20(address(mdn))));
+        vm.expectRevert();
+        Vat(bank).frob(uilk, self, abi.encodePacked(int(1), goldwethtokid), int(WAD));
+
+        // gold feed null...frob should fail
+        Vat(bank).filh(uilk, 'fsrc', single(bytes32(bytes20(WETH))), bytes32(bytes20(address(mdn))));
+        Vat(bank).filh(uilk, 'fsrc', single(bytes32(bytes20(agold))), bytes32(uint(0)));
+        vm.expectRevert();
+        Vat(bank).frob(uilk, self, abi.encodePacked(int(1), goldwethtokid), int(WAD));
+
+        // both feeds non-null...frob should pass
+        Vat(bank).filh(uilk, 'fsrc', single(bytes32(bytes20(agold))), bytes32(bytes20(address(mdn))));
+        Vat(bank).frob(uilk, self, abi.encodePacked(int(1), goldwethtokid), int(WAD));
+    }
 }

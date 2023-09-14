@@ -193,14 +193,7 @@ contract UniNFTHook is Hook, Bank {
             // multiply gem0 amount by its price in rico, add to tot
             {
                 Source storage src0 = hs.sources[i][token0];
-                bytes32 val; uint ttl;
-                if (src0.fsrc == address(0)) {
-                    // if no feed, assume price is 0
-                    // todo fail to frob tokens with no feed?
-                    (val, ttl) = (0, type(uint).max);
-                } else {
-                    (val, ttl) = fb.pull(src0.fsrc, src0.ftag);
-                }
+                (bytes32 val, uint ttl) = fb.pull(src0.fsrc, src0.ftag);
 
                 minttl = min(minttl, ttl);
                 tot   += amount0 * uint(val);
@@ -209,12 +202,8 @@ contract UniNFTHook is Hook, Bank {
             // multiply gem1 amount by its price in rico, add to tot
             {
                 Source storage src1 = hs.sources[i][token1];
-                bytes32 val; uint ttl;
-                if (src1.fsrc == address(0)) {
-                    (val, ttl) = (0, type(uint).max);
-                } else {
-                    (val, ttl) = fb.pull(src1.fsrc, src1.ftag);
-                }
+                (bytes32 val, uint ttl) = fb.pull(src1.fsrc, src1.ftag);
+
                 minttl = min(minttl, ttl);
                 tot   += amount1 * uint(val);
             }
