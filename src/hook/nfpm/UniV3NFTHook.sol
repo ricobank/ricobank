@@ -51,7 +51,7 @@ contract UniNFTHook is Hook, Bank {
     int256  internal constant  FREE = -1;
 
     error ErrDinkLength();
-    error ErrIdx();
+    error ErrNotFound();
     error ErrDir();
     error ErrFull();
 
@@ -61,7 +61,7 @@ contract UniNFTHook is Hook, Bank {
         UniNFTHookStorage storage hs = getStorage();
         uint[] storage tokenIds      = hs.inks[i][u];
 
-        // dink must be a nonempty packed list of uints
+        // dink is a nonempty packed list of uint tokenIds
         if (dink.length < 32 || dink.length % 32 != 0) revert ErrDinkLength();
 
         {
@@ -73,7 +73,6 @@ contract UniNFTHook is Hook, Bank {
         if (safer) { 
             // add uni positions
 
-            // dink is an array of tokenIds
             for (uint idx = 32; idx < dink.length; idx += 32) {
                 uint tokenId = uint(bytes32(dink[idx:idx+32]));
 
@@ -90,39 +89,33 @@ contract UniNFTHook is Hook, Bank {
         } else { 
             // remove uni positions
 
-            // dink is an array of indexes into tokenIds
             if ((dink.length - 32) / 32 > tokenIds.length) revert ErrDinkLength();
 
-            // Move all of the outgoing tokenIds to the end of the array, then pop.
-            // `swidx` is index to swap next idx with.
-            // Except when idx == swidx, tokenIds[swidx] does not need to be
-            // removed, so it's always ok to swap with something that does need
-            // to be removed.
-            uint swidx = tokenIds.length;
-            uint last = type(uint).max;
-            for (uint j = dink.length - 32; j >= 32; j -= 32) {
-                uint idx = uint(bytes32(dink[j:j+32]));
+            for (uint j = 32; j < dink.length; j += 32) {
+                uint toss  = uint(bytes32(dink[j:j+32]));
 
-                // tokenIds[swidx] is OOB or needs to be removed, so decrement swidx
-                swidx--;
+                // search ink for toss
+                bool found;
+                for (uint k = 0; k < tokenIds.length; k++) {
 
-                // removal indices must be in ascending order
-                if (idx >= last || idx >= tokenIds.length) revert ErrIdx();
+                    uint tokenId = tokenIds[k];
+                    if (found = tokenId == toss) {
+                        // id found; pop
+                        tokenIds[k] = tokenIds[tokenIds.length - 1];
+                        tokenIds.pop();
+                        break;
+                    }
+                }
 
-                // transfer position back to user
-                hs.nfpm.transferFrom(address(this), sender, tokenIds[idx]);
-
-                // swap
-                tokenIds[idx] = tokenIds[swidx];
-                last          = idx;
+                if (!found) revert ErrNotFound();
             }
 
-            // last elements of the list are all to be removed
-            uint rm = tokenIds.length - swidx;
-            while (rm > 0) {
-                tokenIds.pop();
-                unchecked {rm--;}
+            // send dinked tokens back to user
+            for (uint j = 32; j < dink.length; j += 32) {
+                uint toss = uint(bytes32(dink[j:j+32]));
+                hs.nfpm.transferFrom(address(this), u, toss);
             }
+
         }
         emit NewPalmBytes2('uninfthook.0.ink', i, bytes32(bytes20(u)), abi.encodePacked(tokenIds));
     }

@@ -236,7 +236,7 @@ contract NFTHookTest is Test, RicoSetUp {
         assertEq(nfpm.ownerOf(golddaitokid), bank);
 
         // remove golddaitokid
-        data = abi.encodePacked(-int(1), uint(1));
+        data = abi.encodePacked(-int(1), golddaitokid);
         Vat(bank).frob(uilk, self, data, 0);
         assertEq(nfpm.ownerOf(goldwethtokid), bank);
         assertEq(nfpm.ownerOf(golddaitokid), self);
@@ -253,7 +253,7 @@ contract NFTHookTest is Test, RicoSetUp {
         assertTrue(spot == Vat.Spot.Safe);
 
         // remove goldwethtokid
-        data = abi.encodePacked(-int(1), uint(0));
+        data = abi.encodePacked(-int(1), goldwethtokid);
         Vat(bank).frob(uilk, self, data, 0);
         assertEq(nfpm.ownerOf(goldwethtokid), self);
         assertEq(nfpm.ownerOf(golddaitokid), bank);
@@ -268,7 +268,7 @@ contract NFTHookTest is Test, RicoSetUp {
         assertEq(nfpm.ownerOf(golddaitokid), bank);
 
         // remove both
-        data = abi.encodePacked(-int(1), uint(0), uint(1));
+        data = abi.encodePacked(-int(1), golddaitokid, goldwethtokid);
         rico_mint(100, true); // rounding
         Vat(bank).frob(uilk, self, data, -int(WAD));
         assertEq(nfpm.ownerOf(goldwethtokid), self);
@@ -322,17 +322,6 @@ contract NFTHookTest is Test, RicoSetUp {
         Vat(bank).frob(uilk, self, data, int(0));
     }
 
-    function test_frob_down_ooo() public {
-        bytes memory data = abi.encodePacked(int(1), goldwethtokid, golddaitokid);
-        Vat(bank).frob(uilk, self, data, int(WAD));
-
-        // remove both, but ooo
-        data = abi.encodePacked(-int(1), uint(1), uint(0));
-        rico_mint(100, true); // rounding
-        vm.expectRevert(UniNFTHook.ErrIdx.selector);
-        Vat(bank).frob(uilk, self, data, -int(WAD));
-    }
-
     function test_frob_down_five() public {
         uint160 onex96 = 2 ** 96;
         PoolArgs memory args = PoolArgs(
@@ -358,7 +347,10 @@ contract NFTHookTest is Test, RicoSetUp {
             assertEq(nfpm.ownerOf(goldwethtokids[i]), bank);
         }
 
-        data = abi.encodePacked(-int(1), uint(0), uint(1), uint(2), uint(3), uint(4));
+        data = abi.encodePacked(
+            -int(1), golddaitokid, goldwethtokids[0], goldwethtokids[1],
+            goldwethtokids[2], goldwethtokids[3]
+        );
         rico_mint(100, true); // rounding
         Vat(bank).frob(uilk, self, data, -int(WAD));
 
@@ -377,7 +369,9 @@ contract NFTHookTest is Test, RicoSetUp {
         );
         Vat(bank).frob(uilk, self, data, int(WAD));
 
-        data = abi.encodePacked(-int(1), uint(0), uint(2), uint(4));
+        data = abi.encodePacked(
+            -int(1), golddaitokid, goldwethtokids[1], goldwethtokids[3]
+        );
         Vat(bank).frob(uilk, self, data, -int(WAD));
     }
 
@@ -429,6 +423,18 @@ contract NFTHookTest is Test, RicoSetUp {
 
         Vat(bank).filh(uilk, 'fsrc', single(bytes32(bytes20(self))), bytes32(uint(10)));
         Vat(bank).filh(uilk, 'ftag', single(bytes32(bytes20(self))), bytes32(uint(100)));
+    }
+
+    function test_not_found() public {
+        // add goldwethtokid and golddaitokid at once
+        bytes memory data = abi.encodePacked(int(1), goldwethtokid);
+        Vat(bank).frob(uilk, self, data, int(WAD));
+
+        data = abi.encodePacked(-int(1), golddaitokid);
+        vm.expectRevert(UniNFTHook.ErrNotFound.selector);
+        Vat(bank).frob(uilk, self, data, -int(WAD/2));
+
+        data = abi.encodePacked(-int(1), golddaitokid);
     }
 
 }
