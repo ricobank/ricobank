@@ -51,20 +51,17 @@ abstract contract RicoSetUp is BaseHelper {
     bytes32 constant public uilk  = ":uninft";
     bytes32 constant public dutag = "dai:usd";
     bytes32 constant public grtag = "gold:ref";
+    bytes32 constant public rrtag = "ruby:ref";
     bytes32 constant public wrtag = "weth:ref";
     bytes32 constant public drtag = "dai:ref";
-
-    bytes32 constant public rtag       = "rico:usd";
+    bytes32 constant public rtag  = "rico:usd";
     uint160 constant public risk_price = 2 ** 96;
     uint256 constant public INIT_PAR   = RAY;
     uint256 constant public init_mint  = 10000;
-    uint256 constant public no_rush    = RAY;
     uint256 constant public flappep    = RAY;
     uint256 constant public flappop    = RAY;
     uint256 constant public floppep    = RAY;
     uint256 constant public floppop    = RAY;
-    address public immutable self = payable(address(this));
-    bytes32[] public empty = new bytes32[](0);
 
     ERC20Hook  public hook;
     UniNFTHook public nfthook;
@@ -170,6 +167,9 @@ abstract contract RicoSetUp is BaseHelper {
     }
 
     function make_bank() public {
+        make_bank(true);
+    }
+    function make_bank(bool fake_feeds) public {
         feed   = new Feedbase();
         gemfab = new GemFab();
         rico  = gemfab.build(bytes32("Rico"), bytes32("RICO"));
@@ -254,14 +254,15 @@ abstract contract RicoSetUp is BaseHelper {
         ahook = payable(address(hook));
 
         feed.push(bytes32("ONE"), bytes32(RAY), type(uint).max);
-        make_feed(rtag);
-        make_feed(wrtag);
-        make_feed(grtag);
-        make_feed(RISK_RICO_TAG);
-        make_feed(RICO_RISK_TAG);
-
-        feedpush(RISK_RICO_TAG, bytes32(RAY), block.timestamp + 1000);
-        feedpush(RICO_RISK_TAG, bytes32(RAY), block.timestamp + 1000);
+        if (fake_feeds) {
+            make_feed(rtag);
+            make_feed(wrtag);
+            make_feed(grtag);
+            make_feed(RISK_RICO_TAG);
+            make_feed(RICO_RISK_TAG);
+            feedpush(RISK_RICO_TAG, bytes32(RAY), block.timestamp + 1000);
+            feedpush(RICO_RISK_TAG, bytes32(RAY), block.timestamp + 1000);
+        }
     }
 
     function init_dai() public {
@@ -286,7 +287,7 @@ abstract contract RicoSetUp is BaseHelper {
         gold.mint(self, init_mint * WAD);
         gold.approve(bank, type(uint256).max);
         Vat(bank).init(gilk, address(hook));
-        Vat(bank).filh(gilk, 'gem', empty, bytes32(bytes20(address(gold))));
+        Vat(bank).filh(gilk, 'gem',  empty, bytes32(bytes20(address(gold))));
         Vat(bank).filh(gilk, 'fsrc', empty, bytes32(bytes20(self)));
         Vat(bank).filh(gilk, 'ftag', empty, grtag);
  
@@ -304,15 +305,15 @@ abstract contract RicoSetUp is BaseHelper {
         ruby.mint(self, init_mint * WAD);
         ruby.approve(bank, type(uint256).max);
         Vat(bank).init(rilk, address(hook));
-        Vat(bank).filh(rilk, 'gem', empty, bytes32(bytes20(address(ruby))));
+        Vat(bank).filh(rilk, 'gem',  empty, bytes32(bytes20(address(ruby))));
         Vat(bank).filh(rilk, 'fsrc', empty, bytes32(bytes20(self)));
-        Vat(bank).filh(rilk, 'ftag', empty, rtag);
+        Vat(bank).filh(rilk, 'ftag', empty, rrtag);
  
         Vat(bank).filk(rilk, 'hook', bytes32(uint(bytes32(bytes20(address(hook))))));
-        Vat(bank).filk(rilk, bytes32('chop'), bytes32(RAD));
+        Vat(bank).filk(rilk, bytes32('chop'), bytes32(RAY));
         Vat(bank).filk(rilk, bytes32('line'), bytes32(init_mint * 10 * RAD));
         Vat(bank).filk(rilk, bytes32('fee'), bytes32(uint(1000000001546067052200000000)));  // 5%
-        feedpush(rtag, bytes32(RAY), block.timestamp + 1000);
+        feedpush(rrtag, bytes32(RAY), block.timestamp + 1000);
         aruby = address(ruby);
     }
 

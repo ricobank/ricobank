@@ -19,7 +19,6 @@ import {Bank} from '../src/bank.sol';
 contract VatTest is Test, RicoSetUp {
     uint256 public init_join = 1000;
     uint stack = WAD * 10;
-    bytes32[] ilks;
     address[] gems;
     uint256[] wads;
     Flasher public chap;
@@ -29,7 +28,6 @@ contract VatTest is Test, RicoSetUp {
     function setUp() public {
         make_bank();
         init_gold();
-        ilks.push(gilk);
         chap = new Flasher(bank, arico, gilk);
         achap = address(chap);
         gold.mint(achap, 500 * WAD);

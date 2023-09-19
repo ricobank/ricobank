@@ -24,14 +24,9 @@ import { File } from '../src/file.sol';
 import { BankDiamond } from '../src/diamond.sol';
 
 contract BallTest is BaseHelper {
-    bytes32 internal constant WETH_REF_TAG = "weth:ref";
-    bytes32 internal constant WETH_USD_TAG = "weth:usd";
     bytes32 internal constant RAI_ETH_TAG  = "rai:eth";
     bytes32 internal constant RAI_REF_TAG  = "rai:ref";
     bytes32 internal constant RICO_DAI_TAG = "rico:dai";
-    bytes32 internal constant XAU_USD_TAG  = "xau:usd";
-    bytes32 internal constant DAI_USD_TAG  = "dai:usd";
-    bytes32 internal constant RICO_REF_TAG = "rico:ref";
 
     uint160 constant risk_price = 2 ** 96;
     uint256 constant INIT_SQRTPAR = RAY * 2;

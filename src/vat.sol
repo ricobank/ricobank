@@ -30,12 +30,12 @@ contract Vat is Bank {
     function urns(bytes32 i, address u) view external returns (uint) {
         return getVatStorage().urns[i][u];
     }
-    function joy() view external returns (uint) {return getVatStorage().joy;}
-    function sin() view external returns (uint) {return getVatStorage().sin;}
+    function joy()  view external returns (uint) {return getVatStorage().joy;}
+    function sin()  view external returns (uint) {return getVatStorage().sin;}
     function rest() view external returns (uint) {return getVatStorage().rest;}
     function debt() view external returns (uint) {return getVatStorage().debt;}
     function ceil() view external returns (uint) {return getVatStorage().ceil;}
-    function par() view external returns (uint) {return getVatStorage().par;}
+    function par()  view external returns (uint) {return getVatStorage().par;}
     function ink(bytes32 i, address u) external view returns (bytes memory) {
         return abi.decode(_hookview(i, abi.encodeWithSelector(
             Hook.ink.selector, i, u

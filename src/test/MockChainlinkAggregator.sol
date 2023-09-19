@@ -12,8 +12,8 @@ contract MockChainlinkAggregator {
     bytes32 public tag;
     uint public decimals;
 
-    constructor(address _fb, address _src, bytes32 _tag, uint _decimals) {
-        fb = Feedbase(_fb);
+    constructor(Feedbase _fb, address _src, bytes32 _tag, uint _decimals) {
+        fb = _fb;
         src = _src;
         tag = _tag;
         decimals = _decimals;

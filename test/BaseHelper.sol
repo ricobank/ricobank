@@ -28,6 +28,11 @@ abstract contract BaseHelper is Math, Test, UniSetUp {
     address constant public VAULT        = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;
     bytes32 constant public RICO_RISK_TAG = "rico:risk";
     bytes32 constant public RISK_RICO_TAG = "risk:rico";
+    bytes32 constant public RICO_REF_TAG  = "rico:ref";
+    bytes32 constant public XAU_USD_TAG   = "xau:usd";
+    bytes32 constant public DAI_USD_TAG   = "dai:usd";
+    bytes32 constant public WETH_REF_TAG  = "weth:ref";
+    bytes32 constant public WETH_USD_TAG  = "weth:usd";
     bytes32 constant public RAI_ILK  = "rai";
     bytes32 constant public WETH_ILK = "weth";
     uint24  constant public RICO_FEE   = 500;
@@ -35,7 +40,9 @@ abstract contract BaseHelper is Math, Test, UniSetUp {
     uint256 constant public HOOK_ROOM  = 8;
     uint256 constant public BANKYEAR   = (365 * 24 + 6) * 3600;
     uint256 constant public CL_DEC     = 8;
+    address immutable public self      = payable(address(this));
 
+    bytes32[] public empty = new bytes32[](0);
     address payable public bank;
 
     receive () payable external {}

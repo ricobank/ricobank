@@ -15,6 +15,11 @@ optimizer=true
 optimizer-runs=10_000
 solc_version='0.8.19'
 
+[invariant]
+fail_on_revert = false
+runs = 2
+depth = 1000
+
 [profile.lite.optimizer_details.yulDetails]
 stackAllocation = true
 optimizerSteps = ''
