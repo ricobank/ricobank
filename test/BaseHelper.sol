@@ -40,6 +40,7 @@ abstract contract BaseHelper is Math, Test, UniSetUp {
     uint256 constant public HOOK_ROOM  = 8;
     uint256 constant public BANKYEAR   = (365 * 24 + 6) * 3600;
     uint256 constant public CL_DEC     = 8;
+    uint256 constant public WETH_REF_VAL = 805830286360171930170219164;
     address immutable public self      = payable(address(this));
 
     bytes32[] public empty = new bytes32[](0);

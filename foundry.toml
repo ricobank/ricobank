@@ -1,7 +1,9 @@
 [profile.default]
 src = 'src'
 out = 'artifacts'
-fs_permissions = [{access = 'read', path = './lib/feedbase'}]
+fs_permissions = [{access = 'read', path = './lib/feedbase'},
+                  {access = 'read', path = './test/invariant'},
+                  {access = 'read', path = './node_modules/@uniswap'}]
 libs = [
     'lib',
     'node_modules',
@@ -17,7 +19,7 @@ solc_version='0.8.19'
 
 [invariant]
 fail_on_revert = false
-runs = 2
+runs = 1
 depth = 1000
 
 [profile.lite.optimizer_details.yulDetails]

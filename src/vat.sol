@@ -187,7 +187,6 @@ contract Vat is Bank {
         if (spot != Spot.Sunk) revert ErrSafeBail();
 
         VatStorage storage vs = getVatStorage();
-        // liquidate the urn
         Ilk storage ilk = vs.ilks[i];
 
         uint art = vs.urns[i][u];

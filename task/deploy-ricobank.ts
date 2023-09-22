@@ -69,7 +69,6 @@ task('deploy-ricobank', '')
         risk: deps.objects.risk.address,
         ricodai: deps.objects.ricodai.address,
         ricorisk: deps.objects.ricorisk.address,
-        router: hre.ethers.constants.AddressZero, // todo remove
         uniwrapper: uniwrapper.address,
         par: ray(1),
         ceil: wad(100000),

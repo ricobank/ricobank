@@ -137,7 +137,6 @@ contract BallTest is BaseHelper {
             risk,
             ricodai,
             ricorisk,
-            router,
             uniwrapper,
             INIT_PAR,
             100000 * WAD,

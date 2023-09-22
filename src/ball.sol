@@ -92,7 +92,6 @@ contract Ball is Math, Ward {
         address risk;
         address ricodai;
         address ricorisk;
-        address router;
         address uniwrapper;
         uint256 par;
         uint256 ceil;

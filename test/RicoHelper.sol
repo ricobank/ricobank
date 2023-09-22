@@ -169,14 +169,15 @@ abstract contract RicoSetUp is BaseHelper {
     function make_bank() public {
         make_bank(true);
     }
-    function make_bank(bool fake_feeds) public {
+    function make_bank(bool fork) public {
         feed   = new Feedbase();
         gemfab = new GemFab();
         rico  = gemfab.build(bytes32("Rico"), bytes32("RICO"));
         risk  = gemfab.build(bytes32("Rico Riskshare"), bytes32("RISK"));
         arico = address(rico);
         arisk = address(risk);
-        uint160 sqrt_ratio_x96 = get_rico_sqrtx96(INIT_PAR);
+        uint160 sqrt_ratio_x96 = 3479451586963517060052302675955;
+        if (fork) sqrt_ratio_x96 = get_rico_sqrtx96(INIT_PAR);
         ricodai  = create_pool(arico, DAI,   RICO_FEE, sqrt_ratio_x96);
         ricorisk = create_pool(arico, arisk, RISK_FEE, risk_price);
 
@@ -212,7 +213,6 @@ abstract contract RicoSetUp is BaseHelper {
             arisk,
             ricodai,
             ricorisk,
-            router,
             uniwrapper,
             INIT_PAR,
             100000 * WAD,
@@ -254,15 +254,13 @@ abstract contract RicoSetUp is BaseHelper {
         ahook = payable(address(hook));
 
         feed.push(bytes32("ONE"), bytes32(RAY), type(uint).max);
-        if (fake_feeds) {
-            make_feed(rtag);
-            make_feed(wrtag);
-            make_feed(grtag);
-            make_feed(RISK_RICO_TAG);
-            make_feed(RICO_RISK_TAG);
-            feedpush(RISK_RICO_TAG, bytes32(RAY), block.timestamp + 1000);
-            feedpush(RICO_RISK_TAG, bytes32(RAY), block.timestamp + 1000);
-        }
+        make_feed(rtag);
+        make_feed(wrtag);
+        make_feed(grtag);
+        make_feed(RISK_RICO_TAG);
+        make_feed(RICO_RISK_TAG);
+        feedpush(RISK_RICO_TAG, bytes32(RAY), block.timestamp + 1000);
+        feedpush(RICO_RISK_TAG, bytes32(RAY), block.timestamp + 1000);
     }
 
     function init_dai() public {
