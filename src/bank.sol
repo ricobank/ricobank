@@ -4,14 +4,14 @@
 
 pragma solidity ^0.8.19;
 
-import { OwnableInternal } from '../lib/solidstate-solidity/contracts/access/OwnableInternal.sol';
+import { OwnableInternal, OwnableStorage } from '../lib/solidstate-solidity/contracts/access/OwnableInternal.sol';
 import { Math } from './mixin/math.sol';
 import { Flog } from './mixin/flog.sol';
 import { Palm } from './mixin/palm.sol';
 import { Gem }  from '../lib/gemfab/src/gem.sol';
 import { Feedbase } from '../lib/feedbase/src/Feedbase.sol';
 
-abstract contract Bank is Math, Flog, Palm, OwnableInternal{
+abstract contract Bank is Math, Flog, Palm, OwnableInternal {
 
     // per-collateral type accounting
     struct Ilk {
@@ -62,6 +62,7 @@ abstract contract Bank is Math, Flog, Palm, OwnableInternal{
     struct VowStorage {
         Gem     RISK;
         Ramp    ramp;
+        uint256 toll;
         uint256 flappep;  // [ray] rush gradient
         uint256 flappop;  // [ray] rush offset
         address flapsrc;  // flap feed
@@ -111,6 +112,10 @@ abstract contract Bank is Math, Flog, Palm, OwnableInternal{
             let size := mload(data)
             revert(add(32, data), size)
         }
+    }
+
+    function owner() internal view returns (address) {
+        return OwnableStorage.layout().owner;
     }
 
 }

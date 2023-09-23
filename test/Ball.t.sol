@@ -165,7 +165,7 @@ contract BallTest is BaseHelper {
         BankDiamond(bank).acceptOwnership();
 
         uint usedgas     = gas - gasleft();
-        uint expectedgas = 20992226;
+        uint expectedgas = 21142095;
         if (usedgas < expectedgas) {
             console.log("ball saved %s gas...currently %s", expectedgas - usedgas, usedgas);
         }
@@ -255,7 +255,9 @@ contract BallTest is BaseHelper {
         uint me_risk_2 = Gem(risk).balanceOf(me);
         uint me_rico_2 = Gem(rico).balanceOf(me);
 
-        assertEq(me_risk_1, me_risk_2);
+        // burned one risk for rounding
+        uint expected_me_risk = Vat(bank).sin() == 0 ? me_risk_2 + 1 : me_risk_2;
+        assertEq(me_risk_1, expected_me_risk);
         assertEq(me_rico_1, me_rico_2);
     }
 

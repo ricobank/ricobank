@@ -10,6 +10,8 @@ import { Feedbase } from '../lib/feedbase/src/Feedbase.sol';
 import { Bank } from './bank.sol';
 
 contract File is Bank {
+    error ErrHighToll();
+
     function file(bytes32 key, bytes32 val) onlyOwner _flog_ external {
         VatStorage storage vatS = getVatStorage();
         VowStorage storage vowS = getVowStorage();
@@ -22,6 +24,10 @@ contract File is Bank {
         else if (key == "rel") { vowS.ramp.rel = uint(val); }
         else if (key == "bel") { vowS.ramp.bel = uint(val); }
         else if (key == "cel") { vowS.ramp.cel = uint(val); }
+        else if (key == "toll") { 
+            if (uint(val) > RAY) revert ErrHighToll();
+            vowS.toll = uint(val);
+        }
         else if (key == "floppep") { vowS.floppep = uint(val); }
         else if (key == "flappep") { vowS.flappep = uint(val); }
         else if (key == "floppop") { vowS.floppop = uint(val); }

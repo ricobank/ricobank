@@ -346,6 +346,72 @@ contract VowTest is Test, RicoSetUp {
         Vat(bank).bail(gilk, self);
         assertEq(gold.balanceOf(bank), vowgoldbefore);
     }
+
+    function test_toll() public {
+        File(bank).file('toll', bytes32(RAY / 3));
+        uint _dink = 10000 * WAD;
+        gold.mint(address(guy), _dink);
+        risk.mint(address(guy), 1000000 * WAD);
+        feedpush(RICO_RISK_TAG, bytes32(10 * RAY), type(uint).max);
+
+        vm.startPrank(address(guy));
+
+        // from some rico
+        gold.approve(bank, UINT256_MAX);
+        Vat(bank).frob(gilk, address(guy), abi.encodePacked(_dink), int(_dink));
+
+        // wait a few years and keep
+        skip(BANKYEAR * 10);
+        uint guys  = rico.balanceOf(address(guy));
+        uint selfs = rico.balanceOf(self);
+        uint burned = risk.balanceOf(address(guy));
+
+        for (uint i = 0; i < ilks.length; i++) Vat(bank).drip(ilks[i]);
+        uint debt = Vat(bank).debt();
+        // not exact, close enough
+        uint flap = Vat(bank).joy() - Vat(bank).sin() / RAY;
+        uint price = rdiv(10 * RAY, rdiv(flap + debt, debt));
+
+        Vow(bank).keep(ilks);
+
+        // owner and guy's portions of the flap
+        guys  = rico.balanceOf(address(guy)) - guys;
+        selfs = rico.balanceOf(self) - selfs;
+        burned = burned - risk.balanceOf(address(guy));
+
+
+        // check that owner got about 1/9 of what keeper got
+        assertClose(guys, selfs * 2, 100000);
+        assertClose(burned, rmul(guys, price), 25);
+
+        vm.stopPrank();
+        // try with toll == 100%
+        File(bank).file('toll', bytes32(RAY));
+        vm.startPrank(address(guy));
+
+        // wait a few years and keep
+        skip(BANKYEAR * 10);
+        guys  = rico.balanceOf(address(guy));
+        selfs = rico.balanceOf(self);
+        Vow(bank).keep(ilks);
+
+        // owner and guy's portions of the flap
+        guys  = rico.balanceOf(address(guy)) - guys;
+        selfs = rico.balanceOf(self) - selfs;
+
+        // check that owner got everything
+        assertEq(guys, 0);
+        assertGt(selfs, 0);
+
+        vm.stopPrank();
+
+    }
+
+    function test_high_toll() public {
+        File(bank).file('toll', bytes32(RAY));
+        vm.expectRevert(File.ErrHighToll.selector);
+        File(bank).file('toll', bytes32(RAY + 1));
+    }
 }
 
 contract FrobHook is Hook {
@@ -364,6 +430,7 @@ contract FrobHook is Hook {
         return abi.encode(uint(0));
     }
 }
+
 contract ZeroHook is Hook {
     function frobhook(
         address sender, bytes32 i, address u, bytes calldata dink, int dart
@@ -622,5 +689,5 @@ contract VowJsTest is Test, RicoSetUp {
         assertGt(joy1, joy0);
         assertLt(vat_weth_1, hook_weth_0);
     }
-}
 
+}

@@ -5,7 +5,7 @@
 pragma solidity ^0.8.19;
 
 import { Vat }  from './vat.sol';
-import { Bank, Gem } from './bank.sol';
+import { Bank, Gem, OwnableStorage } from './bank.sol';
 
 // accounting mechanism
 // triggers collateral (flip), surplus (flap), and deficit (flop) auctions
@@ -49,27 +49,34 @@ contract Vow is Bank {
         if (joy > sin) {
 
             // pay down sin, then auction off surplus RICO for RISK
-            uint over = joy - sin;
+            uint flap = joy - sin;
             if (sin > 1) {
                 // gas - don't zero sin
                 Vat(address(this)).heal(sin - 1);
                 joy -= sin - 1;
             } else {
                 // gas - don't zero joy
-                over -= 1;
+                flap -= 1;
             }
 
             // rush increases as surplus increases, i.e. if there's a massive
             // surplus the system deduces that it's overpricing rico
             uint debt = vatS.debt;
-            uint rush = (over * vowS.flappep + debt * vowS.flappop) / debt;
+            uint rush = (flap * vowS.flappep + debt * vowS.flappop) / debt;
 
-            // buy-and-burn risk with remaining (`over`) rico
-            joy     -= over;
+            // buy-and-burn risk with remaining (`flap`) rico
+            joy     -= flap;
             vatS.joy = joy;
             emit NewPalm0('joy', bytes32(joy));
 
-            flow(vowS.flapsrc, vowS.flaptag, rico, over, risk, rush);
+            uint price = rdiv(_price(vowS.flapsrc, vowS.flaptag), rush) + 1;
+            uint sell  = rmul(flap, RAY - vowS.toll);
+            uint earn  = rmul(sell, price) + 1;
+
+            // swap rico for RISK, pay protocol fee
+            Gem(risk).burn(msg.sender, earn);
+            Gem(rico).mint(msg.sender, sell);
+            if (sell < flap) Gem(rico).mint(owner(), flap - sell);
 
         } else if (sin > joy) {
 
@@ -99,26 +106,22 @@ contract Vow is Bank {
             emit NewPalm0('bel', bytes32(vowS.ramp.bel));
 
             // swap RISK for rico to cover sin
+            uint earn = flop * _price(vowS.flopsrc, vowS.floptag) / rush;
+            Gem(rico).burn(msg.sender, earn);
+            Gem(risk).mint(msg.sender, flop);
+
             // new joy will heal some sin in next flop
-            joy     += flow(vowS.flopsrc, vowS.floptag, risk, flop, rico, rush);
+            joy     += earn;
             vatS.joy = joy;
             emit NewPalm0('joy', bytes32(joy));
 
         }
     }
 
-    function flow(
-        address src, bytes32 tag, Gem hag, uint ham, Gem wag, uint rush
-    ) internal returns (uint earn){
-        // pull the feed to get the earn (in rico for flop, risk for flap)
-        // if rush was 1.0
-        (bytes32 val, uint ttl) = getBankStorage().fb.pull(src, tag);
+    function _price(address src, bytes32 tag) internal view returns (uint) {
+        (bytes32 _val, uint ttl) = getBankStorage().fb.pull(src, tag);
         if (ttl < block.timestamp) revert ErrOutDated();
-        uint cut = ham * uint(val);
-
-        // cut is RAD, rush is RAY, so bank earns a WAD
-        earn = cut / rush;
-        Gem(wag).burn(msg.sender, earn);
-        Gem(hag).mint(msg.sender, ham);
+        return uint(_val);
     }
+
 }
