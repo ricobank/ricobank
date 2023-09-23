@@ -165,7 +165,7 @@ contract BallTest is BaseHelper {
         BankDiamond(bank).acceptOwnership();
 
         uint usedgas     = gas - gasleft();
-        uint expectedgas = 21142095;
+        uint expectedgas = 21141495;
         if (usedgas < expectedgas) {
             console.log("ball saved %s gas...currently %s", expectedgas - usedgas, usedgas);
         }

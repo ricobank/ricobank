@@ -80,15 +80,15 @@ contract Vow is Bank {
 
         } else if (sin > joy) {
 
+            // mint-and-sell risk to cover `under`
+            uint under = sin - joy;
+
             // pay down as much sin as possible
             if (joy > 1) {
                 // gas - don't zero joy
                 Vat(address(this)).heal(joy - 1);
                 joy = 1;
             }
-
-            // mint-and-sell risk to cover `under`
-            uint under = sin - joy;
 
             // rush increases as system becomes undercollateralized
             // i.e. if it's very undercollateralized then bank deduces

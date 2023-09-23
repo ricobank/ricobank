@@ -347,6 +347,43 @@ contract VowTest is Test, RicoSetUp {
         assertEq(gold.balanceOf(bank), vowgoldbefore);
     }
 
+    function test_flop_rush() public {
+        // generate a flop, with nonnegligible joy and sin
+        // vow should properly update cached joy and sin values after heal
+        // so that rush is correct
+        feedpush(grtag, bytes32(RAY * 1000), UINT256_MAX);
+        feedpush(RISK_RICO_TAG, bytes32(RAY), UINT256_MAX);
+        Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(WAD * 1000));
+        skip(BANKYEAR);
+        Vat(bank).bail(gilk, self);
+
+        // have a bunch of sin, now make some joy but less joy than sin
+        Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(WAD * 800));
+        skip(BANKYEAR * 10);
+        Vat(bank).drip(gilk);
+
+        uint sin = Vat(bank).sin() / RAY;
+        // both nonnegligible, and sin > joy
+        assertGt(sin, 100);
+        assertGt(sin, Vat(bank).joy());
+        uint joy = Vat(bank).joy();
+        uint debt = Vat(bank).debt() - joy; // post heal debt
+        uint under = sin - joy;
+        // feed price, pep, and pop are all 1
+        // -> rush should be (under + debt) / debt
+        uint rush = rdiv(under + debt, debt);
+
+        // keep
+        uint earn = rico.balanceOf(self);
+        uint sell = risk.balanceOf(self);
+        Vow(bank).keep(empty);
+        earn = earn - rico.balanceOf(self);
+        sell = risk.balanceOf(self) - sell;
+
+        // keeper should lose sell / rush risk
+        assertClose(earn, rdiv(sell, rush), 1000);
+    }
+
     function test_toll() public {
         File(bank).file('toll', bytes32(RAY / 3));
         uint _dink = 10000 * WAD;
