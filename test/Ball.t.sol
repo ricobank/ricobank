@@ -154,7 +154,6 @@ contract BallTest is BaseHelper {
             XAU_USD_AGG
         );
 
-        uint gas = gasleft();
         Ball ball = new Ball(bargs);
         BankDiamond(bank).transferOwnership(address(ball));
         ball.setup(bargs);
@@ -163,15 +162,6 @@ contract BallTest is BaseHelper {
         ball.makeuni(ups);
         ball.approve(me);
         BankDiamond(bank).acceptOwnership();
-
-        uint usedgas     = gas - gasleft();
-        uint expectedgas = 21141495;
-        if (usedgas < expectedgas) {
-            console.log("ball saved %s gas...currently %s", expectedgas - usedgas, usedgas);
-        }
-        if (usedgas > expectedgas) {
-            console.log("ball gas increase by %s...currently %s", usedgas - expectedgas, usedgas);
-        }
 
         Gem(rico).ward(bank, true);
         Gem(risk).ward(bank, true);
