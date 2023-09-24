@@ -655,7 +655,6 @@ contract VowJsTest is Test, RicoSetUp {
 
         // more sin than rico, should flop
         feedpush(RISK_RICO_TAG, bytes32(RAY), UINT256_MAX);
-        vm.expectCall(bank, abi.encodePacked(Vat.heal.selector));
         Vow(bank).keep(ilks);
     }
 

@@ -57,18 +57,6 @@ contract VatTest is Test, RicoSetUp {
         check_gas(gas, 34399);
     }
 
-    function test_heal_gas() public {
-        feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
-        Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(WAD));
-        skip(1);
-        feedpush(grtag, bytes32(0), type(uint).max);
-        Vat(bank).bail(gilk, self);
-
-        uint gas = gasleft();
-        Vat(bank).heal(1);
-        check_gas(gas, 10351);
-    }
-
     function test_drip_gas() public {
         uint gas = gasleft();
         Vat(bank).drip(gilk);

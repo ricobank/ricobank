@@ -52,8 +52,7 @@ contract Vow is Bank {
             uint flap = joy - sin;
             if (sin > 1) {
                 // gas - don't zero sin
-                Vat(address(this)).heal(sin - 1);
-                joy -= sin - 1;
+                joy = _heal(sin - 1);
             } else {
                 // gas - don't zero joy
                 flap -= 1;
@@ -86,8 +85,7 @@ contract Vow is Bank {
             // pay down as much sin as possible
             if (joy > 1) {
                 // gas - don't zero joy
-                Vat(address(this)).heal(joy - 1);
-                joy = 1;
+                joy = _heal(joy - 1);
             }
 
             // rush increases as system becomes undercollateralized
@@ -116,6 +114,19 @@ contract Vow is Bank {
             emit NewPalm0('joy', bytes32(joy));
 
         }
+    }
+
+    function _heal(uint wad) internal returns (uint joy) {
+        VatStorage storage vs = getVatStorage();
+
+        vs.sin  = vs.sin  - (wad * RAY);
+        emit NewPalm0('sin', bytes32(vs.sin));
+
+        vs.joy  = (joy = vs.joy - wad);
+        emit NewPalm0('joy', bytes32(joy));
+
+        vs.debt = vs.debt - wad;
+        emit NewPalm0('debt', bytes32(vs.debt));
     }
 
     function _price(address src, bytes32 tag) internal view returns (uint) {

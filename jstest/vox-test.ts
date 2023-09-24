@@ -216,7 +216,7 @@ describe('Vox', () => {
     })
 
     it('deploy gas', async () => {
-      await check(ethers.BigNumber.from(deploygas), 40420421)
+      await check(ethers.BigNumber.from(deploygas), 40302436)
     })
 
     it('ploke gas', async () => {
@@ -238,7 +238,7 @@ describe('Vox', () => {
     it('frob cold gas', async () => {
       let dink = ethers.utils.solidityPack(['int'], [wad(5)])
       let gas = await bank.estimateGas.frob(b32('weth'), ALI, dink, wad(2))
-      await check(gas, 276019)
+      await check(gas, 276064)
     })
 
     it('frob hot gas', async () => {
@@ -247,7 +247,7 @@ describe('Vox', () => {
       let gas = await bank.estimateGas.frob(
         b32('weth'), ALI, ethers.utils.solidityPack(['int'], [wad(5)]), wad(2)
       )
-      await check(gas, 154449)
+      await check(gas, 154493)
     })
 
     it('bail gas', async () => {
@@ -262,13 +262,17 @@ describe('Vox', () => {
 
     it('keep surplus gas', async () => {
       let dink = ethers.utils.solidityPack(['int'], [wad(5)])
-      await send(bank.frob, b32('weth'), ALI, dink, wad(2))
+      await send(bank.frob, b32('weth'), ALI, dink, wad(1))
+      await send(fb.push, b32('weth:ref'), bn2b32(ray(0)), constants.MaxUint256)
+      await send(bank.bail, b32('weth'), ALI)
+      await send(fb.push, b32('weth:ref'), bn2b32(ray(1)), constants.MaxUint256)
+      await send(bank.frob, b32('weth'), ALI, dink, wad(4))
 
-      await mine(hh, BANKYEAR)
+      await mine(hh, BANKYEAR * 100)
       await send(bank.drip, b32('weth'))
 
       let gas = await bank.estimateGas.keep([])
-      await check(gas, 104087)
+      await check(gas, 115398)
     })
 
     it('keep deficit gas', async() => {
@@ -278,7 +282,7 @@ describe('Vox', () => {
       await send(bank.bail, b32('weth'), ALI)
 
       let gas = await bank.estimateGas.keep([])
-      await check(gas, 136089)
+      await check(gas, 127777)
     })
 
     it('poke up gas', async () => {
@@ -364,7 +368,7 @@ describe('Vox', () => {
             ['int', 'uint', 'uint'], [-1, ricodaitokids[2], ricodaitokids[1]]
         )
         let gas = await bank.estimateGas.frob(b32(':uninft'), ALI, dink, wad(-9))
-        await check(gas, 443270)
+        await check(gas, 443317)
         await send(bank.frob, b32(':uninft'), ALI, dink, wad(-9))
     })
   })

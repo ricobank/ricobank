@@ -245,19 +245,6 @@ contract Vat is Bank {
         emit NewPalm0('joy', bytes32(vs.joy));
     }
 
-    function heal(uint wad) _flog_ external {
-        VatStorage storage vs = getVatStorage();
-
-        vs.sin  = vs.sin  - (wad * RAY);
-        emit NewPalm0('sin', bytes32(vs.sin));
-
-        vs.joy  = vs.joy  - wad;
-        emit NewPalm0('joy', bytes32(vs.joy));
-        
-        vs.debt = vs.debt - wad;
-        emit NewPalm0('debt', bytes32(vs.debt));
-    }
-
     function flash(address code, bytes calldata data)
       external returns (bytes memory result) {
         // lock->mint->call->burn->unlock

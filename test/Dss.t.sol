@@ -853,7 +853,6 @@ contract DssVowTest is DssJsTest {
         skip(1);
         rico_mint(50 * WAD, true);
         uint self_rico1 = rico.balanceOf(self);
-        vm.expectCall(bank, abi.encodePacked(Vat(bank).heal.selector));
         Vow(bank).keep(ilks);
         uint self_rico2 = rico.balanceOf(self);
         // should only have some rico from instant risk sale +1 extra which wasn't spent healing
