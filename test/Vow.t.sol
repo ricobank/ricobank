@@ -393,7 +393,7 @@ contract VowTest is Test, RicoSetUp {
 
         vm.startPrank(address(guy));
 
-        // from some rico
+        // frob some rico
         gold.approve(bank, UINT256_MAX);
         Vat(bank).frob(gilk, address(guy), abi.encodePacked(_dink), int(_dink));
 
@@ -417,7 +417,7 @@ contract VowTest is Test, RicoSetUp {
         burned = burned - risk.balanceOf(address(guy));
 
 
-        // check that owner got about 1/9 of what keeper got
+        // check that owner got about 1/3 of what keeper got
         assertClose(guys, selfs * 2, 100000);
         assertClose(burned, rmul(guys, price), 25);
 

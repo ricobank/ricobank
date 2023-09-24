@@ -54,8 +54,10 @@ contract InvariantFluidPrice is Test, BaseHelper {
         // debt invariant
         assertEq(joy + sup, debt);
 
-        // tart invariant. compare as RADs
-        assertEq(tart * rack - rest, RAY * (sup + joy) - sin);
+        // tart invariant. compare as RADs. unchecked - ok if both are equally negative
+        unchecked {
+            assertEq(tart * rack - rest, RAY * (sup + joy) - sin);
+        }
         assertLt(tart * RAY, line);
 
         // actors ink + weth should be constant outside of liquidations and frobs which benefit a different urn,

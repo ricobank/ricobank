@@ -2,6 +2,7 @@
 pragma solidity ^0.8.19;
 
 import "forge-std/Test.sol";
+import { VmSafe } from "lib/forge-std/src/Vm.sol";
 
 import { RicoSetUp } from '../RicoHelper.sol';
 import { Gem } from '../../lib/gemfab/src/gem.sol';
@@ -131,6 +132,7 @@ contract ERC20Handler is Test, Local, RicoSetUp {
 
     modifier _larp_(uint256 actorSeed) {
         currentActor = actors[bound(actorSeed, 0, actors.length - 1)];
+        clear_prank();
         vm.startPrank(currentActor);
         _;
         vm.stopPrank();
@@ -138,8 +140,12 @@ contract ERC20Handler is Test, Local, RicoSetUp {
 
     // the prank in _larp_() persists over test runs when they revert, use this to ensure acting as handler
     modifier _self_() {
-        vm.startPrank(self);
-        vm.stopPrank();
+        clear_prank();
         _;
+    }
+
+    function clear_prank() internal {
+        (VmSafe.CallerMode caller_mode,,) = vm.readCallers();
+        if (caller_mode != VmSafe.CallerMode.None) vm.stopPrank();
     }
 }

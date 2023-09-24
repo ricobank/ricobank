@@ -22,8 +22,8 @@ contract Local is Test {
     address constant public nfpm_addr       = 0xC36442b4a4522E871399CD717aBDD847Ab11FE88;
 
     function deploy_local_deps() public {
-        deployCodeTo(weth9Artifact, weth_addr);
-        deployCodeTo(v3FactoryArtifact, factory_addr);
+        deployCodeTo(weth9Artifact,      weth_addr);
+        deployCodeTo(v3FactoryArtifact,  factory_addr);
         deployCodeTo(SwapRouterArtifact, abi.encode(factory_addr, weth_addr), router_addr);
         deployCodeTo(DescriptorArtifact, abi.encode(weth_addr, bytes32('ETH')), descriptor_addr);
         deployCodeTo(NFPMArtifact,       abi.encode(factory_addr, weth_addr, descriptor_addr), nfpm_addr);
