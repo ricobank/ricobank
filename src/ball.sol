@@ -176,16 +176,15 @@ contract Ball is Math, Ward {
 
     function setup(BallArgs calldata args) _ward_ external payable {
         IDiamondCuttable.FacetCut[] memory facetCuts = new IDiamondCuttable.FacetCut[](4);
-        bytes4[] memory filesels = new bytes4[](4);
+        bytes4[] memory filesels = new bytes4[](3);
         bytes4[] memory vatsels  = new bytes4[](20);
         bytes4[] memory vowsels  = new bytes4[](7);
         bytes4[] memory voxsels  = new bytes4[](7);
         File fbank = File(bank);
 
         filesels[0] = File.file.selector;
-        filesels[1] = File.link.selector;
-        filesels[2] = File.fb.selector;
-        filesels[3] = File.rico.selector;
+        filesels[1] = File.fb.selector;
+        filesels[2] = File.rico.selector;
         vatsels[0]  = Vat.filk.selector;
         vatsels[1]  = Vat.filh.selector;
         vatsels[2]  = Vat.init.selector;
@@ -228,10 +227,10 @@ contract Ball is Math, Ward {
         Diamond(payable(address(fbank))).acceptOwnership();
         Diamond(payable(address(fbank))).diamondCut(facetCuts, address(0), bytes(''));
 
-        fbank.link('rico', rico);
-        fbank.link('risk', risk);
-        fbank.link('fb',  feedbase);
-        fbank.link('tip', address(divider));
+        fbank.file('rico', bytes32(bytes20(rico)));
+        fbank.file('risk', bytes32(bytes20(risk)));
+        fbank.file('fb',  bytes32(bytes20(feedbase)));
+        fbank.file('tip', bytes32(bytes20(address(divider))));
 
         fbank.file('par',  bytes32(args.par));
         fbank.file('ceil', bytes32(args.ceil));

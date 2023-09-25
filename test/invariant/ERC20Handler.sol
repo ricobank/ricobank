@@ -30,7 +30,7 @@ contract ERC20Handler is Test, Local, RicoSetUp {
     constructor() {
         deploy_local_deps();
         make_bank(false);
-        File(bank).link('tip', self);
+        File(bank).file('tip', bytes32(bytes20(self)));
         ilks.push(WETH_ILK);
         weth_ref_val = WETH_REF_VAL;
         weth_ref_max = weth_ref_val;

@@ -92,7 +92,7 @@ describe('Vox', () => {
     dai  = dapp.dai
 
     await send(bank.file, b32("tag"), TAG)
-    await send(bank.link, b32("tip"), ALI)
+    await send(bank.file, b32("tip"), ALI + '00'.repeat(12))
 
     await send(bank.file, b32("cap"), b32(ray(3)))
 
@@ -216,7 +216,7 @@ describe('Vox', () => {
     })
 
     it('deploy gas', async () => {
-      await check(ethers.BigNumber.from(deploygas), 40302436)
+      await check(ethers.BigNumber.from(deploygas), 40152167)
     })
 
     it('ploke gas', async () => {
