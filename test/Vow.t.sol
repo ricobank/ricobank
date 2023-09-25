@@ -56,7 +56,7 @@ contract VowTest is Test, RicoSetUp {
         uint borrow = WAD;
         uint rico_price_in_risk = 10;
         feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
-        feedpush(RICO_RISK_TAG, bytes32(rico_price_in_risk * RAY), type(uint).max);
+        feedpush(RISK_RICO_TAG, bytes32(rinv(rico_price_in_risk * RAY)), type(uint).max);
         Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(borrow));
         skip(BANKYEAR);
         Vat(bank).drip(gilk);
@@ -70,9 +70,9 @@ contract VowTest is Test, RicoSetUp {
         force_fees(sin_wad);
 
         // set pep to * 1000 growth rate
-        File(bank).file('flappep', bytes32(RAY * 1000));
+        File(bank).file('plat.pep', bytes32(RAY * 1000));
         // set pop to increase initial price by 1%
-        File(bank).file('flappop', bytes32(RAY * 99 / 100));
+        File(bank).file('plat.pop', bytes32(RAY * 99 / 100));
 
         uint debt = Vat(bank).debt() - sin_wad;
         uint gain = surplus * 1000;
@@ -104,9 +104,9 @@ contract VowTest is Test, RicoSetUp {
         Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(borrow));
 
         // set pep to *1000 rate discount increases
-        File(bank).file('floppep', bytes32(RAY * 1000));
+        File(bank).file('plot.pep', bytes32(RAY * 1000));
         // set pop so initial flop discount is about 1%
-        File(bank).file('floppop', bytes32(RAY * 101 / 100));
+        File(bank).file('plot.pop', bytes32(RAY * 101 / 100));
 
         uint debt = Vat(bank).debt();
         uint sin  = Vat(bank).sin() / RAY;
@@ -303,7 +303,7 @@ contract VowTest is Test, RicoSetUp {
 
         feedpush(grtag, bytes32(0), block.timestamp + 10000);
 
-        feedpush(RICO_RISK_TAG, bytes32(1000 * RAY), UINT256_MAX);
+        feedpush(RISK_RICO_TAG, bytes32(RAY / 1000), UINT256_MAX);
         assertEq(Vat(bank).joy(), 0);
         uint self_risk_1 = risk.balanceOf(self);
         Vow(bank).keep(ilks);
@@ -389,7 +389,7 @@ contract VowTest is Test, RicoSetUp {
         uint _dink = 10000 * WAD;
         gold.mint(address(guy), _dink);
         risk.mint(address(guy), 1000000 * WAD);
-        feedpush(RICO_RISK_TAG, bytes32(10 * RAY), type(uint).max);
+        feedpush(RISK_RICO_TAG, bytes32(RAY / 10), type(uint).max);
 
         vm.startPrank(address(guy));
 
@@ -585,7 +585,7 @@ contract VowJsTest is Test, RicoSetUp {
         // wait a year, flap the surplus
         skip(BANKYEAR);
         uint start_ink = _ink(i0, me);
-        feedpush(RICO_RISK_TAG, bytes32(RAY), UINT256_MAX);
+        feedpush(RISK_RICO_TAG, bytes32(RAY), UINT256_MAX);
         Vow(bank).keep(ilks);
 
         (Vat.Spot spot,,) = Vat(bank).safe(i0, me);
@@ -633,7 +633,7 @@ contract VowJsTest is Test, RicoSetUp {
     function test_keep_vow_1yr_drip_flap() public {
         uint initial_total = rico.totalSupply();
         skip(BANKYEAR);
-        feedpush(RICO_RISK_TAG, bytes32(RAY), UINT256_MAX);
+        feedpush(RISK_RICO_TAG, bytes32(RAY), UINT256_MAX);
         //vm.expectCall(address(hook), abi.encodePacked(hook.flow.selector));
         Vow(bank).keep(ilks);
         uint final_total = rico.totalSupply();
@@ -690,12 +690,12 @@ contract VowJsTest is Test, RicoSetUp {
         // run a flap and ensure risk is burnt
         uint risk_initial_supply = risk.totalSupply();
         skip(BANKYEAR);
-        feedpush(RICO_RISK_TAG, bytes32(2 * RAY), UINT256_MAX);
+        feedpush(RISK_RICO_TAG, bytes32(RAY / 2), UINT256_MAX);
         risk.mint(address(guy), 1000 * WAD);
         guy.keep(ilks);
 
         skip(60);
-        feedpush(RICO_RISK_TAG, bytes32(10000 * RAY), UINT256_MAX);
+        feedpush(RISK_RICO_TAG, bytes32(RAY / 10000), UINT256_MAX);
         risk.mint(address(guy), 1000 * WAD);
         Vow(bank).keep(ilks); // call again to burn risk given to vow the first time
 

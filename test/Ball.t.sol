@@ -70,7 +70,6 @@ contract BallTest is BaseHelper {
     }
 
     function look_poke() internal {
-        ploker.ploke(RICO_RISK_TAG);
         ploker.ploke(RISK_RICO_TAG);
         advance_chainlink();
         mdn.poke(WETH_REF_TAG);
@@ -144,10 +143,10 @@ contract BallTest is BaseHelper {
             BANKYEAR * 100,
             BANKYEAR, // daiusd
             BANKYEAR, // xauusd
-            RAY,  // flappep
-            RAY,  // flappop
-            RAY,  // floppep
-            RAY,  // floppop
+            RAY,  // plat.pep
+            RAY,  // plat.pop
+            RAY,  // plot.pep
+            RAY,  // plot.pop
             Bank.Ramp(WAD, WAD, block.timestamp, 1),
             DAI,
             DAI_USD_AGG,

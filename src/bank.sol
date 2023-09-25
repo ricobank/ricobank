@@ -59,18 +59,23 @@ abstract contract Bank is Math, Flog, Palm, OwnableInternal {
         uint cel; // [sec] max seconds flop can ramp up
     }
 
+    struct Plx {
+        uint pep; // [ray] rush gradient
+        uint pop; // [ray] rush offset
+    }
+
+    struct Rudd {
+        address src;
+        bytes32 tag;
+    }
+
     struct VowStorage {
         Gem     RISK;
         Ramp    ramp;
         uint256 toll;
-        uint256 flappep;  // [ray] rush gradient
-        uint256 flappop;  // [ray] rush offset
-        address flapsrc;  // flap feed
-        bytes32 flaptag;
-        uint256 floppep;  // [ray] rush gradient
-        uint256 floppop;  // [ray] rush offset
-        address flopsrc;  // flop feed
-        bytes32 floptag;
+        Plx     plat; // flap plot
+        Plx     plot; // flop plot
+        Rudd    rudd; // risk:rico feed
     }
 
     struct VoxStorage {

@@ -36,7 +36,6 @@ contract Ball is Math, Ward {
     bytes32 internal constant XAU_USD_TAG   = "xau:usd";
     bytes32 internal constant DAI_USD_TAG   = "dai:usd";
     bytes32 internal constant RICO_REF_TAG  = "rico:ref";
-    bytes32 internal constant RICO_RISK_TAG = "rico:risk";
     bytes32 internal constant RISK_RICO_TAG = "risk:rico";
     bytes32 internal constant WETH_USD_TAG  = "weth:usd";
     bytes32 internal constant UNI_NFT_ILK   = ":uninft";
@@ -99,10 +98,10 @@ contract Ball is Math, Ward {
         uint256 adaptttl;
         uint256 daiusdttl;
         uint256 xauusdttl;
-        uint256 flappep;
-        uint256 flappop;
-        uint256 floppep;
-        uint256 floppop;
+        uint256 platpep;
+        uint256 platpop;
+        uint256 plotpep;
+        uint256 plotpop;
         Vow.Ramp mintramp;
         address DAI;
         address DAI_USD_AGG;
@@ -141,7 +140,6 @@ contract Ball is Math, Ward {
             RICO_DAI_TAG,
             UniswapV3Adapter.Config(args.ricodai, args.adaptrange, args.adaptttl, args.DAI < args.rico)
         );
-        Feedbase(feedbase).push(bytes32("ONE"), bytes32(RAY), type(uint).max);
 
         _configureBlock(multiplier, RICO_USD_TAG,
                        address(cladapt),  DAI_USD_TAG,
@@ -150,35 +148,26 @@ contract Ball is Math, Ward {
                        address(multiplier), RICO_USD_TAG,
                        address(cladapt),    XAU_USD_TAG);
 
-        //
-        // rico/risk, risk/rico
-        //
+        // risk:rico
         uniadapt.setConfig(
-            RICO_RISK_TAG,
-            UniswapV3Adapter.Config(args.ricorisk, args.adaptrange, args.adaptttl, args.rico < args.risk)
+            RISK_RICO_TAG,
+            UniswapV3Adapter.Config(args.ricorisk, args.adaptrange, args.adaptttl, args.risk < args.rico)
         );
-        _configureBlock(divider, RISK_RICO_TAG,
-                       address(this),     bytes32("ONE"),
-                       address(uniadapt), RICO_RISK_TAG);
         Medianizer.Config memory mdnconf = Medianizer.Config(new address[](1), new bytes32[](1), 1);
-        mdnconf.srcs[0] = address(divider); mdnconf.tags[0] = RISK_RICO_TAG;
+        mdnconf.srcs[0] = address(uniadapt); mdnconf.tags[0] = RISK_RICO_TAG;
         mdn.setConfig(RISK_RICO_TAG, mdnconf);
-        mdnconf.srcs[0] = address(uniadapt); mdnconf.tags[0] = RICO_RISK_TAG;
-        mdn.setConfig(RICO_RISK_TAG, mdnconf);
 
         Ploker.Config memory plokerconf = Ploker.Config(new address[](1), new bytes32[](1));
         plokerconf = Ploker.Config(new address[](1), new bytes32[](1));
         plokerconf.combinators[0] = address(mdn); plokerconf.combinatortags[0] = RISK_RICO_TAG;
         ploker.setConfig(RISK_RICO_TAG, plokerconf);
-        plokerconf.combinators[0] = address(mdn); plokerconf.combinatortags[0] = RICO_RISK_TAG;
-        ploker.setConfig(RICO_RISK_TAG, plokerconf);
     }
 
     function setup(BallArgs calldata args) _ward_ external payable {
         IDiamondCuttable.FacetCut[] memory facetCuts = new IDiamondCuttable.FacetCut[](4);
         bytes4[] memory filesels = new bytes4[](3);
         bytes4[] memory vatsels  = new bytes4[](20);
-        bytes4[] memory vowsels  = new bytes4[](7);
+        bytes4[] memory vowsels  = new bytes4[](6);
         bytes4[] memory voxsels  = new bytes4[](7);
         File fbank = File(bank);
 
@@ -208,10 +197,9 @@ contract Ball is Math, Ward {
         vowsels[0]  = Vow.keep.selector;
         vowsels[1]  = Vow.RISK.selector;
         vowsels[2]  = Vow.ramp.selector;
-        vowsels[3]  = Vow.flapfeed.selector;
-        vowsels[4]  = Vow.flopfeed.selector;
-        vowsels[5]  = Vow.flapplot.selector;
-        vowsels[6]  = Vow.flopplot.selector;
+        vowsels[3]  = Vow.rudd.selector;
+        vowsels[4]  = Vow.plat.selector;
+        vowsels[5]  = Vow.plot.selector;
         voxsels[0]  = Vox.poke.selector;
         voxsels[1]  = Vox.way.selector;
         voxsels[2]  = Vox.how.selector;
@@ -235,14 +223,12 @@ contract Ball is Math, Ward {
         fbank.file('par',  bytes32(args.par));
         fbank.file('ceil', bytes32(args.ceil));
 
-        fbank.file('flappep', bytes32(args.flappep));
-        fbank.file('flappop', bytes32(args.flappop));
-        fbank.file('flaptag', RICO_RISK_TAG);
-        fbank.file('flapsrc', bytes32(bytes20(address(mdn))));
-        fbank.file('floppep', bytes32(args.floppep));
-        fbank.file('floppop', bytes32(args.floppop));
-        fbank.file('floptag', RISK_RICO_TAG);
-        fbank.file('flopsrc', bytes32(bytes20(address(mdn))));
+        fbank.file('plat.pep', bytes32(args.platpep));
+        fbank.file('plat.pop', bytes32(args.platpop));
+        fbank.file('rudd.tag', RISK_RICO_TAG);
+        fbank.file('rudd.src', bytes32(bytes20(address(mdn))));
+        fbank.file('plot.pep', bytes32(args.plotpep));
+        fbank.file('plot.pop', bytes32(args.plotpop));
         fbank.file("vel", bytes32(args.mintramp.vel));
         fbank.file("rel", bytes32(args.mintramp.vel));
         fbank.file("bel", bytes32(args.mintramp.bel));

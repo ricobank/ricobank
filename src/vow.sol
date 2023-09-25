@@ -5,7 +5,7 @@
 pragma solidity ^0.8.19;
 
 import { Vat }  from './vat.sol';
-import { Bank, Gem, OwnableStorage } from './bank.sol';
+import { Feedbase, Bank, Gem, OwnableStorage } from './bank.sol';
 
 // accounting mechanism
 // triggers collateral (flip), surplus (flap), and deficit (flop) auctions
@@ -14,18 +14,9 @@ contract Vow is Bank {
     function ramp() view external returns (Ramp memory) {
         return getVowStorage().ramp;
     }
-    function flapfeed() view external returns (address, bytes32) {
-        return (getVowStorage().flapsrc, getVowStorage().flaptag);
-    }
-    function flopfeed() view external returns (address, bytes32) {
-        return (getVowStorage().flopsrc, getVowStorage().floptag);
-    }
-    function flapplot() view external returns (uint, uint) {
-        return (getVowStorage().flappep, getVowStorage().flappop);
-    }
-    function flopplot() view external returns (uint, uint) {
-        return (getVowStorage().floppep, getVowStorage().floppop);
-    }
+    function rudd() view external returns (Rudd memory) { return getVowStorage().rudd; }
+    function plat() view external returns (Plx memory) { return getVowStorage().plat; }
+    function plot() view external returns (Plx memory) { return getVowStorage().plot; }
 
     error ErrReflop();
     error ErrOutDated();
@@ -61,14 +52,14 @@ contract Vow is Bank {
             // rush increases as surplus increases, i.e. if there's a massive
             // surplus the system deduces that it's overpricing rico
             uint debt = vatS.debt;
-            uint rush = (flap * vowS.flappep + debt * vowS.flappop) / debt;
+            uint rush = (flap * vowS.plat.pep + debt * vowS.plat.pop) / debt;
 
             // buy-and-burn risk with remaining (`flap`) rico
             joy     -= flap;
             vatS.joy = joy;
             emit NewPalm0('joy', bytes32(joy));
 
-            uint price = rdiv(_price(vowS.flapsrc, vowS.flaptag), rush) + 1;
+            uint price = rdiv(rinv(_price()), rush) + 1;
             uint sell  = rmul(flap, RAY - vowS.toll);
             uint earn  = rmul(sell, price) + 1;
 
@@ -92,7 +83,7 @@ contract Vow is Bank {
             // i.e. if it's very undercollateralized then bank deduces
             // that it's overpricing RISK
             uint debt  = vatS.debt;
-            uint rush  = (under * vowS.floppep + debt * vowS.floppop) / debt;
+            uint rush  = (under * vowS.plot.pep + debt * vowS.plot.pop) / debt;
 
             // rate-limit flop
             uint slope = min(vowS.ramp.vel, wmul(vowS.ramp.rel, risk.totalSupply()));
@@ -104,7 +95,7 @@ contract Vow is Bank {
             emit NewPalm0('bel', bytes32(vowS.ramp.bel));
 
             // swap RISK for rico to cover sin
-            uint earn = flop * _price(vowS.flopsrc, vowS.floptag) / rush;
+            uint earn = flop * _price() / rush;
             Gem(rico).burn(msg.sender, earn);
             Gem(risk).mint(msg.sender, flop);
 
@@ -129,8 +120,10 @@ contract Vow is Bank {
         emit NewPalm0('debt', bytes32(vs.debt));
     }
 
-    function _price(address src, bytes32 tag) internal view returns (uint) {
-        (bytes32 _val, uint ttl) = getBankStorage().fb.pull(src, tag);
+    function _price() internal view returns (uint) {
+        BankStorage storage bankS = getBankStorage();
+        VowStorage  storage vowS  = getVowStorage();
+        (bytes32 _val, uint ttl)  = bankS.fb.pull(vowS.rudd.src, vowS.rudd.tag);
         if (ttl < block.timestamp) revert ErrOutDated();
         return uint(_val);
     }

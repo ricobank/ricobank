@@ -102,11 +102,8 @@ describe('Vox', () => {
     await send(bank.filh, b32('weth'), b32('ftag'), [], b32('weth:ref'))
     await send(fb.push, b32('weth:ref'), bn2b32(ray(0.8)), constants.MaxUint256);
 
-    await send(bank.file, b32('flopsrc'), ALI + '00'.repeat(12))
-    await send(bank.file, b32('floptag'), b32('risk:rico'))
-    await send(bank.file, b32('flapsrc'), ALI + '00'.repeat(12))
-    await send(bank.file, b32('flaptag'), b32('rico:risk'))
-    await send(fb.push, b32('rico:risk'), bn2b32(ray(1)), constants.MaxUint256)
+    await send(bank.file, b32('rudd.src'), ALI + '00'.repeat(12))
+    await send(bank.file, b32('rudd.tag'), b32('risk:rico'))
     await send(fb.push, b32('risk:rico'), bn2b32(ray(1)), constants.MaxUint256)
 
     await ali.sendTransaction({
@@ -126,9 +123,9 @@ describe('Vox', () => {
   })
 
   it('ploke', async () => {
-    for (const tag of ['weth:ref', 'rico:risk', 'risk:rico']) {
+    for (const tag of ['weth:ref', 'risk:rico']) {
         debug(`ploking ${tag}`)
-        await ploker.ploke(b32(tag))
+        await send(ploker.ploke, b32(tag))
     }
     await fail('ErrNoConfig', ploker.ploke, b32('ricoref'))
   })
@@ -216,7 +213,7 @@ describe('Vox', () => {
     })
 
     it('deploy gas', async () => {
-      await check(ethers.BigNumber.from(deploygas), 40151291)
+      await check(ethers.BigNumber.from(deploygas), 39510202)
     })
 
     it('ploke gas', async () => {
@@ -272,7 +269,7 @@ describe('Vox', () => {
       await send(bank.drip, b32('weth'))
 
       let gas = await bank.estimateGas.keep([])
-      await check(gas, 115398)
+      await check(gas, 115837)
     })
 
     it('keep deficit gas', async() => {
@@ -282,21 +279,21 @@ describe('Vox', () => {
       await send(bank.bail, b32('weth'), ALI)
 
       let gas = await bank.estimateGas.keep([])
-      await check(gas, 127777)
+      await check(gas, 127978)
     })
 
     it('poke up gas', async () => {
       await mine(hh, 100)
       await send(fb.push, TAG, bn2b32(ray(0.5)), constants.MaxUint256)
       let gas = await bank.estimateGas.poke()
-      await check(gas, 68862, 69111)
+      await check(gas, 68641, 68741)
     })
 
     it('poke down gas', async () => {
       await mine(hh, 100)
       await send(fb.push, TAG, bn2b32(ray(2)), constants.MaxUint256)
       let gas = await bank.estimateGas.poke()
-      await check(gas, 69355, 69607)
+      await check(gas, 69133, 69233)
     })
 
     it('read mar gas', async () => {

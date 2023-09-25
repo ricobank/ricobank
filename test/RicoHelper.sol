@@ -58,10 +58,10 @@ abstract contract RicoSetUp is BaseHelper {
     uint160 constant public risk_price = 2 ** 96;
     uint256 constant public INIT_PAR   = RAY;
     uint256 constant public init_mint  = 10000;
-    uint256 constant public flappep    = RAY;
-    uint256 constant public flappop    = RAY;
-    uint256 constant public floppep    = RAY;
-    uint256 constant public floppop    = RAY;
+    uint256 constant public platpep    = RAY;
+    uint256 constant public platpop    = RAY;
+    uint256 constant public plotpep    = RAY;
+    uint256 constant public plotpop    = RAY;
 
     ERC20Hook  public hook;
     UniNFTHook public nfthook;
@@ -220,10 +220,10 @@ abstract contract RicoSetUp is BaseHelper {
             BANKYEAR / 4,
             BANKYEAR, // daiusd
             BANKYEAR, // xauusd
-            flappep,
-            flappop,
-            floppep,
-            floppop,
+            platpep,
+            platpop,
+            plotpep,
+            plotpop,
             Bank.Ramp(WAD, WAD, block.timestamp, 1),
             DAI,
             DAI_USD_AGG,

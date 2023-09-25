@@ -32,15 +32,13 @@ contract File is Bank {
             if (uint(val) > RAY) revert ErrHighToll();
             vowS.toll = uint(val);
         }
+        else if (key == "plot.pep") { vowS.plot.pep = uint(val); }
+        else if (key == "plat.pep") { vowS.plat.pep = uint(val); }
+        else if (key == "plot.pop") { vowS.plot.pop = uint(val); }
+        else if (key == "plat.pop") { vowS.plat.pop = uint(val); }
+        else if (key == "rudd.src") { vowS.rudd.src = address(bytes20(bytes32(val))); }
+        else if (key == "rudd.tag") { vowS.rudd.tag = val; }
         else if (key == 'risk') { vowS.RISK = Gem(address(bytes20(val))); }
-        else if (key == "floppep") { vowS.floppep = uint(val); }
-        else if (key == "flappep") { vowS.flappep = uint(val); }
-        else if (key == "floppop") { vowS.floppop = uint(val); }
-        else if (key == "flappop") { vowS.flappop = uint(val); }
-        else if (key == "flopsrc") { vowS.flopsrc = address(bytes20(val)); }
-        else if (key == "flapsrc") { vowS.flapsrc = address(bytes20(val)); }
-        else if (key == "floptag") { vowS.floptag = val; }
-        else if (key == "flaptag") { vowS.flaptag = val; }
         // vox
         else if (key == "tip") { voxS.tip = address(bytes20(val)); }
         else if (key == "tag") { voxS.tag = val; }
