@@ -944,6 +944,27 @@ contract VatTest is Test, RicoSetUp {
         assertEq(ink.length, 32);
     }
 
+    function test_no_dink() public {
+        address rsh = address(new RevertSafeHook());
+        feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
+        Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(WAD));
+        Vat(bank).filk(gilk, 'hook', bytes32(bytes20(rsh)));
+        Vat(bank).frob(gilk, self, '', -int(WAD / 2));
+    }
+}
+
+contract RevertSafeHook is Hook {
+    error ErrBadSafe();
+    function frobhook(
+        address, bytes32, address, bytes calldata, int
+    ) pure external returns (bool safer) {}
+    function bailhook(
+        bytes32, address, uint, address, uint, uint
+    ) external returns (bytes memory) {}
+    function safehook(
+        bytes32, address
+    ) pure external returns (uint, uint){ revert ErrBadSafe(); }
+    function ink(bytes32, address) external pure returns (bytes memory) {}
 }
 
 contract OnlyInkHook is Hook {

@@ -173,11 +173,13 @@ contract Vat is Bank {
             safer = both(safer, abi.decode(data, (bool)));
         }
 
-        // urn is safer, or is safe
-        (Spot spot,,) = safe(i, u);
-        if (!either(safer, spot == Spot.Safe)) revert ErrNotSafe();
-        // urn is safer, or urn is caller
-        if (!either(safer, u == msg.sender)) revert ErrWrongUrn();
+        // urn is safer, or it is safe and urn holder is caller
+        if (!safer) {
+            (Spot spot,,) = safe(i, u);
+            if (spot != Spot.Safe) revert ErrNotSafe();
+            if (u != msg.sender) revert ErrWrongUrn();
+        }
+ 
     }
 
     function bail(bytes32 i, address u) _flog_ external returns (bytes memory)
