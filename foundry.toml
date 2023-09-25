@@ -20,7 +20,7 @@ solc_version='0.8.19'
 [invariant]
 fail_on_revert = false
 runs = 1
-depth = 1000
+depth = 10000
 
 [profile.lite.optimizer_details.yulDetails]
 stackAllocation = true

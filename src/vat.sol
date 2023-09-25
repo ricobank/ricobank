@@ -121,11 +121,11 @@ contract Vat is Bank {
 
         if (ilk.rack == 0) revert ErrIlkInit();
 
-        uint art   = add(vs.urns[i][u], dart);
+        uint art = add(vs.urns[i][u], dart);
         vs.urns[i][u] = art;
         emit NewPalm2('art', i, bytes32(bytes20(u)), bytes32(art));
 
-        ilk.tart   = add(ilk.tart, dart);
+        ilk.tart = add(ilk.tart, dart);
         emit NewPalm1('tart', i, bytes32(ilk.tart));
 
         // rico mint/burn amount increases with rack

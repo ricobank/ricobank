@@ -132,5 +132,8 @@ contract ERC20HandlerTest is Test, BaseHelper {
 
         uint p3 = Vat(bank).par();
         assertLt(p3, p2);
+
+        uint minPar = handler.minPar();
+        assertLt(minPar, p1);
     }
 }

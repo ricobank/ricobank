@@ -3,12 +3,12 @@
 
 import subprocess
 
-timeout    = 10
+timeout    = 60
 start_seed = 1
 end_seed   = 1000
-
 command = ["forge", "test", "--match-test", "invariant", "--fuzz-seed"]
 
+subprocess.run(["forge", "build"])
 for seed in range(start_seed, end_seed):
     output = ''
     expired = failed = False
