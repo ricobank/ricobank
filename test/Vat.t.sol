@@ -951,6 +951,42 @@ contract VatTest is Test, RicoSetUp {
         Vat(bank).filk(gilk, 'hook', bytes32(bytes20(rsh)));
         Vat(bank).frob(gilk, self, '', -int(WAD / 2));
     }
+
+    function test_ceil_big_rest() public {
+        // frob a billion rico
+        // simple way to quickly generate some rest
+        gold.mint(self, RAY * 1000);
+        File(bank).file('ceil', bytes32(RAY));
+        Vat(bank).filk(gilk, 'line', bytes32(UINT256_MAX));
+
+        feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
+        skip(1);
+        Vat(bank).drip(gilk);
+        assertGt(Vat(bank).ilks(gilk).rack, RAY);
+        Vat(bank).frob(gilk, self, abi.encodePacked(RAY), int(RAY * 2 / 3));
+
+        // make about 50 * RAY rest to exceed ceil while debt < ceil
+        for (uint i = 0; i < 100; i++) {
+            int dart = i % 2 == 0 ? -int(RAY / 2): int(RAY / 2);
+            Vat(bank).frob(gilk, self, '', dart);
+        }
+
+        // frob what space is left below ceil
+        // ceiling check should take rest into account
+        uint diff = Vat(bank).ceil() - Vat(bank).debt();
+        uint rack = Vat(bank).ilks(gilk).rack;
+        vm.expectRevert(Vat.ErrDebtCeil.selector);
+        Vat(bank).frob(gilk, self, '', int(rdiv(diff, rack)));
+
+        skip(1);
+        // drip to mod the rest so it's < RAY and recalculate dart
+        // frob should work now
+        Vat(bank).drip(gilk);
+        diff = Vat(bank).ceil() - Vat(bank).debt();
+        rack = Vat(bank).ilks(gilk).rack;
+        Vat(bank).frob(gilk, self, '', int(rdiv(diff, rack)));
+    }
+
 }
 
 contract RevertSafeHook is Hook {

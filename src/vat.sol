@@ -158,7 +158,11 @@ contract Vat is Bank {
         }
 
         // either debt has decreased, or debt ceilings are not exceeded
-        if (both(dart > 0, either(ilk.tart * ilk.rack > ilk.line, vs.debt > vs.ceil))) revert ErrDebtCeil();
+        {
+            bool oline = ilk.tart * ilk.rack > ilk.line;
+            bool oceil = vs.debt + vs.rest / RAY > vs.ceil;
+            if (both(dart > 0, either(oline, oceil))) revert ErrDebtCeil();
+        }
 
         // urn has no debt, or a non-dusty amount
         if (both(art != 0, tab < ilk.dust)) revert ErrUrnDust();
