@@ -161,11 +161,11 @@ contract Vat is Bank {
         {
             bool oline = ilk.tart * ilk.rack > ilk.line;
             bool oceil = vs.debt + vs.rest / RAY > vs.ceil;
-            if (both(dart > 0, either(oline, oceil))) revert ErrDebtCeil();
+            if (dart > 0 && (oline || oceil)) revert ErrDebtCeil();
         }
 
         // urn has no debt, or a non-dusty amount
-        if (both(art != 0, tab < ilk.dust)) revert ErrUrnDust();
+        if (art != 0 && tab < ilk.dust) revert ErrUrnDust();
 
         // safer if less/same art and more/same ink
         bool safer = dart <= 0;
@@ -174,7 +174,7 @@ contract Vat is Bank {
                 Hook.frobhook.selector, msg.sender, i, u, dink, dart
             ));
             if (data.length != 32) revert ErrHookData();
-            safer = both(safer, abi.decode(data, (bool)));
+            safer = safer && abi.decode(data, (bool));
         }
 
         // urn is safer, or it is safe and urn holder is caller
