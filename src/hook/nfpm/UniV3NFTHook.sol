@@ -26,12 +26,19 @@ contract UniNFTHook is Hook, Bank {
         bytes32 ftag;  // [tag] feedbase `tag` bytes32
     }
 
+    struct UniNFTIlk {
+        mapping(address gem => Source source) sources;
+        uint liqr;
+        uint pep;
+        uint pop;
+    }
+
     struct UniNFTHookStorage {
         INonfungiblePositionManager nfpm; // uni NFT
         uint256 ROOM;     // maximum position list length
         IUniWrapper wrap; // wrapper for uniswap libraries that use earlier solc
-        mapping (bytes32 ilk => mapping(address gem => Source source)) sources; // feeds
-        mapping (bytes32 ilk => mapping(address usr => uint[] tokenIds)) inks; // position lists
+        mapping(bytes32 ilk => UniNFTIlk) ilks;
+        mapping(bytes32 ilk => mapping(address usr => uint[] tokenIds)) inks;
     }
 
     bytes32 constant public   INFO     = bytes32(abi.encodePacked('uninfthook.0'));
@@ -122,17 +129,19 @@ contract UniNFTHook is Hook, Bank {
 
     function bailhook(
         bytes32 i, address u, uint256 bill,
-        address keeper, uint256 rush, uint256 cut
+        address keeper, uint256 rush
     ) external returns (bytes memory) {
-        UniNFTHookStorage storage hs = getStorage();
-        uint[] memory ids = hs.inks[i][u];
+        UniNFTHookStorage storage hs  = getStorage();
+        UniNFTIlk         storage ilk = hs.ilks[i];
+        uint[]            memory  ids = hs.inks[i][u];
 
         // bail all the uni positions
         delete hs.inks[i][u];
         emit NewPalmBytes2('uninfthook.0.ink', i, bytes32(bytes20(u)), bytes(''));
 
         // cut is RAD, rush is RAY, so vow earns a WAD
-        uint256 earn = cut / rush;
+        uint256 mash = rmul(ilk.pop, rpow(rinv(rush), ilk.pep));
+        uint256 earn = rmul(bill, mash);
         uint256 over = earn > bill ? earn - bill : 0;
 
         // take from keeper to underwrite urn, return what's left to urn owner.
@@ -178,8 +187,10 @@ contract UniNFTHook is Hook, Bank {
     }
 
     function safehook(bytes32 i, address u) public view returns (uint tot, uint minttl) {
-        UniNFTHookStorage storage hs = getStorage();
-        uint[] storage tokenIds = hs.inks[i][u];
+        UniNFTHookStorage storage hs       = getStorage();
+        UniNFTIlk         storage ilk      = hs.ilks[i];
+        uint[]            storage tokenIds = hs.inks[i][u];
+
         minttl = type(uint).max;
 
         for (uint idx = 0; idx < tokenIds.length; idx++) {
@@ -192,39 +203,44 @@ contract UniNFTHook is Hook, Bank {
 
             // multiply gem0 amount by its price in rico, add to tot
             {
-                Source storage src0 = hs.sources[i][token0];
+                Source storage src0 = ilk.sources[token0];
                 (bytes32 val, uint ttl) = fb.pull(src0.fsrc, src0.ftag);
 
                 minttl = min(minttl, ttl);
-                tot   += amount0 * uint(val);
+                tot   += amount0 * rdiv(uint(val), ilk.liqr);
             }
 
             // multiply gem1 amount by its price in rico, add to tot
             {
-                Source storage src1 = hs.sources[i][token1];
+                Source storage src1 = ilk.sources[token1];
                 (bytes32 val, uint ttl) = fb.pull(src1.fsrc, src1.ftag);
 
                 minttl = min(minttl, ttl);
-                tot   += amount1 * uint(val);
+                tot   += amount1 * rdiv(uint(val), ilk.liqr);
             }
         }
+
     }
 
     function file(bytes32 key, bytes32 i, bytes32[] calldata xs, bytes32 val)
       external {
-        UniNFTHookStorage storage hs = getStorage();
+        UniNFTHookStorage storage hs  = getStorage();
+        UniNFTIlk         storage ilk = hs.ilks[i];
 
         if (xs.length == 0) {
             if (key == 'nfpm') { hs.nfpm = INonfungiblePositionManager(address(bytes20(val)));
             } else if (key == 'ROOM') { hs.ROOM = uint(val);
             } else if (key == 'wrap') { hs.wrap = IUniWrapper(address(bytes20(val)));
+            } else if (key == 'liqr') { ilk.liqr = uint(val);
+            } else if (key == 'pep')  { ilk.pep = uint(val);
+            } else if (key == 'pop')  { ilk.pop = uint(val);
             } else { revert ErrWrongKey(); }
             emit NewPalm0(concat(INFO, '.', key), val);
         } else if (xs.length == 1) {
             address gem = address(bytes20(xs[0]));
 
-            if (key == 'fsrc') { hs.sources[i][gem].fsrc = address(bytes20(val));
-            } else if (key == 'ftag') { hs.sources[i][gem].ftag = val;
+            if (key == 'fsrc') { ilk.sources[gem].fsrc = address(bytes20(val));
+            } else if (key == 'ftag') { ilk.sources[gem].ftag = val;
             } else { revert ErrWrongKey(); }
             emit NewPalm2(concat(INFO, '.', key), i, xs[0], val);
         } else {
@@ -234,18 +250,22 @@ contract UniNFTHook is Hook, Bank {
 
     function get(bytes32 key, bytes32 i, bytes32[] calldata xs)
       view external returns (bytes32) {
-        UniNFTHookStorage storage hs = getStorage();
+        UniNFTHookStorage storage hs  = getStorage();
+        UniNFTIlk         storage ilk = hs.ilks[i];
 
         if (xs.length == 0) {
             if (key == 'nfpm') { return bytes32(bytes20(address(hs.nfpm)));
             } else if (key == 'ROOM') { return bytes32(hs.ROOM);
             } else if (key == 'wrap') { return bytes32(bytes20(address(hs.wrap)));
+            } else if (key == 'liqr') { return bytes32(ilk.liqr);
+            } else if (key == 'pep') { return bytes32(ilk.pep);
+            } else if (key == 'pop') { return bytes32(ilk.pop);
             } else { revert ErrWrongKey(); }
         } else if (xs.length == 1) {
             address gem = address(bytes20(xs[0]));
 
-            if (key == 'fsrc') { return bytes32(bytes20(hs.sources[i][gem].fsrc));
-            } else if (key == 'ftag') { return hs.sources[i][gem].ftag;
+            if (key == 'fsrc') { return bytes32(bytes20(ilk.sources[gem].fsrc));
+            } else if (key == 'ftag') { return ilk.sources[gem].ftag;
             } else { revert ErrWrongKey(); }
         } else {
             revert ErrWrongKey();

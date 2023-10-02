@@ -48,7 +48,7 @@ contract InvariantFluidPrice is Test, BaseHelper {
         uint tart = vat.ilks(WETH_ILK).tart;
         uint rack = vat.ilks(WETH_ILK).rack;
         uint line = vat.ilks(WETH_ILK).line;
-        uint liqr = vat.ilks(WETH_ILK).liqr;
+        uint liqr = uint(vat.geth(WETH_ILK, 'liqr', empty));
         uint weth_val  = handler.localWeth() * handler.weth_ref_max() / handler.minPar();
 
         // debt invariant

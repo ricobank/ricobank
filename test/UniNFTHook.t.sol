@@ -167,12 +167,16 @@ contract NFTHookTest is Test, RicoSetUp {
     }
 
     function test_nft_bail_refund() public {
+        uint pop = RAY * 2; //uint(Vat(bank).geth(uilk, 'pop', empty));
+        Vat(bank).filh(uilk, 'pop', empty, bytes32(pop));
+        uint pep = uint(Vat(bank).geth(uilk, 'pep', empty));
+ 
         // the NFT has 1000 each of gold and weth, valued at 1900 and 1000
         // frob to max safe debt with double cratio, 1.45MM rico
         File(bank).file('ceil', bytes32(WAD * 1_000_000_000));
         Vat(bank).filk(uilk, 'line', bytes32(RAD * 1_000_000_000));
-        Vat(bank).filk(gilk,      'line', bytes32(RAD * 1_000_000_000));
-        Vat(bank).filk(uilk, 'liqr', bytes32(RAY * 2));
+        Vat(bank).filk(gilk, 'line', bytes32(RAD * 1_000_000_000));
+        Vat(bank).filh(uilk, 'liqr', empty, bytes32(RAY * 2));
         bytes memory addgwpos = abi.encodePacked(int(1), goldwethtokid);
         uint borrow = WAD * uint(1_450_000 - 1);
         Vat(bank).frob(uilk, self, addgwpos, int(borrow));
@@ -182,7 +186,8 @@ contract NFTHookTest is Test, RicoSetUp {
         feedpush(grtag, bytes32(1425 * RAY), type(uint).max);
 
         // price should be 0.75**2, as 0.75 for oracle drop and 0.75 for rush factor
-        uint expected_cost_for_keeper = wmul(borrow * 2, wmul(WAD * 75 / 100, WAD * 75 / 100));
+        uint slash = rmul(pop, rpow(RAY * 75 / 100, pep));
+        uint expected_cost_for_keeper = rmul(borrow, slash);
         // tiny errors from uni pool?
         expected_cost_for_keeper = expected_cost_for_keeper * 10001 / 10000;
         rico_mint(expected_cost_for_keeper, false);
@@ -213,8 +218,8 @@ contract NFTHookTest is Test, RicoSetUp {
         Vat(bank).bail(uilk, self);
 
         feedpush(drtag, bytes32(RAY / uint(100_000)), type(uint).max);
-        (,uint rush, uint cut) = Vat(bank).safe(uilk, self);
-        uint wad_cost = cut / RAY * rush / RAY;
+        (,uint rush) = Vat(bank).safe(uilk, self);
+        uint wad_cost = 4 * Vat(bank).urns(uilk, self) * Vat(bank).ilks(uilk).rack / rush;
         rico_mint(wad_cost, true);
         rico.transfer(address(guy), wad_cost);
         uint guy_rico_before = rico.balanceOf(address(guy));
@@ -240,7 +245,7 @@ contract NFTHookTest is Test, RicoSetUp {
         Vat(bank).frob(uilk, self, data, 0);
         assertEq(nfpm.ownerOf(goldwethtokid), bank);
         assertEq(nfpm.ownerOf(golddaitokid), self);
-        (Vat.Spot spot,,) = Vat(bank).safe(uilk, self);
+        (Vat.Spot spot,) = Vat(bank).safe(uilk, self);
         assertTrue(spot == Vat.Spot.Safe);
 
         // put it back
@@ -249,7 +254,7 @@ contract NFTHookTest is Test, RicoSetUp {
         Vat(bank).frob(uilk, self, data, 0);
         assertEq(nfpm.ownerOf(goldwethtokid), bank);
         assertEq(nfpm.ownerOf(golddaitokid), bank);
-        (spot,,) = Vat(bank).safe(uilk, self);
+        (spot,) = Vat(bank).safe(uilk, self);
         assertTrue(spot == Vat.Spot.Safe);
 
         // remove goldwethtokid
@@ -257,7 +262,7 @@ contract NFTHookTest is Test, RicoSetUp {
         Vat(bank).frob(uilk, self, data, 0);
         assertEq(nfpm.ownerOf(goldwethtokid), self);
         assertEq(nfpm.ownerOf(golddaitokid), bank);
-        (spot,,) = Vat(bank).safe(uilk, self);
+        (spot,) = Vat(bank).safe(uilk, self);
         assertTrue(spot == Vat.Spot.Safe);
 
         // put it back
@@ -285,19 +290,19 @@ contract NFTHookTest is Test, RicoSetUp {
         Vat(bank).frob(uilk, self, data, int(900 * WAD));
 
         feedpush(drtag, bytes32(0), type(uint).max);
-        (Vat.Spot spot,,) = Vat(bank).safe(uilk, self);
+        (Vat.Spot spot,) = Vat(bank).safe(uilk, self);
         assertTrue(spot == Vat.Spot.Safe);
         feedpush(grtag, bytes32(0), type(uint).max);
-        (spot,,) = Vat(bank).safe(uilk, self);
+        (spot,) = Vat(bank).safe(uilk, self);
         assertTrue(spot == Vat.Spot.Safe);
 
         skip(BANKYEAR * 10);
         Vat(bank).drip(uilk);
-        (spot,,) = Vat(bank).safe(uilk, self);
+        (spot,) = Vat(bank).safe(uilk, self);
         assertTrue(spot == Vat.Spot.Sunk);
 
-        (,uint cut, uint rush) = Vat(bank).safe(uilk, self);
-        uint wad_cost = cut / RAY * rush / RAY;
+        (,uint rush) = Vat(bank).safe(uilk, self);
+        uint wad_cost = 4 * Vat(bank).urns(uilk, self) * Vat(bank).ilks(uilk).rack / rush;
         rico_mint(wad_cost, true);
 
         bytes memory ids = Vat(bank).bail(uilk, self);
@@ -453,5 +458,37 @@ contract NFTHookTest is Test, RicoSetUp {
         // both feeds non-null...frob should pass
         Vat(bank).filh(uilk, 'fsrc', single(bytes32(bytes20(agold))), bytes32(bytes20(address(mdn))));
         Vat(bank).frob(uilk, self, abi.encodePacked(int(1), goldwethtokid), int(WAD));
+    }
+
+    function test_bail_pop_pep_uni() public {
+        // set pep and pop to something awk
+        uint pep = 3;
+        uint pop = 5 * RAY;
+        uint borrow = 1000 * WAD;
+        Vat(bank).filh(uilk, 'pep', empty, bytes32(pep));
+        Vat(bank).filh(uilk, 'pop', empty, bytes32(uint(pop)));
+
+
+        feedpush(grtag, bytes32(RAY), UINT256_MAX);
+        feedpush(wrtag, bytes32(RAY), UINT256_MAX);
+        Vat(bank).filh(uilk, 'fsrc', single(bytes32(bytes20(WETH))), bytes32(bytes20(self)));
+        Vat(bank).filh(uilk, 'fsrc', single(bytes32(bytes20(agold))), bytes32(bytes20(self)));
+        Vat(bank).filh(uilk, 'ftag', single(bytes32(bytes20(WETH))), bytes32(grtag));
+        Vat(bank).filh(uilk, 'ftag', single(bytes32(bytes20(agold))), bytes32(wrtag));
+
+
+        // overcollateralized 2x
+        Vat(bank).frob(uilk, self, abi.encodePacked(int(1), goldwethtokid), int(WAD * 1000));
+
+        // chop == 1, so bill is tab / RAY
+        // overcollateralized 2x, price 1/6x -> rush is 3
+        // -> mash is pop / (3 ^ pep)
+        feed.push(grtag, bytes32(RAY / 6), UINT256_MAX);
+        feed.push(wrtag, bytes32(RAY / 6), UINT256_MAX);
+        uint mash = RAY * 5 / ((6 / 2) ** 3);
+        uint selfrico = rico.balanceOf(self);
+        Vat(bank).bail(uilk, self);
+
+        assertClose(selfrico - rico.balanceOf(self), rmul(borrow, mash), 1000000000);
     }
 }

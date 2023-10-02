@@ -86,6 +86,9 @@ contract DssJsTest is Test, RicoSetUp {
         Vat(bank).filh(gilk, 'gem', empty, bytes32(bytes20(address(agold))));
         Vat(bank).filh(gilk, 'fsrc', empty, bytes32(bytes20(address(mdn))));
         Vat(bank).filh(gilk, 'ftag', empty, grtag);
+        Vat(bank).filh(gilk, 'liqr', empty, bytes32(RAY));
+        Vat(bank).filh(gilk, 'pep', empty, bytes32(uint(2)));
+        Vat(bank).filh(gilk, 'pop', empty, bytes32(RAY));
  
         Vat(bank).filk(gilk, bytes32('chop'), bytes32(RAY));
         Vat(bank).filk(gilk, bytes32("line"), bytes32(init_mint * 10 * RAY));
@@ -366,7 +369,8 @@ contract DssBiteTest is DssVatTest {
         // tag=4, mat=2
         // make urn unsafe, set liquidation penalty
         feedpush(grtag, bytes32(RAY * 49 / 10), block.timestamp + 1000);
-        Vat(bank).filk(i0, 'liqr', bytes32(RAY * 2));
+        Vat(bank).filh(i0, 'liqr', empty, bytes32(RAY * 2));
+        Vat(bank).filh(i0, 'pop', empty, bytes32(RAY * 2));
         Vat(bank).filk(i0, 'chop', bytes32(RAY * 11 / 10));
 
         assertEq(_ink(i0, me), 40 * WAD);
@@ -444,7 +448,7 @@ contract DssBiteTest is DssVatTest {
         Vat(bank).bail(i0, me);
         assertEq(Vat(bank).sin() / RAY, ricoamt);
         // added 40, price is 2 and debt is 100, so earnings reduced 1.25 times
-        uint earn = WAD * 80 * 4 / 5;
+        uint earn = WAD * 80 * 4 / 5; // starts from bill, where chop is 1 rn
         assertEq(Vat(bank).joy(), earn);
         assertEq(Vat(bank).sin() / RAY, ricoamt);
     }
@@ -573,7 +577,7 @@ contract DssClipTest is DssJsTest {
         _slip(gold, me, 1000 * WAD);
         // no need to join
 
-        Vat(bank).filk(i0, 'liqr', bytes32(2 * RAY)); // dss mat
+        Vat(bank).filh(i0, 'liqr', empty, bytes32(2 * RAY)); // dss mat
 
         feedpush(grtag, bytes32(goldprice), block.timestamp + 1000);
 

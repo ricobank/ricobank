@@ -9,7 +9,7 @@ interface Hook {
         address sender, bytes32 i, address u, bytes calldata dink, int dart
     ) external returns (bool safer);
     function bailhook(
-        bytes32 i, address u, uint bill, address keeper, uint rush, uint cut
+        bytes32 i, address u, uint bill, address keeper, uint rush
     ) external returns (bytes memory);
     function safehook(
         bytes32 i, address u

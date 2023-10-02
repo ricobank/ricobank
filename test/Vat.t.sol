@@ -91,38 +91,34 @@ contract VatTest is Test, RicoSetUp {
 
     function test_safe_return_vals() public {
         Vat(bank).frob(gilk, address(this), abi.encodePacked(stack), int(stack));
-        (Vat.Spot spot, uint rush, uint cut) = Vat(bank).safe(gilk, self);
+        (Vat.Spot spot, uint rush) = Vat(bank).safe(gilk, self);
         // position should be safe, just
         assertTrue(spot == Vat.Spot.Safe);
         // when safe rush should be 0
         assertEq(rush, 0);
-        // have deposited 10 at a price of 1 with 1.0 cratio so cut should be 10
-        assertEq(cut , RAD * 10);
         // drop price to 80%
         feedpush(grtag, bytes32(RAY * 4 / 5), block.timestamp + 1000);
-        (spot, rush, cut) = Vat(bank).safe(gilk, self);
+        (spot, rush) = Vat(bank).safe(gilk, self);
         // position should now be underwater
         assertTrue(spot == Vat.Spot.Sunk);
         // the rush should now be 1.25
         assertEq(rush, RAY * 5 / 4);
-        // cut should be 80%
-        assertEq(cut , RAD * 8);
         // wait longer than ttl so price feed is stale and expect iffy
         skip(1100);
-        (spot, rush, cut) = Vat(bank).safe(gilk, self);
+        (spot, rush) = Vat(bank).safe(gilk, self);
         assertTrue(spot == Vat.Spot.Iffy);
     }
 
     function test_rack_puts_urn_underwater() public {
         // frob to exact edge
         Vat(bank).frob(gilk, address(this), abi.encodePacked(stack), int(stack));
-        (Vat.Spot spot,,) = Vat(bank).safe(gilk, self);
+        (Vat.Spot spot,) = Vat(bank).safe(gilk, self);
         assertTrue(spot == Vat.Spot.Safe);
 
         // accrue some interest to sink
         skip(100);
         Vat(bank).drip(gilk);
-        (spot,,) = Vat(bank).safe(gilk, self);
+        (spot,) = Vat(bank).safe(gilk, self);
         assertTrue(spot == Vat.Spot.Sunk);
 
         // can't refloat with neg quantity rate
@@ -132,68 +128,68 @@ contract VatTest is Test, RicoSetUp {
 
     function test_liqr_puts_urn_underwater() public {
         Vat(bank).frob(gilk, address(this), abi.encodePacked(stack), int(stack));
-        (Vat.Spot spot,,) = Vat(bank).safe(gilk, self);
+        (Vat.Spot spot,) = Vat(bank).safe(gilk, self);
         assertTrue(spot == Vat.Spot.Safe);
-        Vat(bank).filk(gilk, 'liqr', bytes32(RAY + 1000000));
-        (spot,,) = Vat(bank).safe(gilk, self);
+        Vat(bank).filh(gilk, 'liqr', empty, bytes32(RAY + 1000000));
+        (spot,) = Vat(bank).safe(gilk, self);
         assertTrue(spot == Vat.Spot.Sunk);
 
-        Vat(bank).filk(gilk, 'liqr', bytes32(RAY - 1000000));
-        (spot,,) = Vat(bank).safe(gilk, self);
+        Vat(bank).filh(gilk, 'liqr', empty, bytes32(RAY - 1000000));
+        (spot,) = Vat(bank).safe(gilk, self);
         assertTrue(spot == Vat.Spot.Safe);
     }
 
     function test_gold_crash_sinks_urn() public {
         Vat(bank).frob(gilk, address(this), abi.encodePacked(stack), int(stack));
-        (Vat.Spot spot,,) = Vat(bank).safe(gilk, self);
+        (Vat.Spot spot,) = Vat(bank).safe(gilk, self);
         assertTrue(spot == Vat.Spot.Safe);
 
         feed.push(grtag, bytes32(RAY / 2), block.timestamp + 1000);
-        (spot,,) = Vat(bank).safe(gilk, self);
+        (spot,) = Vat(bank).safe(gilk, self);
         assertTrue(spot == Vat.Spot.Sunk);
 
         feed.push(grtag, bytes32(RAY * 2), block.timestamp + 1000);
-        (spot,,) = Vat(bank).safe(gilk, self);
+        (spot,) = Vat(bank).safe(gilk, self);
         assertTrue(spot == Vat.Spot.Safe);
     }
 
     function test_time_makes_urn_iffy() public {
         Vat(bank).frob(gilk, address(this), abi.encodePacked(stack), int(stack));
-        (Vat.Spot spot,,) = Vat(bank).safe(gilk, self);
+        (Vat.Spot spot,) = Vat(bank).safe(gilk, self);
         assertTrue(spot == Vat.Spot.Safe);
 
         // feed was set will ttl of now + 1000
         skip(1100);
-        (spot,,) = Vat(bank).safe(gilk, self);
+        (spot,) = Vat(bank).safe(gilk, self);
         assertTrue(spot == Vat.Spot.Iffy);
 
         // without a drip an update should refloat urn
         feed.push(grtag, bytes32(RAY), block.timestamp + 1000);
-        (spot,,) = Vat(bank).safe(gilk, self);
+        (spot,) = Vat(bank).safe(gilk, self);
         assertTrue(spot == Vat.Spot.Safe);
     }
 
     function test_frob_refloat() public {
         Vat(bank).frob(gilk, address(this), abi.encodePacked(stack), int(stack));
-        (Vat.Spot spot,,) = Vat(bank).safe(gilk, self);
+        (Vat.Spot spot,) = Vat(bank).safe(gilk, self);
         assertTrue(spot == Vat.Spot.Safe);
 
         feed.push(grtag, bytes32(RAY / 2), block.timestamp + 1000);
-        (spot,,) = Vat(bank).safe(gilk, self);
+        (spot,) = Vat(bank).safe(gilk, self);
         assertTrue(spot == Vat.Spot.Sunk);
 
         Vat(bank).frob(gilk, address(this), abi.encodePacked(stack), int(0));
-        (spot,,) = Vat(bank).safe(gilk, self);
+        (spot,) = Vat(bank).safe(gilk, self);
         assertTrue(spot == Vat.Spot.Safe);
     }
 
     function test_increasing_risk_sunk_urn() public {
         Vat(bank).frob(gilk, address(this), abi.encodePacked(stack), int(stack));
-        (Vat.Spot spot,,) = Vat(bank).safe(gilk, self);
+        (Vat.Spot spot,) = Vat(bank).safe(gilk, self);
         assertTrue(spot == Vat.Spot.Safe);
 
         feed.push(grtag, bytes32(RAY / 2), block.timestamp + 1000);
-        (spot,,) = Vat(bank).safe(gilk, self);
+        (spot,) = Vat(bank).safe(gilk, self);
         assertTrue(spot == Vat.Spot.Sunk);
 
         //should always be able to decrease art
@@ -212,11 +208,11 @@ contract VatTest is Test, RicoSetUp {
 
     function test_increasing_risk_iffy_urn() public {
         Vat(bank).frob(gilk, address(this), abi.encodePacked(stack), int(10));
-        (Vat.Spot spot,,) = Vat(bank).safe(gilk, self);
+        (Vat.Spot spot,) = Vat(bank).safe(gilk, self);
         assertTrue(spot == Vat.Spot.Safe);
 
         skip(1100);
-        (spot,,) = Vat(bank).safe(gilk, self);
+        (spot,) = Vat(bank).safe(gilk, self);
         assertTrue(spot == Vat.Spot.Iffy);
 
         //should always be able to decrease art
@@ -235,7 +231,7 @@ contract VatTest is Test, RicoSetUp {
 
     function test_increasing_risk_safe_urn() public {
         Vat(bank).frob(gilk, address(this), abi.encodePacked(stack), int(10));
-        (Vat.Spot spot,,) = Vat(bank).safe(gilk, self);
+        (Vat.Spot spot,) = Vat(bank).safe(gilk, self);
         assertTrue(spot == Vat.Spot.Safe);
 
         //should always be able to decrease art
@@ -476,12 +472,12 @@ contract VatTest is Test, RicoSetUp {
     }
 
     function test_feed_plot_safe() public {
-        (Vat.Spot safe0,,) = Vat(bank).safe(gilk, self);
+        (Vat.Spot safe0,) = Vat(bank).safe(gilk, self);
         assertEq(uint(safe0), uint(Vat.Spot.Safe));
 
         Vat(bank).frob(gilk, self, abi.encodePacked(100 * WAD), int(50 * WAD));
 
-        (Vat.Spot safe1,,) = Vat(bank).safe(gilk, self);
+        (Vat.Spot safe1,) = Vat(bank).safe(gilk, self);
         assertEq(uint(safe1), uint(Vat.Spot.Safe));
 
 
@@ -492,23 +488,23 @@ contract VatTest is Test, RicoSetUp {
 
         feed.push(grtag, bytes32(RAY), block.timestamp + 1000);
 
-        (Vat.Spot safe2,,) = Vat(bank).safe(gilk, self);
+        (Vat.Spot safe2,) = Vat(bank).safe(gilk, self);
         assertEq(uint(safe2), uint(Vat.Spot.Safe));
 
         feed.push(grtag, bytes32(RAY / 50), block.timestamp + 1000);
 
-        (Vat.Spot safe3,,) = Vat(bank).safe(gilk, self);
+        (Vat.Spot safe3,) = Vat(bank).safe(gilk, self);
         assertEq(uint(safe3), uint(Vat.Spot.Sunk));
     }
 
     function test_par() public {
         assertEq(Vat(bank).par(), RAY);
         Vat(bank).frob(gilk, self, abi.encodePacked(100 * WAD), int(50 * WAD));
-        (Vat.Spot spot,,) = Vat(bank).safe(gilk, self);
+        (Vat.Spot spot,) = Vat(bank).safe(gilk, self);
         assertEq(uint(spot), uint(Vat.Spot.Safe));
         // par increase should increase collateral requirement
         File(bank).file('par', bytes32(RAY * 3));
-        (Vat.Spot spot2,,) = Vat(bank).safe(gilk, self);
+        (Vat.Spot spot2,) = Vat(bank).safe(gilk, self);
         assertEq(uint(spot2), uint(Vat.Spot.Sunk));
     }
 
@@ -524,6 +520,7 @@ contract VatTest is Test, RicoSetUp {
         Vat(bank).filh(hilk, 'gem', empty, bytes32(bytes20(address(hgm))));
         Vat(bank).filh(hilk, 'fsrc', empty, bytes32(bytes20(address(mdn))));
         Vat(bank).filh(hilk, 'ftag', empty, htag);
+        Vat(bank).filh(hilk, 'liqr', empty, bytes32(RAY));
  
         uint amt = WAD;
 
@@ -557,6 +554,7 @@ contract VatTest is Test, RicoSetUp {
         Vat(bank).filh(hilk, 'gem', empty, bytes32(bytes20(address(hgm))));
         Vat(bank).filh(hilk, 'fsrc', empty, bytes32(bytes20(address(mdn))));
         Vat(bank).filh(hilk, 'ftag', empty, htag);
+        Vat(bank).filh(hilk, 'liqr', empty, bytes32(RAY));
 
         hgm.mint(self, dink * 1000);
         hgm.approve(bank, type(uint).max);
@@ -605,6 +603,7 @@ contract VatTest is Test, RicoSetUp {
         Vat(bank).filh(baililk, 'gem', empty, bytes32(bytes20(address(bgm))));
         Vat(bank).filh(baililk, 'fsrc', empty, bytes32(bytes20(address(mdn))));
         Vat(bank).filh(baililk, 'ftag', empty, bailtag);
+        Vat(bank).filh(baililk, 'liqr', empty, bytes32(RAY));
 
         bgm.mint(self, dink * 1000);
         bgm.approve(bank, type(uint).max);
@@ -670,7 +669,7 @@ contract VatTest is Test, RicoSetUp {
         // check that bailhook called
         bytes memory hookdata = abi.encodeCall(
             zhook.bailhook,
-            (gilk, self, WAD, self, UINT256_MAX, 0)
+            (gilk, self, WAD, self, UINT256_MAX)
         );
         feedpush(grtag, bytes32(0), UINT256_MAX);
         vm.expectCall(address(zhook), hookdata);
@@ -987,6 +986,26 @@ contract VatTest is Test, RicoSetUp {
         Vat(bank).frob(gilk, self, '', int(rdiv(diff, rack)));
     }
 
+    function test_bail_pop_pep() public {
+        // set pep and pop to something awk
+        uint pep = 3;
+        uint pop = 5 * RAY;
+        Vat(bank).filh(gilk, 'pep', empty, bytes32(pep));
+        Vat(bank).filh(gilk, 'pop', empty, bytes32(uint(pop)));
+
+        feedpush(grtag, bytes32(RAY), UINT256_MAX);
+        Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(WAD));
+
+        // chop == 1, so bill is tab / RAY
+        // 5 * (1/4) ^ 3
+        feedpush(grtag, bytes32(RAY / 6), UINT256_MAX);
+        uint mash = RAY * 5 / (6 ** 3);
+        uint selfrico = rico.balanceOf(self);
+        Vat(bank).bail(gilk, self);
+
+        assertClose(selfrico - rico.balanceOf(self), rmul(WAD, mash), 1000000000);
+    }
+
 }
 
 contract RevertSafeHook is Hook {
@@ -995,7 +1014,7 @@ contract RevertSafeHook is Hook {
         address, bytes32, address, bytes calldata, int
     ) pure external returns (bool safer) {}
     function bailhook(
-        bytes32, address, uint, address, uint, uint
+        bytes32, address, uint, address, uint
     ) external returns (bytes memory) {}
     function safehook(
         bytes32, address
@@ -1010,11 +1029,12 @@ contract OnlyInkHook is Hook {
         return int(uint(bytes32(dink[:32]))) >= 0; 
     }
     function bailhook(
-        bytes32 i, address u, uint bill, address keeper, uint rush, uint cut
+        bytes32,address,uint,address,uint
     ) external returns (bytes memory) {}
     function safehook(
         bytes32, address
-    ) pure external returns (uint, uint){return(uint(10 ** 18 * 10 ** 27), type(uint256).max);}
+    ) pure external returns (uint, uint){
+        return(10 ** 45, type(uint256).max);}
     function ink(bytes32, address) external pure returns (bytes memory) {
         return abi.encode(uint(0));
     }
@@ -1027,11 +1047,13 @@ contract FrobHook is Hook {
         return int(uint(bytes32(dink[:32]))) >= 0 && dart <= 0; 
     }
     function bailhook(
-        bytes32 i, address u, uint bill, address keeper, uint rush, uint cut
+        bytes32,address,uint,address,uint
     ) external returns (bytes memory) {}
     function safehook(
         bytes32, address
-    ) pure external returns (uint, uint){return(uint(10 ** 18 * 10 ** 27), type(uint256).max);}
+    ) pure external returns (uint, uint) {
+        return(10 ** 45, type(uint256).max);
+    }
     function ink(bytes32, address) external pure returns (bytes memory) {
         return abi.encode(uint(0));
     }
@@ -1041,11 +1063,11 @@ contract ZeroHook is Hook {
         address sender, bytes32 i, address u, bytes calldata dink, int dart
     ) external returns (bool safer) {}
     function bailhook(
-        bytes32 i, address u, uint bill, address keeper, uint rush, uint cut
+        bytes32,address,uint,address,uint
     ) external returns (bytes memory) {}
     function safehook(
         bytes32, address
-    ) pure external returns (uint, uint){return(uint(0), type(uint256).max);}
+    ) pure external returns (uint, uint){return(0, type(uint256).max);}
     function ink(bytes32, address) external pure returns (bytes memory) {
         return abi.encode(uint(0));
     }

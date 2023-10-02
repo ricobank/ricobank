@@ -25,7 +25,6 @@ abstract contract Bank is Math, Flog, Palm, OwnableInternal {
         uint256  rho;  // [sec] Time of last drip
 
         uint256 chop;  // [ray] Liquidation Penalty
-        uint256 liqr;  // [ray] Liquidation Ratio
 
         address hook;  // [obj] Frob/grab/safe hook
     }

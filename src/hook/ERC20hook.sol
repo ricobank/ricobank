@@ -10,15 +10,17 @@ import { Hook } from './hook.sol';
 // hook that interprets ink as a single uint and dink as a single int.
 contract ERC20Hook is Hook, Bank {
 
-    // per-ilk gem and price feed
-    struct Item {
+    struct ERC20Ilk {
         address gem;   // this ilk's gem
         address fsrc;  // [obj] feedbase `src` address
         bytes32 ftag;  // [tag] feedbase `tag` bytes32
+        uint    liqr;
+        uint    pep;
+        uint    pop;
     }
 
     struct ERC20HookStorage {
-        mapping (bytes32 ilk => Item) items; // token info
+        mapping (bytes32 i => ERC20Ilk) ilks; // token info
         mapping (bytes32 i => mapping(address u => uint)) inks; // amount
     }
 
@@ -52,7 +54,7 @@ contract ERC20Hook is Hook, Bank {
         hs.inks[i][u] = _ink;
         emit NewPalmBytes2('erc20hook.0.ink', i, bytes32(bytes20(u)), abi.encodePacked(_ink));
 
-        Gem gem = Gem(hs.items[i].gem);
+        Gem gem = Gem(hs.ilks[i].gem);
         if (dink > 0) {
 
             // pull tokens from sender
@@ -74,22 +76,23 @@ contract ERC20Hook is Hook, Bank {
     }
 
     function bailhook(
-        bytes32 i, address u, uint256 bill,
-        address keeper, uint256 rush, uint256 cut
+        bytes32 i, address u, uint256 bill, address keeper, uint256 rush
     ) external returns (bytes memory) {
-        ERC20HookStorage storage hs = getStorage();
-        VatStorage       storage vs = getVatStorage();
+        ERC20HookStorage storage hs  = getStorage();
+        VatStorage       storage vs  = getVatStorage();
+        ERC20Ilk         storage ilk = hs.ilks[i];
 
         // cut is RAD, rush is RAY, so bank earns a WAD.
         // sell - sold collateral
         // earn - rico "earned" by bank in this liquidation
-        uint ham  = hs.inks[i][u];
-        uint sell = ham;
-        uint earn = cut / rush;
+        uint sell = hs.inks[i][u];
+        // bill * pop * rush ^ -pep
+        uint mash = rmul(ilk.pop, rpow(rinv(rush), ilk.pep));
+        uint earn = rmul(bill, mash);
 
         // clamp `sell` so bank only gets enough to underwrite urn.
         if (earn > bill) {
-            sell = bill * ham / earn;
+            sell = rdiv(sell, mash);
             earn = bill;
         }
 
@@ -105,31 +108,33 @@ contract ERC20Hook is Hook, Bank {
 
         // trade collateral with keeper for rico
         getBankStorage().rico.burn(keeper, earn);
-        if (!Gem(hs.items[i].gem).transfer(keeper, sell)) revert ErrTransfer();
+        if (!Gem(hs.ilks[i].gem).transfer(keeper, sell)) revert ErrTransfer();
 
         return abi.encodePacked(sell);
     }
 
+    // returns cut, ttl
     function safehook(bytes32 i, address u) view public returns (uint, uint) {
-        ERC20HookStorage storage hs = getStorage();
-        Item storage item = hs.items[i];
+        ERC20HookStorage storage hs  = getStorage();
+        ERC20Ilk         storage ilk = hs.ilks[i];
 
         // total value of collateral == ink * price feed val
-        (bytes32 val, uint ttl) = getBankStorage().fb.pull(item.fsrc, item.ftag);
-        return (uint(val) * hs.inks[i][u], ttl);
+        (bytes32 val, uint ttl) = getBankStorage().fb.pull(ilk.fsrc, ilk.ftag);
+        return (hs.inks[i][u] * rdiv(uint(val), ilk.liqr), ttl);
     }
 
     function file(bytes32 key, bytes32 i, bytes32[] calldata xs, bytes32 val)
       external {
         ERC20HookStorage storage hs = getStorage();
+        ERC20Ilk         storage ilk = hs.ilks[i];
 
         if (xs.length == 0) {
-            if (key == 'gem') {
-                hs.items[i].gem = address(bytes20(val));
-            } else if (key == 'fsrc') {
-                hs.items[i].fsrc = address(bytes20(val));
-            } else if (key == 'ftag') {
-                hs.items[i].ftag = val;
+            if (key == 'gem') { ilk.gem = address(bytes20(val));
+            } else if (key == 'fsrc') { ilk.fsrc = address(bytes20(val));
+            } else if (key == 'ftag') { ilk.ftag = val;
+            } else if (key == 'liqr') { ilk.liqr = uint(val);
+            } else if (key == 'pep')  { ilk.pep = uint(val);
+            } else if (key == 'pop')  { ilk.pop = uint(val);
             } else { revert ErrWrongKey(); }
             emit NewPalm1(concat(INFO, '.', key), i, val);
         } else {
@@ -139,15 +144,16 @@ contract ERC20Hook is Hook, Bank {
 
     function get(bytes32 key, bytes32 i, bytes32[] calldata xs)
       view external returns (bytes32) {
-        ERC20HookStorage storage hs = getStorage();
+        ERC20HookStorage storage hs  = getStorage();
+        ERC20Ilk         storage ilk = hs.ilks[i];
 
         if (xs.length == 0) {
-            if (key == 'gem') {
-                return bytes32(bytes20(hs.items[i].gem));
-            } else if (key == 'fsrc') {
-                return bytes32(bytes20(hs.items[i].fsrc));
-            } else if (key == 'ftag') {
-                return hs.items[i].ftag;
+            if (key == 'gem') { return bytes32(bytes20(ilk.gem));
+            } else if (key == 'fsrc') { return bytes32(bytes20(ilk.fsrc));
+            } else if (key == 'ftag') { return ilk.ftag;
+            } else if (key == 'liqr') { return bytes32(ilk.liqr);
+            } else if (key == 'pep') { return bytes32(ilk.pep);
+            } else if (key == 'pop') { return bytes32(ilk.pop);
             } else { revert ErrWrongKey(); }
         } else {
             revert ErrWrongKey();

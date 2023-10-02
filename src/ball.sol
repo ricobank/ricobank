@@ -249,10 +249,12 @@ contract Ball is Math, Ward {
         Vat(bank).filk(ilk, 'dust', bytes32(ilkparams.dust));
         Vat(bank).filk(ilk, 'fee',  bytes32(ilkparams.fee));
         Vat(bank).filk(ilk, 'line', bytes32(ilkparams.line));
-        Vat(bank).filk(ilk, 'liqr', bytes32(ilkparams.liqr));
+        Vat(bank).filh(ilk, 'liqr', empty, bytes32(ilkparams.liqr));
         Vat(bank).filh(ilk, 'gem', empty, bytes32(bytes20(ilkparams.gem)));
         Vat(bank).filh(ilk, 'fsrc', empty, bytes32(bytes20(address(mdn))));
         Vat(bank).filh(ilk, 'ftag', empty, gemreftag);
+        Vat(bank).filh(ilk, 'pep', empty, bytes32(uint(2)));
+        Vat(bank).filh(ilk, 'pop', empty, bytes32(RAY));
         {
             Medianizer.Config memory mdnconf = Medianizer.Config(new address[](1), new bytes32[](1), 1);
             mdnconf.srcs[0] = address(divider); mdnconf.tags[0] = gemreftag;
@@ -296,6 +298,11 @@ contract Ball is Math, Ward {
 
         Vat(bank).filk(ups.ilk, 'fee', bytes32(ups.fee));
         Vat(bank).filk(ups.ilk, 'chop', bytes32(ups.chop));
+
+        Vat(bank).filh(UNI_NFT_ILK, 'liqr', empty, bytes32(RAY));
+        Vat(bank).filh(UNI_NFT_ILK, 'pep', empty, bytes32(uint(2)));
+        Vat(bank).filh(UNI_NFT_ILK, 'pop', empty, bytes32(RAY));
+ 
     }
 
     function approve(address usr) _ward_ external {

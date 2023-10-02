@@ -272,10 +272,13 @@ abstract contract RicoSetUp is BaseHelper {
         Vat(bank).filh(dilk, 'gem', empty, bytes32(bytes20(address(dai))));
         Vat(bank).filh(dilk, 'fsrc', empty, bytes32(bytes20(self)));
         Vat(bank).filh(dilk, 'ftag', empty, drtag);
+        Vat(bank).filh(dilk, 'liqr', empty, bytes32(RAY));
+        Vat(bank).filh(dilk, 'pep', empty, bytes32(uint(2)));
+        Vat(bank).filh(dilk, 'pop', empty, bytes32(RAY));
         Vat(bank).filk(dilk, 'hook', bytes32(uint(bytes32(bytes20(address(hook))))));
-        Vat(bank).filk(dilk, bytes32('chop'), bytes32(RAD));
-        Vat(bank).filk(dilk, bytes32('line'), bytes32(init_mint * 10 * RAD));
-        Vat(bank).filk(dilk, bytes32('fee'), bytes32(uint(1000000001546067052200000000)));  // 5%
+        Vat(bank).filk(dilk, 'chop', bytes32(RAD));
+        Vat(bank).filk(dilk, 'line', bytes32(init_mint * 10 * RAD));
+        Vat(bank).filk(dilk, 'fee', bytes32(uint(1000000001546067052200000000)));  // 5%
         // feedpush(dutag, bytes32(RAY), block.timestamp + 1000);
         make_feed(drtag);
     }
@@ -288,6 +291,9 @@ abstract contract RicoSetUp is BaseHelper {
         Vat(bank).filh(gilk, 'gem',  empty, bytes32(bytes20(address(gold))));
         Vat(bank).filh(gilk, 'fsrc', empty, bytes32(bytes20(self)));
         Vat(bank).filh(gilk, 'ftag', empty, grtag);
+        Vat(bank).filh(gilk, 'liqr', empty, bytes32(RAY));
+        Vat(bank).filh(gilk, 'pep', empty, bytes32(uint(2)));
+        Vat(bank).filh(gilk, 'pop', empty, bytes32(RAY));
  
         Vat(bank).filk(gilk, 'hook', bytes32(uint(bytes32(bytes20(address(hook))))));
         // todo fix other chops, should be rays
@@ -306,6 +312,9 @@ abstract contract RicoSetUp is BaseHelper {
         Vat(bank).filh(rilk, 'gem',  empty, bytes32(bytes20(address(ruby))));
         Vat(bank).filh(rilk, 'fsrc', empty, bytes32(bytes20(self)));
         Vat(bank).filh(rilk, 'ftag', empty, rrtag);
+        Vat(bank).filh(rilk, 'liqr', empty, bytes32(RAY));
+        Vat(bank).filh(rilk, 'pep', empty, bytes32(uint(2)));
+        Vat(bank).filh(rilk, 'pop', empty, bytes32(RAY));
  
         Vat(bank).filk(rilk, 'hook', bytes32(uint(bytes32(bytes20(address(hook))))));
         Vat(bank).filk(rilk, bytes32('chop'), bytes32(RAY));

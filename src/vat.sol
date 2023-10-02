@@ -70,7 +70,6 @@ contract Vat is Bank {
         vs.ilks[ilk] = Ilk({
             rack: RAY,
             fee : RAY,
-            liqr: RAY,
             hook: hook,
             rho : block.timestamp,
             tart: 0,
@@ -78,7 +77,6 @@ contract Vat is Bank {
         });
         emit NewPalm1('rack', ilk, bytes32(RAY));
         emit NewPalm1('fee',  ilk, bytes32(RAY));
-        emit NewPalm1('liqr', ilk, bytes32(RAY));
         emit NewPalm1('hook', ilk, bytes32(bytes20(hook)));
         emit NewPalm1('rho',  ilk, bytes32(block.timestamp));
         emit NewPalm1('tart', ilk, bytes32(uint(0)));
@@ -88,7 +86,7 @@ contract Vat is Bank {
     }
 
     function safe(bytes32 i, address u)
-      public view returns (Spot, uint, uint)
+      public view returns (Spot, uint)
     {
         VatStorage storage vs = getVatStorage();
         Ilk storage ilk = vs.ilks[i];
@@ -98,18 +96,18 @@ contract Vat is Bank {
         if (data.length != 64) revert ErrHookData();
  
         (uint cut, uint ttl) = abi.decode(data, (uint, uint));
-        if (block.timestamp > ttl) return (Spot.Iffy, 0, 0);
+        if (block.timestamp > ttl) return (Spot.Iffy, 0);
 
         // par acts as a multiplier for collateral requirements
         // par increase has same effect on cut as fee accumulation through rack
         // par decrease acts like a negative fee
-        uint256 tab = vs.urns[i][u] * rmul(rmul(vs.par, ilk.rack), ilk.liqr);
+        uint256 tab = vs.urns[i][u] * rmul(vs.par, ilk.rack);
         if (tab <= cut) {
-            return (Spot.Safe, 0, cut);
+            return (Spot.Safe, 0);
         } else {
             uint256 rush = type(uint256).max;
             if (cut > RAY) rush = tab / (cut / RAY);
-            return (Spot.Sunk, rush, cut);
+            return (Spot.Sunk, rush);
         }
     }
 
@@ -121,16 +119,18 @@ contract Vat is Bank {
 
         if (ilk.rack == 0) revert ErrIlkInit();
 
-        uint art = add(vs.urns[i][u], dart);
+        // modify normalized debt
+        uint art      = add(vs.urns[i][u], dart);
         vs.urns[i][u] = art;
         emit NewPalm2('art', i, bytes32(bytes20(u)), bytes32(art));
 
-        ilk.tart = add(ilk.tart, dart);
+        // keep track of total so it denorm doesn't exceed line
+        ilk.tart      = add(ilk.tart, dart);
         emit NewPalm1('tart', i, bytes32(ilk.tart));
 
         // rico mint/burn amount increases with rack
-        int dtab = mul(ilk.rack, dart);
-        uint tab = ilk.rack * art;
+        int dtab      = mul(ilk.rack, dart);
+        uint tab      = ilk.rack * art;
 
         if (dtab > 0) {
             // borrow
@@ -179,7 +179,7 @@ contract Vat is Bank {
 
         // urn is safer, or it is safe and urn holder is caller
         if (!safer) {
-            (Spot spot,,) = safe(i, u);
+            (Spot spot,) = safe(i, u);
             if (spot != Spot.Safe) revert ErrNotSafe();
             if (u != msg.sender) revert ErrWrongUrn();
         }
@@ -189,7 +189,7 @@ contract Vat is Bank {
     function bail(bytes32 i, address u) _flog_ external returns (bytes memory)
     {
         _drip(i);
-        (Spot spot, uint rush, uint cut) = safe(i, u);
+        (Spot spot, uint rush) = safe(i, u);
         if (spot != Spot.Sunk) revert ErrSafeBail();
 
         VatStorage storage vs = getVatStorage();
@@ -213,7 +213,7 @@ contract Vat is Bank {
 
         // ink auction
         return abi.decode(_hookcall(i, abi.encodeWithSelector(
-            Hook.bailhook.selector, i, u, bill, msg.sender, rush, cut
+            Hook.bailhook.selector, i, u, bill, msg.sender, rush
         )), (bytes));
     }
 
@@ -276,7 +276,6 @@ contract Vat is Bank {
                if (key == "line") { i.line = _val;
         } else if (key == "dust") { i.dust = _val;
         } else if (key == "hook") { i.hook = address(bytes20(val));
-        } else if (key == "liqr") { i.liqr = _val;
         } else if (key == "chop") { i.chop = _val;
         } else if (key == "fee") {
             if (_val < RAY)                revert ErrFeeMin();
