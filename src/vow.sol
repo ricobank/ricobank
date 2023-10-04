@@ -27,7 +27,7 @@ contract Vow is Bank {
         VatStorage storage  vatS  = getVatStorage();
         BankStorage storage bankS = getBankStorage();
 
-        for (uint256 i = 0; i < ilks.length; i++) {
+        for (uint256 i = 0; i < ilks.length; ++i) {
             Vat(address(this)).drip(ilks[i]);
         }
 
@@ -60,7 +60,7 @@ contract Vow is Bank {
             vatS.joy = joy;
             emit NewPalm0('joy', bytes32(joy));
 
-            uint price = rmul(rinv(_price()), mash) + 1;
+            uint price = rdiv(mash, _price()) + 1;
             uint sell  = rmul(flap, RAY - vowS.toll);
             uint earn  = rmul(sell, price) + 1;
 
