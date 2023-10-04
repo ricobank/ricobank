@@ -390,6 +390,7 @@ contract DssBiteTest is DssVatTest {
         skip(1);
         prepguyrico(550 * WAD, true);
         uint joy_0 = Vat(bank).joy();
+
         guy.keep(ilks);
         assertGt(Vat(bank).joy(), joy_0);
     }
@@ -468,9 +469,11 @@ contract DssBiteTest is DssVatTest {
         assertEq(rico.balanceOf(bank), 0);
         assertEq(vow_Awe() / RAY, 0);
 
-        // all joy & debt in existence are in vow, so rush factor will be (x + x) / x = 2 wad
-        // feeds are at equal prices so rico will be sold for half price
-        assertClose(gov.balanceOf(me), amt / 2, gov.balanceOf(me) / 2);
+        // all joy & debt in existence are in vow, so deal will be x / (x * 2) == 2 wad
+        // pop == 1 and pep == 2
+        // => mash will be pop * deal ^ pep == 1/4
+        // feeds are at equal prices so rico will be sold for 1/4 price
+        assertClose(gov.balanceOf(me), amt - amt / 4, 1000);
 
         skip(1);
 

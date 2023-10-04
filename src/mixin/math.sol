@@ -123,4 +123,5 @@ contract Math {
     function concat(bytes32 a, bytes32 b, bytes32 c) internal pure returns (bytes32) {
         return concat(a, concat(b, c));
     }
+
 }

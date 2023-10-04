@@ -58,9 +58,9 @@ abstract contract RicoSetUp is BaseHelper {
     uint160 constant public risk_price = 2 ** 96;
     uint256 constant public INIT_PAR   = RAY;
     uint256 constant public init_mint  = 10000;
-    uint256 constant public platpep    = RAY;
+    uint256 constant public platpep    = 2;
     uint256 constant public platpop    = RAY;
-    uint256 constant public plotpep    = RAY;
+    uint256 constant public plotpep    = 2;
     uint256 constant public plotpop    = RAY;
 
     ERC20Hook  public hook;

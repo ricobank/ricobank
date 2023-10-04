@@ -49,17 +49,18 @@ contract Vow is Bank {
                 flap -= 1;
             }
 
-            // rush increases as surplus increases, i.e. if there's a massive
+            // deal decreases as surplus increases, i.e. if there's a massive
             // surplus the system deduces that it's overpricing rico
             uint debt = vatS.debt;
-            uint rush = (flap * vowS.plat.pep + debt * vowS.plat.pop) / debt;
+            uint deal = rdiv(debt, debt + flap);
+            uint mash = rmul(vowS.plat.pop, rpow(deal, vowS.plat.pep));
 
             // buy-and-burn risk with remaining (`flap`) rico
             joy     -= flap;
             vatS.joy = joy;
             emit NewPalm0('joy', bytes32(joy));
 
-            uint price = rdiv(rinv(_price()), rush) + 1;
+            uint price = rmul(rinv(_price()), mash) + 1;
             uint sell  = rmul(flap, RAY - vowS.toll);
             uint earn  = rmul(sell, price) + 1;
 
@@ -79,11 +80,12 @@ contract Vow is Bank {
                 joy = _heal(joy - 1);
             }
 
-            // rush increases as system becomes undercollateralized
+            // deal decreases as system becomes undercollateralized
             // i.e. if it's very undercollateralized then bank deduces
             // that it's overpricing RISK
             uint debt  = vatS.debt;
-            uint rush  = (under * vowS.plot.pep + debt * vowS.plot.pop) / debt;
+            uint deal  = rdiv(debt, debt + under);
+            uint mash  = rmul(vowS.plot.pop, rpow(deal, vowS.plot.pep));
 
             // rate-limit flop
             uint slope = min(vowS.ramp.vel, wmul(vowS.ramp.rel, risk.totalSupply()));
@@ -95,7 +97,7 @@ contract Vow is Bank {
             emit NewPalm0('bel', bytes32(vowS.ramp.bel));
 
             // swap RISK for rico to cover sin
-            uint earn = flop * _price() / rush;
+            uint earn = rmul(flop, rmul(_price(), mash));
             Gem(rico).burn(msg.sender, earn);
             Gem(risk).mint(msg.sender, flop);
 

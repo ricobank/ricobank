@@ -69,25 +69,26 @@ contract VowTest is Test, RicoSetUp {
         uint sin_wad = Vat(bank).sin() / RAY;
         force_fees(sin_wad);
 
+        uint pep = 2;
+        uint pop = RAY * 99 / 100;
         // set pep to * 1000 growth rate
-        File(bank).file('plat.pep', bytes32(RAY * 1000));
+        File(bank).file('plat.pep', bytes32(pep));
         // set pop to increase initial price by 1%
-        File(bank).file('plat.pop', bytes32(RAY * 99 / 100));
+        File(bank).file('plat.pop', bytes32(pop));
 
         uint debt = Vat(bank).debt() - sin_wad;
-        uint gain = surplus * 1000;
-        uint init = debt * 99 / 100;
-        uint rush = wdiv((gain + init), debt);
-        // (50 + 2001.05 * 0.99) / 2001.05 = 1.014_986_881_8870094
-        assertClose(rush, WAD * 1_014_986_881 / 1_000_000_000, 100_000);
+        uint deal = rdiv(debt, debt + surplus);
+        uint mash = rmul(pop, rpow(deal, pep));
+        // 0.99 * (2001.05 / (0.05 + 2001.05)) ^ 2 ~= 0.9899505278281044
+        assertClose(mash, RAY * 989_950_527 / 1_000_000_000, 100_000);
 
-        uint expected_risk_cost = wdiv(surplus * rico_price_in_risk, rush);
+        uint expected_risk_cost = rmul(surplus * rico_price_in_risk, mash);
 
         risk.mint(self, WAD * 1_000);
         uint self_rico_1 = rico.balanceOf(self);
         uint self_risk_1 = risk.balanceOf(self);
 
-        Vow(bank).keep(ilks);
+        Vow(bank).keep(empty);
 
         uint rico_gain = rico.balanceOf(self) - self_rico_1;
         uint risk_cost = self_risk_1 - risk.balanceOf(self);
@@ -104,17 +105,20 @@ contract VowTest is Test, RicoSetUp {
         Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(borrow));
 
         // set pep to *1000 rate discount increases
-        File(bank).file('plot.pep', bytes32(RAY * 1000));
+        uint pep = 4;
+        uint pop = RAY * 101 / 100;
+        File(bank).file('plot.pep', bytes32(pep));
         // set pop so initial flop discount is about 1%
-        File(bank).file('plot.pop', bytes32(RAY * 101 / 100));
+        File(bank).file('plot.pop', bytes32(pop));
 
         uint debt = Vat(bank).debt();
         uint sin  = Vat(bank).sin() / RAY;
+        uint joy  = Vat(bank).joy();
 
-        uint gain = sin * 1000;
-        uint init = debt * 101 / 100;
-        uint rush = wdiv((gain + init), debt);
-        uint expected_rico_per_risk = wdiv(risk_price_in_rico, rush) / 10**9;
+        uint flop = sin - joy;
+        uint deal = rdiv(debt, debt + flop);
+        uint mash = rmul(pop, rpow(deal, pep));
+        uint expected_rico_per_risk = rmul(risk_price_in_rico, mash);
 
         uint self_rico_1 = rico.balanceOf(self);
         uint self_risk_1 = risk.balanceOf(self);
@@ -124,7 +128,7 @@ contract VowTest is Test, RicoSetUp {
         uint rico_cost = self_rico_1 - rico.balanceOf(self);
         uint risk_gain = risk.balanceOf(self) - self_risk_1;
 
-        assertEq(wdiv(rico_cost, risk_gain), expected_rico_per_risk);
+        assertClose(rdiv(rico_cost, risk_gain), expected_rico_per_risk, 1000000000);
     }
 
     function test_bail_price() public {
@@ -135,7 +139,7 @@ contract VowTest is Test, RicoSetUp {
 
         // drop gold/rico to 75%
         feedpush(grtag, bytes32(750 * RAY), type(uint).max);
-        // price should be 0.75**3, 0.75 for oracle drop and 0.75**2 for rush**pep
+        // price should be 0.75**3, 0.75 for oracle drop and 0.75**2 for deal**pep
         uint expected = wmul(borrow, WAD * 75**3 / 100**3);
         rico_mint(expected, false);
         rico.transfer(address(guy), expected);
@@ -168,11 +172,11 @@ contract VowTest is Test, RicoSetUp {
         // position is still overcollateralized, should get a refund and guy should only pay borrowed rico
         rico_mint(borrow, false);
         rico.transfer(address(guy), borrow);
-        // price should be 0.75**2, as 0.75 for oracle drop and 0.75 for rush factor
+        // price should be 0.75**2, as 0.75 for oracle drop and 0.75 for deal factor
         guy.bail(gilk, self);
 
-        // guy should not get all gold, should be ink * (amount borrowed / expected price for full collateral and rush)
-        // price should be 0.75**3, as 0.75 for oracle drop and 0.75**2 for rush**pep factor
+        // guy should not get all gold, should be ink * (amount borrowed / expected price for full collateral and deal)
+        // price should be 0.75**3, as 0.75 for oracle drop and 0.75**2 for deal**pep factor
         uint expected_full = rmul(wmul(borrow * 2, dink * 75**3 / 100**3), pop);
         uint guy_earn = wmul(dink, wdiv(borrow, expected_full));
         assertEq(gold.balanceOf(address(guy)), guy_earn);
@@ -352,10 +356,10 @@ contract VowTest is Test, RicoSetUp {
         assertEq(gold.balanceOf(bank), vowgoldbefore);
     }
 
-    function test_flop_rush() public {
+    function test_flop_deal() public {
         // generate a flop, with nonnegligible joy and sin
         // vow should properly update cached joy and sin values after heal
-        // so that rush is correct
+        // so that deal is correct
         feedpush(grtag, bytes32(RAY * 1000), UINT256_MAX);
         feedpush(RISK_RICO_TAG, bytes32(RAY), UINT256_MAX);
         Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(WAD * 1000));
@@ -375,8 +379,8 @@ contract VowTest is Test, RicoSetUp {
         uint debt = Vat(bank).debt() - joy; // post heal debt
         uint under = sin - joy;
         // feed price, pep, and pop are all 1
-        // -> rush should be (under + debt) / debt
-        uint rush = rdiv(under + debt, debt);
+        // -> deal should be debt / (under + debt)
+        uint deal = rdiv(debt, under + debt);
 
         // keep
         uint earn = rico.balanceOf(self);
@@ -385,8 +389,8 @@ contract VowTest is Test, RicoSetUp {
         earn = earn - rico.balanceOf(self);
         sell = risk.balanceOf(self) - sell;
 
-        // keeper should lose sell / rush risk
-        assertClose(earn, rdiv(sell, rush), 1000);
+        // pop == 1, pep == 2 -> keeper should lose sell * deal ^ 2 risk
+        assertClose(earn, rmul(sell, rpow(deal, 2)), 1000);
     }
 
     function test_toll() public {
@@ -409,10 +413,10 @@ contract VowTest is Test, RicoSetUp {
         uint burned = risk.balanceOf(address(guy));
 
         for (uint i = 0; i < ilks.length; i++) Vat(bank).drip(ilks[i]);
-        uint debt = Vat(bank).debt();
-        // not exact, close enough
-        uint flap = Vat(bank).joy() - Vat(bank).sin() / RAY;
-        uint price = rdiv(10 * RAY, rdiv(flap + debt, debt));
+        uint debt  = Vat(bank).debt() - Vat(bank).sin() / RAY;
+        uint flap  = Vat(bank).joy() - Vat(bank).sin() / RAY;
+        uint mash  = rpow(rinv(rdiv(debt + flap, debt)), 2); // pep == 2
+        uint price = rmul(10 * RAY, mash);
 
         Vow(bank).keep(ilks);
 
@@ -424,7 +428,7 @@ contract VowTest is Test, RicoSetUp {
 
         // check that owner got about 1/3 of what keeper got
         assertClose(guys, selfs * 2, 100000);
-        assertClose(burned, rmul(guys, price), 25);
+        assertClose(burned, rmul(guys, price), 100000);
 
         vm.stopPrank();
         // try with toll == 100%
@@ -454,6 +458,35 @@ contract VowTest is Test, RicoSetUp {
         vm.expectRevert(File.ErrHighToll.selector);
         File(bank).file('toll', bytes32(RAY + 1));
     }
+
+    function test_pep_pop() public {
+        // some awk numbers for pep and pop
+        uint pep = 13;
+        uint pop = RAY * 3;
+        File(bank).file('plat.pep', bytes32(pep));
+        File(bank).file('plat.pop', bytes32(pop));
+
+        feedpush(RISK_RICO_TAG, bytes32(100 * RAY), type(uint).max);
+        // force surplus == debt_before_keep / 3
+        force_fees(Vat(bank).sin() / RAY + Vat(bank).debt() / 3);
+
+        uint debt = Vat(bank).debt();
+        // 1/4 because force_fees increased debt
+        uint deal = rdiv(debt, debt + (debt * 1 / 4));
+        uint mash = rmul(pop, rpow(deal, pep));
+
+        // check vow's ask price
+        uint selfrisk = risk.balanceOf(self);
+        uint selfrico = rico.balanceOf(self);
+        Vow(bank).keep(empty);
+
+        assertClose(
+            100 * rdiv(selfrisk - risk.balanceOf(self), rico.balanceOf(self) - selfrico),
+            mash,
+            100000
+        );
+    }
+
 }
 
 contract FrobHook is Hook {

@@ -143,9 +143,9 @@ contract BallTest is BaseHelper {
             BANKYEAR * 100,
             BANKYEAR, // daiusd
             BANKYEAR, // xauusd
-            RAY,  // plat.pep
+            2,    // plat.pep
             RAY,  // plat.pop
-            RAY,  // plot.pep
+            2,    // plot.pep
             RAY,  // plot.pop
             Bank.Ramp(WAD, WAD, block.timestamp, 1),
             DAI,
