@@ -381,7 +381,7 @@ contract NFTHookTest is Test, RicoSetUp {
 
     function test_geth() public {
         assertEq(address(bytes20(Vat(bank).geth(uilk, 'nfpm', empty))), address(nfpm));
-        assertEq(uint(Vat(bank).geth(uilk, 'ROOM', empty)), HOOK_ROOM);
+        assertEq(uint(Vat(bank).geth(uilk, 'room', empty)), HOOK_ROOM);
         assertEq(address(bytes20(Vat(bank).geth(uilk, 'wrap', empty))), uniwrapper);
         vm.expectRevert(Bank.ErrWrongKey.selector);
         Vat(bank).geth(uilk, 'oh', empty);
@@ -409,9 +409,9 @@ contract NFTHookTest is Test, RicoSetUp {
         Vat(bank).filh(uilk, 'blah', empty, bytes32(bytes20(address(nfpm))));
         // wrong xs length
         vm.expectRevert(Bank.ErrWrongKey.selector);
-        Vat(bank).filh(uilk, 'ROOM', new bytes32[](1), bytes32(uint(6)));
+        Vat(bank).filh(uilk, 'room', new bytes32[](1), bytes32(uint(6)));
 
-        Vat(bank).filh(uilk, 'ROOM', empty, bytes32(uint(5)));
+        Vat(bank).filh(uilk, 'room', empty, bytes32(uint(5)));
         Vat(bank).filh(uilk, 'nfpm', empty, bytes32(bytes20(address(nfpm))));
         Vat(bank).filh(uilk, 'wrap', empty, bytes32(bytes20(self)));
 

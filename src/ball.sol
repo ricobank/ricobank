@@ -38,7 +38,6 @@ contract Ball is Math, Ward {
     bytes32 internal constant RICO_REF_TAG  = "rico:ref";
     bytes32 internal constant RISK_RICO_TAG = "risk:rico";
     bytes32 internal constant WETH_USD_TAG  = "weth:usd";
-    bytes32 internal constant UNI_NFT_ILK   = ":uninft";
     bytes32 internal constant HOW = bytes32(uint(1000000000000003652500000000));
     bytes32 internal constant CAP = bytes32(uint(1000000021970000000000000000));
     uint256 internal constant MIN_P_SIZE    = 2;
@@ -289,20 +288,17 @@ contract Ball is Math, Ward {
     }
 
     function makeuni(UniParams calldata ups) _ward_ external {
-        if (Vat(bank).ilks(UNI_NFT_ILK).rack != 0) return;
-        // initialize uni ilk
         Vat(bank).init(ups.ilk, address(nfthook));
-        Vat(bank).filh(UNI_NFT_ILK, 'nfpm', empty, bytes32(bytes20(address(ups.nfpm))));
-        Vat(bank).filh(UNI_NFT_ILK, 'ROOM', empty, bytes32(ups.room));
-        Vat(bank).filh(UNI_NFT_ILK, 'wrap', empty, bytes32(bytes20(address(ups.uniwrapper))));
+        Vat(bank).filh(ups.ilk, 'nfpm', empty, bytes32(bytes20(address(ups.nfpm))));
+        Vat(bank).filh(ups.ilk, 'room', empty, bytes32(ups.room));
+        Vat(bank).filh(ups.ilk, 'wrap', empty, bytes32(bytes20(address(ups.uniwrapper))));
 
-        Vat(bank).filk(ups.ilk, 'fee', bytes32(ups.fee));
+        Vat(bank).filk(ups.ilk, 'fee',  bytes32(ups.fee));
         Vat(bank).filk(ups.ilk, 'chop', bytes32(ups.chop));
 
-        Vat(bank).filh(UNI_NFT_ILK, 'liqr', empty, bytes32(RAY));
-        Vat(bank).filh(UNI_NFT_ILK, 'pep', empty, bytes32(uint(2)));
-        Vat(bank).filh(UNI_NFT_ILK, 'pop', empty, bytes32(RAY));
- 
+        Vat(bank).filh(ups.ilk, 'liqr', empty, bytes32(RAY));
+        Vat(bank).filh(ups.ilk, 'pep',  empty, bytes32(uint(2)));
+        Vat(bank).filh(ups.ilk, 'pop',  empty, bytes32(RAY));
     }
 
     function approve(address usr) _ward_ external {
