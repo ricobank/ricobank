@@ -448,7 +448,8 @@ contract DssBiteTest is DssVatTest {
         Vat(bank).bail(i0, me);
         assertEq(Vat(bank).sin() / RAY, ricoamt);
         // added 40, price is 2 and debt is 100, so earnings reduced 1.25 times
-        uint earn = WAD * 80 * 4 / 5; // starts from bill, where chop is 1 rn
+        // pep is 2 so deal factor is squared
+        uint earn = WAD * 40 * 2 * 4**2 / 5**2;
         assertEq(Vat(bank).joy(), earn);
         assertEq(Vat(bank).sin() / RAY, ricoamt);
     }

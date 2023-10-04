@@ -9,10 +9,10 @@ interface Hook {
         address sender, bytes32 i, address u, bytes calldata dink, int dart
     ) external returns (bool safer);
     function bailhook(
-        bytes32 i, address u, uint bill, address keeper, uint rush
+        bytes32 i, address u, uint bill, address keeper, uint deal, uint tot
     ) external returns (bytes memory);
     function safehook(
         bytes32 i, address u
-    ) view external returns (uint, uint);
+    ) view external returns (uint tot, uint cut, uint minttl);
     function ink(bytes32 i, address u) external view returns (bytes memory);
 }

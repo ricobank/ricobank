@@ -14,9 +14,9 @@ contract ERC20Hook is Hook, Bank {
         address gem;   // this ilk's gem
         address fsrc;  // [obj] feedbase `src` address
         bytes32 ftag;  // [tag] feedbase `tag` bytes32
-        uint    liqr;
-        uint    pep;
-        uint    pop;
+        uint    liqr;  // [ray] liquidation ratio
+        uint    pep;   // [int] discount exponent
+        uint    pop;   // [ray] sale price multiplier
     }
 
     struct ERC20HookStorage {
@@ -76,23 +76,21 @@ contract ERC20Hook is Hook, Bank {
     }
 
     function bailhook(
-        bytes32 i, address u, uint256 bill, address keeper, uint256 rush
+        bytes32 i, address u, uint256 bill, address keeper, uint256 deal, uint tot
     ) external returns (bytes memory) {
         ERC20HookStorage storage hs  = getStorage();
         VatStorage       storage vs  = getVatStorage();
         ERC20Ilk         storage ilk = hs.ilks[i];
 
-        // cut is RAD, rush is RAY, so bank earns a WAD.
+        // tot is RAD, deal is RAY, so bank earns a WAD.
         // sell - sold collateral
         // earn - rico "earned" by bank in this liquidation
         uint sell = hs.inks[i][u];
-        // bill * pop * rush ^ -pep
-        uint mash = rmul(ilk.pop, rpow(rinv(rush), ilk.pep));
-        uint earn = rmul(bill, mash);
+        uint earn = rmul(tot / RAY, rmul(rpow(deal, ilk.pep), ilk.pop));
 
         // clamp `sell` so bank only gets enough to underwrite urn.
         if (earn > bill) {
-            sell = rdiv(sell, mash);
+            sell = sell * bill / earn;
             earn = bill;
         }
 
@@ -113,14 +111,15 @@ contract ERC20Hook is Hook, Bank {
         return abi.encodePacked(sell);
     }
 
-    // returns cut, ttl
-    function safehook(bytes32 i, address u) view public returns (uint, uint) {
+    function safehook(bytes32 i, address u) view public returns (uint tot, uint cut, uint ttl) {
         ERC20HookStorage storage hs  = getStorage();
         ERC20Ilk         storage ilk = hs.ilks[i];
 
         // total value of collateral == ink * price feed val
-        (bytes32 val, uint ttl) = getBankStorage().fb.pull(ilk.fsrc, ilk.ftag);
-        return (hs.inks[i][u] * rdiv(uint(val), ilk.liqr), ttl);
+        (bytes32 val, uint _ttl) = getBankStorage().fb.pull(ilk.fsrc, ilk.ftag);
+        tot = uint(val) * hs.inks[i][u];
+        cut = uint(val) * rdiv(hs.inks[i][u], ilk.liqr);
+        ttl = _ttl;
     }
 
     function file(bytes32 key, bytes32 i, bytes32[] calldata xs, bytes32 val)

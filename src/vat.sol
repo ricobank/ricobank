@@ -86,28 +86,27 @@ contract Vat is Bank {
     }
 
     function safe(bytes32 i, address u)
-      public view returns (Spot, uint)
+      public view returns (Spot, uint, uint)
     {
         VatStorage storage vs = getVatStorage();
         Ilk storage ilk = vs.ilks[i];
         bytes memory data = _hookview(i, abi.encodeWithSelector(
             Hook.safehook.selector, i, u
         ));
-        if (data.length != 64) revert ErrHookData();
+        if (data.length != 96) revert ErrHookData();
  
-        (uint cut, uint ttl) = abi.decode(data, (uint, uint));
-        if (block.timestamp > ttl) return (Spot.Iffy, 0);
+        (uint tot, uint cut, uint ttl) = abi.decode(data, (uint, uint, uint));
+        if (block.timestamp > ttl) return (Spot.Iffy, 0, tot);
 
         // par acts as a multiplier for collateral requirements
         // par increase has same effect on cut as fee accumulation through rack
         // par decrease acts like a negative fee
         uint256 tab = vs.urns[i][u] * rmul(vs.par, ilk.rack);
         if (tab <= cut) {
-            return (Spot.Safe, 0);
+            return (Spot.Safe, RAY, tot);
         } else {
-            uint256 rush = type(uint256).max;
-            if (cut > RAY) rush = tab / (cut / RAY);
-            return (Spot.Sunk, rush);
+            uint256 deal = cut / (tab / RAY);
+            return (Spot.Sunk, deal, tot);
         }
     }
 
@@ -179,7 +178,7 @@ contract Vat is Bank {
 
         // urn is safer, or it is safe and urn holder is caller
         if (!safer) {
-            (Spot spot,) = safe(i, u);
+            (Spot spot,,) = safe(i, u);
             if (spot != Spot.Safe) revert ErrNotSafe();
             if (u != msg.sender) revert ErrWrongUrn();
         }
@@ -189,7 +188,7 @@ contract Vat is Bank {
     function bail(bytes32 i, address u) _flog_ external returns (bytes memory)
     {
         _drip(i);
-        (Spot spot, uint rush) = safe(i, u);
+        (Spot spot, uint deal, uint tot) = safe(i, u);
         if (spot != Spot.Sunk) revert ErrSafeBail();
 
         VatStorage storage vs = getVatStorage();
@@ -213,7 +212,7 @@ contract Vat is Bank {
 
         // ink auction
         return abi.decode(_hookcall(i, abi.encodeWithSelector(
-            Hook.bailhook.selector, i, u, bill, msg.sender, rush
+            Hook.bailhook.selector, i, u, bill, msg.sender, deal, tot
         )), (bytes));
     }
 

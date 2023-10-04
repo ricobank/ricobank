@@ -142,7 +142,7 @@ contract NFTHookTest is Test, RicoSetUp {
         // frob to max safe debt with double cratio, 1.45MM rico
         File(bank).file('ceil', bytes32(WAD * 1_000_000_000));
         Vat(bank).filk(uilk, 'line', bytes32(RAD * 1_000_000_000));
-        Vat(bank).filk(gilk,      'line', bytes32(RAD * 1_000_000_000));
+        Vat(bank).filk(gilk, 'line', bytes32(RAD * 1_000_000_000));
         bytes memory addgwpos = abi.encodePacked(int(1), goldwethtokid);
         uint borrow = WAD * uint(2_900_000 - 1);
         assertEq(nfpm.ownerOf(goldwethtokid), self);
@@ -150,11 +150,11 @@ contract NFTHookTest is Test, RicoSetUp {
         assertEq(nfpm.ownerOf(goldwethtokid), bank);
 
         // set prices to 75%
-        feedpush(wrtag, bytes32(750 * RAY), type(uint).max);
+        feedpush(wrtag, bytes32(750  * RAY), type(uint).max);
         feedpush(grtag, bytes32(1425 * RAY), type(uint).max);
 
-        // price should be 0.75**2, as 0.75 for oracle drop and 0.75 for rush factor
-        uint expected = wmul(borrow, wmul(WAD * 75 / 100, WAD * 75 / 100));
+        // price should be 0.75**3, cubed comes from for oracle drop decreasing value, and deal factor ** pep(2)
+        uint expected = wmul(borrow, WAD * 75**3 / 100**3);
         // tiny errors from uni pool?
         expected = expected * 10001 / 10000;
         rico_mint(expected, false);
@@ -167,10 +167,9 @@ contract NFTHookTest is Test, RicoSetUp {
     }
 
     function test_nft_bail_refund() public {
-        uint pop = RAY * 2; //uint(Vat(bank).geth(uilk, 'pop', empty));
+        uint pop = RAY * 2;
         Vat(bank).filh(uilk, 'pop', empty, bytes32(pop));
-        uint pep = uint(Vat(bank).geth(uilk, 'pep', empty));
- 
+
         // the NFT has 1000 each of gold and weth, valued at 1900 and 1000
         // frob to max safe debt with double cratio, 1.45MM rico
         File(bank).file('ceil', bytes32(WAD * 1_000_000_000));
@@ -185,9 +184,8 @@ contract NFTHookTest is Test, RicoSetUp {
         feedpush(wrtag, bytes32(750 * RAY), type(uint).max);
         feedpush(grtag, bytes32(1425 * RAY), type(uint).max);
 
-        // price should be 0.75**2, as 0.75 for oracle drop and 0.75 for rush factor
-        uint slash = rmul(pop, rpow(RAY * 75 / 100, pep));
-        uint expected_cost_for_keeper = rmul(borrow, slash);
+        // price should be pop(2) * 0.75**3, as 0.75 for oracle drop and 0.75**2 for deal factor (pep = 2)
+        uint expected_cost_for_keeper = rmul(wmul(borrow * 2, WAD * 75**3 / 100**3), pop);
         // tiny errors from uni pool?
         expected_cost_for_keeper = expected_cost_for_keeper * 10001 / 10000;
         rico_mint(expected_cost_for_keeper, false);
@@ -218,16 +216,17 @@ contract NFTHookTest is Test, RicoSetUp {
         Vat(bank).bail(uilk, self);
 
         feedpush(drtag, bytes32(RAY / uint(100_000)), type(uint).max);
-        (,uint rush) = Vat(bank).safe(uilk, self);
-        uint wad_cost = 4 * Vat(bank).urns(uilk, self) * Vat(bank).ilks(uilk).rack / rush;
-        rico_mint(wad_cost, true);
+        (,uint deal,) = Vat(bank).safe(uilk, self);
+        // only asset of value is 1000 dai worth 0.01, discount should be 0.01 ^ 2
+        uint wad_cost = rmul(WAD, rmul(deal, rmul(deal, deal)));
+        rico_mint(WAD, true);
         rico.transfer(address(guy), wad_cost);
         uint guy_rico_before = rico.balanceOf(address(guy));
-
-        uint gas = gasleft();
         guy.bail(uilk, self);
-        check_gas(gas, 259791);
+        uint guy_rico_after = rico.balanceOf(address(guy));
+        uint bail_price = guy_rico_before - guy_rico_after;
 
+        assertClose(bail_price, wad_cost, 1_000_000);
         assertLt(rico.balanceOf(address(guy)), guy_rico_before);
         assertEq(nfpm.ownerOf(goldwethtokid), address(guy));
         assertEq(nfpm.ownerOf(golddaitokid), address(guy));
@@ -245,7 +244,7 @@ contract NFTHookTest is Test, RicoSetUp {
         Vat(bank).frob(uilk, self, data, 0);
         assertEq(nfpm.ownerOf(goldwethtokid), bank);
         assertEq(nfpm.ownerOf(golddaitokid), self);
-        (Vat.Spot spot,) = Vat(bank).safe(uilk, self);
+        (Vat.Spot spot,,) = Vat(bank).safe(uilk, self);
         assertTrue(spot == Vat.Spot.Safe);
 
         // put it back
@@ -254,7 +253,7 @@ contract NFTHookTest is Test, RicoSetUp {
         Vat(bank).frob(uilk, self, data, 0);
         assertEq(nfpm.ownerOf(goldwethtokid), bank);
         assertEq(nfpm.ownerOf(golddaitokid), bank);
-        (spot,) = Vat(bank).safe(uilk, self);
+        (spot,,) = Vat(bank).safe(uilk, self);
         assertTrue(spot == Vat.Spot.Safe);
 
         // remove goldwethtokid
@@ -262,7 +261,7 @@ contract NFTHookTest is Test, RicoSetUp {
         Vat(bank).frob(uilk, self, data, 0);
         assertEq(nfpm.ownerOf(goldwethtokid), self);
         assertEq(nfpm.ownerOf(golddaitokid), bank);
-        (spot,) = Vat(bank).safe(uilk, self);
+        (spot,,) = Vat(bank).safe(uilk, self);
         assertTrue(spot == Vat.Spot.Safe);
 
         // put it back
@@ -290,19 +289,19 @@ contract NFTHookTest is Test, RicoSetUp {
         Vat(bank).frob(uilk, self, data, int(900 * WAD));
 
         feedpush(drtag, bytes32(0), type(uint).max);
-        (Vat.Spot spot,) = Vat(bank).safe(uilk, self);
+        (Vat.Spot spot,,) = Vat(bank).safe(uilk, self);
         assertTrue(spot == Vat.Spot.Safe);
         feedpush(grtag, bytes32(0), type(uint).max);
-        (spot,) = Vat(bank).safe(uilk, self);
+        (spot,,) = Vat(bank).safe(uilk, self);
         assertTrue(spot == Vat.Spot.Safe);
 
         skip(BANKYEAR * 10);
         Vat(bank).drip(uilk);
-        (spot,) = Vat(bank).safe(uilk, self);
+        (spot,,) = Vat(bank).safe(uilk, self);
         assertTrue(spot == Vat.Spot.Sunk);
 
-        (,uint rush) = Vat(bank).safe(uilk, self);
-        uint wad_cost = 4 * Vat(bank).urns(uilk, self) * Vat(bank).ilks(uilk).rack / rush;
+        (,uint deal,) = Vat(bank).safe(uilk, self);
+        uint wad_cost = rmul(rpow(deal, 2), 1000 * WAD);
         rico_mint(wad_cost, true);
 
         bytes memory ids = Vat(bank).bail(uilk, self);
@@ -466,8 +465,7 @@ contract NFTHookTest is Test, RicoSetUp {
         uint pop = 5 * RAY;
         uint borrow = 1000 * WAD;
         Vat(bank).filh(uilk, 'pep', empty, bytes32(pep));
-        Vat(bank).filh(uilk, 'pop', empty, bytes32(uint(pop)));
-
+        Vat(bank).filh(uilk, 'pop', empty, bytes32(pop));
 
         feedpush(grtag, bytes32(RAY), UINT256_MAX);
         feedpush(wrtag, bytes32(RAY), UINT256_MAX);
@@ -476,19 +474,58 @@ contract NFTHookTest is Test, RicoSetUp {
         Vat(bank).filh(uilk, 'ftag', single(bytes32(bytes20(WETH))), bytes32(grtag));
         Vat(bank).filh(uilk, 'ftag', single(bytes32(bytes20(agold))), bytes32(wrtag));
 
-
         // overcollateralized 2x
-        Vat(bank).frob(uilk, self, abi.encodePacked(int(1), goldwethtokid), int(WAD * 1000));
+        Vat(bank).frob(uilk, self, abi.encodePacked(int(1), goldwethtokid), int(borrow));
 
-        // chop == 1, so bill is tab / RAY
-        // overcollateralized 2x, price 1/6x -> rush is 3
-        // -> mash is pop / (3 ^ pep)
         feed.push(grtag, bytes32(RAY / 6), UINT256_MAX);
         feed.push(wrtag, bytes32(RAY / 6), UINT256_MAX);
-        uint mash = RAY * 5 / ((6 / 2) ** 3);
-        uint selfrico = rico.balanceOf(self);
-        Vat(bank).bail(uilk, self);
 
-        assertClose(selfrico - rico.balanceOf(self), rmul(borrow, mash), 1000000000);
+        uint pre_rico = rico.balanceOf(self);
+        Vat(bank).bail(uilk, self);
+        uint aft_rico = rico.balanceOf(self);
+        uint paid     = pre_rico - aft_rico;
+
+        // overcollateralized 2x, price 1/6x -> deal is 1/3
+        uint tot  = 2 * borrow / 6;
+        uint rush = 3;
+        uint est  = rmul(tot, pop) / rush**pep;
+
+        assertClose(paid, est, 1000000000);
+    }
+
+    function test_bail_pop_pep_with_liqr_uni() public {
+        // set pep and pop to something awk
+        uint pep = 3;
+        uint pop = 5 * RAY;
+        uint borrow = 1000 * WAD;
+        uint liqr = 2 * RAY;
+        Vat(bank).filh(uilk, 'pep', empty, bytes32(pep));
+        Vat(bank).filh(uilk, 'pop', empty, bytes32(pop));
+
+        feedpush(grtag, bytes32(RAY), UINT256_MAX);
+        feedpush(wrtag, bytes32(RAY), UINT256_MAX);
+        Vat(bank).filh(uilk, 'fsrc', single(bytes32(bytes20(WETH))), bytes32(bytes20(self)));
+        Vat(bank).filh(uilk, 'fsrc', single(bytes32(bytes20(agold))), bytes32(bytes20(self)));
+        Vat(bank).filh(uilk, 'ftag', single(bytes32(bytes20(WETH))), bytes32(grtag));
+        Vat(bank).filh(uilk, 'ftag', single(bytes32(bytes20(agold))), bytes32(wrtag));
+
+        // overcollateralized 2x
+        Vat(bank).frob(uilk, self, abi.encodePacked(int(1), goldwethtokid), int(borrow));
+
+        feed.push(grtag, bytes32(RAY / 6), UINT256_MAX);
+        feed.push(wrtag, bytes32(RAY / 6), UINT256_MAX);
+        Vat(bank).filh(uilk, 'liqr', empty, bytes32(liqr));
+
+        uint pre_rico = rico.balanceOf(self);
+        Vat(bank).bail(uilk, self);
+        uint aft_rico = rico.balanceOf(self);
+        uint paid     = pre_rico - aft_rico;
+
+        // overcollateralized 2x, price 1/6x , and liqr 2 -> deal = 1 / 6
+        uint tot  = 2 * borrow / 6;
+        uint rush = 6;
+        uint est  = rmul(tot, pop) / rush**pep;
+
+        assertClose(paid, est, 1000000000);
     }
 }

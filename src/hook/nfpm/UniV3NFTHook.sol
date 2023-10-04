@@ -28,9 +28,9 @@ contract UniNFTHook is Hook, Bank {
 
     struct UniNFTIlk {
         mapping(address gem => Source source) sources;
-        uint liqr;
-        uint pep;
-        uint pop;
+        uint liqr;  // [ray] liquidation ratio
+        uint pep;   // [int] discount exponent
+        uint pop;   // [ray] sale price multiplier
     }
 
     struct UniNFTHookStorage {
@@ -54,8 +54,8 @@ contract UniNFTHook is Hook, Bank {
         return abi.encode(getStorage().inks[i][u]);
     }
 
-    int256  internal constant  LOCK = 1;
-    int256  internal constant  FREE = -1;
+    int256 internal constant LOCK = 1;
+    int256 internal constant FREE = -1;
 
     error ErrDinkLength();
     error ErrNotFound();
@@ -103,7 +103,7 @@ contract UniNFTHook is Hook, Bank {
 
                 // search ink for toss
                 bool found;
-                for (uint k = 0; k < tokenIds.length; k++) {
+                for (uint k = 0; k < tokenIds.length; ++k) {
 
                     uint tokenId = tokenIds[k];
                     if (found = tokenId == toss) {
@@ -128,8 +128,7 @@ contract UniNFTHook is Hook, Bank {
     }
 
     function bailhook(
-        bytes32 i, address u, uint256 bill,
-        address keeper, uint256 rush
+        bytes32 i, address u, uint256 bill, address keeper, uint256 deal, uint256 tot
     ) external returns (bytes memory) {
         UniNFTHookStorage storage hs  = getStorage();
         UniNFTIlk         storage ilk = hs.ilks[i];
@@ -139,10 +138,9 @@ contract UniNFTHook is Hook, Bank {
         delete hs.inks[i][u];
         emit NewPalmBytes2('uninfthook.0.ink', i, bytes32(bytes20(u)), bytes(''));
 
-        // cut is RAD, rush is RAY, so vow earns a WAD
-        uint256 mash = rmul(ilk.pop, rpow(rinv(rush), ilk.pep));
-        uint256 earn = rmul(bill, mash);
-        uint256 over = earn > bill ? earn - bill : 0;
+        // tot is RAD, deal is RAY, so bank earns a WAD
+        uint earn = rmul(tot / RAY, rmul(rpow(deal, ilk.pep), ilk.pop));
+        uint over = earn > bill ? earn - bill : 0;
 
         // take from keeper to underwrite urn, return what's left to urn owner.
         Gem rico = getBankStorage().rico;
@@ -171,10 +169,9 @@ contract UniNFTHook is Hook, Bank {
 
     // respective amounts of token0 and token1 that this position
     // would yield if burned now
-    function amounts(uint tokenId) view internal returns (
+    function amounts(uint tokenId, UniNFTHookStorage storage hs) view internal returns (
         address t0, address t1, uint a0, uint a1
     ) {
-        UniNFTHookStorage storage hs = getStorage();
         uint24 fee;
         (,,t0,t1,fee,,,,,,,) = hs.nfpm.positions(tokenId);
 
@@ -186,37 +183,35 @@ contract UniNFTHook is Hook, Bank {
         (a0, a1) = hs.wrap.total(hs.nfpm, tokenId, sqrtPriceX96);
     }
 
-    function safehook(bytes32 i, address u) public view returns (uint tot, uint minttl) {
+    function safehook(bytes32 i, address u) public view returns (uint tot, uint cut, uint minttl) {
         UniNFTHookStorage storage hs       = getStorage();
         UniNFTIlk         storage ilk      = hs.ilks[i];
         uint[]            storage tokenIds = hs.inks[i][u];
 
         minttl = type(uint).max;
 
-        for (uint idx = 0; idx < tokenIds.length; idx++) {
-            uint tokenId = tokenIds[idx];
+        for (uint idx = 0; idx < tokenIds.length; ++idx) {
             // get amounts of token0 and token1
             (
                 address token0, address token1, uint amount0, uint amount1
-            ) = amounts(tokenId);
+            ) = amounts(tokenIds[idx], hs);
             Feedbase fb = getBankStorage().fb;
 
-            // multiply gem0 amount by its price in rico, add to tot
+            // find total value value of tok0 + tok1, and allowed debt cut off
             {
                 Source storage src0 = ilk.sources[token0];
                 (bytes32 val, uint ttl) = fb.pull(src0.fsrc, src0.ftag);
-
                 minttl = min(minttl, ttl);
-                tot   += amount0 * rdiv(uint(val), ilk.liqr);
+                tot   += amount0 * uint(val);
+                cut   += amount0 * rdiv(uint(val), ilk.liqr);
             }
 
-            // multiply gem1 amount by its price in rico, add to tot
             {
                 Source storage src1 = ilk.sources[token1];
                 (bytes32 val, uint ttl) = fb.pull(src1.fsrc, src1.ftag);
-
                 minttl = min(minttl, ttl);
-                tot   += amount1 * rdiv(uint(val), ilk.liqr);
+                tot   += amount1 * uint(val);
+                cut   += amount1 * rdiv(uint(val), ilk.liqr);
             }
         }
 
