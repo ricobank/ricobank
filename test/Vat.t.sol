@@ -6,7 +6,6 @@ import "forge-std/Test.sol";
 import { Ball } from '../src/ball.sol';
 import { Flasher } from "./Flasher.sol";
 import { RicoSetUp, Guy } from "./RicoHelper.sol";
-import { OverrideableGem } from './mixin/OverrideableGem.sol';
 import { Gem } from '../lib/gemfab/src/gem.sol';
 import { Vat }  from '../src/vat.sol';
 import { Vow }  from '../src/vow.sol';
@@ -515,120 +514,21 @@ contract VatTest is Test, RicoSetUp {
     }
 
     function test_frob_reentrancy_1() public {
-        bytes32 htag = 'hgmrico';
-        bytes32 hilk = 'hgm';
-        uint dink = WAD;
-        uint dart = WAD + 1;
-        Gem hgm = Gem(address(new HackyGem(Frobber(self), bank, "hacky gem", "HGM")));
-        HackyGem(address(hgm)).setargs(hilk, self, int(dink), int(dart));
-        HackyGem(address(hgm)).setdepth(1);
-        Vat(bank).init(hilk, address(hook));
-        Vat(bank).filh(hilk, 'gem', empty, bytes32(bytes20(address(hgm))));
-        Vat(bank).filh(hilk, 'fsrc', empty, bytes32(bytes20(address(mdn))));
-        Vat(bank).filh(hilk, 'ftag', empty, htag);
-        Vat(bank).filh(hilk, 'liqr', empty, bytes32(RAY));
- 
-        uint amt = WAD;
+        Vat(bank).frob(gilk, self, abi.encodePacked(int(WAD)), int(WAD));
 
-        hgm.mint(self, amt * 5);
-        hgm.approve(bank, type(uint).max);
-        make_feed(htag);
-        Vat(bank).filk(hilk, 'line', bytes32(100000000 * RAD));
-        File(bank).file('par', bytes32(RAY));
-        feedpush(htag, bytes32(RAY), type(uint).max);
-        uint fee = RAY + 1;
-        Vat(bank).filk(hilk, bytes32('fee'), bytes32(fee)); 
-
-        skip(1);
-        // with one frob rest would be WAD + 1
-        // should be double that with an extra recursive frob
-        Vat(bank).drip(hilk);
-        feedpush(htag, bytes32(RAY * 1000000), type(uint).max);
-        Vat(bank).frob(hilk, self, abi.encodePacked(dink), int(dart));
-        assertEq(Vat(bank).rest(), 2 * (WAD + 1));
-    }
-
-    function test_frob_reentrancy_toggle_rico() public {
-        bytes32 htag = 'hgmrico';
-        bytes32 hilk = 'hgm';
-        uint dink = WAD;
-        uint dart = WAD + 1;
-        Gem hgm = Gem(address(new HackyGem(Frobber(self), bank, "hacky gem", "HGM")));
-        HackyGem(address(hgm)).setargs(hilk, self, int(dink), int(dart));
-        HackyGem(address(hgm)).setdepth(1);
-        Vat(bank).init(hilk, address(hook));
-        Vat(bank).filh(hilk, 'gem', empty, bytes32(bytes20(address(hgm))));
-        Vat(bank).filh(hilk, 'fsrc', empty, bytes32(bytes20(address(mdn))));
-        Vat(bank).filh(hilk, 'ftag', empty, htag);
-        Vat(bank).filh(hilk, 'liqr', empty, bytes32(RAY));
-
-        hgm.mint(self, dink * 1000);
-        hgm.approve(bank, type(uint).max);
-        make_feed(htag);
-        Vat(bank).filk(hilk, 'line', bytes32(100000000 * RAD));
-        File(bank).file('par', bytes32(RAY));
-        feedpush(htag, bytes32(RAY), type(uint).max);
-        uint fee = RAY + 1;
-        Vat(bank).filk(hilk, bytes32('fee'), bytes32(fee)); 
-
-        skip(1);
-        // with one frob rest would be WAD + 1
-        // should be double that with an extra recursive frob
-        Vat(bank).drip(hilk);
-        feedpush(htag, bytes32(RAY * 1000000), type(uint).max);
-        // rico balance should underflow
-        Vat(bank).frob(hilk, self, abi.encodePacked(dink), int(dart));
-        assertEq(Vat(bank).rest(), 2 * (WAD + 1));
-
-
-        // throw most out
-        // minus one for rounding in system's favor
-        rico.transfer(address(1), rico.balanceOf(self) - 1);
-        assertEq(rico.balanceOf(self), 1);
-        HackyGem(address(hgm)).setdepth(1);
-        // should fail because not enough left to send to vat
-        vm.expectRevert(OverrideableGem.ErrUnderflow.selector);
-        Vat(bank).frob(hilk, self, abi.encodePacked(dink), -int(dart));
-    }
-
-    function dofrob(bytes32 i, address u, int dink, int dart) public {
-        Vat(bank).frob(i, u, abi.encodePacked(dink), dart);
+        // dink == 0 instead of '' so it calls hook
+        Vat(bank).filk(gilk, 'hook', bytes32(bytes20(address(new FrobBailReentrancyHook()))));
+        vm.expectRevert(Vat.ErrLock.selector);
+        Vat(bank).frob(gilk, self, abi.encodePacked(int(0)), int(WAD));
     }
 
     function test_bail_reentrancy() public {
-        // create a gem that re-bails on transfer
-        // the re-bail should fail, because the first bail
-        // wrote off the debt and an urn with 0 debt is safe
-        bytes32 bailtag = 'bgmrico';
-        bytes32 baililk = 'bgm';
-        uint dink = WAD;
-        uint dart = WAD;
-        Gem bgm = Gem(address(new BailyGem(Bailer(self), bank, "baily gem", "BGM")));
-        BailyGem(address(bgm)).setargs(baililk, self, -int(dink), -int(dart));
-        Vat(bank).init(baililk, address(hook));
-        Vat(bank).filh(baililk, 'gem', empty, bytes32(bytes20(address(bgm))));
-        Vat(bank).filh(baililk, 'fsrc', empty, bytes32(bytes20(address(mdn))));
-        Vat(bank).filh(baililk, 'ftag', empty, bailtag);
-        Vat(bank).filh(baililk, 'liqr', empty, bytes32(RAY));
+        Vat(bank).frob(gilk, self, abi.encodePacked(int(WAD)), int(WAD));
 
-        bgm.mint(self, dink * 1000);
-        bgm.approve(bank, type(uint).max);
-        Vat(bank).filk(baililk, 'line', bytes32(100000000 * RAD));
-        File(bank).file('par', bytes32(RAY));
-        make_feed(bailtag);
-        feedpush(bailtag, bytes32(RAY * 1000000), type(uint).max);
-        Vat(bank).filk(baililk, 'chop', bytes32(RAY));
-
-        Vat(bank).frob(baililk, self, abi.encodePacked(dink * 2), int(dart));
-        BailyGem(address(bgm)).setdepth(1);
-        feedpush(bailtag, bytes32(0), UINT256_MAX);
-        // recursive call should be safe bail bc art == 0
-        vm.expectRevert(Vat.ErrSafeBail.selector);
-        Vat(bank).bail(baililk, self);
-    }
-
-    function dobail(bytes32 i, address u) public {
-        Vat(bank).bail(i, u);
+        // dink == 0 instead of '' so it calls hook
+        Vat(bank).filk(gilk, 'hook', bytes32(bytes20(address(new BailFrobReentrancyHook()))));
+        vm.expectRevert(Vat.ErrLock.selector);
+        Vat(bank).bail(gilk, self);
     }
 
     function test_frob_hook() public {
@@ -1071,7 +971,7 @@ contract RevertSafeHook is Hook {
 contract OnlyInkHook is Hook {
     function frobhook(
         address, bytes32, address, bytes calldata dink, int
-    ) pure external returns (bool safer) {
+    ) pure external returns (bool) {
         return int(uint(bytes32(dink[:32]))) >= 0; 
     }
     function bailhook(
@@ -1089,7 +989,7 @@ contract OnlyInkHook is Hook {
 contract FrobHook is Hook {
     function frobhook(
         address, bytes32, address, bytes calldata dink, int dart
-    ) pure external returns (bool safer) {
+    ) pure external returns (bool) {
         return int(uint(bytes32(dink[:32]))) >= 0 && dart <= 0; 
     }
     function bailhook(
@@ -1107,7 +1007,7 @@ contract FrobHook is Hook {
 contract ZeroHook is Hook {
     function frobhook(
         address sender, bytes32 i, address u, bytes calldata dink, int dart
-    ) external returns (bool safer) {}
+    ) external returns (bool) {}
     function bailhook(
         bytes32,address,uint,address,uint,uint
     ) external returns (bytes memory) {}
@@ -1119,111 +1019,43 @@ contract ZeroHook is Hook {
     }
 }
 
-interface Frobber {
-    function dofrob(bytes32 i, address u, int dink, int dart) external;
-}
-
-contract HackyGem is OverrideableGem {
-    uint depth;
-    bytes32 i;
-    address u;
-    int dink;
-    int dart;
-    Frobber frobber;
-    address payable bank;
-
-    constructor(Frobber _frobber, address payable _bank, bytes32 name, bytes32 symbol) OverrideableGem(name, symbol) {
-        bank = _bank;
-        frobber = _frobber;
+contract FrobBailReentrancyHook is Bank, Hook {
+    function frobhook(
+        address, bytes32 i, address u, bytes calldata,int
+    ) external returns (bool) {
+        Vat(address(this)).bail(i, u);
+        return true;
     }
-
-    function setdepth(uint _depth) public {
-        depth = _depth;
-    }
-
-    function setargs(bytes32 _i, address _u, int _dink, int _dart) public {
-        i = _i;
-        u = _u;
-        dink = _dink;
-        dart = _dart;
-    }
-
-    function transferFrom(address src, address dst, uint wad) public payable virtual override returns (bool ok) {
-
-        if (depth > 0) {
-            depth--;
-            frobber.dofrob(i, u, dink, dart);
-        }
-
-        unchecked {
-            ok              = true;
-            balanceOf[dst] += wad;
-            uint256 prevB   = balanceOf[src];
-            balanceOf[src]  = prevB - wad;
-            uint256 prevA   = allowance[src][msg.sender];
-
-            emit Transfer(src, dst, wad);
-
-            if ( prevA != type(uint256).max ) {
-                allowance[src][msg.sender] = prevA - wad;
-                if( prevA < wad ) {
-                    revert ErrUnderflow();
-                }
-            }
-
-            if( prevB < wad ) {
-                revert ErrUnderflow();
-            }
-        }
+    function bailhook(
+        bytes32,address,uint,address,uint,uint
+    ) external pure returns (bytes memory) {return abi.encodePacked('');}
+    function safehook(
+        bytes32, address
+    ) pure external returns (uint, uint, uint){return(0, 0, type(uint256).max);}
+    function ink(bytes32, address) external pure returns (bytes memory) {
+        return abi.encode(uint(0));
     }
 }
 
-interface Bailer {
-    function dobail(bytes32 i, address u) external;
-}
-
-contract BailyGem is OverrideableGem {
-    address payable bank;
-    uint depth;
-    bytes32 i;
-    address u;
-    int dink;
-    int dart;
-    Bailer bailer;
-
-    constructor(Bailer _bailer, address payable _bank, bytes32 name, bytes32 symbol) OverrideableGem(name, symbol) {
-        bank = _bank;
-        bailer = _bailer;
+contract BailFrobReentrancyHook is Bank, Hook {
+    function frobhook(
+        address, bytes32 i, address u, bytes calldata,int
+    ) external returns (bool) {
+        Vat(address(this)).bail(i, u);
+        return true;
     }
-
-    function setdepth(uint _depth) public {
-        depth = _depth;
+    function bailhook(
+        bytes32 i, address u,uint,address,uint,uint
+    ) external returns (bytes memory) {
+        getBankStorage().rico.mint(address(this), WAD * 1000);
+        Vat(address(this)).frob(i, u, '', int(WAD));
+        return abi.encodePacked('');
     }
-
-    function setargs(bytes32 _i, address _u, int _dink, int _dart) public {
-        i = _i;
-        u = _u;
-        dink = _dink;
-        dart = _dart;
-    }
-
-    function transfer(address dst, uint wad)
-      payable external virtual override returns (bool ok)
-    {
-        if (depth > 0) {
-            depth--;
-            bailer.dobail(i, u);
-        }
-
-        unchecked {
-            ok = true;
-            uint256 prev = balanceOf[msg.sender];
-            balanceOf[msg.sender] = prev - wad;
-            balanceOf[dst]       += wad;
-            emit Transfer(msg.sender, dst, wad);
-            if( prev < wad ) {
-                revert ErrUnderflow();
-            }
-        }
+    function safehook(
+        bytes32, address
+    ) pure external returns (uint, uint, uint){return(0, 0, type(uint256).max);}
+    function ink(bytes32, address) external pure returns (bytes memory) {
+        return abi.encode(uint(0));
     }
 }
+

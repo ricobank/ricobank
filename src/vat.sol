@@ -62,6 +62,14 @@ contract Vat is Bank {
     error ErrSafeBail();
     error ErrHookCallerNotBank();
 
+    modifier _lock_ {
+        VatStorage storage vs = getVatStorage();
+        if (vs.lock == LOCKED) revert ErrLock();
+        vs.lock = LOCKED;
+        _;
+        vs.lock = UNLOCKED;
+    }
+
     function init(bytes32 ilk, address hook)
       onlyOwner _flog_ external
     {
@@ -111,7 +119,7 @@ contract Vat is Bank {
     }
 
     function frob(bytes32 i, address u, bytes calldata dink, int dart)
-      _flog_ public
+      _flog_ _lock_ public
     {
         VatStorage storage vs = getVatStorage();
         Ilk storage ilk = vs.ilks[i];
@@ -129,7 +137,6 @@ contract Vat is Bank {
 
         // rico mint/burn amount increases with rack
         int dtab      = mul(ilk.rack, dart);
-        uint tab      = ilk.rack * art;
 
         if (dtab > 0) {
             // borrow
@@ -164,7 +171,7 @@ contract Vat is Bank {
         }
 
         // urn has no debt, or a non-dusty amount
-        if (art != 0 && tab < ilk.dust) revert ErrUrnDust();
+        if (art != 0 && ilk.rack * art < ilk.dust) revert ErrUrnDust();
 
         // safer if less/same art and more/same ink
         bool safer = dart <= 0;
@@ -185,7 +192,8 @@ contract Vat is Bank {
  
     }
 
-    function bail(bytes32 i, address u) _flog_ external returns (bytes memory)
+    function bail(bytes32 i, address u)
+      _flog_ _lock_ external returns (bytes memory)
     {
         _drip(i);
         (Spot spot, uint deal, uint tot) = safe(i, u);
@@ -254,8 +262,8 @@ contract Vat is Bank {
       external returns (bytes memory result) {
         // lock->mint->call->burn->unlock
         VatStorage storage vs = getVatStorage();
-        if (vs.lock == LOCKED) revert ErrLock();
-        vs.lock = LOCKED;
+        if (vs.flock == LOCKED) revert ErrLock();
+        vs.flock = LOCKED;
 
         getBankStorage().rico.mint(code, _MINT);
         bool ok;
@@ -263,7 +271,7 @@ contract Vat is Bank {
         if (!ok) bubble(result);
         getBankStorage().rico.burn(code, _MINT);
 
-        vs.lock = UNLOCKED;
+        vs.flock = UNLOCKED;
     }
 
     function filk(bytes32 ilk, bytes32 key, bytes32 val)

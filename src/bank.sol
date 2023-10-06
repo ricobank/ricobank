@@ -43,7 +43,8 @@ abstract contract Bank is Math, Flog, Palm, OwnableInternal {
         uint debt;  // [wad] Total Rico Issued
         uint ceil;  // [wad] Total Debt Ceiling
         uint par;   // [ray] System Price (rico/ref)
-        uint lock;  // flash lock
+        uint lock;  // lock
+        uint flock; // flash lock
     }
 
     uint constant UNLOCKED = 2;
