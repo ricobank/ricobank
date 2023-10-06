@@ -213,7 +213,7 @@ describe('Vox', () => {
     })
 
     it('deploy gas', async () => {
-      await check(ethers.BigNumber.from(deploygas), 40055339)
+      await check(ethers.BigNumber.from(deploygas), 40006616)
     })
 
     it('ploke gas', async () => {
@@ -254,7 +254,7 @@ describe('Vox', () => {
       await send(fb.push, b32('weth:ref'), bn2b32(ray(0.1)), constants.MaxUint256)
       debug('bail')
       let gas = await bank.estimateGas.bail(b32('weth'), ALI)
-      await check(gas, 244932, 245400)
+      await check(gas, 244921, 244932)
     })
 
     it('keep surplus gas', async () => {
@@ -321,6 +321,10 @@ describe('Vox', () => {
             bank.filh, b32(':uninft'), b32('ftag'),
             [dai.address + '00'.repeat(12)], b32('dai:ref')
         )
+        await send(
+            bank.filh, b32(':uninft'), b32('liqr'),
+            [dai.address + '00'.repeat(12)], bn2b32(ray(1))
+        )
         await send(fb.push, b32('dai:ref'), bn2b32(ray(1)), constants.MaxUint256)
 
         await send(
@@ -330,6 +334,10 @@ describe('Vox', () => {
         await send(
             bank.filh, b32(':uninft'), b32('ftag'),
             [rico.address + '00'.repeat(12)], b32('rico:ref')
+        )
+        await send(
+            bank.filh, b32(':uninft'), b32('liqr'),
+            [rico.address + '00'.repeat(12)], bn2b32(ray(1))
         )
         await send(fb.push, b32('rico:ref'), bn2b32(ray(0.8)), constants.MaxUint256)
 
@@ -365,7 +373,7 @@ describe('Vox', () => {
             ['int', 'uint', 'uint'], [-1, ricodaitokids[2], ricodaitokids[1]]
         )
         let gas = await bank.estimateGas.frob(b32(':uninft'), ALI, dink, wad(-9))
-        await check(gas, 450948)
+        await check(gas, 452881)
         await send(bank.frob, b32(':uninft'), ALI, dink, wad(-9))
     })
   })

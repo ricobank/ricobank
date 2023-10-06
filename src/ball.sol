@@ -296,7 +296,6 @@ contract Ball is Math, Ward {
         Vat(bank).filk(ups.ilk, 'fee',  bytes32(ups.fee));
         Vat(bank).filk(ups.ilk, 'chop', bytes32(ups.chop));
 
-        Vat(bank).filh(ups.ilk, 'liqr', empty, bytes32(RAY));
         Vat(bank).filh(ups.ilk, 'pep',  empty, bytes32(uint(2)));
         Vat(bank).filh(ups.ilk, 'pop',  empty, bytes32(RAY));
     }

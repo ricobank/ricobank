@@ -8,11 +8,11 @@ import { Bank, Gem, Feedbase } from '../../bank.sol';
 import { Hook } from '../hook.sol';
 
 import { IUniswapV3Pool } from '@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol';
-import { INonfungiblePositionManager } from './interfaces/INonfungiblePositionManager.sol';
+import { INonfungiblePositionManager as INFPM } from './interfaces/INonfungiblePositionManager.sol';
 
 // uniswap libraries to get total token amounts in uniswap positions
 interface IUniWrapper {
-    function total(INonfungiblePositionManager nfpm, uint tokenId, uint160 sqrtPriceX96) view external returns (uint amount0, uint amount1);
+    function total(INFPM nfpm, uint tokenId, uint160 sqrtPriceX96) view external returns (uint amount0, uint amount1);
     function computeAddress(address factory, address t0, address t1, uint24 fee) view external returns (address);
 }
 
@@ -24,17 +24,24 @@ contract UniNFTHook is Hook, Bank {
     struct Source {
         address fsrc;  // [obj] feedbase `src` address
         bytes32 ftag;  // [tag] feedbase `tag` bytes32
+        uint256 liqr;  // [ray] liquidation ratio. Greater value means collateral allows less debt
     }
 
     struct UniNFTHookStorage {
         mapping(address gem => Source source) sources;
         mapping(address usr => uint[] tokenIds) inks;
-        INonfungiblePositionManager nfpm; // uni NFT
         IUniWrapper wrap; // wrapper for uniswap libraries that use earlier solc
+        INFPM   nfpm; // uni NFT
         uint256 room;  // maximum position list length
-        uint256 liqr;  // [ray] liquidation ratio
         uint256 pep;   // [int] discount exponent
         uint256 pop;   // [ray] sale price multiplier
+    }
+
+    struct Amounts {
+        address tok0;
+        address tok1;
+        uint256 amt0;
+        uint256 amt1;
     }
 
     function getStorage(bytes32 i) internal pure returns (UniNFTHookStorage storage hs) {
@@ -98,7 +105,6 @@ contract UniNFTHook is Hook, Bank {
                 // search ink for toss
                 bool found;
                 for (uint k = 0; k < tokenIds.length; ++k) {
-
                     uint tokenId = tokenIds[k];
                     if (found = tokenId == toss) {
                         // id found; pop
@@ -162,51 +168,47 @@ contract UniNFTHook is Hook, Bank {
 
     // respective amounts of token0 and token1 that this position
     // would yield if burned now
-    function amounts(uint tokenId, UniNFTHookStorage storage hs) view internal returns (
-        address t0, address t1, uint a0, uint a1
-    ) {
+    function amounts(uint tokenId, UniNFTHookStorage storage hs) view internal returns (Amounts memory) {
+        Amounts memory amts;
         uint24 fee;
-        (,,t0,t1,fee,,,,,,,) = hs.nfpm.positions(tokenId);
+
+        INFPM nfpm = hs.nfpm;
+        IUniWrapper wrap = hs.wrap;
+        (,,amts.tok0, amts.tok1, fee,,,,,,,) = nfpm.positions(tokenId);
 
         // get the current price
-        address pool = hs.wrap.computeAddress(hs.nfpm.factory(), t0, t1, fee);
+        address pool = wrap.computeAddress(nfpm.factory(), amts.tok0, amts.tok1, fee);
         (uint160 sqrtPriceX96,,,,,,) = IUniswapV3Pool(pool).slot0();
 
         // uni library function to get amounts
-        (a0, a1) = hs.wrap.total(hs.nfpm, tokenId, sqrtPriceX96);
+        (amts.amt0, amts.amt1) = wrap.total(nfpm, tokenId, sqrtPriceX96);
+        return amts;
     }
 
     function safehook(bytes32 i, address u) public view returns (uint tot, uint cut, uint minttl) {
+        Feedbase fb = getBankStorage().fb;
         UniNFTHookStorage storage hs       = getStorage(i);
-        uint[]            storage tokenIds = hs.inks[u];
-
-        minttl = type(uint).max;
+        uint256[]         storage tokenIds = hs.inks[u];
+        minttl = type(uint256).max;
+        uint256 ttl; bytes32 val;
 
         for (uint idx = 0; idx < tokenIds.length; ++idx) {
             // get amounts of token0 and token1
-            (
-                address token0, address token1, uint amount0, uint amount1
-            ) = amounts(tokenIds[idx], hs);
-            Feedbase fb = getBankStorage().fb;
+            Amounts memory amts = amounts(tokenIds[idx], hs);
+            Source storage src0 = hs.sources[amts.tok0];
+            Source storage src1 = hs.sources[amts.tok1];
+            uint256 liqr = max(src0.liqr, src1.liqr);
 
-            // find total value value of tok0 + tok1, and allowed debt cut off
-            {
-                Source storage src0 = hs.sources[token0];
-                (bytes32 val, uint ttl) = fb.pull(src0.fsrc, src0.ftag);
-                minttl = min(minttl, ttl);
-                tot   += amount0 * uint(val);
-                cut   += amount0 * rdiv(uint(val), hs.liqr);
-            }
+            // find total value of tok0 + tok1, and allowed debt cut off
+            (val, minttl) = fb.pull(src0.fsrc, src0.ftag);
+            tot += amts.amt0 * uint(val);
+            cut += amts.amt0 * rdiv(uint(val), liqr);
 
-            {
-                Source storage src1 = hs.sources[token1];
-                (bytes32 val, uint ttl) = fb.pull(src1.fsrc, src1.ftag);
-                minttl = min(minttl, ttl);
-                tot   += amount1 * uint(val);
-                cut   += amount1 * rdiv(uint(val), hs.liqr);
-            }
+            (val, ttl) = fb.pull(src1.fsrc, src1.ftag);
+            minttl = min(minttl, ttl);
+            tot += amts.amt1 * uint(val);
+            cut += amts.amt1 * rdiv(uint(val), liqr);
         }
-
     }
 
     function file(bytes32 key, bytes32 i, bytes32[] calldata xs, bytes32 val)
@@ -214,10 +216,9 @@ contract UniNFTHook is Hook, Bank {
         UniNFTHookStorage storage hs  = getStorage(i);
 
         if (xs.length == 0) {
-            if (key == 'nfpm') { hs.nfpm = INonfungiblePositionManager(address(bytes20(val)));
+            if (key == 'nfpm') { hs.nfpm = INFPM(address(bytes20(val)));
             } else if (key == 'room') { hs.room = uint(val);
             } else if (key == 'wrap') { hs.wrap = IUniWrapper(address(bytes20(val)));
-            } else if (key == 'liqr') { hs.liqr = uint(val);
             } else if (key == 'pep')  { hs.pep = uint(val);
             } else if (key == 'pop')  { hs.pop = uint(val);
             } else { revert ErrWrongKey(); }
@@ -227,6 +228,7 @@ contract UniNFTHook is Hook, Bank {
 
             if (key == 'fsrc') { hs.sources[gem].fsrc = address(bytes20(val));
             } else if (key == 'ftag') { hs.sources[gem].ftag = val;
+            } else if (key == 'liqr') { hs.sources[gem].liqr = uint(val);
             } else { revert ErrWrongKey(); }
             emit NewPalm2(key, i, xs[0], val);
         } else {
@@ -242,7 +244,6 @@ contract UniNFTHook is Hook, Bank {
             if (key == 'nfpm') { return bytes32(bytes20(address(hs.nfpm)));
             } else if (key == 'room') { return bytes32(hs.room);
             } else if (key == 'wrap') { return bytes32(bytes20(address(hs.wrap)));
-            } else if (key == 'liqr') { return bytes32(hs.liqr);
             } else if (key == 'pep')  { return bytes32(hs.pep);
             } else if (key == 'pop')  { return bytes32(hs.pop);
             } else { revert ErrWrongKey(); }
@@ -251,6 +252,7 @@ contract UniNFTHook is Hook, Bank {
 
             if (key == 'fsrc') { return bytes32(bytes20(hs.sources[gem].fsrc));
             } else if (key == 'ftag') { return hs.sources[gem].ftag;
+            } else if (key == 'liqr') { return bytes32(hs.sources[gem].liqr);
             } else { revert ErrWrongKey(); }
         } else {
             revert ErrWrongKey();

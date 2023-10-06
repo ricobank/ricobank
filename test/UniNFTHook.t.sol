@@ -51,14 +51,17 @@ contract NFTHookTest is Test, RicoSetUp {
 
         Vat(bank).filh(uilk, 'fsrc', single(bytes32(bytes20(WETH))), bytes32(bytes20(address(mdn))));
         Vat(bank).filh(uilk, 'ftag', single(bytes32(bytes20(WETH))), wrtag);
- 
+        Vat(bank).filh(uilk, 'liqr', single(bytes32(bytes20(WETH))), bytes32(RAY));
+
         feedpush(wrtag, bytes32(1000 * RAY), type(uint).max);
         Vat(bank).filh(uilk, 'fsrc', single(bytes32(bytes20(agold))), bytes32(bytes20(address(mdn))));
         Vat(bank).filh(uilk, 'ftag', single(bytes32(bytes20(agold))), grtag);
+        Vat(bank).filh(uilk, 'liqr', single(bytes32(bytes20(agold))), bytes32(RAY));
  
         feedpush(grtag, bytes32(1900 * RAY), type(uint).max);
         Vat(bank).filh(uilk, 'fsrc', single(bytes32(bytes20(DAI))), bytes32(bytes20(address(mdn))));
         Vat(bank).filh(uilk, 'ftag', single(bytes32(bytes20(DAI))), drtag);
+        Vat(bank).filh(uilk, 'liqr', single(bytes32(bytes20(DAI))), bytes32(RAY));
  
         feedpush(drtag, bytes32(RAY), type(uint).max);
 
@@ -174,7 +177,9 @@ contract NFTHookTest is Test, RicoSetUp {
         File(bank).file('ceil', bytes32(WAD * 1_000_000_000));
         Vat(bank).filk(uilk, 'line', bytes32(RAD * 1_000_000_000));
         Vat(bank).filk(gilk, 'line', bytes32(RAD * 1_000_000_000));
-        Vat(bank).filh(uilk, 'liqr', empty, bytes32(RAY * 2));
+        Vat(bank).filh(uilk, 'liqr', single(bytes32(bytes20(WETH))),  bytes32(RAY * 2));
+        Vat(bank).filh(uilk, 'liqr', single(bytes32(bytes20(agold))), bytes32(RAY * 2));
+
         bytes memory addgwpos = abi.encodePacked(int(1), goldwethtokid);
         uint borrow = WAD * uint(1_450_000 - 1);
         Vat(bank).frob(uilk, self, addgwpos, int(borrow));
@@ -423,9 +428,12 @@ contract NFTHookTest is Test, RicoSetUp {
         Vat(bank).filh(uilk, 'fsrc', empty, bytes32(uint(5)));
         vm.expectRevert(Bank.ErrWrongKey.selector);
         Vat(bank).filh(uilk, 'fsrc', new bytes32[](2), bytes32(uint(5)));
+        vm.expectRevert(Bank.ErrWrongKey.selector);
+        Vat(bank).filh(uilk, 'liqr', empty, bytes32(uint(5)));
 
         Vat(bank).filh(uilk, 'fsrc', single(bytes32(bytes20(self))), bytes32(uint(10)));
         Vat(bank).filh(uilk, 'ftag', single(bytes32(bytes20(self))), bytes32(uint(100)));
+        Vat(bank).filh(uilk, 'liqr', single(bytes32(bytes20(self))), bytes32(uint(100)));
     }
 
     function test_not_found() public {
@@ -513,7 +521,8 @@ contract NFTHookTest is Test, RicoSetUp {
 
         feed.push(grtag, bytes32(RAY / 6), UINT256_MAX);
         feed.push(wrtag, bytes32(RAY / 6), UINT256_MAX);
-        Vat(bank).filh(uilk, 'liqr', empty, bytes32(liqr));
+        Vat(bank).filh(uilk, 'liqr', single(bytes32(bytes20(WETH))),  bytes32(liqr));
+        Vat(bank).filh(uilk, 'liqr', single(bytes32(bytes20(agold))), bytes32(liqr));
 
         uint pre_rico = rico.balanceOf(self);
         Vat(bank).bail(uilk, self);
@@ -526,5 +535,31 @@ contract NFTHookTest is Test, RicoSetUp {
         uint est  = rmul(tot, pop) / rush**pep;
 
         assertClose(paid, est, 1000000000);
+    }
+
+    function test_combined_liqr() public {
+        File(bank).file('ceil', bytes32(WAD * 1_000_000_000));
+        Vat(bank).filk(uilk, 'line', bytes32(RAD * 1_000_000_000));
+        Vat(bank).filk(gilk, 'line', bytes32(RAD * 1_000_000_000));
+
+        // the NFT has 1000 each of gold and weth, valued at 1900 and 1000
+        bytes memory addgwpos = abi.encodePacked(int(1), goldwethtokid);
+        uint borrow = WAD * uint(2_900_000 - 1);
+
+        // safe debt level should come from the safest liqr of either token
+        Vat(bank).filh(uilk, 'liqr', single(bytes32(bytes20(WETH))),  bytes32(RAY * 1));
+        Vat(bank).filh(uilk, 'liqr', single(bytes32(bytes20(agold))), bytes32(RAY * 100 / 99));
+        vm.expectRevert(Vat.ErrNotSafe.selector);
+        Vat(bank).frob(uilk, self, addgwpos, int(borrow));
+
+        Vat(bank).filh(uilk, 'liqr', single(bytes32(bytes20(WETH))),  bytes32(RAY * 100 / 99));
+        Vat(bank).filh(uilk, 'liqr', single(bytes32(bytes20(agold))), bytes32(RAY * 1));
+        vm.expectRevert(Vat.ErrNotSafe.selector);
+        Vat(bank).frob(uilk, self, addgwpos, int(borrow));
+
+        // with both liqr at 1.0 same frob should pass
+        Vat(bank).filh(uilk, 'liqr', single(bytes32(bytes20(WETH))),  bytes32(RAY * 1));
+        Vat(bank).filh(uilk, 'liqr', single(bytes32(bytes20(agold))), bytes32(RAY * 1));
+        Vat(bank).frob(uilk, self, addgwpos, int(borrow));
     }
 }
