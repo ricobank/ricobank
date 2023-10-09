@@ -35,13 +35,19 @@ contract ERC20Hook is Hook, Bank {
     }
 
     function frobhook(
-        address sender, bytes32 i, address u, bytes calldata _dink, int
+        address sender, bytes32 i, address u, bytes calldata _dink, int dart
     ) external returns (bool safer) {
         ERC20HookStorage storage hs = getStorage(i);
 
         // read dink as a single uint
-        if (_dink.length != 32) revert ErrDinkSize();
-        int dink = int(uint(bytes32(_dink)));
+        int dink;
+        if (_dink.length == 0) { dink = 0;
+        } else if (_dink.length == 32) { dink = int(uint(bytes32(_dink)));
+        } else { revert ErrDinkSize(); }
+
+        // safer if locking ink and wiping art
+        safer = dink >= 0 && dart <= 0;
+        if (!safer && u != sender) revert ErrWrongUrn();
 
         // update balance before transfering tokens
         uint _ink  = add(hs.inks[u], dink);
@@ -65,8 +71,6 @@ contract ERC20Hook is Hook, Bank {
 
         }
 
-        // safer if this call added tokens to ink
-        return dink >= 0;
     }
 
     function bailhook(

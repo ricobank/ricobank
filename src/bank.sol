@@ -110,6 +110,7 @@ abstract contract Bank is Math, Flog, Palm, OwnableInternal {
     }
 
     error ErrWrongKey();
+    error ErrWrongUrn();
 
     // bubble up error code from a reverted call
     function bubble(bytes memory data) internal pure {

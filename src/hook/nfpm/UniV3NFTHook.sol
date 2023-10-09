@@ -64,23 +64,27 @@ contract UniNFTHook is Hook, Bank {
     error ErrFull();
 
     function frobhook(
-        address sender, bytes32 i, address u, bytes calldata dink, int
+        address sender, bytes32 i, address u, bytes calldata dink, int dart
     ) external returns (bool safer) {
         UniNFTHookStorage storage hs = getStorage(i);
         uint[] storage tokenIds      = hs.inks[u];
 
         // dink is a nonempty packed list of uint tokenIds
-        if (dink.length < 32 || dink.length % 32 != 0) revert ErrDinkLength();
+        if (dink.length % 32 != 0) revert ErrDinkLength();
 
-        {
-            int dir = int(uint(bytes32(dink[:32])));
-            if (dir != LOCK && dir != FREE) revert ErrDir();
-            safer = dir == LOCK;
-        }
+        // first word must either be LOCK (add token) or FREE (remove token)
+        int dir = dink.length == 0 ? LOCK : int(uint(bytes32(dink[:32])));
+        if (dir != LOCK && dir != FREE) revert ErrDir();
 
-        if (safer) { 
+        // can't steal collateral or rico from others' urns
+        if ((dir == FREE || dart > 0) && u != sender) revert ErrWrongUrn();
+        
+        if (dir == LOCK) { 
+
+            // safer if locking ink and wiping art
+            safer = dart <= 0;
+
             // add uni positions
-
             for (uint idx = 32; idx < dink.length; idx += 32) {
                 uint tokenId = uint(bytes32(dink[idx:idx+32]));
 
@@ -124,6 +128,7 @@ contract UniNFTHook is Hook, Bank {
             }
 
         }
+
         emit NewPalmBytes2('ink', i, bytes32(bytes20(u)), abi.encodePacked(tokenIds));
     }
 

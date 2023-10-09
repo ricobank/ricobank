@@ -11,6 +11,7 @@ import { RicoSetUp, Guy } from "./RicoHelper.sol";
 import { Asset, PoolArgs } from "./UniHelper.sol";
 import { ERC20Hook } from '../src/hook/ERC20hook.sol';
 import { File } from '../src/file.sol';
+import { Bank } from '../src/bank.sol';
 
 contract Usr {
     address payable bank;
@@ -190,9 +191,29 @@ contract DssFrobTest is DssVatTest {
         // calm means that the debt ceiling is not exceeded
         // it's ok to increase debt as long as you remain calm
         Vat(bank).filk(i0, 'line', bytes32(10 * RAD));
+        feedpush(grtag, bytes32(RAY * 2), UINT256_MAX);
         Vat(bank).frob(i0, me, abi.encodePacked(10 * WAD), int(9 * WAD));
+
         // only if under debt ceiling
         vm.expectRevert(Vat.ErrDebtCeil.selector);
+        Vat(bank).frob(i0, me, abi.encodePacked(int(0)), int(2 * WAD));
+
+        // but safe check comes first
+        feedpush(grtag, bytes32(0), UINT256_MAX);
+        vm.expectRevert(Vat.ErrNotSafe.selector);
+        Vat(bank).frob(i0, me, abi.encodePacked(int(0)), int(2 * WAD));
+
+        // calm line
+        feedpush(grtag, bytes32(RAY * 2), UINT256_MAX);
+        Vat(bank).filk(i0, 'line', bytes32(20 * RAD));
+
+        // but not ceil
+        File(bank).file('ceil', bytes32(10 * WAD));
+        vm.expectRevert(Vat.ErrDebtCeil.selector);
+        Vat(bank).frob(i0, me, abi.encodePacked(int(0)), int(2 * WAD));
+
+        // ok calm down
+        File(bank).file('ceil', bytes32(20 * WAD));
         Vat(bank).frob(i0, me, abi.encodePacked(int(0)), int(2 * WAD));
     }
 
@@ -263,17 +284,17 @@ contract DssFrobTest is DssVatTest {
 
         // only the lad can free
         assertTrue(ali.can_frob(i0, a, abi.encodePacked(-int(WAD)), 0));
-        vm.expectRevert(Vat.ErrWrongUrn.selector);
+        vm.expectRevert(Bank.ErrWrongUrn.selector);
         bob.frob(i0, a, abi.encodePacked(-int(WAD)), 0);
-        vm.expectRevert(Vat.ErrWrongUrn.selector);
+        vm.expectRevert(Bank.ErrWrongUrn.selector);
         cat.frob(i0, a, abi.encodePacked(-int(WAD)), 0);
         // the lad can free to anywhere - N/A no v or w
 
         // only the lad can draw
         assertTrue(ali.can_frob(i0, a, abi.encodePacked(int(0)), int(WAD)));
-        vm.expectRevert(Vat.ErrWrongUrn.selector);
+        vm.expectRevert(Bank.ErrWrongUrn.selector);
         bob.frob(i0, a, '', int(WAD));
-        vm.expectRevert(Vat.ErrWrongUrn.selector);
+        vm.expectRevert(Bank.ErrWrongUrn.selector);
         cat.frob(i0, a, '', int(WAD));
         // lad can draw to anywhere - N/A no v or w
 
@@ -296,9 +317,9 @@ contract DssFrobTest is DssVatTest {
 
         // only owner can do risky actions
         assertTrue(ali.can_frob(i0, a, abi.encodePacked(int(0)), int(WAD)));
-        vm.expectRevert(Vat.ErrWrongUrn.selector);
+        vm.expectRevert(Bank.ErrWrongUrn.selector);
         bob.frob(i0, a, abi.encodePacked(int(0)), int(WAD));
-        vm.expectRevert(Vat.ErrWrongUrn.selector);
+        vm.expectRevert(Bank.ErrWrongUrn.selector);
         cat.frob(i0, a, abi.encodePacked(int(0)), int(WAD));
 
         // unless they hope another user - N/A no hope
@@ -911,7 +932,8 @@ contract DssDogTest is DssJsTest {
     }
 
     function test_bark_dusty_vault() public {
-        // difference from dss: error on dust
+        // difference from dss: error on dust, no dog
+        gold.mint(me, 200000 * WAD);
         uint dust = 200;
         Vat(bank).filk(i0, 'dust', bytes32(dust * RAD));
         vm.expectRevert(Vat.ErrUrnDust.selector);

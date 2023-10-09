@@ -55,7 +55,6 @@ contract Vat is Bank {
     error ErrDebtCeil();
     error ErrMultiIlk();
     error ErrTransfer();
-    error ErrWrongUrn();
     error ErrHookData();
     error ErrStatic();
     error ErrLock();
@@ -163,33 +162,26 @@ contract Vat is Bank {
             getBankStorage().rico.burn(msg.sender, wad);
         }
 
-        // either debt has decreased, or debt ceilings are not exceeded
-        {
-            bool oline = ilk.tart * ilk.rack > ilk.line;
-            bool oceil = vs.debt + vs.rest / RAY > vs.ceil;
-            if (dart > 0 && (oline || oceil)) revert ErrDebtCeil();
+        // safer if less/same art and more/same ink
+        bytes memory data = _hookcall(i, abi.encodeWithSelector(
+            Hook.frobhook.selector, msg.sender, i, u, dink, dart
+        ));
+        if (data.length != 32) revert ErrHookData();
+
+        // urn is safer, or it is safe
+        if (!abi.decode(data, (bool))) {
+            (Spot spot,,) = safe(i, u);
+            if (spot != Spot.Safe) revert ErrNotSafe();
         }
 
         // urn has no debt, or a non-dusty amount
         if (art != 0 && ilk.rack * art < ilk.dust) revert ErrUrnDust();
 
-        // safer if less/same art and more/same ink
-        bool safer = dart <= 0;
-        if (dink.length != 0) {
-            bytes memory data = _hookcall(i, abi.encodeWithSelector(
-                Hook.frobhook.selector, msg.sender, i, u, dink, dart
-            ));
-            if (data.length != 32) revert ErrHookData();
-            safer = safer && abi.decode(data, (bool));
+        // either debt has decreased, or debt ceilings are not exceeded
+        if (dart > 0) {
+            if (ilk.tart * ilk.rack > ilk.line) revert ErrDebtCeil();
+            else if (vs.debt + vs.rest / RAY > vs.ceil) revert ErrDebtCeil();
         }
-
-        // urn is safer, or it is safe and urn holder is caller
-        if (!safer) {
-            (Spot spot,,) = safe(i, u);
-            if (spot != Spot.Safe) revert ErrNotSafe();
-            if (u != msg.sender) revert ErrWrongUrn();
-        }
- 
     }
 
     function bail(bytes32 i, address u)

@@ -590,57 +590,82 @@ contract VatTest is Test, RicoSetUp {
         skip(1);
         Vat(bank).drip(gilk);
 
-        // ceily, not safe, wrong urn, dusty...should be ceily
+        // ceily, not safe, wrong urn, dusty...should be wrong urn
         feedpush(grtag, bytes32(0), type(uint).max);
-        vm.expectRevert(Vat.ErrDebtCeil.selector);
+        vm.expectRevert(Bank.ErrWrongUrn.selector);
         Vat(bank).frob(gilk, bank, abi.encodePacked(WAD), int(WAD / 2));
 
-        // non-ceily, should be dusty
-        vm.expectRevert(Vat.ErrUrnDust.selector);
-        Vat(bank).frob(gilk, bank, abi.encodePacked(WAD), int(WAD / 2 - 1));
-
-        // non-dusty, should be unsafe
-        Vat(bank).filk(gilk, 'dust', bytes32(RAD - RAY * 2));
+        // right urn, should be unsafe
         vm.expectRevert(Vat.ErrNotSafe.selector);
-        Vat(bank).frob(gilk, bank, abi.encodePacked(WAD), int(WAD / 2 - 1));
+        Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(WAD / 2 - 1));
 
-        //safe, should be wrong urn
-        feedpush(grtag, bytes32(RAY), type(uint).max);
-        vm.expectRevert(Vat.ErrWrongUrn.selector);
-        Vat(bank).frob(gilk, bank, abi.encodePacked(WAD), int(WAD / 2 - 1));
+        // safe, should be dusty
+        feedpush(grtag, bytes32(RAY * 100), type(uint).max);
+        vm.expectRevert(Vat.ErrUrnDust.selector);
+        Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(WAD / 2 - 1));
 
-        // raising ceil should fix ceil
+        //non-dusty, should be ceily
+        vm.expectRevert(Vat.ErrDebtCeil.selector);
+        Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(WAD / 2));
+
+        // raising ceil should fix ceilyness
         File(bank).file('ceil', bytes32(WAD));
         Vat(bank).frob(gilk, self, abi.encodePacked(WAD * 2), int(WAD / 2));
     }
 
     function test_frob_err_ordering_darts() public {
-        Vat(bank).filk(gilk, 'fee', bytes32(2 * RAY));
         File(bank).file('ceil', bytes32(WAD));
         Vat(bank).filk(gilk, 'dust', bytes32(RAD));
-        skip(1);
-        Vat(bank).drip(gilk);
         feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
 
+        // check how it works with some fees dripped
+        Vat(bank).filk(gilk, 'fee', bytes32(2 * RAY));
+        skip(1);
+        Vat(bank).drip(gilk);
+
+        // frob while pranking medianizer address
         address amdn = address(mdn);
         gold.mint(amdn, 1000 * WAD);
         vm.startPrank(amdn);
         gold.approve(bank, 1000 * WAD);
         Vat(bank).frob(gilk, address(mdn), abi.encodePacked(WAD * 2), int(WAD / 2));
+
+        // send the rico back to self
         rico.transfer(self, 100);
         vm.stopPrank();
 
         // bypasses most checks when dart <= 0
         feedpush(grtag, bytes32(0), type(uint).max);
         File(bank).file('ceil', bytes32(0));
-        vm.expectRevert(Vat.ErrDebtCeil.selector);
-        Vat(bank).frob(gilk, amdn, abi.encodePacked(WAD), int(1));
-        Vat(bank).frob(gilk, amdn, abi.encodePacked(WAD), int(0));
+
+        // can't help because dust
         vm.expectRevert(Vat.ErrUrnDust.selector);
         Vat(bank).frob(gilk, amdn, abi.encodePacked(WAD), -int(1));
+
+        // can't hurt because permissions
+        vm.expectRevert(Bank.ErrWrongUrn.selector);
+        Vat(bank).frob(gilk, amdn, abi.encodePacked(WAD), int(1));
+
+        // ok now frob my own urn...but it's not safe
+        vm.expectRevert(Vat.ErrNotSafe.selector);
+        Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(1));
+
+        // make it safe...should be dusty
+        feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
+        vm.expectRevert(Vat.ErrUrnDust.selector);
+        Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(1));
+
+        // frob a non-dusty amount...but mdn already frobbed a bunch
+        // should exceed ceil
+        vm.expectRevert(Vat.ErrDebtCeil.selector);
+        Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(WAD));
+
+        // ceiling checks are last
+        File(bank).file('ceil', bytes32(WAD * 4));
+        Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(WAD));
     }
 
-    function test_frob_err_ordering_dinks() public {
+    function test_frob_err_ordering_dinks_1() public {
         Vat(bank).filk(gilk, 'fee', bytes32(2 * RAY));
         File(bank).file('ceil', bytes32(WAD));
         Vat(bank).filk(gilk, 'dust', bytes32(RAD));
@@ -658,11 +683,13 @@ contract VatTest is Test, RicoSetUp {
         // bypasses most checks when dink >= 0
         feedpush(grtag, bytes32(0), type(uint).max);
         File(bank).file('ceil', bytes32(0));
+        vm.expectRevert(Bank.ErrWrongUrn.selector);
+        Vat(bank).frob(gilk, amdn, abi.encodePacked(-int(1)), int(0));
+
+        vm.prank(amdn);
         vm.expectRevert(Vat.ErrNotSafe.selector);
         Vat(bank).frob(gilk, amdn, abi.encodePacked(-int(1)), int(0));
-        feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
-        vm.expectRevert(Vat.ErrWrongUrn.selector);
-        Vat(bank).frob(gilk, amdn, abi.encodePacked(-int(1)), int(0));
+
         feedpush(grtag, bytes32(0), type(uint).max);
         // doesn't care when ink >= 0
         Vat(bank).frob(gilk, amdn, abi.encodePacked(int(0)), int(0));
@@ -690,16 +717,21 @@ contract VatTest is Test, RicoSetUp {
         feedpush(grtag, bytes32(0), type(uint).max);
         File(bank).file('ceil', bytes32(WAD * 10000));
 
+        vm.expectRevert(Bank.ErrWrongUrn.selector);
+        Vat(bank).frob(gilk, amdn, abi.encodePacked(-int(1)), int(1));
+
+        vm.prank(amdn);
         vm.expectRevert(Vat.ErrNotSafe.selector);
         Vat(bank).frob(gilk, amdn, abi.encodePacked(-int(1)), int(1));
+
         feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
-        vm.expectRevert(Vat.ErrWrongUrn.selector);
-        Vat(bank).frob(gilk, amdn, abi.encodePacked(-int(1)), int(1));
-        feedpush(grtag, bytes32(0), type(uint).max);
-        // doesn't care when ink >= 0
+
+        // on the edge of dustiness
         Vat(bank).frob(gilk, amdn, abi.encodePacked(int(0)), int(0));
+
         vm.expectRevert(Vat.ErrUrnDust.selector);
         Vat(bank).frob(gilk, amdn, abi.encodePacked(int(1)), int(-1));
+
         Vat(bank).filk(gilk, 'dust', bytes32(RAD / 2));
         Vat(bank).frob(gilk, amdn, abi.encodePacked(int(1)), int(-1));
     }
@@ -781,7 +813,8 @@ contract VatTest is Test, RicoSetUp {
 
         feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
         gold.mint(address(guy), 1000 * WAD);
-        vm.expectRevert(Vat.ErrWrongUrn.selector);
+
+        // no wrong urn error; AC is a hook property
         guy.frob(gilk, self, abi.encodePacked(int(0)), int(WAD));
     }
 
@@ -850,10 +883,19 @@ contract VatTest is Test, RicoSetUp {
     }
 
     function test_no_dink() public {
+        // test null ('') as dink
         address rsh = address(new RevertSafeHook());
+        address oldhook = Vat(bank).ilks(gilk).hook;
+
         feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
         Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(WAD));
+
         Vat(bank).filk(gilk, 'hook', bytes32(bytes20(rsh)));
+        vm.expectRevert(RevertSafeHook.ErrBadSafe.selector);
+        Vat(bank).frob(gilk, self, '', -int(WAD / 2));
+
+        // no-dink is a hook property, not vat
+        Vat(bank).filk(gilk, 'hook', bytes32(bytes20(oldhook)));
         Vat(bank).frob(gilk, self, '', -int(WAD / 2));
     }
 
@@ -952,6 +994,54 @@ contract VatTest is Test, RicoSetUp {
         Vat(bank).bail(gilk, self);
     }
 
+    function test_frob_safer_over_ceilings() public {
+        Vat(bank).frob(gilk, self, abi.encodePacked(2000 * WAD), int(1000 * WAD));
+
+        Vat(bank).filk(gilk, 'line', bytes32(0));
+        // safer dart
+        Vat(bank).frob(gilk, self, '', -int(WAD));
+        // safer dink
+        Vat(bank).frob(gilk, self, abi.encodePacked(int(WAD)), 0);
+
+        Vat(bank).filk(gilk, 'line', bytes32(UINT256_MAX));
+        File(bank).file('ceil', bytes32(0));
+        Vat(bank).frob(gilk, self, '', -int(WAD));
+        Vat(bank).frob(gilk, self, abi.encodePacked(int(WAD)), 0);
+
+        Vat(bank).filk(gilk, 'line', bytes32(UINT256_MAX));
+        File(bank).file('ceil', bytes32(UINT256_MAX));
+        Vat(bank).frob(gilk, self, '', -int(WAD));
+        Vat(bank).frob(gilk, self, abi.encodePacked(int(WAD)), 0);
+    }
+
+    function test_frob_down_not_safer_over_ceilings() public {
+        Vat(bank).frob(gilk, self, abi.encodePacked(2000 * WAD), int(1000 * WAD));
+
+        File(bank).file('ceil', bytes32(0));
+        Vat(bank).filk(gilk, 'line', bytes32(0));
+
+        // it's not safer, but still should check ceilings
+        Vat(bank).frob(gilk, self, abi.encodePacked(-int(WAD)), -int(WAD));
+    }
+
+}
+
+contract FrobUpSaferHook is Hook, Bank {
+    function frobhook(
+        address, bytes32, address, bytes calldata _dink, int dart
+    ) pure external returns (bool safer) {
+        int dink = abi.decode(_dink, (int));
+        if (dink > 0) safer = dink > dart;
+    }
+    function bailhook(
+        bytes32, address, uint, address, uint, uint
+    ) external returns (bytes memory) {}
+    function safehook(
+        bytes32, address
+    ) pure external returns (uint, uint, uint) {
+        return (type(uint).max, type(uint).max, type(uint).max);
+    }
+    function ink(bytes32, address) external pure returns (bytes memory) {}
 }
 
 contract RevertSafeHook is Hook {
