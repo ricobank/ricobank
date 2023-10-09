@@ -82,7 +82,7 @@ task('deploy-ricobank', '')
         platpop:    ray(1),
         plotpep:    2,
         plotpop:    ray(1),
-        mintramp:   { vel: wad(1), rel: wad(1), bel: timestamp, cel: 1 },
+        mintramp:   { vel: wad(1), rel: wad(1), bel: timestamp, cel: 1, wel: wad(1) },
         DAI: deps.objects.dai.address,
         DAI_USD_AGG: agg_daiusd.address,
         XAU_USD_AGG: agg_xauusd.address,

@@ -487,6 +487,65 @@ contract VowTest is Test, RicoSetUp {
         );
     }
 
+    function test_zero_flap() public {
+        feedpush(RISK_RICO_TAG, bytes32(RAY), type(uint).max);
+
+        force_sin(0);
+        force_fees(1);
+        Vow(bank).keep(empty);
+
+        assertEq(Vat(bank).sin(), 0);
+        assertEq(Vat(bank).joy(), 1);
+
+        // vow leaves at least 1 joy to avoid toggling 0
+        // so this keep should flap 0
+        uint pre_rico = rico.balanceOf(self);
+        uint pre_risk = risk.balanceOf(self);
+        Vow(bank).keep(empty);
+        uint aft_rico = rico.balanceOf(self);
+        uint aft_risk = risk.balanceOf(self);
+
+        assertEq(aft_rico, pre_rico);
+        assertEq(aft_risk, pre_risk - 1);
+    }
+
+    function test_wel() public _check_integrity_after_ {
+        feedpush(RISK_RICO_TAG, bytes32(RAY), type(uint).max);
+
+        // can't flap more rico than surplus
+        vm.expectRevert(File.ErrHighWel.selector);
+        File(bank).file('wel', bytes32(RAY + 1));
+
+        uint wel = WAD / 7;
+        File(bank).file('wel', bytes32(wel));
+        Vat(bank).frob(gilk, self, abi.encodePacked(int(WAD)), int(WAD));
+
+        // drip a bunch of joy
+        Vat(bank).filk(gilk, 'fee', bytes32(RAY * 10));
+        skip(5);
+        Vat(bank).drip(gilk);
+
+        // keep should flap 1/7 the joy
+        uint joy = Vat(bank).joy() - Vat(bank).sin() / RAY;
+        uint pre_rico = rico.balanceOf(self);
+        uint pre_risk = risk.balanceOf(self);
+
+        // make sure it offers the right price
+        // feed price == 1 and pop == 1, so rico:risk == mash
+        uint debt     = Vat(bank).debt() - Vat(bank).sin() / RAY;
+        uint exp_mash = rpow(rdiv(debt, debt + joy), 2);
+
+        Vow(bank).keep(empty);
+
+        uint aft_rico = rico.balanceOf(self);
+        uint aft_risk = risk.balanceOf(self);
+
+        assertClose(aft_rico - pre_rico, joy / 7, 100000000000);
+
+        uint act_price = rdiv(pre_risk - aft_risk, aft_rico - pre_rico);
+        assertClose(act_price, exp_mash, 1000000);
+    }
+
 }
 
 contract FrobHook is Hook {

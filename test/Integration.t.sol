@@ -25,24 +25,6 @@ contract IntegrationTest is Test, RicoSetUp {
         risk.mint(self, 10_000 * WAD);
     }
     
-    function check_integrity() internal {
-        uint sup  = rico.totalSupply();
-        uint joy  = Vat(bank).joy();
-        uint sin  = Vat(bank).sin() / RAY;
-        uint debt = Vat(bank).debt();
-        uint tart = Vat(bank).ilks(gilk).tart;
-        uint rack = Vat(bank).ilks(gilk).rack;
-
-        assertEq(rico.balanceOf(bank), 0);
-        assertEq(joy + sup, debt);
-        assertEq(rmul(tart, rack), sup + joy - sin);
-    }
-    
-    modifier _check_integrity_after_ {
-        _;
-        check_integrity();
-    }
-
     function test_joy_accounting() public {
         Vat(bank).frob(gilk, self, abi.encodePacked(10 * WAD), int(5 * WAD));
         skip(100);

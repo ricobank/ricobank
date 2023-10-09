@@ -57,6 +57,7 @@ abstract contract Bank is Math, Flog, Palm, OwnableInternal {
         uint rel; // [wad] fraction of RISK supply/s
         uint bel; // [sec] last flop timestamp
         uint cel; // [sec] max seconds flop can ramp up
+        uint wel; // [wad] fraction of joy/flap
     }
 
     struct Plx {

@@ -11,6 +11,7 @@ import { Bank } from './bank.sol';
 
 contract File is Bank {
     error ErrHighToll();
+    error ErrHighWel();
 
     function file(bytes32 key, bytes32 val) onlyOwner _flog_ external {
         VatStorage storage vatS = getVatStorage();
@@ -28,6 +29,10 @@ contract File is Bank {
         else if (key == "rel") { vowS.ramp.rel = uint(val); }
         else if (key == "bel") { vowS.ramp.bel = uint(val); }
         else if (key == "cel") { vowS.ramp.cel = uint(val); }
+        else if (key == "wel") {
+            if (uint(val) > RAY) revert ErrHighWel();
+            vowS.ramp.wel = uint(val);
+        }
         else if (key == "toll") { 
             if (uint(val) > RAY) revert ErrHighToll();
             vowS.toll = uint(val);

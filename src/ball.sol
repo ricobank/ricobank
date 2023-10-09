@@ -232,6 +232,7 @@ contract Ball is Math, Ward {
         fbank.file("rel", bytes32(args.mintramp.vel));
         fbank.file("bel", bytes32(args.mintramp.bel));
         fbank.file("cel", bytes32(args.mintramp.cel));
+        fbank.file("wel", bytes32(args.mintramp.wel));
 
         fbank.file('tag', RICO_REF_TAG);
         fbank.file('how', HOW);

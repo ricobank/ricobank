@@ -126,6 +126,16 @@ abstract contract RicoSetUp is BaseHelper {
         vm.store(bank, debt_pos, bytes32(debt_0 + gain));
     }
 
+    function force_sin(uint val) public {
+        // set sin as if it was covered by a good bail
+        uint256 sin_idx  = 3;
+        bytes32 vat_info = 'vat.0';
+        bytes32 vat_pos  = keccak256(abi.encodePacked(vat_info));
+        bytes32 sin_pos  = bytes32(uint(vat_pos) + sin_idx);
+
+        vm.store(bank, sin_pos, bytes32(val));
+    }
+
     function _art(bytes32 ilk, address usr) internal view returns (uint art) {
         art = Vat(bank).urns(ilk, usr);
     }
@@ -224,7 +234,7 @@ abstract contract RicoSetUp is BaseHelper {
             platpop,
             plotpep,
             plotpop,
-            Bank.Ramp(WAD, WAD, block.timestamp, 1),
+            Bank.Ramp(WAD, WAD, block.timestamp, 1, WAD),
             DAI,
             DAI_USD_AGG,
             XAU_USD_AGG
@@ -328,4 +338,23 @@ abstract contract RicoSetUp is BaseHelper {
         rico_mint(amt, bail);
         rico.transfer(address(guy), amt);
     }
+
+    function check_integrity() internal {
+        uint sup  = rico.totalSupply();
+        uint joy  = Vat(bank).joy();
+        uint sin  = Vat(bank).sin() / RAY;
+        uint debt = Vat(bank).debt();
+        uint tart = Vat(bank).ilks(gilk).tart;
+        uint rack = Vat(bank).ilks(gilk).rack;
+
+        assertEq(rico.balanceOf(bank), 0);
+        assertEq(joy + sup, debt);
+        assertEq(rmul(tart, rack), sup + joy - sin);
+    }
+
+    modifier _check_integrity_after_ {
+        _;
+        check_integrity();
+    }
+
 }
