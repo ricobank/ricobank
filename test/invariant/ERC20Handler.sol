@@ -111,7 +111,7 @@ contract ERC20Handler is Test, Local, RicoSetUp {
         minPar = min(minPar, Vat(bank).par());
     }
 
-    function wait(uint8 s) public {
+    function wait(uint16 s) public {
         skip(s);
     }
 

@@ -5,20 +5,27 @@ import "forge-std/Test.sol";
 
 import { Gem } from '../../lib/gemfab/src/gem.sol';
 import { Vat }  from '../../src/vat.sol';
+import { Vox }  from '../../src/vox.sol';
 import { BaseHelper } from "../BaseHelper.sol";
 import { ERC20Handler } from './ERC20Handler.sol';
 
 // Uses single WETH ilk and modifies WETH and RICO price during run
 contract InvariantFluidPrice is Test, BaseHelper {
     ERC20Handler handler;
+    uint256 cap;
+    uint256 icap;
     Vat vat;
+    Vox vox;
     Gem rico;
 
     function setUp() external {
         handler = new ERC20Handler();
         bank    = handler.bank();
         rico    = handler.rico();
-        vat     = Vat(handler.bank());
+        vat     = Vat(bank);
+        vox     = Vox(bank);
+        cap     = vox.cap();
+        icap    = rinv(cap);
 
         targetContract(address(handler));
         bytes4[] memory selectors = new bytes4[](10);
@@ -49,7 +56,8 @@ contract InvariantFluidPrice is Test, BaseHelper {
         uint rack = vat.ilks(WETH_ILK).rack;
         uint line = vat.ilks(WETH_ILK).line;
         uint liqr = uint(vat.geth(WETH_ILK, 'liqr', empty));
-        uint weth_val  = handler.localWeth() * handler.weth_ref_max() / handler.minPar();
+        uint way  = vox.way();
+        uint weth_val = handler.localWeth() * handler.weth_ref_max() / handler.minPar();
 
         // debt invariant
         assertEq(joy + sup, debt);
@@ -73,5 +81,9 @@ contract InvariantFluidPrice is Test, BaseHelper {
 
         // assert limit on total possible RICO drawn
         assertLt(sup, rdiv(weth_val, liqr));
+
+        // way stays within bounds given owner does not file("cap")
+        assertLe(way, cap);
+        assertGe(way, icap);
     }
 }
