@@ -229,7 +229,7 @@ contract Ball is Math, Ward {
         fbank.file('plot.pep', bytes32(args.plotpep));
         fbank.file('plot.pop', bytes32(args.plotpop));
         fbank.file("vel", bytes32(args.mintramp.vel));
-        fbank.file("rel", bytes32(args.mintramp.vel));
+        fbank.file("rel", bytes32(args.mintramp.rel));
         fbank.file("bel", bytes32(args.mintramp.bel));
         fbank.file("cel", bytes32(args.mintramp.cel));
         fbank.file("wel", bytes32(args.mintramp.wel));
