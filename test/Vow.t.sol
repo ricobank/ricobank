@@ -514,7 +514,7 @@ contract VowTest is Test, RicoSetUp {
 
         // can't flap more rico than surplus
         vm.expectRevert(File.ErrHighWel.selector);
-        File(bank).file('wel', bytes32(RAY + 1));
+        File(bank).file('wel', bytes32(WAD + 1));
 
         uint wel = WAD / 7;
         File(bank).file('wel', bytes32(wel));

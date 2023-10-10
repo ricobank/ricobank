@@ -30,7 +30,7 @@ contract File is Bank {
         else if (key == "bel") { vowS.ramp.bel = uint(val); }
         else if (key == "cel") { vowS.ramp.cel = uint(val); }
         else if (key == "wel") {
-            if (uint(val) > RAY) revert ErrHighWel();
+            if (uint(val) > WAD) revert ErrHighWel();
             vowS.ramp.wel = uint(val);
         }
         else if (key == "toll") { 
