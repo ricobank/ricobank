@@ -7,7 +7,6 @@ import { Ball } from '../src/ball.sol';
 import { INonfungiblePositionManager } from './Univ3Interface.sol';
 import { Gem, GemFab } from '../lib/gemfab/src/gem.sol';
 import { Feedbase } from '../lib/feedbase/src/Feedbase.sol';
-import { Ploker } from '../lib/feedbase/src/Ploker.sol';
 import { Divider } from '../lib/feedbase/src/combinators/Divider.sol';
 import { Medianizer } from '../lib/feedbase/src/Medianizer.sol';
 import { UniswapV3Adapter } from "../lib/feedbase/src/adapters/UniswapV3Adapter.sol";
@@ -33,7 +32,6 @@ contract BallTest is BaseHelper {
     uint256 constant INIT_PAR = (INIT_SQRTPAR ** 2) / RAY;
     uint256 constant wethamt = WAD;
     
-    Ploker ploker;
     ChainlinkAdapter cladapt;
     UniswapV3Adapter uniadapt;
     Divider divider;
@@ -70,8 +68,8 @@ contract BallTest is BaseHelper {
     }
 
     function look_poke() internal {
-        ploker.ploke(RISK_RICO_TAG);
         advance_chainlink();
+        mdn.poke(RISK_RICO_TAG);
         mdn.poke(WETH_REF_TAG);
         mdn.poke(RAI_REF_TAG);
     }
@@ -170,7 +168,6 @@ contract BallTest is BaseHelper {
         uniadapt = ball.uniadapt();
         divider = ball.divider();
         mdn = ball.mdn();
-        ploker = ball.ploker();
 
         skip(BANKYEAR / 2);
         look_poke();

@@ -16,7 +16,6 @@ import {Divider} from "../lib/feedbase/src/combinators/Divider.sol";
 import {Feedbase} from "../lib/feedbase/src/Feedbase.sol";
 import {Medianizer} from "../lib/feedbase/src/Medianizer.sol";
 import {Multiplier} from "../lib/feedbase/src/combinators/Multiplier.sol";
-import {Ploker} from "../lib/feedbase/src/Ploker.sol";
 import {UniswapV3Adapter, IUniWrapper} from "../lib/feedbase/src/adapters/UniswapV3Adapter.sol";
 import {Ward} from "../lib/feedbase/src/mixin/ward.sol";
 import {Gem} from "../lib/gemfab/src/gem.sol";
@@ -109,7 +108,6 @@ contract Ball is Math, Ward {
 
     address public rico;
     address public risk;
-    Ploker  public ploker;
 
     constructor(BallArgs memory args) {
         vat  = new Vat();
@@ -118,7 +116,6 @@ contract Ball is Math, Ward {
         file = new File();
         hook = new ERC20Hook();
         nfthook = new UniNFTHook();
-        ploker = new Ploker();
 
         mdn = new Medianizer(args.feedbase);
         uniadapt = new UniswapV3Adapter(Feedbase(args.feedbase), IUniWrapper(args.uniwrapper));
@@ -155,11 +152,6 @@ contract Ball is Math, Ward {
         Medianizer.Config memory mdnconf = Medianizer.Config(new address[](1), new bytes32[](1), 1);
         mdnconf.srcs[0] = address(uniadapt); mdnconf.tags[0] = RISK_RICO_TAG;
         mdn.setConfig(RISK_RICO_TAG, mdnconf);
-
-        Ploker.Config memory plokerconf = Ploker.Config(new address[](1), new bytes32[](1));
-        plokerconf = Ploker.Config(new address[](1), new bytes32[](1));
-        plokerconf.combinators[0] = address(mdn); plokerconf.combinatortags[0] = RISK_RICO_TAG;
-        ploker.setConfig(RISK_RICO_TAG, plokerconf);
     }
 
     function setup(BallArgs calldata args) _ward_ external payable {
@@ -260,11 +252,9 @@ contract Ball is Math, Ward {
             mdnconf.srcs[0] = address(divider); mdnconf.tags[0] = gemreftag;
             mdn.setConfig(gemreftag, mdnconf);
         }
-        Ploker.Config memory pconf;
         bytes32 gemusdtag = concat(ilk, ':usd');
         bytes32 gemclatag;
         address gemusdsrc;
-        pconf = Ploker.Config(new address[](1), new bytes32[](1));
         if (ilkparams.gemethagg == address(0)) {
             // ilk has feed sequence of gem/usd / rico/usd
             cladapt.setConfig(gemusdtag, ChainlinkAdapter.Config(ilkparams.gemusdagg, ilkparams.ttl, RAY));
@@ -284,8 +274,6 @@ contract Ball is Math, Ward {
         _configureBlock(divider, gemreftag,
                         address(gemusdsrc), gemusdtag,
                         address(cladapt),   XAU_USD_TAG);
-        pconf.combinators[0] = address(mdn); pconf.combinatortags[0] = gemreftag;
-        ploker.setConfig(gemreftag, pconf);
     }
 
     function makeuni(UniParams calldata ups) _ward_ external {
@@ -307,7 +295,6 @@ contract Ball is Math, Ward {
         multiplier.give(usr);
         uniadapt.give(usr);
         cladapt.give(usr);
-        ploker.give(usr);
 
         Diamond(bank).transferOwnership(usr);
     }

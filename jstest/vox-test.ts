@@ -67,9 +67,9 @@ const join_pool = async (args) => {
 describe('Vox', () => {
   let ali, bob, cat
   let ALI, BOB, CAT
-  let fb
+  let fb, mdn
   let bank, ball
-  let ploker, weth, rico, risk
+  let weth, rico, risk
   let pack
   let deploygas
   let dapp
@@ -82,10 +82,10 @@ describe('Vox', () => {
     ;[deploygas, pack] = await task_total_gas(hh, 'deploy-ricobank', {mock:'true', netname: 'ethereum', tokens: './tokens.json'})
     dapp = await dpack.load(pack, ethers, ali)
 
-    fb = dapp.feedbase
+    fb   = dapp.feedbase
+    mdn  = dapp.mdn
     bank = dapp.bank
     ball = dapp.ball
-    ploker = dapp.ploker
     weth = dapp.weth
     rico = dapp.rico
     risk = dapp.risk
@@ -122,12 +122,11 @@ describe('Vox', () => {
     await revert(hh);
   })
 
-  it('ploke', async () => {
+  it('poke', async () => {
     for (const tag of ['weth:ref', 'risk:rico']) {
-        debug(`ploking ${tag}`)
-        await send(ploker.ploke, b32(tag))
+        debug(`poking ${tag}`)
+        await send(mdn.poke, b32(tag))
     }
-    await fail('ErrNoConfig', ploker.ploke, b32('ricoref'))
   })
 
   it('sway', async () => {
@@ -213,23 +212,21 @@ describe('Vox', () => {
     })
 
     it('deploy gas', async () => {
-      await check(ethers.BigNumber.from(deploygas), 40068145)
+      await check(ethers.BigNumber.from(deploygas), 38811808)
     })
 
-    it('ploke gas', async () => {
+    it('poke gas', async () => {
       // impersonate adapters to set different non zero values
       // 'weth:ref' has only two relevant chain link tags
       let cladapt = await ball.cladapt()
-      let mdnaddr = await ball.mdn()
-      let mdn = await ethers.getContractAt('Medianizer', mdnaddr)
       await hh.network.provider.send("hardhat_setBalance", [cladapt, "0x100000000000000000000"]);
       const cladapterSigner = await ethers.getImpersonatedSigner(cladapt);
       await send(fb.connect(cladapterSigner).push, b32('weth:usd'), b32(ray(1)), ray(1))
       await send(fb.connect(cladapterSigner).push, b32('xau:usd'),  b32(ray(1)), ray(1))
       await send(mdn.poke, b32('weth:ref'))
-      // measure gas for ploking non zero to non zero slots
-      let gas = await ploker.estimateGas.ploke(b32('weth:ref'))
-      await check(gas, 86318)
+      // measure gas for poking non zero to non zero slot
+      let gas = await mdn.estimateGas.poke(b32('weth:ref'))
+      await check(gas, 73653)
     })
 
     it('frob cold gas', async () => {
