@@ -137,7 +137,6 @@ contract DssJsTest is Test, RicoSetUp {
         b = address(bob);
         c = address(cat);
 
-        File(bank).file('vel', bytes32(1000 * WAD));
         File(bank).file('bel', bytes32(block.timestamp - 1));
         File(bank).file('cel', bytes32(uint(1)));
         guy = new Guy(bank);
@@ -380,6 +379,13 @@ contract DssBiteTest is DssVatTest {
 
     // vow_Woe N/A - no debt queue in vow
 
+    // do not use with very high joy/sin
+    function _surp() public view returns (int) {
+        int joy = int(Vat(bank).joy());
+        int sin = int(Vat(bank).sin() / RAY);
+        return joy - sin;
+    }
+
     function test_happy_bite() public _bite_ {
         // dss: spot = tag / (par . mat), tag=5, mat=2
         // rico: mark = feed.val = 2.5
@@ -410,10 +416,10 @@ contract DssBiteTest is DssVatTest {
         assertGt(_ink(i0, me), 0);
         skip(1);
         prepguyrico(550 * WAD, true);
-        uint joy_0 = Vat(bank).joy();
 
+        int surp_0 = _surp();
         guy.keep(ilks);
-        assertGt(Vat(bank).joy(), joy_0);
+        assertGt(_surp(), surp_0);
     }
 
     // test_partial_litterbox
@@ -702,7 +708,7 @@ contract DssClipTest is DssJsTest {
 //    function test_kick_zero_lot() public _clip_ {
 //        // but cut == 0 if ink == 0
 //        // TODO curb_ramp handle undefined?
-//        // vel/rel similar to dss lot
+//        // rel similar to dss lot
 //        curb(address(gem), 0, WAD, block.timestamp, 1);
 //        vm.expectRevert(); // todo need error types for zero cases
 //        Vat(bank).bail(i0, me);
@@ -792,8 +798,7 @@ contract DssVowTest is DssJsTest {
     function _vow_setUp() internal {
         gem.mint(me, 10000 * WAD);
         gem.approve(bank, UINT256_MAX);
-        File(bank).file('vel', bytes32(100 * WAD));
-        File(bank).file('rel', bytes32(WAD));
+        File(bank).file('rel', bytes32(WAD / BLN));
         File(bank).file('bel', bytes32(block.timestamp));
         File(bank).file('cel', bytes32(uint(1)));
     }
@@ -804,8 +809,7 @@ contract DssVowTest is DssJsTest {
 
     function test_no_reflop() public _vow_ {
         uint amt = WAD / 1000;
-        File(bank).file('vel', bytes32(amt / 2));
-        File(bank).file('rel', bytes32(WAD));
+        File(bank).file('rel', bytes32(WAD / BLN));
         File(bank).file('bel', bytes32(block.timestamp));
         File(bank).file('cel', bytes32(uint(1)));
         skip(1);

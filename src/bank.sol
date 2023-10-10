@@ -53,7 +53,6 @@ abstract contract Bank is Math, Flog, Palm, OwnableInternal {
     // RISK mint rate. Used in struct, never extend in upgrade
     // flop uses min(vel rate, rel rate)
     struct Ramp {
-        uint vel; // [wad] RISK/s
         uint rel; // [wad] fraction of RISK supply/s
         uint bel; // [sec] last flop timestamp
         uint cel; // [sec] max seconds flop can ramp up

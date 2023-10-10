@@ -29,7 +29,6 @@ contract VowTest is Test, RicoSetUp {
         init_gold();
         ilks.push(gilk);
 
-        File(bank).file('vel', bytes32(uint(1e18)));
         File(bank).file('rel', bytes32(uint(1e12)));
         File(bank).file('bel', bytes32(uint(0)));
         File(bank).file('cel', bytes32(uint(600)));
@@ -233,20 +232,18 @@ contract VowTest is Test, RicoSetUp {
  
         // set rate of risk sales to near zero
         // set mint ramp higher to use risk ramp
-        File(bank).file('vel', bytes32(uint(WAD)));
-        File(bank).file('rel', bytes32(uint(WAD)));
-        File(bank).file('bel', bytes32(uint(block.timestamp - 1)));
+        uint supply = risk.totalSupply();
+        File(bank).file('rel', bytes32(wdiv(WAD, supply)));
+        File(bank).file('bel', bytes32(block.timestamp - 1));
         File(bank).file('cel', bytes32(uint(1)));
 
         // setup frobbed to edge, dropping gold price puts system way underwater
         feedpush(grtag, bytes32(RAY), block.timestamp + 10000);
 
         // create the sin and kick off risk sale
-        uint supply = risk.totalSupply();
         vm.expectCall(bank, abi.encodePacked(Vat.bail.selector));
         Vat(bank).bail(gilk, self);
         feedpush(RISK_RICO_TAG, bytes32(10000 * RAY), block.timestamp + 1000);
-        vm.expectCall(ahook, abi.encodePacked(ERC20Hook.bailhook.selector));
         Vow(bank).keep(ilks);
         assertEq(risk.totalSupply(), supply + WAD);
 
@@ -333,7 +330,7 @@ contract VowTest is Test, RicoSetUp {
 
         assertEq(Vat(bank).joy(), 0);
         Bank.Ramp memory ramp = Vow(bank).ramp();
-        uint flop = min(wmul(ramp.rel, risk.totalSupply()), ramp.vel) * min(block.timestamp - ramp.bel, ramp.cel);
+        uint flop = wmul(ramp.rel, risk.totalSupply()) * min(block.timestamp - ramp.bel, ramp.cel);
         feedpush(RISK_RICO_TAG, bytes32(RAY), block.timestamp + 1000);
         uint risk_ts1 = risk.totalSupply();
         Vow(bank).keep(ilks);
@@ -639,7 +636,6 @@ contract VowJsTest is Test, RicoSetUp {
         Vat(bank).filk(i0, 'line', bytes32(10000 * RAD));
         Vat(bank).filk(i0, 'chop', bytes32(RAY * 11 / 10));
 
-        File(bank).file('vel', bytes32(uint(WAD)));
         File(bank).file('rel', bytes32(uint(WAD / 10000)));
         File(bank).file('bel', bytes32(uint(0)));
         File(bank).file('cel', bytes32(uint(60)));
@@ -675,7 +671,6 @@ contract VowJsTest is Test, RicoSetUp {
         join_pool(risk_rico_args);
         rico_risk_pool = getPoolAddr(arisk, arico, 3000);
         
-        File(bank).file('vel', bytes32(uint(200 * WAD)));
         File(bank).file('rel', bytes32(uint(WAD)));
         File(bank).file('bel', bytes32(uint(block.timestamp)));
         File(bank).file('cel', bytes32(uint(1)));
@@ -759,24 +754,10 @@ contract VowJsTest is Test, RicoSetUp {
         Vow(bank).keep(ilks);
     }
 
-    function test_keep_rate_limiting_flop_absolute_rate() public {
-        File(bank).file('ceil', bytes32(uint(100000 * RAD)));
-        Vat(bank).filk(i0, 'line', bytes32(100000 * RAD));
-        File(bank).file('vel', bytes32(uint(WAD)));
-        File(bank).file('rel', bytes32(uint(WAD)));
-        File(bank).file('bel', bytes32(uint(block.timestamp - 1)));
-        File(bank).file('cel', bytes32(uint(1)));
-
-        assertGt(risk.totalSupply(), WAD);
-        prepguyrico(10000 * WAD, true);
-        Vow(bank).keep(ilks);
-    }
-
-    function test_keep_rate_limiting_flop_relative_rate() public {
+    function test_keep_rate_limiting_flop() public {
         File(bank).file('ceil', bytes32(uint(100000 * RAD)));
         Vat(bank).filk(i0, 'line', bytes32(uint(100000 * RAD)));
         File(bank).file('rel', bytes32(uint(WAD)));
-        File(bank).file('vel', bytes32(uint(risk.totalSupply() * 2)));
         File(bank).file('bel', bytes32(uint(block.timestamp - 1)));
         File(bank).file('cel', bytes32(uint(1)));
 
@@ -794,7 +775,10 @@ contract VowJsTest is Test, RicoSetUp {
         uint risk_initial_supply = risk.totalSupply();
         skip(BANKYEAR);
         feedpush(RISK_RICO_TAG, bytes32(RAY / 2), UINT256_MAX);
+
         risk.mint(address(guy), 1000 * WAD);
+        File(bank).file('rel', bytes32(WAD / 1000));
+
         guy.keep(ilks);
 
         skip(60);

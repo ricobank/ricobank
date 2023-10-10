@@ -25,7 +25,6 @@ contract File is Bank {
         else if (key == "ceil") { vatS.ceil = uint(val); }
         else if (key == "par") { vatS.par = uint(val); }
         // vow
-        else if (key == "vel") { vowS.ramp.vel = uint(val); }
         else if (key == "rel") { vowS.ramp.rel = uint(val); }
         else if (key == "bel") { vowS.ramp.bel = uint(val); }
         else if (key == "cel") { vowS.ramp.cel = uint(val); }

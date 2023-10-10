@@ -85,7 +85,7 @@ contract Vow is Bank {
             uint mash  = rmul(vowS.plot.pop, rpow(deal, vowS.plot.pep));
 
             // rate-limit flop
-            uint slope = min(vowS.ramp.vel, wmul(vowS.ramp.rel, risk.totalSupply()));
+            uint slope = wmul(vowS.ramp.rel, risk.totalSupply());
             uint flop  = slope * min(block.timestamp - vowS.ramp.bel, vowS.ramp.cel);
             if (0 == flop) revert ErrReflop();
 
