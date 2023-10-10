@@ -19,8 +19,8 @@ contract VoxTest is Test, RicoSetUp {
     function setUp() public {
         make_bank();
         pre_cap = Vox(bank).cap();
-        File(bank).file(bytes32('tag'), rtag);
-        File(bank).file(bytes32('cap'), bytes32(3 * RAY));
+        File(bank).file('tip.tag', rtag);
+        File(bank).file('cap', bytes32(3 * RAY));
         File(bank).file('par', bytes32(7 * WAD));
     }
 
@@ -109,8 +109,8 @@ contract VoxTest is Test, RicoSetUp {
 
     function test_ttl() public {
         uint old_way = Vox(bank).way();
-        vm.startPrank(Vox(bank).tip());
-        File(bank).fb().push(Vox(bank).tag(), bytes32(Vat(bank).par()), block.timestamp - 1);
+        vm.startPrank(Vox(bank).tip().src);
+        File(bank).fb().push(Vox(bank).tip().tag, bytes32(Vat(bank).par()), block.timestamp - 1);
         vm.stopPrank();
         Vox(bank).poke();
         assertEq(old_way, Vox(bank).way());
@@ -120,8 +120,8 @@ contract VoxTest is Test, RicoSetUp {
         // _orig_ set cap back to original value, otw it's too big to reasonably reach
         Vox(bank).poke();
         skip(100000000);
-        vm.startPrank(Vox(bank).tip());
-        File(bank).fb().push(Vox(bank).tag(), 0, block.timestamp + 1);
+        vm.startPrank(Vox(bank).tip().src);
+        File(bank).fb().push(Vox(bank).tip().tag, 0, block.timestamp + 1);
         vm.stopPrank();
         Vox(bank).poke();
         assertEq(Vox(bank).way(), Vox(bank).cap());
@@ -130,9 +130,9 @@ contract VoxTest is Test, RicoSetUp {
     function test_cap_max() public _orig_ {
         Vox(bank).poke();
         skip(100000000);
-        vm.startPrank(Vox(bank).tip());
+        vm.startPrank(Vox(bank).tip().src);
         uint256 high = 2 ** 128;
-        File(bank).fb().push(Vox(bank).tag(), bytes32(high), block.timestamp + 1 );
+        File(bank).fb().push(Vox(bank).tip().tag, bytes32(high), block.timestamp + 1 );
         vm.stopPrank();
         Vox(bank).poke();
         assertEq(Vox(bank).way(), rinv(Vox(bank).cap()));

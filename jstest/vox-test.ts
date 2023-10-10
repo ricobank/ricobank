@@ -91,15 +91,15 @@ describe('Vox', () => {
     risk = dapp.risk
     dai  = dapp.dai
 
-    await send(bank.file, b32("tag"), TAG)
-    await send(bank.file, b32("tip"), ALI + '00'.repeat(12))
+    await send(bank.file, b32("tip.tag"), TAG)
+    await send(bank.file, b32("tip.src"), ALI + '00'.repeat(12))
 
     await send(bank.file, b32("cap"), b32(ray(3)))
 
     await send(bank.file, b32('par'), b32(wad(7)))
 
-    await send(bank.filh, b32('weth'), b32('fsrc'), [], ALI + '00'.repeat(12))
-    await send(bank.filh, b32('weth'), b32('ftag'), [], b32('weth:ref'))
+    await send(bank.filh, b32('weth'), b32('src'), [], ALI + '00'.repeat(12))
+    await send(bank.filh, b32('weth'), b32('tag'), [], b32('weth:ref'))
     await send(fb.push, b32('weth:ref'), bn2b32(ray(0.8)), constants.MaxUint256);
 
     await send(bank.file, b32('rudd.src'), ALI + '00'.repeat(12))
@@ -212,7 +212,7 @@ describe('Vox', () => {
     })
 
     it('deploy gas', async () => {
-      await check(ethers.BigNumber.from(deploygas), 38811808)
+      await check(ethers.BigNumber.from(deploygas), 38776154)
     })
 
     it('poke gas', async () => {
@@ -251,7 +251,7 @@ describe('Vox', () => {
       await send(fb.push, b32('weth:ref'), bn2b32(ray(0.1)), constants.MaxUint256)
       debug('bail')
       let gas = await bank.estimateGas.bail(b32('weth'), ALI)
-      await check(gas, 244921, 244932)
+      await check(gas, 244921, 244939)
     })
 
     it('keep surplus gas', async () => {
@@ -311,11 +311,11 @@ describe('Vox', () => {
     it('uni nft frob down gas', async () => {
 
         await send(
-            bank.filh, b32(':uninft'), b32('fsrc'),
+            bank.filh, b32(':uninft'), b32('src'),
             [dai.address + '00'.repeat(12)], ALI + '00'.repeat(12)
         )
         await send(
-            bank.filh, b32(':uninft'), b32('ftag'),
+            bank.filh, b32(':uninft'), b32('tag'),
             [dai.address + '00'.repeat(12)], b32('dai:ref')
         )
         await send(
@@ -325,11 +325,11 @@ describe('Vox', () => {
         await send(fb.push, b32('dai:ref'), bn2b32(ray(1)), constants.MaxUint256)
 
         await send(
-            bank.filh, b32(':uninft'), b32('fsrc'),
+            bank.filh, b32(':uninft'), b32('src'),
             [rico.address + '00'.repeat(12)], ALI + '00'.repeat(12)
         )
         await send(
-            bank.filh, b32(':uninft'), b32('ftag'),
+            bank.filh, b32(':uninft'), b32('tag'),
             [rico.address + '00'.repeat(12)], b32('rico:ref')
         )
         await send(

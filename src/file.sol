@@ -44,8 +44,8 @@ contract File is Bank {
         else if (key == "rudd.tag") { vowS.rudd.tag = val; }
         else if (key == 'risk') { vowS.RISK = Gem(address(bytes20(val))); }
         // vox
-        else if (key == "tip") { voxS.tip = address(bytes20(val)); }
-        else if (key == "tag") { voxS.tag = val; }
+        else if (key == "tip.src") { voxS.tip.src = address(bytes20(val)); }
+        else if (key == "tip.tag") { voxS.tip.tag = val; }
         else if (key == "how") { voxS.how = uint256(val); }
         else if (key == "cap") { voxS.cap = uint256(val); }
         else if (key == "tau") { voxS.tau = uint256(val); }

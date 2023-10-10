@@ -22,8 +22,7 @@ interface IUniWrapper {
 contract UniNFTHook is Hook, Bank {
 
     struct Source {
-        address fsrc;  // [obj] feedbase `src` address
-        bytes32 ftag;  // [tag] feedbase `tag` bytes32
+        Rudd    rudd;  // feed src,tag
         uint256 liqr;  // [ray] liquidation ratio. Greater value means collateral allows less debt
     }
 
@@ -33,8 +32,7 @@ contract UniNFTHook is Hook, Bank {
         IUniWrapper wrap; // wrapper for uniswap libraries that use earlier solc
         INFPM   nfpm; // uni NFT
         uint256 room;  // maximum position list length
-        uint256 pep;   // [int] discount exponent
-        uint256 pop;   // [ray] sale price multiplier
+        Plx     plot;  // [int] discount exponent, [ray] sale price multiplier
     }
 
     struct Amounts {
@@ -143,7 +141,7 @@ contract UniNFTHook is Hook, Bank {
         emit NewPalmBytes2('ink', i, bytes32(bytes20(u)), bytes(''));
 
         // tot is RAD, deal is RAY, so bank earns a WAD
-        uint earn = rmul(tot / RAY, rmul(rpow(deal, hs.pep), hs.pop));
+        uint earn = rmul(tot / RAY, rmul(rpow(deal, hs.plot.pep), hs.plot.pop));
         uint over = earn > bill ? earn - bill : 0;
 
         // take from keeper to underwrite urn, return what's left to urn owner.
@@ -205,11 +203,11 @@ contract UniNFTHook is Hook, Bank {
             uint256 liqr = max(src0.liqr, src1.liqr);
 
             // find total value of tok0 + tok1, and allowed debt cut off
-            (val, minttl) = fb.pull(src0.fsrc, src0.ftag);
+            (val, minttl) = fb.pull(src0.rudd.src, src0.rudd.tag);
             tot += amts.amt0 * uint(val);
             cut += amts.amt0 * rdiv(uint(val), liqr);
 
-            (val, ttl) = fb.pull(src1.fsrc, src1.ftag);
+            (val, ttl) = fb.pull(src1.rudd.src, src1.rudd.tag);
             minttl = min(minttl, ttl);
             tot += amts.amt1 * uint(val);
             cut += amts.amt1 * rdiv(uint(val), liqr);
@@ -224,15 +222,15 @@ contract UniNFTHook is Hook, Bank {
             if (key == 'nfpm') { hs.nfpm = INFPM(address(bytes20(val)));
             } else if (key == 'room') { hs.room = uint(val);
             } else if (key == 'wrap') { hs.wrap = IUniWrapper(address(bytes20(val)));
-            } else if (key == 'pep')  { hs.pep = uint(val);
-            } else if (key == 'pop')  { hs.pop = uint(val);
+            } else if (key == 'pep')  { hs.plot.pep = uint(val);
+            } else if (key == 'pop')  { hs.plot.pop = uint(val);
             } else { revert ErrWrongKey(); }
             emit NewPalm1(key, i, val);
         } else if (xs.length == 1) {
             address gem = address(bytes20(xs[0]));
 
-            if (key == 'fsrc') { hs.sources[gem].fsrc = address(bytes20(val));
-            } else if (key == 'ftag') { hs.sources[gem].ftag = val;
+            if (key == 'src') { hs.sources[gem].rudd.src = address(bytes20(val));
+            } else if (key == 'tag') { hs.sources[gem].rudd.tag = val;
             } else if (key == 'liqr') { hs.sources[gem].liqr = uint(val);
             } else { revert ErrWrongKey(); }
             emit NewPalm2(key, i, xs[0], val);
@@ -249,14 +247,14 @@ contract UniNFTHook is Hook, Bank {
             if (key == 'nfpm') { return bytes32(bytes20(address(hs.nfpm)));
             } else if (key == 'room') { return bytes32(hs.room);
             } else if (key == 'wrap') { return bytes32(bytes20(address(hs.wrap)));
-            } else if (key == 'pep')  { return bytes32(hs.pep);
-            } else if (key == 'pop')  { return bytes32(hs.pop);
+            } else if (key == 'pep')  { return bytes32(hs.plot.pep);
+            } else if (key == 'pop')  { return bytes32(hs.plot.pop);
             } else { revert ErrWrongKey(); }
         } else if (xs.length == 1) {
             address gem = address(bytes20(xs[0]));
 
-            if (key == 'fsrc') { return bytes32(bytes20(hs.sources[gem].fsrc));
-            } else if (key == 'ftag') { return hs.sources[gem].ftag;
+            if (key == 'src') { return bytes32(bytes20(hs.sources[gem].rudd.src));
+            } else if (key == 'tag') { return hs.sources[gem].rudd.tag;
             } else if (key == 'liqr') { return bytes32(hs.sources[gem].liqr);
             } else { revert ErrWrongKey(); }
         } else {

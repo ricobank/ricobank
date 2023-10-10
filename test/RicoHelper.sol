@@ -280,8 +280,8 @@ abstract contract RicoSetUp is BaseHelper {
         dai.approve(bank, type(uint256).max);
         Vat(bank).init(dilk, address(hook));
         Vat(bank).filh(dilk, 'gem', empty, bytes32(bytes20(address(dai))));
-        Vat(bank).filh(dilk, 'fsrc', empty, bytes32(bytes20(self)));
-        Vat(bank).filh(dilk, 'ftag', empty, drtag);
+        Vat(bank).filh(dilk, 'src', empty, bytes32(bytes20(self)));
+        Vat(bank).filh(dilk, 'tag', empty, drtag);
         Vat(bank).filh(dilk, 'liqr', empty, bytes32(RAY));
         Vat(bank).filh(dilk, 'pep', empty, bytes32(uint(2)));
         Vat(bank).filh(dilk, 'pop', empty, bytes32(RAY));
@@ -299,8 +299,8 @@ abstract contract RicoSetUp is BaseHelper {
         gold.approve(bank, type(uint256).max);
         Vat(bank).init(gilk, address(hook));
         Vat(bank).filh(gilk, 'gem',  empty, bytes32(bytes20(address(gold))));
-        Vat(bank).filh(gilk, 'fsrc', empty, bytes32(bytes20(self)));
-        Vat(bank).filh(gilk, 'ftag', empty, grtag);
+        Vat(bank).filh(gilk, 'src', empty, bytes32(bytes20(self)));
+        Vat(bank).filh(gilk, 'tag', empty, grtag);
         Vat(bank).filh(gilk, 'liqr', empty, bytes32(RAY));
         Vat(bank).filh(gilk, 'pep', empty, bytes32(uint(2)));
         Vat(bank).filh(gilk, 'pop', empty, bytes32(RAY));
@@ -320,8 +320,8 @@ abstract contract RicoSetUp is BaseHelper {
         ruby.approve(bank, type(uint256).max);
         Vat(bank).init(rilk, address(hook));
         Vat(bank).filh(rilk, 'gem',  empty, bytes32(bytes20(address(ruby))));
-        Vat(bank).filh(rilk, 'fsrc', empty, bytes32(bytes20(self)));
-        Vat(bank).filh(rilk, 'ftag', empty, rrtag);
+        Vat(bank).filh(rilk, 'src', empty, bytes32(bytes20(self)));
+        Vat(bank).filh(rilk, 'tag', empty, rrtag);
         Vat(bank).filh(rilk, 'liqr', empty, bytes32(RAY));
         Vat(bank).filh(rilk, 'pep', empty, bytes32(uint(2)));
         Vat(bank).filh(rilk, 'pop', empty, bytes32(RAY));

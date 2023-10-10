@@ -820,9 +820,9 @@ contract VatTest is Test, RicoSetUp {
 
     function test_geth() public {
         bytes32 val;
-        val = Vat(bank).geth(gilk, 'fsrc', empty);
+        val = Vat(bank).geth(gilk, 'src', empty);
         assertEq(address(bytes20(val)), self);
-        val = Vat(bank).geth(gilk, 'ftag', empty);
+        val = Vat(bank).geth(gilk, 'tag', empty);
         assertEq(val, grtag);
  
         // wrong key
@@ -831,15 +831,15 @@ contract VatTest is Test, RicoSetUp {
 
         // should only work with empty xs
         vm.expectRevert(Bank.ErrWrongKey.selector);
-        Vat(bank).geth(gilk, 'ftag', new bytes32[](1));
+        Vat(bank).geth(gilk, 'tag', new bytes32[](1));
     }
 
     function test_filh() public {
         bytes32 val;
-        val = Vat(bank).geth(gilk, 'fsrc', empty);
+        val = Vat(bank).geth(gilk, 'src', empty);
         assertEq(address(bytes20(val)), self);
-        Vat(bank).filh(gilk, 'fsrc', empty, bytes32(bytes20(0)));
-        val = Vat(bank).geth(gilk, 'fsrc', empty);
+        Vat(bank).filh(gilk, 'src', empty, bytes32(bytes20(0)));
+        val = Vat(bank).geth(gilk, 'src', empty);
         assertEq(address(bytes20(val)), address(0));
 
         // wrong key
@@ -848,10 +848,10 @@ contract VatTest is Test, RicoSetUp {
 
         // should only work with empty xs
         vm.expectRevert(Bank.ErrWrongKey.selector);
-        Vat(bank).filh(gilk, 'fsrc', new bytes32[](1), bytes32(bytes20(self)));
+        Vat(bank).filh(gilk, 'src', new bytes32[](1), bytes32(bytes20(self)));
 
         vm.expectRevert(Bank.ErrWrongKey.selector);
-        Vat(bank).filh(gilk, 'ftag', new bytes32[](1), bytes32(bytes20(self)));
+        Vat(bank).filh(gilk, 'tag', new bytes32[](1), bytes32(bytes20(self)));
     }
 
     function test_bail_drips() public {

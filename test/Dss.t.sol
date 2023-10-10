@@ -85,8 +85,8 @@ contract DssJsTest is Test, RicoSetUp {
         Vat(bank).init(gilk, address(hook));
         agold = address(gold);
         Vat(bank).filh(gilk, 'gem', empty, bytes32(bytes20(address(agold))));
-        Vat(bank).filh(gilk, 'fsrc', empty, bytes32(bytes20(address(mdn))));
-        Vat(bank).filh(gilk, 'ftag', empty, grtag);
+        Vat(bank).filh(gilk, 'src', empty, bytes32(bytes20(address(mdn))));
+        Vat(bank).filh(gilk, 'tag', empty, grtag);
         Vat(bank).filh(gilk, 'liqr', empty, bytes32(RAY));
         Vat(bank).filh(gilk, 'pep', empty, bytes32(uint(2)));
         Vat(bank).filh(gilk, 'pop', empty, bytes32(RAY));

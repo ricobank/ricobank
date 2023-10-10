@@ -31,8 +31,7 @@ contract Vox is Bank {
     function how() external view returns (uint256) {return getVoxStorage().how;}
     function tau() external view returns (uint256) {return getVoxStorage().tau;}
     function cap() external view returns (uint256) {return getVoxStorage().cap;}
-    function tip() external view returns (address) {return getVoxStorage().tip;}
-    function tag() external view returns (bytes32) {return getVoxStorage().tag;}
+    function tip() external view returns (Rudd memory) {return getVoxStorage().tip;}
 
     // poke par and way
     function poke() _flog_ external {
@@ -55,7 +54,7 @@ contract Vox is Bank {
 
         // pull mar
         // forgo way updates if the feed can't be sensed
-        (bytes32 mar, uint ttl) = getBankStorage().fb.pull(voxS.tip, voxS.tag);
+        (bytes32 mar, uint ttl) = getBankStorage().fb.pull(voxS.tip.src, voxS.tip.tag);
         if (block.timestamp > ttl) { return; }
 
         // raise the price rate (way) when mar < par, lower when mar > par

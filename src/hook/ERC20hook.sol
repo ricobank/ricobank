@@ -13,11 +13,9 @@ contract ERC20Hook is Hook, Bank {
     struct ERC20HookStorage {
         mapping (address u => uint) inks; // amount
         address gem;   // this ilk's gem
-        address fsrc;  // [obj] feedbase `src` address
-        bytes32 ftag;  // [tag] feedbase `tag` bytes32
+        Rudd    rudd;  // [obj] feed src,tag
+        Plx     plot;  // [obj] discount exponent and offset
         uint    liqr;  // [ray] liquidation ratio
-        uint    pep;   // [int] discount exponent
-        uint    pop;   // [ray] sale price multiplier
     }
 
     function getStorage(bytes32 i) internal pure returns (ERC20HookStorage storage hs) {
@@ -83,7 +81,7 @@ contract ERC20Hook is Hook, Bank {
         // sell - sold collateral
         // earn - rico "earned" by bank in this liquidation
         uint sell = hs.inks[u];
-        uint earn = rmul(tot / RAY, rmul(rpow(deal, hs.pep), hs.pop));
+        uint earn = rmul(tot / RAY, rmul(rpow(deal, hs.plot.pep), hs.plot.pop));
 
         // clamp `sell` so bank only gets enough to underwrite urn.
         if (earn > bill) {
@@ -112,7 +110,7 @@ contract ERC20Hook is Hook, Bank {
         ERC20HookStorage storage hs  = getStorage(i);
 
         // total value of collateral == ink * price feed val
-        (bytes32 val, uint _ttl) = getBankStorage().fb.pull(hs.fsrc, hs.ftag);
+        (bytes32 val, uint _ttl) = getBankStorage().fb.pull(hs.rudd.src, hs.rudd.tag);
         tot = uint(val) * hs.inks[u];
         cut = uint(val) * rdiv(hs.inks[u], hs.liqr);
         ttl = _ttl;
@@ -124,11 +122,11 @@ contract ERC20Hook is Hook, Bank {
 
         if (xs.length == 0) {
             if (key == 'gem') { hs.gem = address(bytes20(val));
-            } else if (key == 'fsrc') { hs.fsrc = address(bytes20(val));
-            } else if (key == 'ftag') { hs.ftag = val;
+            } else if (key == 'src') { hs.rudd.src = address(bytes20(val));
+            } else if (key == 'tag') { hs.rudd.tag = val;
             } else if (key == 'liqr') { hs.liqr = uint(val);
-            } else if (key == 'pep')  { hs.pep  = uint(val);
-            } else if (key == 'pop')  { hs.pop  = uint(val);
+            } else if (key == 'pep')  { hs.plot.pep  = uint(val);
+            } else if (key == 'pop')  { hs.plot.pop  = uint(val);
             } else { revert ErrWrongKey(); }
             emit NewPalm1(key, i, val);
         } else {
@@ -142,11 +140,11 @@ contract ERC20Hook is Hook, Bank {
 
         if (xs.length == 0) {
             if (key == 'gem') { return bytes32(bytes20(hs.gem));
-            } else if (key == 'fsrc') { return bytes32(bytes20(hs.fsrc));
-            } else if (key == 'ftag') { return hs.ftag;
+            } else if (key == 'src') { return bytes32(bytes20(hs.rudd.src));
+            } else if (key == 'tag') { return hs.rudd.tag;
             } else if (key == 'liqr') { return bytes32(hs.liqr);
-            } else if (key == 'pep')  { return bytes32(hs.pep);
-            } else if (key == 'pop')  { return bytes32(hs.pop);
+            } else if (key == 'pep')  { return bytes32(hs.plot.pep);
+            } else if (key == 'pop')  { return bytes32(hs.plot.pop);
             } else { revert ErrWrongKey(); }
         } else {
             revert ErrWrongKey();

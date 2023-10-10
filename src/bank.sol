@@ -79,9 +79,7 @@ abstract contract Bank is Math, Flog, Palm, OwnableInternal {
     }
 
     struct VoxStorage {
-        address tip; // feedbase `src` address
-        bytes32 tag; // feedbase `tag` bytes32
-
+        Rudd    tip; // feedbase src,tag
         uint256 way; // [ray] System Rate (SP growth rate)
         uint256 how; // [ray] sensitivity paramater
         uint256 tau; // [sec] last poke

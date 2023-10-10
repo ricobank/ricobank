@@ -159,7 +159,7 @@ contract Ball is Math, Ward {
         bytes4[] memory filesels = new bytes4[](3);
         bytes4[] memory vatsels  = new bytes4[](20);
         bytes4[] memory vowsels  = new bytes4[](6);
-        bytes4[] memory voxsels  = new bytes4[](7);
+        bytes4[] memory voxsels  = new bytes4[](6);
         File fbank = File(bank);
 
         filesels[0] = File.file.selector;
@@ -196,8 +196,7 @@ contract Ball is Math, Ward {
         voxsels[2]  = Vox.how.selector;
         voxsels[3]  = Vox.cap.selector;
         voxsels[4]  = Vox.tip.selector;
-        voxsels[5]  = Vox.tag.selector;
-        voxsels[6]  = Vox.tau.selector;
+        voxsels[5]  = Vox.tau.selector;
 
         facetCuts[0] = IDiamondCuttable.FacetCut(address(file), ADD, filesels);
         facetCuts[1] = IDiamondCuttable.FacetCut(address(vat),  ADD, vatsels);
@@ -209,7 +208,6 @@ contract Ball is Math, Ward {
         fbank.file('rico', bytes32(bytes20(rico)));
         fbank.file('risk', bytes32(bytes20(risk)));
         fbank.file('fb',  bytes32(bytes20(feedbase)));
-        fbank.file('tip', bytes32(bytes20(address(divider))));
 
         fbank.file('par',  bytes32(args.par));
         fbank.file('ceil', bytes32(args.ceil));
@@ -226,7 +224,8 @@ contract Ball is Math, Ward {
         fbank.file("cel", bytes32(args.mintramp.cel));
         fbank.file("wel", bytes32(args.mintramp.wel));
 
-        fbank.file('tag', RICO_REF_TAG);
+        fbank.file('tip.src', bytes32(bytes20(address(divider))));
+        fbank.file('tip.tag', RICO_REF_TAG);
         fbank.file('how', HOW);
         fbank.file('cap', CAP);
         fbank.file('tau', bytes32(block.timestamp));
@@ -243,8 +242,8 @@ contract Ball is Math, Ward {
         Vat(bank).filk(ilk, 'line', bytes32(ilkparams.line));
         Vat(bank).filh(ilk, 'liqr', empty, bytes32(ilkparams.liqr));
         Vat(bank).filh(ilk, 'gem', empty, bytes32(bytes20(ilkparams.gem)));
-        Vat(bank).filh(ilk, 'fsrc', empty, bytes32(bytes20(address(mdn))));
-        Vat(bank).filh(ilk, 'ftag', empty, gemreftag);
+        Vat(bank).filh(ilk, 'src', empty, bytes32(bytes20(address(mdn))));
+        Vat(bank).filh(ilk, 'tag', empty, gemreftag);
         Vat(bank).filh(ilk, 'pep', empty, bytes32(uint(2)));
         Vat(bank).filh(ilk, 'pop', empty, bytes32(RAY));
         {
