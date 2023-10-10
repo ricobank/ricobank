@@ -40,13 +40,9 @@ contract Vow is Bank {
         if (joy > sin) {
 
             // pay down sin, then auction off surplus RICO for RISK
-            uint flap = wmul(joy - sin, vowS.ramp.wel);
             if (sin > 1) {
                 // gas - don't zero sin
                 joy = _heal(sin - 1);
-            } else {
-                // gas - don't zero joy
-                flap -= 1;
             }
 
             // deal decreases as surplus increases, i.e. if there's a massive
@@ -56,8 +52,9 @@ contract Vow is Bank {
             uint mash = rmul(vowS.plat.pop, rpow(deal, vowS.plat.pep));
 
             // buy-and-burn risk with remaining (`flap`) rico
-            joy     -= flap;
-            vatS.joy = joy;
+            uint flap  = wmul(joy - 1, vowS.ramp.wel);
+            joy       -= flap;
+            vatS.joy   = joy;
             emit NewPalm0('joy', bytes32(joy));
 
             uint price = rdiv(mash, _price()) + 1;
