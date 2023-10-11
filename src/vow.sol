@@ -95,6 +95,10 @@ contract Vow is Bank {
 
             // swap RISK for rico to cover sin
             uint earn = rmul(flop, rmul(_price(), mash));
+            if (earn > under) {
+                flop = flop * under / earn;
+                earn = under;
+            }
             Gem(rico).burn(msg.sender, earn);
             Gem(risk).mint(msg.sender, flop);
 

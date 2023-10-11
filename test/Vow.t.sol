@@ -329,8 +329,7 @@ contract VowTest is Test, RicoSetUp {
         feedpush(grtag, bytes32(0), block.timestamp + 10000);
 
         assertEq(Vat(bank).joy(), 0);
-        Bank.Ramp memory ramp = Vow(bank).ramp();
-        uint flop = wmul(ramp.rel, risk.totalSupply()) * min(block.timestamp - ramp.bel, ramp.cel);
+        uint flop = 1; // clipped to deficit
         feedpush(RISK_RICO_TAG, bytes32(RAY), block.timestamp + 1000);
         uint risk_ts1 = risk.totalSupply();
         Vow(bank).keep(ilks);
@@ -781,35 +780,71 @@ contract VowJsTest is Test, RicoSetUp {
 
         guy.keep(ilks);
 
-        skip(60);
-        feedpush(RISK_RICO_TAG, bytes32(RAY / 10000), UINT256_MAX);
-        risk.mint(address(guy), 1000 * WAD);
-        Vow(bank).keep(ilks); // call again to burn risk given to vow the first time
-
         uint risk_post_flap_supply = risk.totalSupply();
         assertLt(risk_post_flap_supply, risk_initial_supply + 1000 * WAD * 2);
 
         // confirm bail trades the weth for rico
+        feedpush(wrtag, bytes32(RAY / 10), UINT256_MAX);
         uint joy0 = Vat(bank).joy();
-        uint hook_weth_0 = weth.balanceOf(bank);
         vm.expectCall(address(hook), abi.encodePacked(hook.bailhook.selector));
         Vat(bank).bail(i0, me);
+        uint joy1 = Vat(bank).joy();
+        assertGt(joy1, joy0);
 
+        // bail price was too low to cover, now have deficit
         uint pre_flop_joy = Vat(bank).joy();
         feedpush(RISK_RICO_TAG, bytes32(10 * RAY), UINT256_MAX);
         prepguyrico(2000 * WAD, false);
         guy.keep(ilks);
 
-        // now vow should hold more rico
+        // after flop bank should have more joy
         uint post_flop_joy = Vat(bank).joy();
         assertGt(post_flop_joy, pre_flop_joy);
-
-        // now complete the liquidation
-        feedpush(wrtag, bytes32(100 * RAY), UINT256_MAX);
-        uint joy1 = Vat(bank).joy();
-        uint vat_weth_1 = weth.balanceOf(bank);
-        assertGt(joy1, joy0);
-        assertLt(vat_weth_1, hook_weth_0);
     }
 
+    function test_flop_clipping() public {
+        skip(10);
+        feedpush(RISK_RICO_TAG, bytes32(RAY), UINT256_MAX);
+        feedpush(wrtag, bytes32(0), UINT256_MAX);
+        // cause bank deficit by flipping with zero price
+        Vat(bank).bail(i0, me);
+
+        // set rel small so first flop will not cover deficit
+        File(bank).file('rel', bytes32(uint(WAD / 1_000_000)));
+        Bank.Ramp memory ramp = Vow(bank).ramp();
+        uint flop = wmul(ramp.rel, risk.totalSupply()) * min(block.timestamp - ramp.bel, ramp.cel);
+
+        prepguyrico(2000 * WAD, false);
+        uint ts0 = risk.totalSupply();
+        uint gr0 = rico.balanceOf(address(guy));
+        guy.keep(ilks);
+        uint ts1 = risk.totalSupply();
+        uint gr1 = rico.balanceOf(address(guy));
+        uint price_unclipped = WAD * (gr0 - gr1) / (ts1 - ts0);
+
+        // with small rel, flop size should not have been clipped
+        assertEq(flop, ts1 - ts0);
+
+        skip(1);
+        File(bank).file('rel', bytes32(uint(WAD * 200)));
+        Vat(bank).drip(WETH_ILK);
+
+        uint under = Vat(bank).sin() / RAY - Vat(bank).joy();
+        uint ts2 = risk.totalSupply();
+        uint gr2 = rico.balanceOf(address(guy));
+        guy.keep(ilks);
+        uint ts3 = risk.totalSupply();
+        uint gr3 = rico.balanceOf(address(guy));
+        // with large rel flop size should have been clipped
+        assertEq(under, gr2 - gr3);
+
+        // a clipped flop should leave bank with neither a surplus nor deficit
+        uint joy = Vat(bank).joy();
+        uint sin = Vat(bank).sin() / RAY;
+        assertEq(joy, sin);
+
+        // the first flop was small, price should be about the same
+        uint price_clipped = WAD * (gr2 - gr3) / (ts3 - ts2);
+        assertClose(price_clipped, price_unclipped, 1_000);
+    }
 }
