@@ -811,6 +811,7 @@ contract VowJsTest is Test, RicoSetUp {
 
         // set rel small so first flop will not cover deficit
         File(bank).file('rel', bytes32(uint(WAD / 1_000_000)));
+        File(bank).file('cel', bytes32(uint(5)));
         Bank.Ramp memory ramp = Vow(bank).ramp();
         uint flop = wmul(ramp.rel, risk.totalSupply()) * min(block.timestamp - ramp.bel, ramp.cel);
 
@@ -825,7 +826,7 @@ contract VowJsTest is Test, RicoSetUp {
         // with small rel, flop size should not have been clipped
         assertEq(flop, ts1 - ts0);
 
-        skip(1);
+        skip(2);
         File(bank).file('rel', bytes32(uint(WAD * 200)));
         Vat(bank).drip(WETH_ILK);
 
@@ -846,5 +847,39 @@ contract VowJsTest is Test, RicoSetUp {
         // the first flop was small, price should be about the same
         uint price_clipped = WAD * (gr2 - gr3) / (ts3 - ts2);
         assertClose(price_clipped, price_unclipped, 1_000);
+
+        // should only advance bel 1 second starting from
+        // previous bel bc deficit was tiny and elapsed time
+        // was <= cel
+        assertEq(Vow(bank).ramp().bel, block.timestamp - 1);
+
+    }
+
+    function test_sparse_flop_bel() public {
+        // test bel when elapsed time is >> cel
+
+        uint cel = 100;
+        File(bank).file('cel', bytes32(cel));
+        feedpush(RISK_RICO_TAG, bytes32(RAY), UINT256_MAX);
+
+        // cause bank deficit by flipping with zero price
+        feedpush(wrtag, bytes32(0), UINT256_MAX);
+        Vat(bank).bail(i0, me);
+
+        // set rel high so flop is clipped
+        File(bank).file('rel', bytes32(uint(WAD * 20)));
+
+        // elapse a lot more than cel
+        uint elapsed = cel * 1000;
+        skip(elapsed);
+        Vat(bank).drip(gilk);
+        Vow(bank).keep(empty);
+
+        // elapsed time > cel
+        // -> bel should advance from new timestamp - cel, not last timestamp
+        uint bel = Vow(bank).ramp().bel;
+        assertGt(bel, block.timestamp - cel);
+        assertLt(bel, block.timestamp);
+        
     }
 }

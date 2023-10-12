@@ -85,20 +85,24 @@ contract Vow is Bank {
             uint mash  = rmul(vowS.plot.pop, rpow(deal, vowS.plot.pep));
 
             // rate-limit flop
-            uint slope = wmul(vowS.ramp.rel, risk.totalSupply());
-            uint flop  = slope * min(block.timestamp - vowS.ramp.bel, vowS.ramp.cel);
+            uint elapsed = min(block.timestamp - vowS.ramp.bel, vowS.ramp.cel);
+            uint flop    = elapsed * wmul(vowS.ramp.rel, risk.totalSupply());
             if (0 == flop) revert ErrReflop();
-
-            // update last flop stamp
-            vowS.ramp.bel = block.timestamp;
-            emit NewPalm0('bel', bytes32(vowS.ramp.bel));
 
             // swap RISK for rico to cover sin
             uint earn = rmul(flop, rmul(_price(), mash));
+            uint bel  = block.timestamp;
             if (earn > under) {
-                flop = flop * under / earn;
-                earn = under;
+                // always advances >= 1s from max(vowS.bel, timestamp - cel)
+                bel  -= wmul(elapsed, WAD - wdiv(under, earn));
+                flop  = flop * under / earn;
+                earn  = under;
             }
+
+            // update last flop stamp
+            vowS.ramp.bel = bel;
+            emit NewPalm0('bel', bytes32(bel));
+
             Gem(rico).burn(msg.sender, earn);
             Gem(risk).mint(msg.sender, flop);
 
