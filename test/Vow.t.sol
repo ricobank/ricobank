@@ -551,7 +551,7 @@ contract FrobHook is Hook {
         return int(uint(bytes32(dink[:32]))) >= 0 && dart <= 0; 
     }
     function bailhook(
-        bytes32,address,uint,address,uint,uint
+        bytes32,address,uint,uint,address,uint,uint
     ) external returns (bytes memory) {}
     function safehook(
         bytes32 , address
@@ -568,7 +568,7 @@ contract ZeroHook is Hook {
         address sender, bytes32 i, address u, bytes calldata dink, int dart
     ) external returns (bool safer) {}
     function bailhook(
-        bytes32,address,uint,address,uint,uint
+        bytes32,address,uint,uint,address,uint,uint
     ) external returns (bytes memory) {}
     function safehook(
         bytes32 , address

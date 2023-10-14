@@ -200,19 +200,20 @@ contract Vat is Bank {
 
         // bill is the debt hook will attempt to cover when auctioning ink
         // todo maybe make this +1?
-        uint bill = rmul(ilk.chop, rmul(art, ilk.rack));
+        uint dtab = art * ilk.rack;
+        uint owed = dtab / RAY;
+        uint bill = rmul(ilk.chop, owed);
 
         ilk.tart -= art;
         emit NewPalm1('tart', i, bytes32(ilk.tart));
 
         // record the bad debt for vow to heal
-        uint dtab = art * ilk.rack;
         vs.sin += dtab;
         emit NewPalm0('sin', bytes32(vs.sin));
 
         // ink auction
         return abi.decode(_hookcall(i, abi.encodeWithSelector(
-            Hook.bailhook.selector, i, u, bill, msg.sender, deal, tot
+            Hook.bailhook.selector, i, u, bill, owed, msg.sender, deal, tot
         )), (bytes));
     }
 

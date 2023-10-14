@@ -4,11 +4,11 @@
 
 pragma solidity ^0.8.19;
 
-import { Bank, Gem } from '../bank.sol';
-import { Hook } from './hook.sol';
+import { Gem } from '../bank.sol';
+import { HookMix } from './hook.sol';
 
 // hook that interprets ink as a single uint and dink as a single int.
-contract ERC20Hook is Hook, Bank {
+contract ERC20Hook is HookMix {
 
     struct ERC20HookStorage {
         mapping (address u => uint) inks; // amount
@@ -72,10 +72,9 @@ contract ERC20Hook is Hook, Bank {
     }
 
     function bailhook(
-        bytes32 i, address u, uint256 bill, address keeper, uint256 deal, uint tot
+        bytes32 i, address u, uint256 bill, uint256 owed, address keeper, uint256 deal, uint tot
     ) external returns (bytes memory) {
         ERC20HookStorage storage hs  = getStorage(i);
-        VatStorage       storage vs  = getVatStorage();
 
         // tot is RAD, deal is RAY, so bank earns a WAD.
         // sell - sold collateral
@@ -88,16 +87,12 @@ contract ERC20Hook is Hook, Bank {
             sell = sell * bill / earn;
             earn = bill;
         }
+        vsync(i, earn, owed, 0);
 
         // update collateral balance
         uint _ink  = hs.inks[u] - sell;
         hs.inks[u] = _ink;
         emit NewPalmBytes2('ink', i, bytes32(bytes20(u)), abi.encodePacked(_ink));
-
-        // update joy to help cancel out sin
-        uint mood = vs.joy + earn;
-        vs.joy    = mood;
-        emit NewPalm0('joy', bytes32(mood));
 
         // trade collateral with keeper for rico
         getBankStorage().rico.burn(keeper, earn);

@@ -519,8 +519,8 @@ contract NFTHookTest is Test, RicoSetUp {
         // overcollateralized 2x
         Vat(bank).frob(uilk, self, abi.encodePacked(int(1), goldwethtokid), int(borrow));
 
-        feed.push(grtag, bytes32(RAY / 6), UINT256_MAX);
-        feed.push(wrtag, bytes32(RAY / 6), UINT256_MAX);
+        feedpush(grtag, bytes32(RAY / 6), UINT256_MAX);
+        feedpush(wrtag, bytes32(RAY / 6), UINT256_MAX);
         Vat(bank).filh(uilk, 'liqr', single(bytes32(bytes20(WETH))),  bytes32(liqr));
         Vat(bank).filh(uilk, 'liqr', single(bytes32(bytes20(agold))), bytes32(liqr));
 
@@ -535,6 +535,48 @@ contract NFTHookTest is Test, RicoSetUp {
         uint est  = rmul(tot, pop) / rush**pep;
 
         assertClose(paid, est, 1000000000);
+    }
+
+    function test_bail_uni_moves_line() public {
+        uint borrow = WAD * 2000 - 10;
+        uint line0  = RAD * 2000;
+        uint liqr   = RAY * 1;
+
+        Vat(bank).filk(uilk, 'line', bytes32(line0));
+        Vat(bank).filh(uilk, 'liqr', single(bytes32(bytes20(WETH))),  bytes32(liqr));
+        Vat(bank).filh(uilk, 'liqr', single(bytes32(bytes20(agold))), bytes32(liqr));
+        Vat(bank).filh(uilk, "pep",  empty, bytes32(uint(1)));
+        Vat(bank).filh(uilk, "pop",  empty, bytes32(RAY));
+        feedpush(grtag, bytes32(RAY), UINT256_MAX);
+        feedpush(wrtag, bytes32(RAY), UINT256_MAX);
+
+        // frob to edge of safety and line
+        Vat(bank).frob(uilk, self, abi.encodePacked(int(1), goldwethtokid), int(borrow));
+
+        feedpush(grtag, bytes32(RAY / 2), UINT256_MAX);
+        feedpush(wrtag, bytes32(RAY / 2), UINT256_MAX);
+
+        Vat(bank).bail(uilk, self);
+        uint line1 = Vat(bank).ilks(uilk).line;
+
+        // was initially at limits of line and art, and price dropped to half
+        // rico recovery will be borrowed amount * 0.5 for price, * 0.5 for deal
+        // line should have decreased to 25% capacity
+        assertClose(line0 / 4, line1, 1_000_000_000);
+
+        IERC721(UNI_NFT_ADDR).approve(bank, goldwethtokid);
+        vm.expectRevert(Vat.ErrDebtCeil.selector);
+        Vat(bank).frob(uilk, self, abi.encodePacked(int(1), goldwethtokid), int(borrow) / 3);
+        Vat(bank).frob(uilk, self, abi.encodePacked(int(1), goldwethtokid), int(borrow) / 4);
+
+        Vat(bank).filk(uilk, 'line', bytes32(line0 / 10));
+        feedpush(grtag, bytes32(RAY / 10), UINT256_MAX);
+        feedpush(wrtag, bytes32(RAY / 10), UINT256_MAX);
+        Vat(bank).bail(uilk, self);
+        uint line2 = Vat(bank).ilks(uilk).line;
+
+        // fees or line modifications can lead to loss > capacity, check underflow OK
+        assertEq(line2, 0);
     }
 
     function test_combined_liqr() public {

@@ -4,8 +4,8 @@
 
 pragma solidity ^0.8.19;
 
-import { Bank, Gem, Feedbase } from '../../bank.sol';
-import { Hook } from '../hook.sol';
+import { Gem, Feedbase } from '../../bank.sol';
+import { HookMix } from '../hook.sol';
 
 import { IUniswapV3Pool } from '@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol';
 import { INonfungiblePositionManager as INFPM } from './interfaces/INonfungiblePositionManager.sol';
@@ -19,7 +19,7 @@ interface IUniWrapper {
 // hook for uni NonfungiblePositionManager
 // calculates token amounts for each uniswap position in the CDP
 // and adds them to `cut`
-contract UniNFTHook is Hook, Bank {
+contract UniNFTHook is HookMix {
 
     struct Source {
         Rudd    rudd;  // feed src,tag
@@ -131,7 +131,7 @@ contract UniNFTHook is Hook, Bank {
     }
 
     function bailhook(
-        bytes32 i, address u, uint256 bill, address keeper, uint256 deal, uint256 tot
+        bytes32 i, address u, uint256 bill, uint256 owed, address keeper, uint256 deal, uint256 tot
     ) external returns (bytes memory) {
         UniNFTHookStorage storage hs  = getStorage(i);
         uint[]            memory  ids = hs.inks[u];
@@ -142,20 +142,13 @@ contract UniNFTHook is Hook, Bank {
 
         // tot is RAD, deal is RAY, so bank earns a WAD
         uint earn = rmul(tot / RAY, rmul(rpow(deal, hs.plot.pep), hs.plot.pop));
-        uint over = earn > bill ? earn - bill : 0;
 
         // take from keeper to underwrite urn, return what's left to urn owner.
         Gem rico = getBankStorage().rico;
         rico.burn(keeper, earn);
-        rico.mint(u, over);
-
-        {
-            // increase joy just by what was used to underwrite urn.
-            VatStorage storage vs = getVatStorage();
-            uint mood = vs.joy + earn - over;
-            vs.joy = mood;
-            emit NewPalm0('joy', bytes32(mood));
-        }
+        uint over = earn > bill ? earn - bill : 0;
+        if (over > 0) rico.mint(u, over);
+        vsync(i, earn, owed, over);
 
         // send the uni positions to keeper
         uint len = ids.length;

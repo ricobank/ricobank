@@ -575,7 +575,7 @@ contract VatTest is Test, RicoSetUp {
         // check that bailhook called
         bytes memory hookdata = abi.encodeCall(
             zhook.bailhook,
-            (gilk, self, WAD, self, 0, 0)
+            (gilk, self, WAD, WAD, self, 0, 0)
         );
         feedpush(grtag, bytes32(0), UINT256_MAX);
         vm.expectCall(address(zhook), hookdata);
@@ -1024,6 +1024,47 @@ contract VatTest is Test, RicoSetUp {
         Vat(bank).frob(gilk, self, abi.encodePacked(-int(WAD)), -int(WAD));
     }
 
+    function test_bail_moves_line() public {
+        uint dink   = WAD * 1000;
+        uint borrow = WAD * 1000;
+        uint line0  = RAD * 1000;
+
+        Vat(bank).filk(gilk, 'line', bytes32(line0));
+        Vat(bank).filh(gilk, "liqr", empty, bytes32(RAY));
+        Vat(bank).filh(gilk, "pep",  empty, bytes32(uint(1)));
+        Vat(bank).filh(gilk, "pop",  empty, bytes32(RAY));
+        feedpush(grtag, bytes32(RAY), type(uint).max);
+        // frob to edge of safety and line
+        Vat(bank).frob(gilk, self, abi.encodePacked(dink), int(borrow));
+
+        feedpush(grtag, bytes32(RAY / 2), type(uint).max);
+
+        uint sr0   = rico.balanceOf(self);
+        uint sg0   = gold.balanceOf(self);
+        Vat(bank).bail(gilk, self);
+        uint line1 = Vat(bank).ilks(gilk).line;
+        uint sr1   = rico.balanceOf(self);
+        uint sg1   = gold.balanceOf(self);
+
+        // was initially at limits of line and art, and price dropped to half
+        // rico recovery will be borrowed amount * 0.5 for price, * 0.5 for deal
+        // line should have decreased to 25% capacity
+        assertEq(line0 / 4, line1);
+        assertEq(sr0, sr1 + borrow / 4);
+        assertEq(sg0, sg1 - dink);
+
+        vm.expectRevert(Vat.ErrDebtCeil.selector);
+        Vat(bank).frob(gilk, self, abi.encodePacked(dink), int(borrow / 4 + 1));
+        Vat(bank).frob(gilk, self, abi.encodePacked(dink), int(borrow / 4));
+
+        Vat(bank).filk(gilk, 'line', bytes32(line0 / 10));
+        feedpush(grtag, bytes32(RAY / 10), type(uint).max);
+        Vat(bank).bail(gilk, self);
+        uint line2 = Vat(bank).ilks(gilk).line;
+
+        // fees or line modifications can lead to loss > capacity, check underflow OK
+        assertEq(line2, 0);
+    }
 }
 
 contract FrobUpSaferHook is Hook, Bank {
@@ -1034,7 +1075,7 @@ contract FrobUpSaferHook is Hook, Bank {
         if (dink > 0) safer = dink > dart;
     }
     function bailhook(
-        bytes32, address, uint, address, uint, uint
+        bytes32, address, uint, uint, address, uint, uint
     ) external returns (bytes memory) {}
     function safehook(
         bytes32, address
@@ -1050,7 +1091,7 @@ contract RevertSafeHook is Hook {
         address, bytes32, address, bytes calldata, int
     ) pure external returns (bool safer) {}
     function bailhook(
-        bytes32, address, uint, address, uint, uint
+        bytes32, address, uint, uint, address, uint, uint
     ) external returns (bytes memory) {}
     function safehook(
         bytes32, address
@@ -1065,7 +1106,7 @@ contract OnlyInkHook is Hook {
         return int(uint(bytes32(dink[:32]))) >= 0; 
     }
     function bailhook(
-        bytes32,address,uint,address,uint,uint
+        bytes32,address,uint,uint,address,uint,uint
     ) external returns (bytes memory) {}
     function safehook(
         bytes32, address
@@ -1083,7 +1124,7 @@ contract FrobHook is Hook {
         return int(uint(bytes32(dink[:32]))) >= 0 && dart <= 0; 
     }
     function bailhook(
-        bytes32,address,uint,address,uint,uint
+        bytes32,address,uint,uint,address,uint,uint
     ) external returns (bytes memory) {}
     function safehook(
         bytes32, address
@@ -1099,7 +1140,7 @@ contract ZeroHook is Hook {
         address sender, bytes32 i, address u, bytes calldata dink, int dart
     ) external returns (bool) {}
     function bailhook(
-        bytes32,address,uint,address,uint,uint
+        bytes32,address,uint,uint,address,uint,uint
     ) external returns (bytes memory) {}
     function safehook(
         bytes32, address
@@ -1117,7 +1158,7 @@ contract FrobBailReentrancyHook is Bank, Hook {
         return true;
     }
     function bailhook(
-        bytes32,address,uint,address,uint,uint
+        bytes32,address,uint,uint,address,uint,uint
     ) external pure returns (bytes memory) {return abi.encodePacked('');}
     function safehook(
         bytes32, address
@@ -1135,7 +1176,7 @@ contract BailFrobReentrancyHook is Bank, Hook {
         return true;
     }
     function bailhook(
-        bytes32 i, address u,uint,address,uint,uint
+        bytes32 i, address u,uint,uint,address,uint,uint
     ) external returns (bytes memory) {
         getBankStorage().rico.mint(address(this), WAD * 1000);
         Vat(address(this)).frob(i, u, '', int(WAD));
