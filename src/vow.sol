@@ -14,6 +14,7 @@ contract Vow is Bank {
     function ramp() view external returns (Ramp memory) {
         return getVowStorage().ramp;
     }
+    function toll() view external returns (uint) { return getVowStorage().toll; }
     function rudd() view external returns (Rudd memory) { return getVowStorage().rudd; }
     function plat() view external returns (Plx memory) { return getVowStorage().plat; }
     function plot() view external returns (Plx memory) { return getVowStorage().plot; }
