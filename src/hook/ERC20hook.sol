@@ -32,38 +32,38 @@ contract ERC20Hook is HookMix {
         data = abi.encodePacked(getStorage(i).inks[u]);
     }
 
-    function frobhook(
-        address sender, bytes32 i, address u, bytes calldata _dink, int dart
-    ) external returns (bool safer) {
-        ERC20HookStorage storage hs = getStorage(i);
+    function frobhook(FHParams calldata p)
+      external returns (bool safer)
+    {
+        ERC20HookStorage storage hs = getStorage(p.i);
 
         // read dink as a single uint
         int dink;
-        if (_dink.length == 0) { dink = 0;
-        } else if (_dink.length == 32) { dink = int(uint(bytes32(_dink)));
+        if (p.dink.length == 0) { dink = 0;
+        } else if (p.dink.length == 32) { dink = int(uint(bytes32(p.dink)));
         } else { revert ErrDinkSize(); }
 
         // safer if locking ink and wiping art
-        safer = dink >= 0 && dart <= 0;
-        if (!safer && u != sender) revert ErrWrongUrn();
+        safer = dink >= 0 && p.dart <= 0;
+        if (!safer && p.u != p.sender) revert ErrWrongUrn();
 
         // update balance before transfering tokens
-        uint _ink  = add(hs.inks[u], dink);
-        hs.inks[u] = _ink;
-        emit NewPalmBytes2('ink', i, bytes32(bytes20(u)), abi.encodePacked(_ink));
+        uint _ink  = add(hs.inks[p.u], dink);
+        hs.inks[p.u] = _ink;
+        emit NewPalmBytes2('ink', p.i, bytes32(bytes20(p.u)), abi.encodePacked(_ink));
 
         Gem gem = Gem(hs.gem);
         if (dink > 0) {
 
             // pull tokens from sender
-            if (!gem.transferFrom(sender, address(this), uint(dink))) {
+            if (!gem.transferFrom(p.sender, address(this), uint(dink))) {
                 revert ErrTransfer();
             }
 
         } else if (dink < 0) {
 
             // return tokens to sender
-            if (!gem.transfer(sender, uint(-dink))) {
+            if (!gem.transfer(p.sender, uint(-dink))) {
                 revert ErrTransfer();
             }
 
@@ -71,37 +71,39 @@ contract ERC20Hook is HookMix {
 
     }
 
-    function bailhook(
-        bytes32 i, address u, uint256 bill, uint256 owed, address keeper, uint256 deal, uint tot
-    ) external returns (bytes memory) {
-        ERC20HookStorage storage hs  = getStorage(i);
+    function bailhook(BHParams calldata p)
+      external returns (bytes memory)
+    {
+        ERC20HookStorage storage hs  = getStorage(p.i);
 
         // tot is RAD, deal is RAY, so bank earns a WAD.
         // sell - sold collateral
         // earn - rico "earned" by bank in this liquidation
-        uint sell = hs.inks[u];
-        uint earn = rmul(tot / RAY, rmul(rpow(deal, hs.plot.pep), hs.plot.pop));
+        uint sell = hs.inks[p.u];
+        uint earn = rmul(p.tot / RAY, rmul(rpow(p.deal, hs.plot.pep), hs.plot.pop));
 
         // clamp `sell` so bank only gets enough to underwrite urn.
-        if (earn > bill) {
-            sell = sell * bill / earn;
-            earn = bill;
+        if (earn > p.bill) {
+            sell = sell * p.bill / earn;
+            earn = p.bill;
         }
-        vsync(i, earn, owed, 0);
+        vsync(p.i, earn, p.owed, 0);
 
         // update collateral balance
-        uint _ink  = hs.inks[u] - sell;
-        hs.inks[u] = _ink;
-        emit NewPalmBytes2('ink', i, bytes32(bytes20(u)), abi.encodePacked(_ink));
+        uint _ink  = hs.inks[p.u] - sell;
+        hs.inks[p.u] = _ink;
+        emit NewPalmBytes2('ink', p.i, bytes32(bytes20(p.u)), abi.encodePacked(_ink));
 
         // trade collateral with keeper for rico
-        getBankStorage().rico.burn(keeper, earn);
-        if (!Gem(hs.gem).transfer(keeper, sell)) revert ErrTransfer();
+        getBankStorage().rico.burn(p.keeper, earn);
+        if (!Gem(hs.gem).transfer(p.keeper, sell)) revert ErrTransfer();
 
         return abi.encodePacked(sell);
     }
 
-    function safehook(bytes32 i, address u) view public returns (uint tot, uint cut, uint ttl) {
+    function safehook(bytes32 i, address u)
+      view public returns (uint tot, uint cut, uint ttl)
+    {
         ERC20HookStorage storage hs  = getStorage(i);
 
         // total value of collateral == ink * price feed val

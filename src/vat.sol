@@ -163,9 +163,10 @@ contract Vat is Bank {
         }
 
         // safer if less/same art and more/same ink
-        bytes memory data = _hookcall(i, abi.encodeWithSelector(
-            Hook.frobhook.selector, msg.sender, i, u, dink, dart
-        ));
+        Hook.FHParams memory p = Hook.FHParams(msg.sender, i, u, dink, dart);
+        bytes memory data      = _hookcall(
+            i, abi.encodeWithSelector(Hook.frobhook.selector, p)
+        );
         if (data.length != 32) revert ErrHookData();
 
         // urn is safer, or it is safe
@@ -212,9 +213,12 @@ contract Vat is Bank {
         emit NewPalm0('sin', bytes32(vs.sin));
 
         // ink auction
-        return abi.decode(_hookcall(i, abi.encodeWithSelector(
-            Hook.bailhook.selector, i, u, bill, owed, msg.sender, deal, tot
-        )), (bytes));
+        Hook.BHParams memory p = Hook.BHParams(
+            i, u, bill, owed, msg.sender, deal, tot
+        );
+        return abi.decode(_hookcall(
+            i, abi.encodeWithSelector(Hook.bailhook.selector, p)
+        ), (bytes));
     }
 
     function drip(bytes32 i) _flog_ external { _drip(i); }

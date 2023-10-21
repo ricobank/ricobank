@@ -7,15 +7,27 @@ pragma solidity ^0.8.19;
 import { Bank } from '../bank.sol';
 
 interface Hook {
-    function frobhook(
-        address sender, bytes32 i, address u, bytes calldata dink, int dart
-    ) external returns (bool safer);
-    function bailhook(
-        bytes32 i, address u, uint bill, uint owed, address keeper, uint deal, uint tot
-    ) external returns (bytes memory);
-    function safehook(
-        bytes32 i, address u
-    ) view external returns (uint tot, uint cut, uint minttl);
+    struct FHParams {
+        address sender;
+        bytes32 i;
+        address u;
+        bytes   dink;
+        int     dart;
+    }
+    struct BHParams {
+        bytes32 i;
+        address u;
+        uint    bill;
+        uint    owed;
+        address keeper;
+        uint    deal;
+        uint    tot;
+    }
+
+    function frobhook(FHParams calldata) external returns (bool safer);
+    function bailhook(BHParams calldata) external returns (bytes memory);
+    function safehook(bytes32 i, address u) view external
+      returns (uint tot, uint cut, uint minttl);
     function ink(bytes32 i, address u) external view returns (bytes memory);
 }
 

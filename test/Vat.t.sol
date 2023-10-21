@@ -537,7 +537,7 @@ contract VatTest is Test, RicoSetUp {
         uint goldbefore = gold.balanceOf(self);
         bytes memory hookdata = abi.encodeCall(
             hook.frobhook,
-            (self, gilk, self, abi.encodePacked(WAD), 0)
+            Hook.FHParams(self, gilk, self, abi.encodePacked(WAD), 0)
         );
 
         vm.expectCall(address(hook), hookdata);
@@ -552,7 +552,7 @@ contract VatTest is Test, RicoSetUp {
         Vat(bank).frob(gilk, self, abi.encodePacked(WAD), 0);
         bytes memory hookdata = abi.encodeCall(
             hook.frobhook,
-            (self, gilk, self, abi.encodePacked(-int(WAD)), 0)
+            Hook.FHParams(self, gilk, self, abi.encodePacked(-int(WAD)), 0)
         );
 
         vm.expectCall(address(hook), hookdata);
@@ -575,7 +575,7 @@ contract VatTest is Test, RicoSetUp {
         // check that bailhook called
         bytes memory hookdata = abi.encodeCall(
             zhook.bailhook,
-            (gilk, self, WAD, WAD, self, 0, 0)
+            Hook.BHParams(gilk, self, WAD, WAD, self, 0, 0)
         );
         feedpush(grtag, bytes32(0), UINT256_MAX);
         vm.expectCall(address(zhook), hookdata);
@@ -1068,15 +1068,11 @@ contract VatTest is Test, RicoSetUp {
 }
 
 contract FrobUpSaferHook is Hook, Bank {
-    function frobhook(
-        address, bytes32, address, bytes calldata _dink, int dart
-    ) pure external returns (bool safer) {
-        int dink = abi.decode(_dink, (int));
-        if (dink > 0) safer = dink > dart;
+    function frobhook(FHParams calldata p) pure external returns (bool safer) {
+        int dink = abi.decode(p.dink, (int));
+        if (dink > 0) safer = dink > p.dart;
     }
-    function bailhook(
-        bytes32, address, uint, uint, address, uint, uint
-    ) external returns (bytes memory) {}
+    function bailhook(BHParams calldata p) external returns (bytes memory) {}
     function safehook(
         bytes32, address
     ) pure external returns (uint, uint, uint) {
@@ -1087,12 +1083,8 @@ contract FrobUpSaferHook is Hook, Bank {
 
 contract RevertSafeHook is Hook {
     error ErrBadSafe();
-    function frobhook(
-        address, bytes32, address, bytes calldata, int
-    ) pure external returns (bool safer) {}
-    function bailhook(
-        bytes32, address, uint, uint, address, uint, uint
-    ) external returns (bytes memory) {}
+    function frobhook(FHParams calldata) pure external returns (bool safer) {}
+    function bailhook(BHParams calldata) external returns (bytes memory) {}
     function safehook(
         bytes32, address
     ) pure external returns (uint, uint, uint){ revert ErrBadSafe(); }
@@ -1100,14 +1092,10 @@ contract RevertSafeHook is Hook {
 }
 
 contract OnlyInkHook is Hook {
-    function frobhook(
-        address, bytes32, address, bytes calldata dink, int
-    ) pure external returns (bool) {
-        return int(uint(bytes32(dink[:32]))) >= 0; 
+    function frobhook(FHParams calldata p) pure external returns (bool) {
+        return int(uint(bytes32(p.dink[:32]))) >= 0;
     }
-    function bailhook(
-        bytes32,address,uint,uint,address,uint,uint
-    ) external returns (bytes memory) {}
+    function bailhook(BHParams calldata) external returns (bytes memory) {}
     function safehook(
         bytes32, address
     ) pure external returns (uint, uint, uint){
@@ -1118,14 +1106,10 @@ contract OnlyInkHook is Hook {
 }
 
 contract FrobHook is Hook {
-    function frobhook(
-        address, bytes32, address, bytes calldata dink, int dart
-    ) pure external returns (bool) {
-        return int(uint(bytes32(dink[:32]))) >= 0 && dart <= 0; 
+    function frobhook(FHParams calldata p) pure external returns (bool) {
+        return int(uint(bytes32(p.dink[:32]))) >= 0 && p.dart <= 0;
     }
-    function bailhook(
-        bytes32,address,uint,uint,address,uint,uint
-    ) external returns (bytes memory) {}
+    function bailhook(BHParams calldata) external returns (bytes memory) {}
     function safehook(
         bytes32, address
     ) pure external returns (uint, uint, uint) {
@@ -1136,12 +1120,8 @@ contract FrobHook is Hook {
     }
 }
 contract ZeroHook is Hook {
-    function frobhook(
-        address sender, bytes32 i, address u, bytes calldata dink, int dart
-    ) external returns (bool) {}
-    function bailhook(
-        bytes32,address,uint,uint,address,uint,uint
-    ) external returns (bytes memory) {}
+    function frobhook(FHParams calldata) external returns (bool) {}
+    function bailhook(BHParams calldata) external returns (bytes memory) {}
     function safehook(
         bytes32, address
     ) pure external returns (uint, uint, uint){return(0, 0, type(uint256).max);}
@@ -1151,15 +1131,13 @@ contract ZeroHook is Hook {
 }
 
 contract FrobBailReentrancyHook is Bank, Hook {
-    function frobhook(
-        address, bytes32 i, address u, bytes calldata,int
-    ) external returns (bool) {
-        Vat(address(this)).bail(i, u);
+    function frobhook(FHParams calldata p) external returns (bool) {
+        Vat(address(this)).bail(p.i, p.u);
         return true;
     }
-    function bailhook(
-        bytes32,address,uint,uint,address,uint,uint
-    ) external pure returns (bytes memory) {return abi.encodePacked('');}
+    function bailhook(BHParams calldata) external pure returns (bytes memory) {
+        return abi.encodePacked('');
+    }
     function safehook(
         bytes32, address
     ) pure external returns (uint, uint, uint){return(0, 0, type(uint256).max);}
@@ -1169,17 +1147,13 @@ contract FrobBailReentrancyHook is Bank, Hook {
 }
 
 contract BailFrobReentrancyHook is Bank, Hook {
-    function frobhook(
-        address, bytes32 i, address u, bytes calldata,int
-    ) external returns (bool) {
-        Vat(address(this)).bail(i, u);
+    function frobhook(FHParams calldata p) external returns (bool) {
+        Vat(address(this)).bail(p.i, p.u);
         return true;
     }
-    function bailhook(
-        bytes32 i, address u,uint,uint,address,uint,uint
-    ) external returns (bytes memory) {
+    function bailhook(BHParams calldata p) external returns (bytes memory) {
         getBankStorage().rico.mint(address(this), WAD * 1000);
-        Vat(address(this)).frob(i, u, '', int(WAD));
+        Vat(address(this)).frob(p.i, p.u, '', int(WAD));
         return abi.encodePacked('');
     }
     function safehook(

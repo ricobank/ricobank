@@ -545,14 +545,10 @@ contract VowTest is Test, RicoSetUp {
 }
 
 contract FrobHook is Hook {
-    function frobhook(
-        address , bytes32 , address , bytes calldata dink, int dart
-    ) external pure returns (bool safer){
-        return int(uint(bytes32(dink[:32]))) >= 0 && dart <= 0; 
+    function frobhook(FHParams calldata p) external pure returns (bool safer) {
+        return int(uint(bytes32(p.dink[:32]))) >= 0 && p.dart <= 0;
     }
-    function bailhook(
-        bytes32,address,uint,uint,address,uint,uint
-    ) external returns (bytes memory) {}
+    function bailhook(BHParams calldata) external returns (bytes memory) {}
     function safehook(
         bytes32 , address
     ) external pure returns (uint, uint, uint) {
@@ -564,12 +560,8 @@ contract FrobHook is Hook {
 }
 
 contract ZeroHook is Hook {
-    function frobhook(
-        address sender, bytes32 i, address u, bytes calldata dink, int dart
-    ) external returns (bool safer) {}
-    function bailhook(
-        bytes32,address,uint,uint,address,uint,uint
-    ) external returns (bytes memory) {}
+    function frobhook(FHParams calldata) external returns (bool safer) {}
+    function bailhook(BHParams calldata) external returns (bytes memory) {}
     function safehook(
         bytes32 , address
     ) external pure returns (uint, uint, uint) {

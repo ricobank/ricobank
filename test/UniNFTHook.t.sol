@@ -15,6 +15,7 @@ import { UniNFTHook } from '../src/hook/nfpm/UniV3NFTHook.sol';
 import { IERC721, INonfungiblePositionManager } from './Univ3Interface.sol';
 import { File } from '../src/file.sol';
 import { Bank } from '../src/bank.sol';
+import { Hook } from '../src/hook/hook.sol';
 
 contract NFTHookTest is Test, RicoSetUp {
     uint256 public init_join = 1000;
@@ -607,29 +608,39 @@ contract NFTHookTest is Test, RicoSetUp {
 
     function test_uni_errors_1() public {
         // can do this one just from the hook
-        assertFalse(nfthook.frobhook(self, uilk, self, '', 1));
+        assertFalse(nfthook.frobhook(Hook.FHParams(self, uilk, self, '', 1)));
 
         // frob up for someone else
         vm.expectRevert(Bank.ErrWrongUrn.selector);
-        nfthook.frobhook(self, uilk, agold, '', 1);
+        nfthook.frobhook(Hook.FHParams(self, uilk, agold, '', 1));
 
         // frob down for someone else
-        assertTrue(nfthook.frobhook(self, uilk, agold, '', -int(1)));
+        assertTrue(nfthook.frobhook(Hook.FHParams(self, uilk, agold, '', -int(1))));
 
         // lock ink for someone else
-        assertTrue(nfthook.frobhook(self, uilk, agold, abi.encodePacked(int(1)), 0));
+        assertTrue(nfthook.frobhook(Hook.FHParams(
+            self, uilk, agold, abi.encodePacked(int(1)), 0)
+        ));
 
         // unlock ink for someone else
         vm.expectRevert(Bank.ErrWrongUrn.selector);
-        nfthook.frobhook(self, uilk, agold, abi.encodePacked(-int(1)), 0);
+        nfthook.frobhook(Hook.FHParams(
+            self, uilk, agold, abi.encodePacked(-int(1)), 0
+        ));
 
         // dink not (int,uint,uint...)
         vm.expectRevert(UniNFTHook.ErrDinkLength.selector);
-        nfthook.frobhook(self, uilk, agold, abi.encodePacked(-int8(1)), 0);
+        nfthook.frobhook(Hook.FHParams(
+            self, uilk, agold, abi.encodePacked(-int8(1)), 0
+        ));
         vm.expectRevert(UniNFTHook.ErrDinkLength.selector);
-        nfthook.frobhook(self, uilk, agold, abi.encodePacked(-int40(1)), 0);
+        nfthook.frobhook(Hook.FHParams(
+            self, uilk, agold, abi.encodePacked(-int40(1)), 0
+        ));
         vm.expectRevert(UniNFTHook.ErrDinkLength.selector);
-        nfthook.frobhook(self, uilk, agold, abi.encodePacked(-int(1), uint8(4)), 0);
+        nfthook.frobhook(Hook.FHParams(
+            self, uilk, agold, abi.encodePacked(-int(1), uint8(4)), 0
+        ));
 
         nfthook.file('room', uilk, empty, bytes32(uint(1)));
         IERC721(UNI_NFT_ADDR).approve(address(nfthook), goldwethtokid);
@@ -639,31 +650,37 @@ contract NFTHookTest is Test, RicoSetUp {
         bytes memory dink = abi.encodePacked(int(1), golddaitokid, goldwethtokid);
         nfthook.file('nfpm', uilk, empty, bytes32(bytes20(UNI_NFT_ADDR)));
         vm.expectRevert(UniNFTHook.ErrFull.selector);
-        nfthook.frobhook(self, uilk, self, dink, 0);
+        nfthook.frobhook(Hook.FHParams(self, uilk, self, dink, 0));
 
         // fix room
         nfthook.file('room', uilk, empty, bytes32(uint(10)));
-        assertTrue(nfthook.frobhook(self, uilk, self, dink, 0));
+        assertTrue(nfthook.frobhook(Hook.FHParams(self, uilk, self, dink, 0)));
 
         // more |dink| than ink
         dink = abi.encodePacked(-int(1), golddaitokid, goldwethtokid, golddaitokid);
         vm.expectRevert(UniNFTHook.ErrDinkLength.selector);
-        assertFalse(nfthook.frobhook(self, uilk, self, dink, 0));
+        assertFalse(nfthook.frobhook(Hook.FHParams(self, uilk, self, dink, 0)));
 
         // not found
         dink = abi.encodePacked(-int(1), uint(100));
         vm.expectRevert(UniNFTHook.ErrNotFound.selector);
-        assertFalse(nfthook.frobhook(self, uilk, self, dink, 0));
+        assertFalse(nfthook.frobhook(Hook.FHParams(self, uilk, self, dink, 0)));
     }
 
     function test_uni_zero_frobhook() public {
-        assertTrue(nfthook.frobhook(self, uilk, self, '', 0));
+        assertTrue(nfthook.frobhook(Hook.FHParams(self, uilk, self, '', 0)));
 
-        assertTrue(nfthook.frobhook(self, uilk, self, abi.encodePacked(int(1)), 0));
+        assertTrue(nfthook.frobhook(Hook.FHParams(
+            self, uilk, self, abi.encodePacked(int(1)), 0)
+        ));
 
-        assertFalse(nfthook.frobhook(self, uilk, self, abi.encodePacked(-int(1)), 0));
+        assertFalse(nfthook.frobhook(Hook.FHParams(
+            self, uilk, self, abi.encodePacked(-int(1)), 0)
+        ));
 
         vm.expectRevert(UniNFTHook.ErrDir.selector);
-        assertFalse(nfthook.frobhook(self, uilk, self, abi.encodePacked(int(0)), 0));
+        assertFalse(nfthook.frobhook(Hook.FHParams(
+            self, uilk, self, abi.encodePacked(int(0)), 0)
+        ));
     }
 }

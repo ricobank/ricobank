@@ -61,33 +61,32 @@ contract UniNFTHook is HookMix {
     error ErrDir();
     error ErrFull();
 
-    function frobhook(
-        address sender, bytes32 i, address u, bytes calldata dink, int dart
-    ) external returns (bool safer) {
-        UniNFTHookStorage storage hs = getStorage(i);
-        uint[] storage tokenIds      = hs.inks[u];
+    function frobhook(FHParams calldata p) external returns (bool safer)
+    {
+        UniNFTHookStorage storage hs = getStorage(p.i);
+        uint[] storage tokenIds      = hs.inks[p.u];
 
         // dink is a nonempty packed list of uint tokenIds
-        if (dink.length % 32 != 0) revert ErrDinkLength();
+        if (p.dink.length % 32 != 0) revert ErrDinkLength();
 
         // first word must either be LOCK (add token) or FREE (remove token)
-        int dir = dink.length == 0 ? LOCK : int(uint(bytes32(dink[:32])));
+        int dir = p.dink.length == 0 ? LOCK : int(uint(bytes32(p.dink[:32])));
         if (dir != LOCK && dir != FREE) revert ErrDir();
 
         // can't steal collateral or rico from others' urns
-        if ((dir == FREE || dart > 0) && u != sender) revert ErrWrongUrn();
+        if ((dir == FREE || p.dart > 0) && p.u != p.sender) revert ErrWrongUrn();
         
         if (dir == LOCK) { 
 
             // safer if locking ink and wiping art
-            safer = dart <= 0;
+            safer = p.dart <= 0;
 
             // add uni positions
-            for (uint idx = 32; idx < dink.length; idx += 32) {
-                uint tokenId = uint(bytes32(dink[idx:idx+32]));
+            for (uint idx = 32; idx < p.dink.length; idx += 32) {
+                uint tokenId = uint(bytes32(p.dink[idx:idx+32]));
 
                 // transfer position from user
-                hs.nfpm.transferFrom(sender, address(this), tokenId);
+                hs.nfpm.transferFrom(p.sender, address(this), tokenId);
 
                 // record it in ink
                 tokenIds.push(tokenId);
@@ -99,10 +98,10 @@ contract UniNFTHook is HookMix {
         } else { 
             // remove uni positions
 
-            if ((dink.length - 32) / 32 > tokenIds.length) revert ErrDinkLength();
+            if ((p.dink.length - 32) / 32 > tokenIds.length) revert ErrDinkLength();
 
-            for (uint j = 32; j < dink.length; j += 32) {
-                uint toss  = uint(bytes32(dink[j:j+32]));
+            for (uint j = 32; j < p.dink.length; j += 32) {
+                uint toss  = uint(bytes32(p.dink[j:j+32]));
 
                 // search ink for toss
                 bool found;
@@ -120,42 +119,43 @@ contract UniNFTHook is HookMix {
             }
 
             // send dinked tokens back to user
-            for (uint j = 32; j < dink.length; j += 32) {
-                uint toss = uint(bytes32(dink[j:j+32]));
-                hs.nfpm.transferFrom(address(this), u, toss);
+            for (uint j = 32; j < p.dink.length; j += 32) {
+                uint toss = uint(bytes32(p.dink[j:j+32]));
+                hs.nfpm.transferFrom(address(this), p.u, toss);
             }
 
         }
 
-        emit NewPalmBytes2('ink', i, bytes32(bytes20(u)), abi.encodePacked(tokenIds));
+        emit NewPalmBytes2(
+            'ink', p.i, bytes32(bytes20(p.u)), abi.encodePacked(tokenIds)
+        );
     }
 
-    function bailhook(
-        bytes32 i, address u, uint256 bill, uint256 owed, address keeper, uint256 deal, uint256 tot
-    ) external returns (bytes memory) {
-        UniNFTHookStorage storage hs  = getStorage(i);
-        uint[]            memory  ids = hs.inks[u];
+    function bailhook(BHParams calldata p) external returns (bytes memory)
+    {
+        UniNFTHookStorage storage hs  = getStorage(p.i);
+        uint[]            memory  ids = hs.inks[p.u];
 
         // bail all the uni positions
-        delete hs.inks[u];
-        emit NewPalmBytes2('ink', i, bytes32(bytes20(u)), bytes(''));
+        delete hs.inks[p.u];
+        emit NewPalmBytes2('ink', p.i, bytes32(bytes20(p.u)), bytes(''));
 
         // tot is RAD, deal is RAY, so bank earns a WAD
-        uint earn = rmul(tot / RAY, rmul(rpow(deal, hs.plot.pep), hs.plot.pop));
+        uint earn = rmul(p.tot / RAY, rmul(rpow(p.deal, hs.plot.pep), hs.plot.pop));
 
         // take from keeper to underwrite urn, return what's left to urn owner.
         Gem rico = getBankStorage().rico;
-        rico.burn(keeper, earn);
-        uint over = earn > bill ? earn - bill : 0;
-        if (over > 0) rico.mint(u, over);
-        vsync(i, earn, owed, over);
+        rico.burn(p.keeper, earn);
+        uint over = earn > p.bill ? earn - p.bill : 0;
+        if (over > 0) rico.mint(p.u, over);
+        vsync(p.i, earn, p.owed, over);
 
         // send the uni positions to keeper
         uint len = ids.length;
         uint idx;
         while (true) {
             uint id = ids[idx];
-            hs.nfpm.transferFrom(address(this), keeper, id);
+            hs.nfpm.transferFrom(address(this), p.keeper, id);
             unchecked{ idx++; }
             if (idx >= len) break;
         }
