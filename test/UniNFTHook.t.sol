@@ -420,7 +420,6 @@ contract NFTHookTest is Test, RicoSetUp {
         Vat(bank).filh(uilk, 'nfpm', empty, bytes32(bytes20(address(nfpm))));
         Vat(bank).filh(uilk, 'wrap', empty, bytes32(bytes20(self)));
 
-
         // wrong key
         vm.expectRevert(Bank.ErrWrongKey.selector);
         Vat(bank).filh(uilk, 'blah', single(bytes32(bytes20(self))), bytes32(uint(5)));

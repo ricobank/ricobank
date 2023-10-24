@@ -84,6 +84,7 @@ contract Math {
         z = amt * rpow(ray, dt) / RAY;
     }
 
+    // from dss src/abaci.sol:136
     function rpow(uint256 x, uint256 n) public pure returns (uint256 z) {
         assembly {
             switch n case 0 { z := RAY }
@@ -119,9 +120,4 @@ contract Math {
         }
         res = a | (b >> (i << 3));
     }
-
-    function concat(bytes32 a, bytes32 b, bytes32 c) internal pure returns (bytes32) {
-        return concat(a, concat(b, c));
-    }
-
 }

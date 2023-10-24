@@ -485,7 +485,6 @@ contract VatTest is Test, RicoSetUp {
         (Vat.Spot safe1,,) = Vat(bank).safe(gilk, self);
         assertEq(uint(safe1), uint(Vat.Spot.Safe));
 
-
         uint ink = _ink(gilk, self);
         uint art = _art(gilk, self);
         assertEq(ink, 100 * WAD);
@@ -864,7 +863,6 @@ contract VatTest is Test, RicoSetUp {
         Vat(bank).bail(gilk, self);
         assertGt(Vat(bank).ilks(gilk).rack, prevrack);
     }
-
 
     // make sure ink and bail decode properly
     function test_bail_return_value() public {

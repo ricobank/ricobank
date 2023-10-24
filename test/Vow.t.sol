@@ -421,7 +421,6 @@ contract VowTest is Test, RicoSetUp {
         selfs = rico.balanceOf(self) - selfs;
         burned = burned - risk.balanceOf(address(guy));
 
-
         // check that owner got about 1/3 of what keeper got
         assertClose(guys, selfs * 2, 100000);
         assertClose(burned, rmul(guys, price), 100000);

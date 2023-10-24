@@ -168,7 +168,6 @@ abstract contract UniSetUp{
         return uint128(x96mul(uint160(amount1), sqrtRatioBX96 - sqrtRatioAX96));
     }
 
-
     function getLiquidityForAmounts(
         uint160 sqrtRatioX96,
         uint160 sqrtRatioAX96,

@@ -18,7 +18,6 @@
 pragma solidity ^0.8.19;
 
 import { Bank } from './bank.sol';
-import { Vat }  from './vat.sol';
 
 // price rate controller
 // ensures that market price (mar) roughly tracks par

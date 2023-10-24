@@ -5,7 +5,7 @@
 pragma solidity ^0.8.19;
 
 import { Vat }  from './vat.sol';
-import { Feedbase, Bank, Gem, OwnableStorage } from './bank.sol';
+import { Bank, Gem } from './bank.sol';
 
 // accounting mechanism
 // triggers collateral (flip), surplus (flap), and deficit (flop) auctions
@@ -21,7 +21,6 @@ contract Vow is Bank {
 
     error ErrReflop();
     error ErrOutDated();
-    error ErrTransfer();
 
     function keep(bytes32[] calldata ilks) _flog_ external {
         VowStorage storage  vowS  = getVowStorage();

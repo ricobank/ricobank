@@ -20,7 +20,7 @@
 
 pragma solidity ^0.8.19;
 
-import { Bank, Gem } from './bank.sol';
+import { Bank } from './bank.sol';
 import { Hook } from './hook/hook.sol';
 
 contract Vat is Bank {
@@ -54,9 +54,7 @@ contract Vat is Bank {
     error ErrUrnDust();
     error ErrDebtCeil();
     error ErrMultiIlk();
-    error ErrTransfer();
     error ErrHookData();
-    error ErrStatic();
     error ErrLock();
     error ErrSafeBail();
     error ErrHookCallerNotBank();

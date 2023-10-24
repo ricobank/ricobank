@@ -2,7 +2,7 @@
 
 // Copyright (C) 2021-2023 halys
 
-pragma solidity >=0.7.0;
+pragma solidity ^0.8.19;
 
 interface IERC721 {
     function transfer(address, uint) external;

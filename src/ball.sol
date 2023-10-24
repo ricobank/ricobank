@@ -18,12 +18,10 @@ import {Medianizer} from "../lib/feedbase/src/Medianizer.sol";
 import {Multiplier} from "../lib/feedbase/src/combinators/Multiplier.sol";
 import {UniswapV3Adapter, IUniWrapper} from "../lib/feedbase/src/adapters/UniswapV3Adapter.sol";
 import {Ward} from "../lib/feedbase/src/mixin/ward.sol";
-import {Gem} from "../lib/gemfab/src/gem.sol";
 
 import {Vat} from './vat.sol';
 import {Vow} from './vow.sol';
 import {Vox} from './vox.sol';
-import {Bank} from './bank.sol';
 import {File} from './file.sol';
 import {Math} from './mixin/math.sol';
 import {ERC20Hook} from './hook/ERC20hook.sol';
@@ -39,8 +37,6 @@ contract Ball is Math, Ward {
     bytes32 internal constant WETH_USD_TAG  = "weth:usd";
     bytes32 internal constant HOW = bytes32(uint(1000000000000003652500000000));
     bytes32 internal constant CAP = bytes32(uint(1000000021970000000000000000));
-    uint256 internal constant MIN_P_SIZE    = 2;
-    uint256 internal constant MAX_P_SIZE    = 3;
     bytes32[] internal empty = new bytes32[](0);
     IDiamondCuttable.FacetCutAction internal constant ADD = IDiamondCuttable.FacetCutAction.ADD;
 
@@ -154,7 +150,7 @@ contract Ball is Math, Ward {
         mdn.setConfig(RISK_RICO_TAG, mdnconf);
     }
 
-    function setup(BallArgs calldata args) _ward_ external payable {
+    function setup(BallArgs calldata args) _ward_ external {
         IDiamondCuttable.FacetCut[] memory facetCuts = new IDiamondCuttable.FacetCut[](4);
         bytes4[] memory filesels = new bytes4[](3);
         bytes4[] memory vatsels  = new bytes4[](20);
