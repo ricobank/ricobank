@@ -65,70 +65,50 @@ contract UniNFTHook is HookMix {
     {
         UniNFTHookStorage storage hs = getStorage(p.i);
         uint[] storage tokenIds      = hs.inks[p.u];
+        uint dinkLen                 = p.dink.length;
 
         // dink is a nonempty packed list of uint tokenIds
-        if (p.dink.length % 32 != 0) revert ErrDinkLength();
+        if (dinkLen % 32 != 0) revert ErrDinkLength();
 
         // first word must either be LOCK (add token) or FREE (remove token)
-        int dir = p.dink.length == 0 ? LOCK : int(uint(bytes32(p.dink[:32])));
-        if (dir != LOCK && dir != FREE) revert ErrDir();
+        int dir = dinkLen == 0 ? LOCK : int(uint(bytes32(p.dink[:32])));
 
-        // can't steal collateral or rico from others' urns
-        if ((dir == FREE || p.dart > 0) && p.u != p.sender) revert ErrWrongUrn();
-        
-        if (dir == LOCK) { 
-
+        if (dir == LOCK) {
             // safer if locking ink and wiping art
             safer = p.dart <= 0;
 
             // add uni positions
-            for (uint idx = 32; idx < p.dink.length; idx += 32) {
+            for (uint idx = 32; idx < dinkLen; idx += 32) {
                 uint tokenId = uint(bytes32(p.dink[idx:idx+32]));
-
-                // transfer position from user
                 hs.nfpm.transferFrom(p.sender, address(this), tokenId);
 
                 // record it in ink
                 tokenIds.push(tokenId);
 
-                // limit the positions in the CDP
+                // limit the number of positions in the CDP
                 if (tokenIds.length > hs.room) revert ErrFull();
             }
-
-        } else { 
+        } else if (dir == FREE) {
             // remove uni positions
-
-            if ((p.dink.length - 32) / 32 > tokenIds.length) revert ErrDinkLength();
-
-            for (uint j = 32; j < p.dink.length; j += 32) {
-                uint toss  = uint(bytes32(p.dink[j:j+32]));
-
-                // search ink for toss
-                bool found;
-                for (uint k = 0; k < tokenIds.length; ++k) {
-                    uint tokenId = tokenIds[k];
-                    if (found = tokenId == toss) {
-                        // id found; pop
-                        tokenIds[k] = tokenIds[tokenIds.length - 1];
+            for (uint j = 32; j < dinkLen; j += 32) {
+                uint toss = uint(bytes32(p.dink[j:j+32]));
+                uint size = tokenIds.length;
+                for (uint k = 0; k < size; ++k) {
+                    if (tokenIds[k] == toss) {
+                        tokenIds[k] = tokenIds[size - 1];
                         tokenIds.pop();
+                        hs.nfpm.transferFrom(address(this), p.u, toss);
                         break;
                     }
                 }
-
-                if (!found) revert ErrNotFound();
+                if (tokenIds.length == size) revert ErrNotFound();
             }
+        } else revert ErrDir();
 
-            // send dinked tokens back to user
-            for (uint j = 32; j < p.dink.length; j += 32) {
-                uint toss = uint(bytes32(p.dink[j:j+32]));
-                hs.nfpm.transferFrom(address(this), p.u, toss);
-            }
+        // can't steal collateral or rico from others' urns
+        if (!(safer || p.u == p.sender)) revert ErrWrongUrn();
 
-        }
-
-        emit NewPalmBytes2(
-            'ink', p.i, bytes32(bytes20(p.u)), abi.encodePacked(tokenIds)
-        );
+        emit NewPalmBytes2('ink', p.i, bytes32(bytes20(p.u)), abi.encodePacked(tokenIds));
     }
 
     function bailhook(BHParams calldata p) external returns (bytes memory)

@@ -657,7 +657,7 @@ contract NFTHookTest is Test, RicoSetUp {
 
         // more |dink| than ink
         dink = abi.encodePacked(-int(1), golddaitokid, goldwethtokid, golddaitokid);
-        vm.expectRevert(UniNFTHook.ErrDinkLength.selector);
+        vm.expectRevert(UniNFTHook.ErrNotFound.selector);
         assertFalse(nfthook.frobhook(Hook.FHParams(self, uilk, self, dink, 0)));
 
         // not found

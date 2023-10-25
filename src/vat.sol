@@ -134,16 +134,18 @@ contract Vat is Bank {
 
         // rico mint/burn amount increases with rack
         int dtab      = mul(ilk.rack, dart);
+        uint _debt;
+        uint _rest;
 
         if (dtab > 0) {
             // borrow
             uint wad = uint(dtab) / RAY;
 
-            vs.debt += wad;
-            emit NewPalm0('debt', bytes32(vs.debt));
+            _debt = vs.debt += wad;
+            emit NewPalm0('debt', bytes32(_debt));
 
-            vs.rest += uint(dtab) % RAY;
-            emit NewPalm0('rest', bytes32(vs.rest));
+            _rest = vs.rest += uint(dtab) % RAY;
+            emit NewPalm0('rest', bytes32(_rest));
 
             getBankStorage().rico.mint(msg.sender, wad);
         } else if (dtab < 0) {
@@ -151,11 +153,11 @@ contract Vat is Bank {
             // dtab is a rad, so burn one extra to round in system's favor
             uint wad = uint(-dtab) / RAY + 1;
 
-            vs.rest += add(wad * RAY, dtab);
-            emit NewPalm0('rest', bytes32(vs.rest));
+            _debt = vs.debt -= wad;
+            emit NewPalm0('debt', bytes32(_debt));
 
-            vs.debt -= wad;
-            emit NewPalm0('debt', bytes32(vs.debt));
+            _rest = vs.rest += add(wad * RAY, dtab);
+            emit NewPalm0('rest', bytes32(_rest));
 
             getBankStorage().rico.burn(msg.sender, wad);
         }
@@ -179,7 +181,7 @@ contract Vat is Bank {
         // either debt has decreased, or debt ceilings are not exceeded
         if (dart > 0) {
             if (ilk.tart * ilk.rack > ilk.line) revert ErrDebtCeil();
-            else if (vs.debt + vs.rest / RAY > vs.ceil) revert ErrDebtCeil();
+            else if (_debt + _rest / RAY > vs.ceil) revert ErrDebtCeil();
         }
     }
 
