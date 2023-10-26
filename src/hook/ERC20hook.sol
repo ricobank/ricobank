@@ -4,8 +4,8 @@
 
 pragma solidity ^0.8.19;
 
-import { Gem } from '../bank.sol';
-import { HookMix } from './hook.sol';
+import { Gem } from "../bank.sol";
+import { HookMix } from "./hook.sol";
 
 // hook that interprets ink as a single uint and dink as a single int.
 contract ERC20Hook is HookMix {
@@ -13,9 +13,9 @@ contract ERC20Hook is HookMix {
     struct ERC20HookStorage {
         mapping (address u => uint) inks; // amount
         address gem;   // this ilk's gem
+        uint256 liqr;  // [ray] liquidation ratio
         Rudd    rudd;  // [obj] feed src,tag
         Plx     plot;  // [obj] discount exponent and offset
-        uint    liqr;  // [ray] liquidation ratio
     }
 
     function getStorage(bytes32 i) internal pure returns (ERC20HookStorage storage hs) {
@@ -50,7 +50,7 @@ contract ERC20Hook is HookMix {
         // update balance before transfering tokens
         uint _ink  = add(hs.inks[p.u], dink);
         hs.inks[p.u] = _ink;
-        emit NewPalmBytes2('ink', p.i, bytes32(bytes20(p.u)), abi.encodePacked(_ink));
+        emit NewPalmBytes2("ink", p.i, bytes32(bytes20(p.u)), abi.encodePacked(_ink));
 
         Gem gem = Gem(hs.gem);
         if (dink > 0) {
@@ -92,7 +92,7 @@ contract ERC20Hook is HookMix {
         // update collateral balance
         uint _ink  = hs.inks[p.u] - sell;
         hs.inks[p.u] = _ink;
-        emit NewPalmBytes2('ink', p.i, bytes32(bytes20(p.u)), abi.encodePacked(_ink));
+        emit NewPalmBytes2("ink", p.i, bytes32(bytes20(p.u)), abi.encodePacked(_ink));
 
         // trade collateral with keeper for rico
         getBankStorage().rico.burn(p.keeper, earn);
@@ -102,7 +102,7 @@ contract ERC20Hook is HookMix {
     }
 
     function safehook(bytes32 i, address u)
-      view public returns (uint tot, uint cut, uint ttl)
+      public view returns (uint tot, uint cut, uint ttl)
     {
         ERC20HookStorage storage hs  = getStorage(i);
 
@@ -118,12 +118,12 @@ contract ERC20Hook is HookMix {
         ERC20HookStorage storage hs  = getStorage(i);
 
         if (xs.length == 0) {
-            if (key == 'gem') { hs.gem = address(bytes20(val));
-            } else if (key == 'src') { hs.rudd.src = address(bytes20(val));
-            } else if (key == 'tag') { hs.rudd.tag = val;
-            } else if (key == 'liqr') { hs.liqr = uint(val);
-            } else if (key == 'pep')  { hs.plot.pep  = uint(val);
-            } else if (key == 'pop')  { hs.plot.pop  = uint(val);
+            if (key == "gem") { hs.gem = address(bytes20(val));
+            } else if (key == "src") { hs.rudd.src = address(bytes20(val));
+            } else if (key == "tag") { hs.rudd.tag = val;
+            } else if (key == "liqr") { hs.liqr = uint(val);
+            } else if (key == "pep")  { hs.plot.pep  = uint(val);
+            } else if (key == "pop")  { hs.plot.pop  = uint(val);
             } else { revert ErrWrongKey(); }
             emit NewPalm1(key, i, val);
         } else {
@@ -132,16 +132,16 @@ contract ERC20Hook is HookMix {
     }
 
     function get(bytes32 key, bytes32 i, bytes32[] calldata xs)
-      view external returns (bytes32) {
+      external view returns (bytes32) {
         ERC20HookStorage storage hs  = getStorage(i);
 
         if (xs.length == 0) {
-            if (key == 'gem') { return bytes32(bytes20(hs.gem));
-            } else if (key == 'src') { return bytes32(bytes20(hs.rudd.src));
-            } else if (key == 'tag') { return hs.rudd.tag;
-            } else if (key == 'liqr') { return bytes32(hs.liqr);
-            } else if (key == 'pep')  { return bytes32(hs.plot.pep);
-            } else if (key == 'pop')  { return bytes32(hs.plot.pop);
+            if (key == "gem") { return bytes32(bytes20(hs.gem));
+            } else if (key == "src") { return bytes32(bytes20(hs.rudd.src));
+            } else if (key == "tag") { return hs.rudd.tag;
+            } else if (key == "liqr") { return bytes32(hs.liqr);
+            } else if (key == "pep")  { return bytes32(hs.plot.pep);
+            } else if (key == "pop")  { return bytes32(hs.plot.pop);
             } else { revert ErrWrongKey(); }
         } else {
             revert ErrWrongKey();

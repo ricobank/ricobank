@@ -20,32 +20,32 @@
 
 pragma solidity ^0.8.19;
 
-import { Bank } from './bank.sol';
-import { Hook } from './hook/hook.sol';
+import { Bank } from "./bank.sol";
+import { Hook } from "./hook/hook.sol";
 
 contract Vat is Bank {
-    function ilks(bytes32 i) view external returns (Ilk memory) {
+    function ilks(bytes32 i) external view returns (Ilk memory) {
         return getVatStorage().ilks[i];
     }
-    function urns(bytes32 i, address u) view external returns (uint) {
+    function urns(bytes32 i, address u) external view returns (uint) {
         return getVatStorage().urns[i][u];
     }
-    function joy()  view external returns (uint) {return getVatStorage().joy;}
-    function sin()  view external returns (uint) {return getVatStorage().sin;}
-    function rest() view external returns (uint) {return getVatStorage().rest;}
-    function debt() view external returns (uint) {return getVatStorage().debt;}
-    function ceil() view external returns (uint) {return getVatStorage().ceil;}
-    function par()  view external returns (uint) {return getVatStorage().par;}
+    function joy()  external view returns (uint) {return getVatStorage().joy;}
+    function sin()  external view returns (uint) {return getVatStorage().sin;}
+    function rest() external view returns (uint) {return getVatStorage().rest;}
+    function debt() external view returns (uint) {return getVatStorage().debt;}
+    function ceil() external view returns (uint) {return getVatStorage().ceil;}
+    function par()  external view returns (uint) {return getVatStorage().par;}
     function ink(bytes32 i, address u) external view returns (bytes memory) {
         return abi.decode(_hookview(i, abi.encodeWithSelector(
             Hook.ink.selector, i, u
         )), (bytes));
     }
-    function MINT() pure external returns (uint) {return _MINT;}
+    function MINT() external pure returns (uint) {return _MINT;}
 
     enum Spot {Sunk, Iffy, Safe}
 
-    uint256 constant _MINT = 2 ** 128;
+    uint256 internal constant _MINT = 2 ** 128;
 
     error ErrFeeMin();
     error ErrFeeRho();
@@ -68,7 +68,7 @@ contract Vat is Bank {
     }
 
     function init(bytes32 ilk, address hook)
-      onlyOwner _flog_ external
+      external onlyOwner _flog_
     {
         VatStorage storage vs = getVatStorage();
         if (vs.ilks[ilk].rack != 0) revert ErrMultiIlk();
@@ -80,14 +80,14 @@ contract Vat is Bank {
             tart: 0,
             chop: 0, line: 0, dust: 0
         });
-        emit NewPalm1('rack', ilk, bytes32(RAY));
-        emit NewPalm1('fee',  ilk, bytes32(RAY));
-        emit NewPalm1('hook', ilk, bytes32(bytes20(hook)));
-        emit NewPalm1('rho',  ilk, bytes32(block.timestamp));
-        emit NewPalm1('tart', ilk, bytes32(uint(0)));
-        emit NewPalm1('chop', ilk, bytes32(uint(0)));
-        emit NewPalm1('line', ilk, bytes32(uint(0)));
-        emit NewPalm1('dust', ilk, bytes32(uint(0)));
+        emit NewPalm1("rack", ilk, bytes32(RAY));
+        emit NewPalm1("fee",  ilk, bytes32(RAY));
+        emit NewPalm1("hook", ilk, bytes32(bytes20(hook)));
+        emit NewPalm1("rho",  ilk, bytes32(block.timestamp));
+        emit NewPalm1("tart", ilk, bytes32(uint(0)));
+        emit NewPalm1("chop", ilk, bytes32(uint(0)));
+        emit NewPalm1("line", ilk, bytes32(uint(0)));
+        emit NewPalm1("dust", ilk, bytes32(uint(0)));
     }
 
     function safe(bytes32 i, address u)
@@ -116,7 +116,7 @@ contract Vat is Bank {
     }
 
     function frob(bytes32 i, address u, bytes calldata dink, int dart)
-      _flog_ _lock_ public
+      public _flog_ _lock_
     {
         VatStorage storage vs = getVatStorage();
         Ilk storage ilk = vs.ilks[i];
@@ -124,13 +124,13 @@ contract Vat is Bank {
         if (ilk.rack == 0) revert ErrIlkInit();
 
         // modify normalized debt
-        uint art      = add(vs.urns[i][u], dart);
+        uint256 art   = add(vs.urns[i][u], dart);
         vs.urns[i][u] = art;
-        emit NewPalm2('art', i, bytes32(bytes20(u)), bytes32(art));
+        emit NewPalm2("art", i, bytes32(bytes20(u)), bytes32(art));
 
         // keep track of total so it denorm doesn't exceed line
         ilk.tart      = add(ilk.tart, dart);
-        emit NewPalm1('tart', i, bytes32(ilk.tart));
+        emit NewPalm1("tart", i, bytes32(ilk.tart));
 
         // rico mint/burn amount increases with rack
         int dtab      = mul(ilk.rack, dart);
@@ -142,10 +142,10 @@ contract Vat is Bank {
             uint wad = uint(dtab) / RAY;
 
             _debt = vs.debt += wad;
-            emit NewPalm0('debt', bytes32(_debt));
+            emit NewPalm0("debt", bytes32(_debt));
 
             _rest = vs.rest += uint(dtab) % RAY;
-            emit NewPalm0('rest', bytes32(_rest));
+            emit NewPalm0("rest", bytes32(_rest));
 
             getBankStorage().rico.mint(msg.sender, wad);
         } else if (dtab < 0) {
@@ -154,10 +154,10 @@ contract Vat is Bank {
             uint wad = uint(-dtab) / RAY + 1;
 
             _debt = vs.debt -= wad;
-            emit NewPalm0('debt', bytes32(_debt));
+            emit NewPalm0("debt", bytes32(_debt));
 
             _rest = vs.rest += add(wad * RAY, dtab);
-            emit NewPalm0('rest', bytes32(_rest));
+            emit NewPalm0("rest", bytes32(_rest));
 
             getBankStorage().rico.burn(msg.sender, wad);
         }
@@ -186,7 +186,7 @@ contract Vat is Bank {
     }
 
     function bail(bytes32 i, address u)
-      _flog_ _lock_ external returns (bytes memory)
+      external _flog_ _lock_ returns (bytes memory)
     {
         _drip(i);
         (Spot spot, uint deal, uint tot) = safe(i, u);
@@ -197,7 +197,7 @@ contract Vat is Bank {
 
         uint art = vs.urns[i][u];
         vs.urns[i][u] = 0;
-        emit NewPalm2('art', i, bytes32(bytes20(u)), bytes32(uint(0)));
+        emit NewPalm2("art", i, bytes32(bytes20(u)), bytes32(uint(0)));
 
         // bill is the debt hook will attempt to cover when auctioning ink
         // todo maybe make this +1?
@@ -206,11 +206,11 @@ contract Vat is Bank {
         uint bill = rmul(ilk.chop, owed);
 
         ilk.tart -= art;
-        emit NewPalm1('tart', i, bytes32(ilk.tart));
+        emit NewPalm1("tart", i, bytes32(ilk.tart));
 
         // record the bad debt for vow to heal
         vs.sin += dtab;
-        emit NewPalm0('sin', bytes32(vs.sin));
+        emit NewPalm0("sin", bytes32(vs.sin));
 
         // ink auction
         Hook.BHParams memory p = Hook.BHParams(
@@ -221,7 +221,7 @@ contract Vat is Bank {
         ), (bytes));
     }
 
-    function drip(bytes32 i) _flog_ external { _drip(i); }
+    function drip(bytes32 i) external _flog_ { _drip(i); }
 
     // drip without flog
     function _drip(bytes32 i) internal {
@@ -239,20 +239,20 @@ contract Vat is Bank {
         uint256 all  = vs.rest + rad;
 
         ilk.rho      = block.timestamp;
-        emit NewPalm1('rho', i, bytes32(block.timestamp));
+        emit NewPalm1("rho", i, bytes32(block.timestamp));
 
         ilk.rack     = rack;
-        emit NewPalm1('rack', i, bytes32(rack));
+        emit NewPalm1("rack", i, bytes32(rack));
 
         vs.debt      = vs.debt + all / RAY;
-        emit NewPalm0('debt', bytes32(vs.debt));
+        emit NewPalm0("debt", bytes32(vs.debt));
 
         // tart * rack is a rad, interest is a wad, rest is the change
         vs.rest      = all % RAY;
-        emit NewPalm0('rest', bytes32(vs.rest));
+        emit NewPalm0("rest", bytes32(vs.rest));
 
         vs.joy       = vs.joy + all / RAY;
-        emit NewPalm0('joy', bytes32(vs.joy));
+        emit NewPalm0("joy", bytes32(vs.joy));
     }
 
     function flash(address code, bytes calldata data)
@@ -272,7 +272,7 @@ contract Vat is Bank {
     }
 
     function filk(bytes32 ilk, bytes32 key, bytes32 val)
-      onlyOwner _flog_ external
+      external onlyOwner _flog_
     {
         uint _val = uint(val);
         VatStorage storage vs = getVatStorage();
@@ -313,7 +313,7 @@ contract Vat is Bank {
     }
 
     function filh(bytes32 ilk, bytes32 key, bytes32[] calldata xs, bytes32 val)
-      onlyOwner _flog_ external {
+      external onlyOwner _flog_ {
         _hookcall(ilk, abi.encodeWithSignature(
             "file(bytes32,bytes32,bytes32[],bytes32)", key, ilk, xs, val
         ));

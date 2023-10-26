@@ -19,7 +19,7 @@ contract MockChainlinkAggregator {
         decimals = _decimals;
     }
 
-    function latestRoundData() view external returns (
+    function latestRoundData() external view returns (
         uint80 roundId,
         int256 answer,
         uint256 startedAt,

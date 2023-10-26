@@ -70,6 +70,9 @@ task('deploy-ricobank', '')
         ricodai: deps.objects.ricodai.address,
         ricorisk: deps.objects.ricorisk.address,
         uniwrapper: uniwrapper.address,
+        dai: deps.objects.dai.address,
+        dai_usd_agg: agg_daiusd.address,
+        xau_usd_agg: agg_xauusd.address,
         par: ray(1),
         ceil: wad(100000),
         adaptrange: 1,
@@ -83,9 +86,6 @@ task('deploy-ricobank', '')
         plotpep:    2,
         plotpop:    ray(1),
         mintramp:   { rel: wad(0.02).div(BANKYEAR), bel: timestamp, cel: 1, wel: wad(1) },
-        DAI: deps.objects.dai.address,
-        DAI_USD_AGG: agg_daiusd.address,
-        XAU_USD_AGG: agg_xauusd.address,
     }
 
     let ilks = []

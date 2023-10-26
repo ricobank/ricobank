@@ -9,7 +9,7 @@
 
 pragma solidity ^0.8.19;
 
-import {Diamond, IDiamondCuttable} from '../lib/solidstate-solidity/contracts/proxy/diamond/Diamond.sol';
+import {Diamond, IDiamondCuttable} from "../lib/solidstate-solidity/contracts/proxy/diamond/Diamond.sol";
 import {Block} from "../lib/feedbase/src/mixin/Read.sol";
 import {ChainlinkAdapter} from "../lib/feedbase/src/adapters/ChainlinkAdapter.sol";
 import {Divider} from "../lib/feedbase/src/combinators/Divider.sol";
@@ -19,13 +19,13 @@ import {Multiplier} from "../lib/feedbase/src/combinators/Multiplier.sol";
 import {UniswapV3Adapter, IUniWrapper} from "../lib/feedbase/src/adapters/UniswapV3Adapter.sol";
 import {Ward} from "../lib/feedbase/src/mixin/ward.sol";
 
-import {Vat} from './vat.sol';
-import {Vow} from './vow.sol';
-import {Vox} from './vox.sol';
-import {File} from './file.sol';
-import {Math} from './mixin/math.sol';
-import {ERC20Hook} from './hook/ERC20hook.sol';
-import {UniNFTHook} from './hook/nfpm/UniV3NFTHook.sol';
+import {Vat} from "./vat.sol";
+import {Vow} from "./vow.sol";
+import {Vox} from "./vox.sol";
+import {File} from "./file.sol";
+import {Math} from "./mixin/math.sol";
+import {ERC20Hook} from "./hook/ERC20hook.sol";
+import {UniNFTHook} from "./hook/nfpm/UniV3NFTHook.sol";
 
 contract Ball is Math, Ward {
     bytes32 internal constant RICO_DAI_TAG  = "rico:dai";
@@ -35,8 +35,8 @@ contract Ball is Math, Ward {
     bytes32 internal constant RICO_REF_TAG  = "rico:ref";
     bytes32 internal constant RISK_RICO_TAG = "risk:rico";
     bytes32 internal constant WETH_USD_TAG  = "weth:usd";
-    bytes32 internal constant HOW = bytes32(uint(1000000000000003652500000000));
-    bytes32 internal constant CAP = bytes32(uint(1000000021970000000000000000));
+    bytes32 internal constant HOW = bytes32(uint256(1000000000000003652500000000));
+    bytes32 internal constant CAP = bytes32(uint256(1000000021970000000000000000));
     bytes32[] internal empty = new bytes32[](0);
     IDiamondCuttable.FacetCutAction internal constant ADD = IDiamondCuttable.FacetCutAction.ADD;
 
@@ -86,6 +86,9 @@ contract Ball is Math, Ward {
         address ricodai;
         address ricorisk;
         address uniwrapper;
+        address dai;
+        address dai_usd_agg;
+        address xau_usd_agg;
         uint256 par;
         uint256 ceil;
         uint256 adaptrange;
@@ -97,9 +100,6 @@ contract Ball is Math, Ward {
         uint256 plotpep;
         uint256 plotpop;
         Vow.Ramp mintramp;
-        address DAI;
-        address DAI_USD_AGG;
-        address XAU_USD_AGG;
     }
 
     address public rico;
@@ -125,12 +125,12 @@ contract Ball is Math, Ward {
         feedbase = args.feedbase;
 
         // rico/usd, rico/ref
-        cladapt.setConfig(XAU_USD_TAG, ChainlinkAdapter.Config(args.XAU_USD_AGG, args.xauusdttl, RAY));
-        cladapt.setConfig(DAI_USD_TAG, ChainlinkAdapter.Config(args.DAI_USD_AGG, args.daiusdttl, RAY));
+        cladapt.setConfig(XAU_USD_TAG, ChainlinkAdapter.Config(args.xau_usd_agg, args.xauusdttl, RAY));
+        cladapt.setConfig(DAI_USD_TAG, ChainlinkAdapter.Config(args.dai_usd_agg, args.daiusdttl, RAY));
         // rico/dai, dai/rico (== 1 / (rico/dai))
         uniadapt.setConfig(
             RICO_DAI_TAG,
-            UniswapV3Adapter.Config(args.ricodai, args.adaptrange, args.adaptttl, args.DAI < args.rico)
+            UniswapV3Adapter.Config(args.ricodai, args.adaptrange, args.adaptttl, args.dai < args.rico)
         );
 
         _configureBlock(multiplier, RICO_USD_TAG,
@@ -150,7 +150,7 @@ contract Ball is Math, Ward {
         mdn.setConfig(RISK_RICO_TAG, mdnconf);
     }
 
-    function setup(BallArgs calldata args) _ward_ external {
+    function setup(BallArgs calldata args) external _ward_ {
         IDiamondCuttable.FacetCut[] memory facetCuts = new IDiamondCuttable.FacetCut[](4);
         bytes4[] memory filesels = new bytes4[](3);
         bytes4[] memory vatsels  = new bytes4[](20);
@@ -199,55 +199,55 @@ contract Ball is Math, Ward {
         facetCuts[2] = IDiamondCuttable.FacetCut(address(vow),  ADD, vowsels);
         facetCuts[3] = IDiamondCuttable.FacetCut(address(vox),  ADD, voxsels);
         Diamond(payable(address(fbank))).acceptOwnership();
-        Diamond(payable(address(fbank))).diamondCut(facetCuts, address(0), bytes(''));
+        Diamond(payable(address(fbank))).diamondCut(facetCuts, address(0), bytes(""));
 
-        fbank.file('rico', bytes32(bytes20(rico)));
-        fbank.file('risk', bytes32(bytes20(risk)));
-        fbank.file('fb',  bytes32(bytes20(feedbase)));
+        fbank.file("rico", bytes32(bytes20(rico)));
+        fbank.file("risk", bytes32(bytes20(risk)));
+        fbank.file("fb",  bytes32(bytes20(feedbase)));
 
-        fbank.file('par',  bytes32(args.par));
-        fbank.file('ceil', bytes32(args.ceil));
+        fbank.file("par",  bytes32(args.par));
+        fbank.file("ceil", bytes32(args.ceil));
 
-        fbank.file('plat.pep', bytes32(args.platpep));
-        fbank.file('plat.pop', bytes32(args.platpop));
-        fbank.file('rudd.tag', RISK_RICO_TAG);
-        fbank.file('rudd.src', bytes32(bytes20(address(mdn))));
-        fbank.file('plot.pep', bytes32(args.plotpep));
-        fbank.file('plot.pop', bytes32(args.plotpop));
+        fbank.file("plat.pep", bytes32(args.platpep));
+        fbank.file("plat.pop", bytes32(args.platpop));
+        fbank.file("rudd.tag", RISK_RICO_TAG);
+        fbank.file("rudd.src", bytes32(bytes20(address(mdn))));
+        fbank.file("plot.pep", bytes32(args.plotpep));
+        fbank.file("plot.pop", bytes32(args.plotpop));
 
         fbank.file("rel", bytes32(args.mintramp.rel));
         fbank.file("bel", bytes32(args.mintramp.bel));
         fbank.file("cel", bytes32(args.mintramp.cel));
         fbank.file("wel", bytes32(args.mintramp.wel));
 
-        fbank.file('tip.src', bytes32(bytes20(address(divider))));
-        fbank.file('tip.tag', RICO_REF_TAG);
-        fbank.file('how', HOW);
-        fbank.file('cap', CAP);
-        fbank.file('tau', bytes32(block.timestamp));
-        fbank.file('way', bytes32(RAY));
+        fbank.file("tip.src", bytes32(bytes20(address(divider))));
+        fbank.file("tip.tag", RICO_REF_TAG);
+        fbank.file("how", HOW);
+        fbank.file("cap", CAP);
+        fbank.file("tau", bytes32(block.timestamp));
+        fbank.file("way", bytes32(RAY));
     }
 
-    function makeilk(IlkParams calldata ilkparams) _ward_ external {
+    function makeilk(IlkParams calldata ilkparams) external _ward_ {
         bytes32 ilk = ilkparams.ilk;
-        bytes32 gemreftag = concat(ilk, ':ref');
+        bytes32 gemreftag = concat(ilk, ":ref");
         Vat(bank).init(ilk, address(hook));
-        Vat(bank).filk(ilk, 'chop', bytes32(ilkparams.chop));
-        Vat(bank).filk(ilk, 'dust', bytes32(ilkparams.dust));
-        Vat(bank).filk(ilk, 'fee',  bytes32(ilkparams.fee));
-        Vat(bank).filk(ilk, 'line', bytes32(ilkparams.line));
-        Vat(bank).filh(ilk, 'liqr', empty, bytes32(ilkparams.liqr));
-        Vat(bank).filh(ilk, 'gem', empty, bytes32(bytes20(ilkparams.gem)));
-        Vat(bank).filh(ilk, 'src', empty, bytes32(bytes20(address(mdn))));
-        Vat(bank).filh(ilk, 'tag', empty, gemreftag);
-        Vat(bank).filh(ilk, 'pep', empty, bytes32(uint(2)));
-        Vat(bank).filh(ilk, 'pop', empty, bytes32(RAY));
+        Vat(bank).filk(ilk, "chop", bytes32(ilkparams.chop));
+        Vat(bank).filk(ilk, "dust", bytes32(ilkparams.dust));
+        Vat(bank).filk(ilk, "fee",  bytes32(ilkparams.fee));
+        Vat(bank).filk(ilk, "line", bytes32(ilkparams.line));
+        Vat(bank).filh(ilk, "liqr", empty, bytes32(ilkparams.liqr));
+        Vat(bank).filh(ilk, "gem", empty, bytes32(bytes20(ilkparams.gem)));
+        Vat(bank).filh(ilk, "src", empty, bytes32(bytes20(address(mdn))));
+        Vat(bank).filh(ilk, "tag", empty, gemreftag);
+        Vat(bank).filh(ilk, "pep", empty, bytes32(uint(2)));
+        Vat(bank).filh(ilk, "pop", empty, bytes32(RAY));
         {
             Medianizer.Config memory mdnconf = Medianizer.Config(new address[](1), new bytes32[](1), 1);
             mdnconf.srcs[0] = address(divider); mdnconf.tags[0] = gemreftag;
             mdn.setConfig(gemreftag, mdnconf);
         }
-        bytes32 gemusdtag = concat(ilk, ':usd');
+        bytes32 gemusdtag = concat(ilk, ":usd");
         bytes32 gemclatag;
         address gemusdsrc;
         if (ilkparams.gemethagg == address(0)) {
@@ -257,7 +257,7 @@ contract Ball is Math, Ward {
             gemclatag = gemusdtag;
         } else {
             // ilk has feed sequence of gem/eth * eth/usd / rico/usd
-            bytes32 gemethtag = concat(ilk, ':eth');
+            bytes32 gemethtag = concat(ilk, ":eth");
             cladapt.setConfig(gemethtag, ChainlinkAdapter.Config(ilkparams.gemethagg, ilkparams.ttl, RAY));
             // add a multiplier config which reads gem/usd. Relies on weth ilk existing for weth:usd cladapter
             _configureBlock(multiplier, gemusdtag,
@@ -271,20 +271,20 @@ contract Ball is Math, Ward {
                         address(cladapt),   XAU_USD_TAG);
     }
 
-    function makeuni(UniParams calldata ups) _ward_ external {
+    function makeuni(UniParams calldata ups) external _ward_ {
         Vat(bank).init(ups.ilk, address(nfthook));
-        Vat(bank).filh(ups.ilk, 'nfpm', empty, bytes32(bytes20(address(ups.nfpm))));
-        Vat(bank).filh(ups.ilk, 'room', empty, bytes32(ups.room));
-        Vat(bank).filh(ups.ilk, 'wrap', empty, bytes32(bytes20(address(ups.uniwrapper))));
+        Vat(bank).filh(ups.ilk, "nfpm", empty, bytes32(bytes20(address(ups.nfpm))));
+        Vat(bank).filh(ups.ilk, "room", empty, bytes32(ups.room));
+        Vat(bank).filh(ups.ilk, "wrap", empty, bytes32(bytes20(address(ups.uniwrapper))));
 
-        Vat(bank).filk(ups.ilk, 'fee',  bytes32(ups.fee));
-        Vat(bank).filk(ups.ilk, 'chop', bytes32(ups.chop));
+        Vat(bank).filk(ups.ilk, "fee",  bytes32(ups.fee));
+        Vat(bank).filk(ups.ilk, "chop", bytes32(ups.chop));
 
-        Vat(bank).filh(ups.ilk, 'pep',  empty, bytes32(uint(2)));
-        Vat(bank).filh(ups.ilk, 'pop',  empty, bytes32(RAY));
+        Vat(bank).filh(ups.ilk, "pep",  empty, bytes32(uint(2)));
+        Vat(bank).filh(ups.ilk, "pop",  empty, bytes32(RAY));
     }
 
-    function approve(address usr) _ward_ external {
+    function approve(address usr) external _ward_ {
         mdn.give(usr);
         divider.give(usr);
         multiplier.give(usr);

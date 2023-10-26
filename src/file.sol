@@ -3,22 +3,22 @@
 // Copyright (C) 2021-2023 halys
 
 pragma solidity ^0.8.19;
-import { Gem }  from '../lib/gemfab/src/gem.sol';
-import { Feedbase } from '../lib/feedbase/src/Feedbase.sol';
-import { Bank } from './bank.sol';
+import { Gem }  from "../lib/gemfab/src/gem.sol";
+import { Feedbase } from "../lib/feedbase/src/Feedbase.sol";
+import { Bank } from "./bank.sol";
 
 contract File is Bank {
     error ErrHighToll();
     error ErrHighWel();
 
-    function file(bytes32 key, bytes32 val) onlyOwner _flog_ external {
+    function file(bytes32 key, bytes32 val) external onlyOwner _flog_ {
         VatStorage storage vatS = getVatStorage();
         VowStorage storage vowS = getVowStorage();
         VoxStorage storage voxS = getVoxStorage();
         BankStorage storage bankS = getBankStorage();
         // bank
         if (key == "rico") { bankS.rico = Gem(address(bytes20(val))); }
-        else if (key == 'fb') { bankS.fb = Feedbase(address(bytes20(val))); }
+        else if (key == "fb") { bankS.fb = Feedbase(address(bytes20(val))); }
         // vat
         else if (key == "ceil") { vatS.ceil = uint(val); }
         else if (key == "par") { vatS.par = uint(val); }
@@ -40,7 +40,7 @@ contract File is Bank {
         else if (key == "plat.pop") { vowS.plat.pop = uint(val); }
         else if (key == "rudd.src") { vowS.rudd.src = address(bytes20(bytes32(val))); }
         else if (key == "rudd.tag") { vowS.rudd.tag = val; }
-        else if (key == 'risk') { vowS.RISK = Gem(address(bytes20(val))); }
+        else if (key == "risk") { vowS.risk = Gem(address(bytes20(val))); }
         // vox
         else if (key == "tip.src") { voxS.tip.src = address(bytes20(val)); }
         else if (key == "tip.tag") { voxS.tip.tag = val; }

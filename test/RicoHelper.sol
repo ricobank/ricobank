@@ -224,6 +224,9 @@ abstract contract RicoSetUp is BaseHelper {
             ricodai,
             ricorisk,
             uniwrapper,
+            DAI,
+            DAI_USD_AGG,
+            XAU_USD_AGG,
             INIT_PAR,
             100000 * WAD,
             20000, // ricodai
@@ -234,10 +237,7 @@ abstract contract RicoSetUp is BaseHelper {
             platpop,
             plotpep,
             plotpop,
-            Bank.Ramp(WAD / BLN, block.timestamp, 1, WAD),
-            DAI,
-            DAI_USD_AGG,
-            XAU_USD_AGG
+            Bank.Ramp(WAD / BLN, block.timestamp, 1, WAD)
         );
 
         ball = new Ball(bargs);

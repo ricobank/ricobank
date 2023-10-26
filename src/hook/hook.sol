@@ -4,7 +4,7 @@
 
 pragma solidity ^0.8.19;
 
-import { Bank } from '../bank.sol';
+import { Bank } from "../bank.sol";
 
 interface Hook {
     struct FHParams {
@@ -12,21 +12,21 @@ interface Hook {
         bytes32 i;
         address u;
         bytes   dink;
-        int     dart;
+        int256  dart;
     }
     struct BHParams {
         bytes32 i;
         address u;
-        uint    bill;
-        uint    owed;
+        uint256 bill;
+        uint256 owed;
         address keeper;
-        uint    deal;
-        uint    tot;
+        uint256 deal;
+        uint256 tot;
     }
 
     function frobhook(FHParams calldata) external returns (bool safer);
     function bailhook(BHParams calldata) external returns (bytes memory);
-    function safehook(bytes32 i, address u) view external
+    function safehook(bytes32 i, address u) external view
       returns (uint tot, uint cut, uint minttl);
     function ink(bytes32 i, address u) external view returns (bytes memory);
 }
@@ -43,12 +43,12 @@ abstract contract HookMix is Hook, Bank {
             uint loss = RAY * (owed - earn);
             uint next = loss > prev ? 0 : prev - loss;
             vs.ilks[i].line = next;
-            emit NewPalm1('line', i, bytes32(next));
+            emit NewPalm1("line", i, bytes32(next));
         }
 
         // update joy to help cancel out sin
         uint mood = vs.joy + earn - over;
         vs.joy = mood;
-        emit NewPalm0('joy', bytes32(mood));
+        emit NewPalm0("joy", bytes32(mood));
     }
 }

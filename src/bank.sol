@@ -4,12 +4,12 @@
 
 pragma solidity ^0.8.19;
 
-import { OwnableInternal, OwnableStorage } from '../lib/solidstate-solidity/contracts/access/OwnableInternal.sol';
-import { Math } from './mixin/math.sol';
-import { Flog } from './mixin/flog.sol';
-import { Palm } from './mixin/palm.sol';
-import { Gem }  from '../lib/gemfab/src/gem.sol';
-import { Feedbase } from '../lib/feedbase/src/Feedbase.sol';
+import { OwnableInternal, OwnableStorage } from "../lib/solidstate-solidity/contracts/access/OwnableInternal.sol";
+import { Math } from "./mixin/math.sol";
+import { Flog } from "./mixin/flog.sol";
+import { Palm } from "./mixin/palm.sol";
+import { Gem }  from "../lib/gemfab/src/gem.sol";
+import { Feedbase } from "../lib/feedbase/src/Feedbase.sol";
 
 abstract contract Bank is Math, Flog, Palm, OwnableInternal {
 
@@ -37,31 +37,31 @@ abstract contract Bank is Math, Flog, Palm, OwnableInternal {
     struct VatStorage {
         mapping (bytes32 => Ilk) ilks;                          // collaterals
         mapping (bytes32 => mapping (address => uint256)) urns; // CDPs
-        uint joy;   // [wad]
-        uint sin;   // [rad]
-        uint rest;  // [rad] Remainder from
-        uint debt;  // [wad] Total Rico Issued
-        uint ceil;  // [wad] Total Debt Ceiling
-        uint par;   // [ray] System Price (rico/ref)
-        uint lock;  // lock
-        uint flock; // flash lock
+        uint256 joy;   // [wad]
+        uint256 sin;   // [rad]
+        uint256 rest;  // [rad] Remainder from
+        uint256 debt;  // [wad] Total Rico Issued
+        uint256 ceil;  // [wad] Total Debt Ceiling
+        uint256 par;   // [ray] System Price (rico/ref)
+        uint256 lock;  // lock
+        uint256 flock; // flash lock
     }
 
-    uint constant UNLOCKED = 2;
-    uint constant LOCKED = 1;
+    uint256 internal constant UNLOCKED = 2;
+    uint256 internal constant LOCKED = 1;
 
     // RISK mint rate. Used in struct, never extend in upgrade
     // flop uses min(vel rate, rel rate)
     struct Ramp {
-        uint rel; // [wad] fraction of RISK supply/s
-        uint bel; // [sec] last flop timestamp
-        uint cel; // [sec] max seconds flop can ramp up
-        uint wel; // [wad] fraction of joy/flap
+        uint256 rel; // [wad] fraction of RISK supply/s
+        uint256 bel; // [sec] last flop timestamp
+        uint256 cel; // [sec] max seconds flop can ramp up
+        uint256 wel; // [wad] fraction of joy/flap
     }
 
     struct Plx {
-        uint pep; // [ray] rush gradient
-        uint pop; // [ray] rush offset
+        uint256 pep; // [ray] rush gradient
+        uint256 pop; // [ray] rush offset
     }
 
     struct Rudd {
@@ -70,7 +70,7 @@ abstract contract Bank is Math, Flog, Palm, OwnableInternal {
     }
 
     struct VowStorage {
-        Gem     RISK;
+        Gem     risk;
         Ramp    ramp;
         uint256 toll;
         Plx     plat; // flap plot
@@ -86,14 +86,14 @@ abstract contract Bank is Math, Flog, Palm, OwnableInternal {
         uint256 cap; // [ray] `way` bound
     }
 
-    bytes32 constant VAT_INFO = 'vat.0';
-    bytes32 constant VAT_POS  = keccak256(abi.encodePacked(VAT_INFO));
-    bytes32 constant VOW_INFO = 'vow.0';
-    bytes32 constant VOW_POS  = keccak256(abi.encodePacked(VOW_INFO));
-    bytes32 constant VOX_INFO = 'vox.0';
-    bytes32 constant VOX_POS  = keccak256(abi.encodePacked(VOX_INFO));
-    bytes32 constant BANK_INFO = 'ricobank.0';
-    bytes32 constant BANK_POS  = keccak256(abi.encodePacked(BANK_INFO));
+    bytes32 internal constant VAT_INFO = "vat.0";
+    bytes32 internal constant VAT_POS  = keccak256(abi.encodePacked(VAT_INFO));
+    bytes32 internal constant VOW_INFO = "vow.0";
+    bytes32 internal constant VOW_POS  = keccak256(abi.encodePacked(VOW_INFO));
+    bytes32 internal constant VOX_INFO = "vox.0";
+    bytes32 internal constant VOX_POS  = keccak256(abi.encodePacked(VOX_INFO));
+    bytes32 internal constant BANK_INFO = "ricobank.0";
+    bytes32 internal constant BANK_POS  = keccak256(abi.encodePacked(BANK_INFO));
     function getVowStorage() internal pure returns (VowStorage storage vs) {
         bytes32 pos = VOW_POS;  assembly { vs.slot := pos }
     }

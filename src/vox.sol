@@ -17,7 +17,7 @@
 
 pragma solidity ^0.8.19;
 
-import { Bank } from './bank.sol';
+import { Bank } from "./bank.sol";
 
 // price rate controller
 // ensures that market price (mar) roughly tracks par
@@ -33,7 +33,7 @@ contract Vox is Bank {
     function tip() external view returns (Rudd memory) {return getVoxStorage().tip;}
 
     // poke par and way
-    function poke() _flog_ external {
+    function poke() external _flog_ {
         VatStorage storage vatS = getVatStorage();
         VoxStorage storage voxS = getVoxStorage();
 
@@ -42,14 +42,14 @@ contract Vox is Bank {
         if (tau_ == block.timestamp) return;
         uint dt   = block.timestamp - tau_;
         voxS.tau  = block.timestamp;
-        emit NewPalm0('tau', bytes32(block.timestamp));
+        emit NewPalm0("tau", bytes32(block.timestamp));
 
         // use previous `way` to grow `par` to keep par updates predictable
         uint par_ = vatS.par;
         uint way_ = voxS.way;
         par_      = grow(par_, way_, dt);
         vatS.par  = par_;
-        emit NewPalm0('par', bytes32(par_));
+        emit NewPalm0("par", bytes32(par_));
 
         // pull mar
         // forgo way updates if the feed can't be sensed
@@ -64,6 +64,6 @@ contract Vox is Bank {
             way_ = max(rinv(voxS.cap), grow(way_, rinv(voxS.how), dt));
         }
         voxS.way = way_;
-        emit NewPalm0('way', bytes32(way_));
+        emit NewPalm0("way", bytes32(way_));
     }
 }

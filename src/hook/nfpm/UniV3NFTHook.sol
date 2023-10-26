@@ -4,16 +4,16 @@
 
 pragma solidity ^0.8.19;
 
-import { Gem, Feedbase } from '../../bank.sol';
-import { HookMix } from '../hook.sol';
+import { Gem, Feedbase } from "../../bank.sol";
+import { HookMix } from "../hook.sol";
 
-import { IUniswapV3Pool } from '@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol';
-import { INonfungiblePositionManager as INFPM } from './interfaces/INonfungiblePositionManager.sol';
+import { IUniswapV3Pool } from "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
+import { INonfungiblePositionManager as INFPM } from "./interfaces/INonfungiblePositionManager.sol";
 
 // uniswap libraries to get total token amounts in uniswap positions
 interface IUniWrapper {
-    function total(INFPM nfpm, uint tokenId, uint160 sqrtPriceX96) view external returns (uint amount0, uint amount1);
-    function computeAddress(address factory, address t0, address t1, uint24 fee) view external returns (address);
+    function total(INFPM nfpm, uint tokenId, uint160 sqrtPriceX96) external view returns (uint amount0, uint amount1);
+    function computeAddress(address factory, address t0, address t1, uint24 fee) external view returns (address);
 }
 
 // hook for uni NonfungiblePositionManager
@@ -49,7 +49,7 @@ contract UniNFTHook is HookMix {
         }
     }
 
-    function ink(bytes32 i, address u) view external returns (bytes memory) {
+    function ink(bytes32 i, address u) external view returns (bytes memory) {
         return abi.encode(getStorage(i).inks[u]);
     }
 
@@ -108,7 +108,7 @@ contract UniNFTHook is HookMix {
         // can't steal collateral or rico from others' urns
         if (!(safer || p.u == p.sender)) revert ErrWrongUrn();
 
-        emit NewPalmBytes2('ink', p.i, bytes32(bytes20(p.u)), abi.encodePacked(tokenIds));
+        emit NewPalmBytes2("ink", p.i, bytes32(bytes20(p.u)), abi.encodePacked(tokenIds));
     }
 
     function bailhook(BHParams calldata p) external returns (bytes memory)
@@ -118,7 +118,7 @@ contract UniNFTHook is HookMix {
 
         // bail all the uni positions
         delete hs.inks[p.u];
-        emit NewPalmBytes2('ink', p.i, bytes32(bytes20(p.u)), bytes(''));
+        emit NewPalmBytes2("ink", p.i, bytes32(bytes20(p.u)), bytes(""));
 
         // tot is RAD, deal is RAY, so bank earns a WAD
         uint earn = rmul(p.tot / RAY, rmul(rpow(p.deal, hs.plot.pep), hs.plot.pop));
@@ -144,7 +144,7 @@ contract UniNFTHook is HookMix {
 
     // respective amounts of token0 and token1 that this position
     // would yield if burned now
-    function amounts(uint tokenId, UniNFTHookStorage storage hs) view internal returns (Amounts memory) {
+    function amounts(uint tokenId, UniNFTHookStorage storage hs) internal view returns (Amounts memory) {
         Amounts memory amts;
         uint24 fee;
 
@@ -192,19 +192,19 @@ contract UniNFTHook is HookMix {
         UniNFTHookStorage storage hs  = getStorage(i);
 
         if (xs.length == 0) {
-            if (key == 'nfpm') { hs.nfpm = INFPM(address(bytes20(val)));
-            } else if (key == 'room') { hs.room = uint(val);
-            } else if (key == 'wrap') { hs.wrap = IUniWrapper(address(bytes20(val)));
-            } else if (key == 'pep')  { hs.plot.pep = uint(val);
-            } else if (key == 'pop')  { hs.plot.pop = uint(val);
+            if (key == "nfpm") { hs.nfpm = INFPM(address(bytes20(val)));
+            } else if (key == "room") { hs.room = uint(val);
+            } else if (key == "wrap") { hs.wrap = IUniWrapper(address(bytes20(val)));
+            } else if (key == "pep")  { hs.plot.pep = uint(val);
+            } else if (key == "pop")  { hs.plot.pop = uint(val);
             } else { revert ErrWrongKey(); }
             emit NewPalm1(key, i, val);
         } else if (xs.length == 1) {
             address gem = address(bytes20(xs[0]));
 
-            if (key == 'src') { hs.sources[gem].rudd.src = address(bytes20(val));
-            } else if (key == 'tag') { hs.sources[gem].rudd.tag = val;
-            } else if (key == 'liqr') { hs.sources[gem].liqr = uint(val);
+            if (key == "src") { hs.sources[gem].rudd.src = address(bytes20(val));
+            } else if (key == "tag") { hs.sources[gem].rudd.tag = val;
+            } else if (key == "liqr") { hs.sources[gem].liqr = uint(val);
             } else { revert ErrWrongKey(); }
             emit NewPalm2(key, i, xs[0], val);
         } else {
@@ -213,22 +213,22 @@ contract UniNFTHook is HookMix {
     }
 
     function get(bytes32 key, bytes32 i, bytes32[] calldata xs)
-      view external returns (bytes32) {
+      external view returns (bytes32) {
         UniNFTHookStorage storage hs  = getStorage(i);
 
         if (xs.length == 0) {
-            if (key == 'nfpm') { return bytes32(bytes20(address(hs.nfpm)));
-            } else if (key == 'room') { return bytes32(hs.room);
-            } else if (key == 'wrap') { return bytes32(bytes20(address(hs.wrap)));
-            } else if (key == 'pep')  { return bytes32(hs.plot.pep);
-            } else if (key == 'pop')  { return bytes32(hs.plot.pop);
+            if (key == "nfpm") { return bytes32(bytes20(address(hs.nfpm)));
+            } else if (key == "room") { return bytes32(hs.room);
+            } else if (key == "wrap") { return bytes32(bytes20(address(hs.wrap)));
+            } else if (key == "pep")  { return bytes32(hs.plot.pep);
+            } else if (key == "pop")  { return bytes32(hs.plot.pop);
             } else { revert ErrWrongKey(); }
         } else if (xs.length == 1) {
             address gem = address(bytes20(xs[0]));
 
-            if (key == 'src') { return bytes32(bytes20(hs.sources[gem].rudd.src));
-            } else if (key == 'tag') { return hs.sources[gem].rudd.tag;
-            } else if (key == 'liqr') { return bytes32(hs.sources[gem].liqr);
+            if (key == "src") { return bytes32(bytes20(hs.sources[gem].rudd.src));
+            } else if (key == "tag") { return hs.sources[gem].rudd.tag;
+            } else if (key == "liqr") { return bytes32(hs.sources[gem].liqr);
             } else { revert ErrWrongKey(); }
         } else {
             revert ErrWrongKey();

@@ -135,6 +135,9 @@ contract BallTest is BaseHelper {
             ricodai,
             ricorisk,
             uniwrapper,
+            DAI,
+            DAI_USD_AGG,
+            XAU_USD_AGG,
             INIT_PAR,
             100000 * WAD,
             20000, // ricodai
@@ -145,10 +148,7 @@ contract BallTest is BaseHelper {
             RAY,  // plat.pop
             2,    // plot.pep
             RAY,  // plot.pop
-            Bank.Ramp(WAD / BLN, block.timestamp, 1, WAD),
-            DAI,
-            DAI_USD_AGG,
-            XAU_USD_AGG
+            Bank.Ramp(WAD / BLN, block.timestamp, 1, WAD)
         );
 
         Ball ball = new Ball(bargs);

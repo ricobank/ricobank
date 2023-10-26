@@ -4,25 +4,25 @@
 
 pragma solidity ^0.8.19;
 
-import { Vat }  from './vat.sol';
-import { Bank, Gem } from './bank.sol';
+import { Vat }  from "./vat.sol";
+import { Bank, Gem } from "./bank.sol";
 
 // accounting mechanism
 // triggers collateral (flip), surplus (flap), and deficit (flop) auctions
 contract Vow is Bank {
-    function RISK() view external returns (Gem) {return getVowStorage().RISK;}
-    function ramp() view external returns (Ramp memory) {
+    function RISK() external view returns (Gem) {return getVowStorage().risk;}
+    function ramp() external view returns (Ramp memory) {
         return getVowStorage().ramp;
     }
-    function toll() view external returns (uint) { return getVowStorage().toll; }
-    function rudd() view external returns (Rudd memory) { return getVowStorage().rudd; }
-    function plat() view external returns (Plx memory) { return getVowStorage().plat; }
-    function plot() view external returns (Plx memory) { return getVowStorage().plot; }
+    function toll() external view returns (uint) { return getVowStorage().toll; }
+    function rudd() external view returns (Rudd memory) { return getVowStorage().rudd; }
+    function plat() external view returns (Plx memory) { return getVowStorage().plat; }
+    function plot() external view returns (Plx memory) { return getVowStorage().plot; }
 
     error ErrReflop();
     error ErrOutDated();
 
-    function keep(bytes32[] calldata ilks) _flog_ external {
+    function keep(bytes32[] calldata ilks) external _flog_ {
         VowStorage storage  vowS  = getVowStorage();
         VatStorage storage  vatS  = getVatStorage();
         BankStorage storage bankS = getBankStorage();
@@ -32,7 +32,7 @@ contract Vow is Bank {
         }
 
         Gem rico = bankS.rico;
-        Gem risk = vowS.RISK;
+        Gem risk = vowS.risk;
         uint joy = vatS.joy;
 
         // use equal scales for sin and joy
@@ -55,7 +55,7 @@ contract Vow is Bank {
             uint flap  = wmul(joy - 1, vowS.ramp.wel);
             joy       -= flap;
             vatS.joy   = joy;
-            emit NewPalm0('joy', bytes32(joy));
+            emit NewPalm0("joy", bytes32(joy));
 
             uint price = rdiv(mash, _price()) + 1;
             uint sell  = rmul(flap, RAY - vowS.toll);
@@ -101,7 +101,7 @@ contract Vow is Bank {
 
             // update last flop stamp
             vowS.ramp.bel = bel;
-            emit NewPalm0('bel', bytes32(bel));
+            emit NewPalm0("bel", bytes32(bel));
 
             Gem(rico).burn(msg.sender, earn);
             Gem(risk).mint(msg.sender, flop);
@@ -109,7 +109,7 @@ contract Vow is Bank {
             // new joy will heal some sin in next flop
             joy     += earn;
             vatS.joy = joy;
-            emit NewPalm0('joy', bytes32(joy));
+            emit NewPalm0("joy", bytes32(joy));
 
         }
     }
@@ -118,13 +118,13 @@ contract Vow is Bank {
         VatStorage storage vs = getVatStorage();
 
         vs.sin  = vs.sin  - (wad * RAY);
-        emit NewPalm0('sin', bytes32(vs.sin));
+        emit NewPalm0("sin", bytes32(vs.sin));
 
         vs.joy  = (joy = vs.joy - wad);
-        emit NewPalm0('joy', bytes32(joy));
+        emit NewPalm0("joy", bytes32(joy));
 
         vs.debt = vs.debt - wad;
-        emit NewPalm0('debt', bytes32(vs.debt));
+        emit NewPalm0("debt", bytes32(vs.debt));
     }
 
     function _price() internal view returns (uint) {
