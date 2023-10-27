@@ -68,7 +68,7 @@ contract UniNFTHook is HookMix {
         uint dinkLen                 = p.dink.length;
 
         // dink is a nonempty packed list of uint tokenIds
-        if (dinkLen % 32 != 0) revert ErrDinkLength();
+        unchecked {if (dinkLen % 32 != 0) revert ErrDinkLength();}
 
         // first word must either be LOCK (add token) or FREE (remove token)
         int dir = dinkLen == 0 ? LOCK : int(uint(bytes32(p.dink[:32])));
@@ -76,32 +76,35 @@ contract UniNFTHook is HookMix {
         if (dir == LOCK) {
             // safer if locking ink and wiping art
             safer = p.dart <= 0;
+            unchecked {
+                // add uni positions
+                for (uint idx = 32; idx < dinkLen; idx += 32) {
+                    uint tokenId = uint(bytes32(p.dink[idx:idx+32]));
+                    hs.nfpm.transferFrom(p.sender, address(this), tokenId);
 
-            // add uni positions
-            for (uint idx = 32; idx < dinkLen; idx += 32) {
-                uint tokenId = uint(bytes32(p.dink[idx:idx+32]));
-                hs.nfpm.transferFrom(p.sender, address(this), tokenId);
+                    // record it in ink
+                    tokenIds.push(tokenId);
 
-                // record it in ink
-                tokenIds.push(tokenId);
-
-                // limit the number of positions in the CDP
-                if (tokenIds.length > hs.room) revert ErrFull();
+                    // limit the number of positions in the CDP
+                    if (tokenIds.length > hs.room) revert ErrFull();
+                }
             }
         } else if (dir == FREE) {
-            // remove uni positions
-            for (uint j = 32; j < dinkLen; j += 32) {
-                uint toss = uint(bytes32(p.dink[j:j+32]));
-                uint size = tokenIds.length;
-                for (uint k = 0; k < size; ++k) {
-                    if (tokenIds[k] == toss) {
-                        tokenIds[k] = tokenIds[size - 1];
-                        tokenIds.pop();
-                        hs.nfpm.transferFrom(address(this), p.u, toss);
-                        break;
+            unchecked {
+                // remove uni positions
+                for (uint j = 32; j < dinkLen; j += 32) {
+                    uint toss = uint(bytes32(p.dink[j:j+32]));
+                    uint size = tokenIds.length;
+                    for (uint k = 0; k < size; ++k) {
+                        if (tokenIds[k] == toss) {
+                            tokenIds[k] = tokenIds[size - 1];
+                            tokenIds.pop();
+                            hs.nfpm.transferFrom(address(this), p.u, toss);
+                            break;
+                        }
                     }
+                    if (tokenIds.length == size) revert ErrNotFound();
                 }
-                if (tokenIds.length == size) revert ErrNotFound();
             }
         } else revert ErrDir();
 
@@ -168,7 +171,7 @@ contract UniNFTHook is HookMix {
         minttl = type(uint256).max;
         uint256 ttl; bytes32 val;
 
-        for (uint idx = 0; idx < tokenIds.length; ++idx) {
+        for (uint idx = 0; idx < tokenIds.length;) {
             // get amounts of token0 and token1
             Amounts memory amts = amounts(tokenIds[idx], hs);
             Source storage src0 = hs.sources[amts.tok0];
@@ -184,6 +187,7 @@ contract UniNFTHook is HookMix {
             minttl = min(minttl, ttl);
             tot += amts.amt1 * uint(val);
             cut += amts.amt1 * rdiv(uint(val), liqr);
+            unchecked {++idx;}
         }
     }
 

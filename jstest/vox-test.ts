@@ -212,7 +212,7 @@ describe('Vox', () => {
     })
 
     it('deploy gas', async () => {
-      await check(ethers.BigNumber.from(deploygas), 39032272)
+      await check(ethers.BigNumber.from(deploygas), 38985557)
     })
 
     it('poke gas', async () => {
@@ -365,12 +365,11 @@ describe('Vox', () => {
         )
         await send(bank.frob, b32(':uninft'), ALI, dink, wad(10))
 
-
         dink = ethers.utils.solidityPack(
             ['int', 'uint', 'uint'], [-1, ricodaitokids[2], ricodaitokids[1]]
         )
         let gas = await bank.estimateGas.frob(b32(':uninft'), ALI, dink, wad(-9))
-        await check(gas, 447702)
+        await check(gas, 446892)
         await send(bank.frob, b32(':uninft'), ALI, dink, wad(-9))
     })
   })

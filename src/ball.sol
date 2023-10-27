@@ -203,7 +203,7 @@ contract Ball is Math, Ward {
 
         fbank.file("rico", bytes32(bytes20(rico)));
         fbank.file("risk", bytes32(bytes20(risk)));
-        fbank.file("fb",  bytes32(bytes20(feedbase)));
+        fbank.file("fb",   bytes32(bytes20(feedbase)));
 
         fbank.file("par",  bytes32(args.par));
         fbank.file("ceil", bytes32(args.ceil));

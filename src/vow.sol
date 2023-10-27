@@ -27,8 +27,9 @@ contract Vow is Bank {
         VatStorage storage  vatS  = getVatStorage();
         BankStorage storage bankS = getBankStorage();
 
-        for (uint256 i = 0; i < ilks.length; ++i) {
+        for (uint256 i = 0; i < ilks.length;) {
             Vat(address(this)).drip(ilks[i]);
+            unchecked {++i;}
         }
 
         Gem rico = bankS.rico;

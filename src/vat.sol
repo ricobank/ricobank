@@ -116,7 +116,7 @@ contract Vat is Bank {
     }
 
     function frob(bytes32 i, address u, bytes calldata dink, int dart)
-      public _flog_ _lock_
+      external _flog_ _lock_
     {
         VatStorage storage vs = getVatStorage();
         Ilk storage ilk = vs.ilks[i];
@@ -196,7 +196,7 @@ contract Vat is Bank {
         Ilk storage ilk = vs.ilks[i];
 
         uint art = vs.urns[i][u];
-        vs.urns[i][u] = 0;
+        delete vs.urns[i][u];
         emit NewPalm2("art", i, bytes32(bytes20(u)), bytes32(uint(0)));
 
         // bill is the debt hook will attempt to cover when auctioning ink

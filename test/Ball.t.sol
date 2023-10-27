@@ -290,7 +290,6 @@ contract BallTest is BaseHelper {
         assertGt(WethLike(WETH).balanceOf(me), meweth);
     }
 
-
     function test_ball_flap() public _flap_after_ {
         Vat(bank).frob(WETH_ILK, me, abi.encodePacked(wethamt), safedart);
         vm.expectRevert(Vat.ErrSafeBail.selector);
