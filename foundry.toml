@@ -22,6 +22,9 @@ fail_on_revert = false
 runs = 1
 depth = 10000
 
+[profile.disallow_reverts.invariant]
+fail_on_revert = true
+
 [profile.lite.optimizer_details.yulDetails]
 stackAllocation = true
 optimizerSteps = ''

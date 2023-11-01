@@ -10,7 +10,7 @@ import { BaseHelper } from "../BaseHelper.sol";
 import { ERC20Handler } from './ERC20Handler.sol';
 
 // Uses single WETH ilk and modifies WETH and RICO price during run
-contract InvariantFluidPrice is Test, BaseHelper {
+contract InvariantRevertSearch is Test, BaseHelper {
     ERC20Handler handler;
     uint256 cap;
     uint256 icap;
@@ -28,25 +28,27 @@ contract InvariantFluidPrice is Test, BaseHelper {
         icap    = rinv(cap);
 
         targetContract(address(handler));
-        bytes4[] memory selectors = new bytes4[](10);
-        selectors[0] = ERC20Handler.frob.selector;
-        selectors[1] = ERC20Handler.frob.selector;  // add frob twice to double probability
-        selectors[2] = ERC20Handler.bail.selector;
-        selectors[3] = ERC20Handler.keep.selector;
-        selectors[4] = ERC20Handler.drip.selector;
-        selectors[5] = ERC20Handler.poke.selector;
-        selectors[6] = ERC20Handler.mark.selector;
-        selectors[7] = ERC20Handler.wait.selector;
-        selectors[8] = ERC20Handler.date.selector;
-        selectors[9] = ERC20Handler.move.selector;
+        bytes4[] memory selectors = new bytes4[](9);
+        selectors[0] = ERC20Handler.norev_frob.selector;
+        selectors[1] = ERC20Handler.norev_frob.selector;  // add frob twice to double probability
+        selectors[2] = ERC20Handler.norev_bail.selector;
+        selectors[3] = ERC20Handler.norev_keep.selector;
+        selectors[4] = ERC20Handler.norev_drip.selector;
+        selectors[5] = ERC20Handler.norev_poke.selector;
+        selectors[6] = ERC20Handler.norev_mark.selector;
+        selectors[7] = ERC20Handler.norev_wait.selector;
+        selectors[8] = ERC20Handler.norev_move.selector;
         targetSelector(FuzzSelector({
             addr:      address(handler),
             selectors: selectors
         }));
+
+        handler.fresh();
+        handler.norev_move(true);
     }
 
     // all invariant tests combined for efficiency
-    function invariant_core() external {
+    function invariant_revert_search() external {
         uint sup  = rico.totalSupply();
         uint joy  = vat.joy();
         uint debt = vat.debt();
