@@ -212,7 +212,7 @@ describe('Vox', () => {
     })
 
     it('deploy gas', async () => {
-      await check(ethers.BigNumber.from(deploygas), 38985557)
+      await check(ethers.BigNumber.from(deploygas), 39027962)
     })
 
     it('poke gas', async () => {
@@ -266,7 +266,7 @@ describe('Vox', () => {
       await send(bank.drip, b32('weth'))
 
       let gas = await bank.estimateGas.keep([])
-      await check(gas, 118588)
+      await check(gas, 119371)
     })
 
     it('keep deficit gas', async() => {
@@ -276,7 +276,7 @@ describe('Vox', () => {
       await send(bank.bail, b32('weth'), ALI)
 
       let gas = await bank.estimateGas.keep([])
-      await check(gas, 126685)
+      await check(gas, 127488)
     })
 
     it('poke up gas', async () => {

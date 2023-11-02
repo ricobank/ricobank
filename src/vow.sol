@@ -46,11 +46,12 @@ contract Vow is Bank {
                 joy = _heal(sin - 1);
             }
 
-            // deal decreases as surplus increases, i.e. if there's a massive
+            // mash decreases as surplus increases, i.e. if there's a massive
             // surplus the system deduces that it's overpricing rico
-            uint debt = vatS.debt;
-            uint deal = rdiv(debt, debt + joy);
-            uint mash = rmul(vowS.plat.pop, rpow(deal, vowS.plat.pep));
+            uint price = _price();
+            uint mcap  = rmul(price, risk.totalSupply());
+            uint mash  = rpow(rdiv(mcap, mcap + joy), vowS.plat.pep);
+            mash       = rmul(vowS.plat.pop, mash);
 
             // buy-and-burn risk with remaining (`flap`) rico
             uint flap  = wmul(joy - 1, vowS.ramp.wel);
@@ -58,9 +59,8 @@ contract Vow is Bank {
             vatS.joy   = joy;
             emit NewPalm0("joy", bytes32(joy));
 
-            uint price = rdiv(mash, _price()) + 1;
             uint sell  = rmul(flap, RAY - vowS.toll);
-            uint earn  = rmul(sell, price) + 1;
+            uint earn  = rmul(sell, rdiv(mash, price) + 1) + 1;
 
             // swap rico for RISK, pay protocol fee
             Gem(risk).burn(msg.sender, earn);
@@ -78,12 +78,13 @@ contract Vow is Bank {
                 joy = _heal(joy - 1);
             }
 
-            // deal decreases as system becomes undercollateralized
+            // mash decreases as system becomes undercollateralized
             // i.e. if it's very undercollateralized then bank deduces
             // that it's overpricing RISK
-            uint debt  = vatS.debt;
-            uint deal  = rdiv(debt, debt + under);
-            uint mash  = rmul(vowS.plot.pop, rpow(deal, vowS.plot.pep));
+            uint price = _price();
+            uint mcap  = rmul(price, risk.totalSupply());
+            uint mash  = rpow(rdiv(mcap, mcap + under), vowS.plot.pep);
+            mash       = rmul(vowS.plot.pop, mash);
 
             // rate-limit flop
             uint elapsed = min(block.timestamp - vowS.ramp.bel, vowS.ramp.cel);
@@ -91,7 +92,7 @@ contract Vow is Bank {
             if (0 == flop) revert ErrReflop();
 
             // swap RISK for rico to cover sin
-            uint earn = rmul(flop, rmul(_price(), mash));
+            uint earn = rmul(flop, rmul(price, mash));
             uint bel  = block.timestamp;
             if (earn > under) {
                 // always advances >= 1s from max(vowS.bel, timestamp - cel)

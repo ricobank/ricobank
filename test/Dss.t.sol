@@ -482,21 +482,23 @@ contract DssBiteTest is DssVatTest {
         assertEq(Vat(bank).sin() / RAY, ricoamt);
     }
 
-    // todo maybe a similar test but get the surplus using frob/bail?
     function test_flappy_bite() public _bite_ {
         uint amt = 100 * WAD;
         force_fees(amt);
+
+        // burn risk so that risk totalSupply == joy
+        risk.burn(address(1), risk.totalSupply() - amt);
+
         assertEq(gov.balanceOf(me), amt);
         assertEq(vow_Awe() / RAY, 0);
 
         feedpush(RICO_RISK_TAG, bytes32(RAY), UINT256_MAX);
         feedpush(RISK_RICO_TAG, bytes32(RAY), UINT256_MAX);
-        gov.mint(address(guy), 100 * WAD);
         Vow(bank).keep(ilks);
         assertEq(rico.balanceOf(bank), 0);
         assertEq(vow_Awe() / RAY, 0);
 
-        // all joy & debt in existence are in vow, so deal will be x / (x * 2) == 2 wad
+        // deal = risk.totalSupply() / (joy + risk.totalSupply()) == 1/2
         // pop == 1 and pep == 2
         // => mash will be pop * deal ^ pep == 1/4
         // feeds are at equal prices so rico will be sold for 1/4 price

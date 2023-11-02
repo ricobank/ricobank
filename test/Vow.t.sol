@@ -110,12 +110,12 @@ contract VowTest is Test, RicoSetUp {
         // set pop so initial flop discount is about 1%
         File(bank).file('plot.pop', bytes32(pop));
 
-        uint debt = Vat(bank).debt();
+        uint mcap = rmul(risk_price_in_rico, risk.totalSupply());
         uint sin  = Vat(bank).sin() / RAY;
         uint joy  = Vat(bank).joy();
 
         uint flop = sin - joy;
-        uint deal = rdiv(debt, debt + flop);
+        uint deal = rdiv(mcap, mcap + flop);
         uint mash = rmul(pop, rpow(deal, pep));
         uint expected_rico_per_risk = rmul(risk_price_in_rico, mash);
 
@@ -243,7 +243,9 @@ contract VowTest is Test, RicoSetUp {
         // create the sin and kick off risk sale
         vm.expectCall(bank, abi.encodePacked(Vat.bail.selector));
         Vat(bank).bail(gilk, self);
-        feedpush(RISK_RICO_TAG, bytes32(10000 * RAY), block.timestamp + 1000);
+
+        uint riskrico_price = 1000 * RAY;
+        feedpush(RISK_RICO_TAG, bytes32(riskrico_price), block.timestamp + 1000);
         Vow(bank).keep(ilks);
         assertEq(risk.totalSupply(), supply + WAD);
 
@@ -372,11 +374,11 @@ contract VowTest is Test, RicoSetUp {
         assertGt(sin, 100);
         assertGt(sin, Vat(bank).joy());
         uint joy = Vat(bank).joy();
-        uint debt = Vat(bank).debt() - joy; // post heal debt
+        uint mcap = risk.totalSupply();
         uint under = sin - joy;
         // feed price, pep, and pop are all 1
         // -> deal should be debt / (under + debt)
-        uint deal = rdiv(debt, under + debt);
+        uint deal = rdiv(mcap, under + mcap);
 
         // keep
         uint earn = rico.balanceOf(self);
@@ -394,7 +396,8 @@ contract VowTest is Test, RicoSetUp {
         uint _dink = 10000 * WAD;
         gold.mint(address(guy), _dink);
         risk.mint(address(guy), 1000000 * WAD);
-        feedpush(RISK_RICO_TAG, bytes32(RAY / 10), type(uint).max);
+        uint riskrico_price = RAY / 10;
+        feedpush(RISK_RICO_TAG, bytes32(riskrico_price), type(uint).max);
 
         vm.startPrank(address(guy));
 
@@ -409,9 +412,9 @@ contract VowTest is Test, RicoSetUp {
         uint burned = risk.balanceOf(address(guy));
 
         for (uint i = 0; i < ilks.length; i++) Vat(bank).drip(ilks[i]);
-        uint debt  = Vat(bank).debt() - Vat(bank).sin() / RAY;
+        uint mcap  = rmul(riskrico_price, risk.totalSupply());
         uint flap  = Vat(bank).joy() - Vat(bank).sin() / RAY;
-        uint mash  = rpow(rinv(rdiv(debt + flap, debt)), 2); // pep == 2
+        uint mash  = rpow(rinv(rdiv(mcap + flap, mcap)), 2); // pep == 2
         uint price = rmul(10 * RAY, mash);
 
         Vow(bank).keep(ilks);
@@ -461,13 +464,13 @@ contract VowTest is Test, RicoSetUp {
         File(bank).file('plat.pep', bytes32(pep));
         File(bank).file('plat.pop', bytes32(pop));
 
-        feedpush(RISK_RICO_TAG, bytes32(100 * RAY), type(uint).max);
+        uint riskrico_price = 100 * RAY;
+        feedpush(RISK_RICO_TAG, bytes32(riskrico_price), type(uint).max);
         // force surplus == debt_before_keep / 3
         force_fees(Vat(bank).sin() / RAY + Vat(bank).debt() / 3);
 
-        uint debt = Vat(bank).debt();
-        // 1/4 because force_fees increased debt
-        uint deal = rdiv(debt, debt + (debt * 1 / 4));
+        uint mcap = rmul(riskrico_price, risk.totalSupply());
+        uint deal = rdiv(mcap, mcap + Vat(bank).joy() - Vat(bank).sin() / RAY);
         uint mash = rmul(pop, rpow(deal, pep));
 
         // check vow's ask price
@@ -873,4 +876,5 @@ contract VowJsTest is Test, RicoSetUp {
         assertLt(bel, block.timestamp);
         
     }
+
 }
