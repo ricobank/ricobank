@@ -248,7 +248,7 @@ contract VowTest is Test, RicoSetUp {
         // art == 10 * ink
         feedpush(grtag, bytes32(RAY * 1000), block.timestamp + 1000);
         Vat(bank).frob(gilk, address(this), abi.encodePacked(1000 * WAD), int(10000 * WAD));
- 
+
         // set rate of risk sales to near zero
         // set mint ramp higher to use risk ramp
         uint supply = risk.totalSupply();
@@ -667,7 +667,7 @@ contract VowJsTest is Test, RicoSetUp {
         dai.transfer(address(1), 2000 * WAD);
         rico.transfer(address(1), 4000 * WAD);
         risk.transfer(address(1), 2000 * WAD);
-        
+
         File(bank).file('rel', bytes32(uint(WAD)));
         File(bank).file('bel', bytes32(uint(block.timestamp)));
         File(bank).file('cel', bytes32(uint(1)));

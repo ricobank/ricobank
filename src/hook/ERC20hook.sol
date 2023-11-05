@@ -33,7 +33,7 @@ contract ERC20Hook is HookMix {
     }
 
     function frobhook(FHParams calldata p)
-      external returns (bool safer)
+      external payable returns (bool safer)
     {
         ERC20HookStorage storage hs = getStorage(p.i);
 
@@ -72,7 +72,7 @@ contract ERC20Hook is HookMix {
     }
 
     function bailhook(BHParams calldata p)
-      external returns (bytes memory)
+      external payable returns (bytes memory)
     {
         ERC20HookStorage storage hs  = getStorage(p.i);
 
@@ -102,7 +102,7 @@ contract ERC20Hook is HookMix {
     }
 
     function safehook(bytes32 i, address u)
-      public view returns (uint tot, uint cut, uint ttl)
+      external view returns (uint tot, uint cut, uint ttl)
     {
         ERC20HookStorage storage hs  = getStorage(i);
 
@@ -114,7 +114,7 @@ contract ERC20Hook is HookMix {
     }
 
     function file(bytes32 key, bytes32 i, bytes32[] calldata xs, bytes32 val)
-      external {
+      external payable {
         ERC20HookStorage storage hs  = getStorage(i);
 
         if (xs.length == 0) {

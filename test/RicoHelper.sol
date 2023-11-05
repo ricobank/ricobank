@@ -41,11 +41,11 @@ contract Guy {
 
 // pretty normal single-uint frobhook
 contract FrobHook is Hook {
-    function frobhook(FHParams calldata p) pure external returns (bool) {
+    function frobhook(FHParams calldata p) external payable returns (bool) {
         // safer when dink >= 0 and dart <= 0
         return int(uint(bytes32(p.dink[:32]))) >= 0 && p.dart <= 0;
     }
-    function bailhook(BHParams calldata) external returns (bytes memory) {}
+    function bailhook(BHParams calldata) external payable returns (bytes memory) {}
     function safehook(
         bytes32, address
     ) pure external returns (uint, uint, uint) {
@@ -59,8 +59,8 @@ contract FrobHook is Hook {
 
 // doesn't really do anything, always returns 0 or false
 contract ZeroHook is Hook {
-    function frobhook(FHParams calldata) external returns (bool) {}
-    function bailhook(BHParams calldata) external returns (bytes memory) {}
+    function frobhook(FHParams calldata) external payable returns (bool) {}
+    function bailhook(BHParams calldata) external payable returns (bytes memory) {}
     function safehook(
         bytes32, address
     ) pure external returns (uint, uint, uint){

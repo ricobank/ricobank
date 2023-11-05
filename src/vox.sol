@@ -33,7 +33,7 @@ contract Vox is Bank {
     function tip() external view returns (Rudd memory) {return getVoxStorage().tip;}
 
     // poke par and way
-    function poke() external _flog_ {
+    function poke() external payable _flog_ {
         VatStorage storage vatS = getVatStorage();
         VoxStorage storage voxS = getVoxStorage();
 

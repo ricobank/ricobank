@@ -24,8 +24,8 @@ interface Hook {
         uint256 tot;
     }
 
-    function frobhook(FHParams calldata) external returns (bool safer);
-    function bailhook(BHParams calldata) external returns (bytes memory);
+    function frobhook(FHParams calldata) external payable returns (bool safer);
+    function bailhook(BHParams calldata) external payable returns (bytes memory);
     function safehook(bytes32 i, address u) external view
       returns (uint tot, uint cut, uint minttl);
     function ink(bytes32 i, address u) external view returns (bytes memory);

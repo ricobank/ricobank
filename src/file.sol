@@ -11,7 +11,7 @@ contract File is Bank {
     error ErrHighToll();
     error ErrHighWel();
 
-    function file(bytes32 key, bytes32 val) external onlyOwner _flog_ {
+    function file(bytes32 key, bytes32 val) external payable onlyOwner _flog_ {
         VatStorage storage vatS = getVatStorage();
         VowStorage storage vowS = getVowStorage();
         VoxStorage storage voxS = getVoxStorage();

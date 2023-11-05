@@ -61,7 +61,7 @@ contract UniNFTHook is HookMix {
     error ErrDir();
     error ErrFull();
 
-    function frobhook(FHParams calldata p) external returns (bool safer)
+    function frobhook(FHParams calldata p) external payable returns (bool safer)
     {
         UniNFTHookStorage storage hs = getStorage(p.i);
         uint[] storage tokenIds      = hs.inks[p.u];
@@ -114,7 +114,7 @@ contract UniNFTHook is HookMix {
         emit NewPalmBytes2("ink", p.i, bytes32(bytes20(p.u)), abi.encodePacked(tokenIds));
     }
 
-    function bailhook(BHParams calldata p) external returns (bytes memory)
+    function bailhook(BHParams calldata p) external payable returns (bytes memory)
     {
         UniNFTHookStorage storage hs  = getStorage(p.i);
         uint[]            memory  ids = hs.inks[p.u];
@@ -164,7 +164,8 @@ contract UniNFTHook is HookMix {
         return amts;
     }
 
-    function safehook(bytes32 i, address u) public view returns (uint tot, uint cut, uint minttl) {
+    function safehook(bytes32 i, address u)
+      external view returns (uint tot, uint cut, uint minttl) {
         Feedbase fb = getBankStorage().fb;
         UniNFTHookStorage storage hs       = getStorage(i);
         uint256[]         storage tokenIds = hs.inks[u];
@@ -192,7 +193,7 @@ contract UniNFTHook is HookMix {
     }
 
     function file(bytes32 key, bytes32 i, bytes32[] calldata xs, bytes32 val)
-      external {
+      external payable {
         UniNFTHookStorage storage hs  = getStorage(i);
 
         if (xs.length == 0) {

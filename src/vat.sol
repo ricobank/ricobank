@@ -68,7 +68,7 @@ contract Vat is Bank {
     }
 
     function init(bytes32 ilk, address hook)
-      external onlyOwner _flog_
+      external payable onlyOwner _flog_
     {
         VatStorage storage vs = getVatStorage();
         if (vs.ilks[ilk].rack != 0) revert ErrMultiIlk();
@@ -116,7 +116,7 @@ contract Vat is Bank {
     }
 
     function frob(bytes32 i, address u, bytes calldata dink, int dart)
-      external _flog_ _lock_
+      external payable _flog_ _lock_
     {
         VatStorage storage vs = getVatStorage();
         Ilk storage ilk = vs.ilks[i];
@@ -186,7 +186,7 @@ contract Vat is Bank {
     }
 
     function bail(bytes32 i, address u)
-      external _flog_ _lock_ returns (bytes memory)
+      external payable _flog_ _lock_ returns (bytes memory)
     {
         _drip(i);
         (Spot spot, uint deal, uint tot) = safe(i, u);
@@ -221,7 +221,7 @@ contract Vat is Bank {
         ), (bytes));
     }
 
-    function drip(bytes32 i) external _flog_ { _drip(i); }
+    function drip(bytes32 i) external payable _flog_ { _drip(i); }
 
     // drip without flog
     function _drip(bytes32 i) internal {
@@ -256,7 +256,7 @@ contract Vat is Bank {
     }
 
     function flash(address code, bytes calldata data)
-      external returns (bytes memory result) {
+      external payable returns (bytes memory result) {
         // lock->mint->call->burn->unlock
         VatStorage storage vs = getVatStorage();
         if (vs.flock == LOCKED) revert ErrLock();
@@ -272,7 +272,7 @@ contract Vat is Bank {
     }
 
     function filk(bytes32 ilk, bytes32 key, bytes32 val)
-      external onlyOwner _flog_
+      external payable onlyOwner _flog_
     {
         uint _val = uint(val);
         VatStorage storage vs = getVatStorage();
@@ -307,13 +307,13 @@ contract Vat is Bank {
     }
 
     function hookcallext(bytes32 i, bytes memory indata)
-      external returns (bytes memory) {
+      external payable returns (bytes memory) {
         if (msg.sender != address(this)) revert ErrHookCallerNotBank();
         return _hookcall(i, indata);
     }
 
     function filh(bytes32 ilk, bytes32 key, bytes32[] calldata xs, bytes32 val)
-      external onlyOwner _flog_ {
+      external payable onlyOwner _flog_ {
         _hookcall(ilk, abi.encodeWithSignature(
             "file(bytes32,bytes32,bytes32[],bytes32)", key, ilk, xs, val
         ));

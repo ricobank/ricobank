@@ -22,7 +22,7 @@ contract Vow is Bank {
     error ErrReflop();
     error ErrOutDated();
 
-    function keep(bytes32[] calldata ilks) external _flog_ {
+    function keep(bytes32[] calldata ilks) external payable _flog_ {
         VowStorage storage  vowS  = getVowStorage();
         VatStorage storage  vatS  = getVatStorage();
         BankStorage storage bankS = getBankStorage();

@@ -85,7 +85,7 @@ contract Math {
     }
 
     // from dss src/abaci.sol:136
-    function rpow(uint256 x, uint256 n) public pure returns (uint256 z) {
+    function rpow(uint256 x, uint256 n) internal pure returns (uint256 z) {
         assembly {
             switch n case 0 { z := RAY }
             default {

@@ -971,7 +971,7 @@ contract VatTest is Test, RicoSetUp {
 
         val = Vat(bank).geth(gilk, 'tag', empty);
         assertEq(val, grtag);
- 
+
         vm.expectRevert(Bank.ErrWrongKey.selector);
         Vat(bank).geth(gilk, 'oh', empty);
 
@@ -1270,8 +1270,8 @@ contract VatTest is Test, RicoSetUp {
 // always reverts on safehook
 contract RevertSafeHook is Hook {
     error ErrBadSafe();
-    function frobhook(FHParams calldata) pure external returns (bool safer) {}
-    function bailhook(BHParams calldata) external returns (bytes memory) {}
+    function frobhook(FHParams calldata) external payable returns (bool safer) {}
+    function bailhook(BHParams calldata) external payable returns (bytes memory) {}
     function safehook(
         bytes32, address
     ) pure external returns (uint, uint, uint){ revert ErrBadSafe(); }
@@ -1280,11 +1280,11 @@ contract RevertSafeHook is Hook {
 
 // only cares about ink
 contract OnlyInkHook is Hook {
-    function frobhook(FHParams calldata p) pure external returns (bool) {
+    function frobhook(FHParams calldata p) external payable returns (bool) {
         // frob raising ink is always safer
         return int(uint(bytes32(p.dink[:32]))) >= 0;
     }
-    function bailhook(BHParams calldata) external returns (bytes memory) {}
+    function bailhook(BHParams calldata) external payable returns (bytes memory) {}
     function safehook(
         bytes32, address
     ) pure external returns (uint, uint, uint){
@@ -1297,11 +1297,11 @@ contract OnlyInkHook is Hook {
 
 // frob reenters by bail
 contract FrobBailReentrancyHook is Bank, Hook {
-    function frobhook(FHParams calldata p) external returns (bool) {
+    function frobhook(FHParams calldata p) external payable returns (bool) {
         Vat(address(this)).bail(p.i, p.u);
         return true;
     }
-    function bailhook(BHParams calldata) external pure returns (bytes memory) {
+    function bailhook(BHParams calldata) external payable returns (bytes memory) {
         return abi.encodePacked('');
     }
     function safehook(
@@ -1314,11 +1314,11 @@ contract FrobBailReentrancyHook is Bank, Hook {
 
 // bail reenters by frob
 contract BailFrobReentrancyHook is Bank, Hook {
-    function frobhook(FHParams calldata p) external returns (bool) {
+    function frobhook(FHParams calldata p) external payable returns (bool) {
         Vat(address(this)).bail(p.i, p.u);
         return true;
     }
-    function bailhook(BHParams calldata p) external returns (bytes memory) {
+    function bailhook(BHParams calldata p) external payable returns (bytes memory) {
         getBankStorage().rico.mint(address(this), WAD * 1000);
         Vat(address(this)).frob(p.i, p.u, '', int(WAD));
         return abi.encodePacked('');
