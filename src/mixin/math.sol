@@ -115,7 +115,7 @@ contract Math {
     function concat(bytes32 a, bytes32 b) internal pure returns (bytes32 res) {
         uint i;
         while (true) {
-            if (a[i] == 0) break;
+            if (i == 32 || a[i] == 0) break;
             unchecked{ i++; }
         }
         res = a | (b >> (i << 3));

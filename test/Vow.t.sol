@@ -3,32 +3,28 @@ pragma solidity ^0.8.19;
 
 import "forge-std/Test.sol";
 
-import { Gem } from '../lib/gemfab/src/gem.sol';
 import { Ward } from '../lib/feedbase/src/mixin/ward.sol';
-import { Ball } from '../src/ball.sol';
-import { Vat } from '../src/vat.sol';
-import { Vow } from '../src/vow.sol';
-import { RicoSetUp, WethLike, Guy } from "./RicoHelper.sol";
+import { Vat, Vow, File, Bank, RicoSetUp, WethLike } from "./RicoHelper.sol";
+import { Guy, FrobHook, ZeroHook } from "./RicoHelper.sol";
+import { Ball, ERC20Hook, Gem } from "./RicoHelper.sol";
 import { Asset, PoolArgs } from "./UniHelper.sol";
 import { Math } from '../src/mixin/math.sol';
 import { Hook } from '../src/hook/hook.sol';
-import { ERC20Hook } from '../src/hook/ERC20hook.sol';
-import {File} from '../src/file.sol';
-import {Bank} from '../src/bank.sol';
 
 // integrated vow/flow tests
 contract VowTest is Test, RicoSetUp {
-    uint256 public init_join = 1000;
-    uint stack = WAD * 10;
+    uint256   init_join = 1000;
+    uint      stack = WAD * 10;
     bytes32[] ilks;
-    address rico_risk_pool;
-    uint back_count;
+    uint      back_count;
 
-    function setUp() public {
+    function setUp() public
+    {
         make_bank();
         init_gold();
         ilks.push(gilk);
 
+        // some risk mint ramp values
         File(bank).file('rel', bytes32(uint(1e12)));
         File(bank).file('bel', bytes32(uint(0)));
         File(bank).file('cel', bytes32(uint(600)));
@@ -39,40 +35,43 @@ contract VowTest is Test, RicoSetUp {
         risk.approve(router, type(uint256).max);
         gold.approve(bank, type(uint256).max);
 
-        rico_risk_pool = getPoolAddr(arico, arisk, 3000);
+        // mint some rico and risk for hysteresis
         rico_mint(2000 * WAD, true);
+        rico.transfer(address(1), rico.balanceOf(self));
         risk.mint(self, 100000 * WAD);
-        PoolArgs memory rico_risk_args = getArgs(arico, 1000 * WAD, arisk, 1000 * WAD, 3000, x96(1));
-        join_pool(rico_risk_args);
 
-        PoolArgs memory gold_rico_args = getArgs(agold, 1000 * WAD, arico, 1000 * WAD, 3000, x96(1));
-        create_and_join_pool(gold_rico_args);
-
+        // non-self user
         guy = new Guy(bank);
     }
 
-    function test_flap_price() public {
+    function test_flap_price() public
+    {
         uint borrow = WAD;
+
+        // risk:rico price 0.1
+        // gold:ref price 1k
         uint rico_price_in_risk = 10;
-        feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
         feedpush(RISK_RICO_TAG, bytes32(rinv(rico_price_in_risk * RAY)), type(uint).max);
+        feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
         Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(borrow));
+
+        // accumulate a bunch of fees
         skip(BANKYEAR);
         Vat(bank).drip(gilk);
 
+        // joy depends on tart and change in rack
         uint surplus = Vat(bank).joy();
-        uint rack = Vat(bank).ilks(gilk).rack;
+        uint rack    = Vat(bank).ilks(gilk).rack;
         assertClose(surplus, rmul(rack, borrow) - borrow, 1_000_000_000);
 
         // cancel out any sin so only joy needs to be considered
         uint sin_wad = Vat(bank).sin() / RAY;
         force_fees(sin_wad);
 
+        // pep makes earn cubic with joy, pop decreases earn by 1%
         uint pep = 2;
         uint pop = RAY * 99 / 100;
-        // set pep to * 1000 growth rate
         File(bank).file('plat.pep', bytes32(pep));
-        // set pop to increase initial price by 1%
         File(bank).file('plat.pop', bytes32(pop));
 
         uint debt = Vat(bank).debt() - sin_wad;
@@ -81,8 +80,10 @@ contract VowTest is Test, RicoSetUp {
         // 0.99 * (2001.05 / (0.05 + 2001.05)) ^ 2 ~= 0.9899505278281044
         assertClose(mash, RAY * 989_950_527 / 1_000_000_000, 100_000);
 
+        // mash is earn multiplier
         uint expected_risk_cost = rmul(surplus * rico_price_in_risk, mash);
 
+        // do the surplus auction
         risk.mint(self, WAD * 1_000);
         uint self_rico_1 = rico.balanceOf(self);
         uint self_risk_1 = risk.balanceOf(self);
@@ -92,22 +93,26 @@ contract VowTest is Test, RicoSetUp {
         uint rico_gain = rico.balanceOf(self) - self_rico_1;
         uint risk_cost = self_risk_1 - risk.balanceOf(self);
 
+        // earn should depend on price and mash
         assertClose(expected_risk_cost, risk_cost, 10_000);
         assertEq(rico_gain, surplus);
     }
 
-    function test_flop_price() public {
-        uint borrow = WAD * 10000;
+    function test_flop_price() public
+    {
+        uint borrow             = WAD * 10000;
+
+        // risk:rico price 10
+        // gold:ref price 10k
         uint risk_price_in_rico = 10 * RAY;
-        feedpush(grtag, bytes32(10000 * RAY), type(uint).max);
         feedpush(RISK_RICO_TAG, bytes32(risk_price_in_rico), type(uint).max);
+        feedpush(grtag, bytes32(10000 * RAY), type(uint).max);
         Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(borrow));
 
-        // set pep to *1000 rate discount increases
+        // pep makes earn quintic with sin, pop raises it by 1%
         uint pep = 4;
         uint pop = RAY * 101 / 100;
         File(bank).file('plot.pep', bytes32(pep));
-        // set pop so initial flop discount is about 1%
         File(bank).file('plot.pop', bytes32(pop));
 
         uint mcap = rmul(risk_price_in_rico, risk.totalSupply());
@@ -122,21 +127,23 @@ contract VowTest is Test, RicoSetUp {
         uint self_rico_1 = rico.balanceOf(self);
         uint self_risk_1 = risk.balanceOf(self);
 
-        Vow(bank).keep(ilks);
+        Vow(bank).keep(single(gilk));
 
         uint rico_cost = self_rico_1 - rico.balanceOf(self);
         uint risk_gain = risk.balanceOf(self) - self_risk_1;
 
+        // rico system takes on deficit auction should be proportional to mash
         assertClose(rdiv(rico_cost, risk_gain), expected_rico_per_risk, 1000000000);
     }
 
-    function test_bail_price() public {
+    function test_bail_price() public
+    {
         // frob to edge of safety
         uint borrow = WAD * 1000;
         feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
         Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(borrow));
 
-        // drop gold/rico to 75%
+        // drop gold/rico to 75%...pep is 2, so earn is cubic
         feedpush(grtag, bytes32(750 * RAY), type(uint).max);
         // price should be 0.75**3, 0.75 for oracle drop and 0.75**2 for deal**pep
         uint expected = wmul(borrow, WAD * 75**3 / 100**3);
@@ -154,7 +161,8 @@ contract VowTest is Test, RicoSetUp {
         assertEq(gold.balanceOf(address(guy)), WAD);
     }
 
-    function test_bail_refund() public {
+    function test_bail_refund() public
+    {
         // set c ratio to double
         uint pop = RAY * 3 / 2;
         uint dink = WAD;
@@ -166,66 +174,77 @@ contract VowTest is Test, RicoSetUp {
         // frob to edge of safety
         Vat(bank).frob(gilk, self, abi.encodePacked(dink), int(borrow));
 
-        // drop gold/rico to 75%
+        // drop gold/rico to 75%...position is still overcollateralized
         feedpush(grtag, bytes32(750 * RAY), type(uint).max);
-        // position is still overcollateralized, should get a refund and guy should only pay borrowed rico
+
+        // price should be 0.75**3x, as 0.75 for oracle drop and 0.75**2 for deal factor
         rico_mint(borrow, false);
         rico.transfer(address(guy), borrow);
-        // price should be 0.75**2, as 0.75 for oracle drop and 0.75 for deal factor
         guy.bail(gilk, self);
 
-        // guy should not get all gold, should be ink * (amount borrowed / expected price for full collateral and deal)
-        // price should be 0.75**3, as 0.75 for oracle drop and 0.75**2 for deal**pep factor
+        // guy should not get all gold, as position was overcollateralized
+        // guy gets ink * (borrowed / total ink value)
         uint expected_full = rmul(wmul(borrow * 2, dink * 75**3 / 100**3), pop);
-        uint guy_earn = wmul(dink, wdiv(borrow, expected_full));
+        uint guy_earn      = wmul(dink, wdiv(borrow, expected_full));
         assertEq(gold.balanceOf(address(guy)), guy_earn);
 
-        // as self urn was overcollateralized not all ink should have been taken, check correct amount still there
+        // excess ink should be sent back to urn holder, not left in urn
         uint ink_left = _ink(gilk, self);
         assertEq(ink_left, WAD - guy_earn);
         assertGt(ink_left, 0);
     }
 
-    function test_keep_deficit_gas() public {
+    function test_basic_keep_deficit() public
+    {
+        // gold:ref price 1k
         feedpush(grtag, bytes32(1000 * RAY), block.timestamp + 1000);
         Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(WAD));
+
+        // big crash, gold:ref price 0.  bail creates some sin
         feedpush(grtag, bytes32(RAY * 0), block.timestamp + 1000);
         Vat(bank).bail(gilk, self);
 
-        bytes32[] memory gilks = new bytes32[](2);
-        gilks[0] = gilk;
-        gilks[1] = gilk;
+        // create some rico to pay for the flop
         rico_mint(100 * WAD, false);
-        uint gas = gasleft();
+
+        // add on a couple ilks so keep does more than one loop iteration
+        bytes32[] memory gilks = new bytes32[](2);
+        gilks[0] = gilk; gilks[1] = gilk;
         Vow(bank).keep(gilks);
-        check_gas(gas, 139036);
     }
 
-    function test_keep_surplus_gas() public {
+    function test_basic_keep_surplus() public
+    {
+        // set fee > 1 so rack changes
         Vat(bank).filk(gilk, 'fee', bytes32(2 * RAY));
+
+        // gold:ref price 10k
         feedpush(grtag, bytes32(10000 * RAY), block.timestamp + 1000);
         Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(3000 * WAD));
+
         skip(1);
 
+        // add on a couple ilks so keep does more than one loop iteration
         bytes32[] memory gilks = new bytes32[](2);
-        gilks[0] = gilk;
-        gilks[1] = gilk;
-        uint gas = gasleft();
+        gilks[0] = gilk; gilks[1] = gilk;
         Vow(bank).keep(gilks);
-        check_gas(gas, 133640);
     }
 
-    function test_bail_gas() public {
+    function test_basic_bail() public
+    {
+        // TODO move to vat
+        // gold:ref price 1k
         feedpush(grtag, bytes32(1000 * RAY), block.timestamp + 1000);
         Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(WAD));
+
+        // big crash and liquidation
         feedpush(grtag, bytes32(0), block.timestamp + 1000);
-        uint gas = gasleft();
         Vat(bank).bail(gilk, self);
-        check_gas(gas, 46744);
     }
 
-    // goldusd, par, and liqr all = 1 after setup
-    function test_risk_ramp_is_used() public {
+    function test_risk_ramp_is_used() public
+    {
+        // goldusd, par, and liqr all = 1 after setup
         // art == 10 * ink
         feedpush(grtag, bytes32(RAY * 1000), block.timestamp + 1000);
         Vat(bank).frob(gilk, address(this), abi.encodePacked(1000 * WAD), int(10000 * WAD));
@@ -244,117 +263,136 @@ contract VowTest is Test, RicoSetUp {
         vm.expectCall(bank, abi.encodePacked(Vat.bail.selector));
         Vat(bank).bail(gilk, self);
 
-        uint riskrico_price = 1000 * RAY;
-        feedpush(RISK_RICO_TAG, bytes32(riskrico_price), block.timestamp + 1000);
-        Vow(bank).keep(ilks);
+        // risk:rico price 1k...test risk mint amount
+        feedpush(RISK_RICO_TAG, bytes32(1000 * RAY), block.timestamp + 1000);
+        Vow(bank).keep(single(gilk));
         assertEq(risk.totalSupply(), supply + WAD);
-
-        rico_mint(10000 * WAD, true);
-        rico.transfer(address(guy), 10000 * WAD);
-
-        rico_mint(10000 * WAD, true);
-        rico.transfer(address(guy), 10000 * WAD);
-        uint vowrisk = risk.balanceOf(bank);
-
-        // vow flow.flow'd for max possible - should receive nothing back
-        assertEq(risk.balanceOf(bank), vowrisk);
     }
 
-    function test_drip() public {
+    function test_drip() public
+    {
+        // should be 0 pending fees
         uint rho = Vat(bank).ilks(gilk).rho;
         assertEq(rho, block.timestamp);
         assertEq(rico.balanceOf(self), 0);
 
+        // set high fee, gold:ref price 1k
         Vat(bank).filk(gilk, 'fee', bytes32(2 * RAY));
         feedpush(grtag, bytes32(RAY * 1000), type(uint).max);
         Vat(bank).frob(gilk, address(this), abi.encodePacked(WAD), int(WAD));
+
+        // wipe previous frob
         uint firstrico = rico.balanceOf(self);
         rico_mint(1, false); // vat burns 1 extra to round in system's favor
         Vat(bank).frob(gilk, address(this), abi.encodePacked(-int(WAD)), -int(WAD));
 
         skip(1);
-        // can only mint a wad rico for a wad gold
+
+        // test rack...right now can only mint a wad rico for a wad gold
         Vat(bank).frob(gilk, address(this), abi.encodePacked(WAD), int(WAD));
         assertEq(rico.balanceOf(self), firstrico);
-        rico_mint(1, false);
+        rico_mint(1, false); // rounding
         Vat(bank).frob(gilk, address(this), abi.encodePacked(-int(WAD)), -int(WAD));
 
-        // until drip, then can mint more
+        // until drip updates rack, then can mint more
         Vat(bank).drip(gilk);
         assertEq(rico.balanceOf(self), 0);
         Vat(bank).frob(gilk, address(this), abi.encodePacked(WAD), int(WAD));
         assertEq(rico.balanceOf(self), firstrico * 2);
     }
 
-    function test_keep_balanced() public {
+    function test_keep_balanced() public
+    {
+        // fee == 2, so drip doubles debt every second
+        // -> easy to predict djoy
         Vat(bank).filk(gilk, 'fee', bytes32(2 * RAY));
 
-        feedpush(grtag, bytes32(RAY * 1000), block.timestamp + 1000);
+        // frob enough rico to cover sin later
         uint amt = Vat(bank).sin() / RAY;
-        Vat(bank).frob(gilk, address(this), abi.encodePacked(amt), int(amt));
+        rico_mint(amt, false);
+
+        // djoy after 1s will be amt
         skip(1);
 
-        feedpush(grtag, bytes32(0), block.timestamp + 10000);
-
+        // keep drips gilk, should accumulate `amt` fees
         assertEq(Vat(bank).joy(), 0);
-        Vow(bank).keep(ilks);
+        Vow(bank).keep(single(gilk));
+
+        // budget balanced; shouldn't do anything, not even heal
+        assertGt(Vat(bank).joy(), 1);
         assertEq(Vat(bank).joy(), Vat(bank).sin() / RAY);
     }
 
-    function test_keep_unbalanced_slightly_more_rico() public {
+    function test_keep_unbalanced_slightly_more_rico() public
+    {
+        // set fee == 2 so easy to predict djoy
         Vat(bank).filk(gilk, 'fee', bytes32(2 * RAY));
 
-        feedpush(grtag, bytes32(RAY * 1000), block.timestamp + 1000);
+        // frob enough rico to cover sin later, plus a lil extra
         uint amt = Vat(bank).sin() / RAY + 1;
-        Vat(bank).frob(gilk, address(this), abi.encodePacked(amt), int(amt));
+        rico_mint(amt, false);
+
+        // djoy after 1s will be amt
         skip(1);
 
-        feedpush(grtag, bytes32(0), block.timestamp + 10000);
-
-        feedpush(RISK_RICO_TAG, bytes32(RAY / 1000), UINT256_MAX);
         assertEq(Vat(bank).joy(), 0);
         uint self_risk_1 = risk.balanceOf(self);
-        Vow(bank).keep(ilks);
+        Vow(bank).keep(single(gilk));
         uint self_risk_2 = risk.balanceOf(self);
+
+        // unlike test_keep_balanced, budget was not balanced
+        // -> keep healed
         assertEq(Vat(bank).joy(), 1);
         assertGt(self_risk_1, self_risk_2);
     }
 
-    function test_keep_unbalanced_slightly_more_sin() public {
+    function test_keep_unbalanced_slightly_more_sin() public
+    {
+        // fee == 2 so easy to predict djoy on drip
         Vat(bank).filk(gilk, 'fee', bytes32(2 * RAY));
 
-        feedpush(grtag, bytes32(RAY * 1000), block.timestamp + 1000);
+        // mint enough to cover sin plus one extra
         uint amt = Vat(bank).sin() / RAY - 1;
-        Vat(bank).frob(gilk, address(this), abi.encodePacked(amt), int(amt));
+        rico_mint(amt, false);
+
+        // after 1s, drip should create amt joy
         skip(1);
 
-        feedpush(grtag, bytes32(0), block.timestamp + 10000);
-
         assertEq(Vat(bank).joy(), 0);
-        uint flop = 1; // clipped to deficit
-        feedpush(RISK_RICO_TAG, bytes32(RAY), block.timestamp + 1000);
         uint risk_ts1 = risk.totalSupply();
-        Vow(bank).keep(ilks);
+        Vow(bank).keep(single(gilk));
         uint risk_ts2 = risk.totalSupply();
+
+        // sin == RAY * (joy + 1)
         assertGt(Vat(bank).joy(), 1);
         assertEq(Vat(bank).sin(), 2 * RAY);
-        assertEq(risk_ts2, risk_ts1 + flop);
+
+        // flop is clipped to deficit, so should only mint 1 (absolute) risk
+        assertEq(risk_ts2, risk_ts1 + 1);
     }
 
-    function test_bail_hook() public {
+    function test_bail_hook() public
+    {
+        // frob with normal hook
         FrobHook hook = new FrobHook();
-        Vat(bank).filk(gilk, 'hook', bytes32(uint(bytes32(bytes20(address(hook))))));
+        Vat(bank).filk(gilk, 'hook', bytes32(bytes20(address(hook))));
         Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(WAD));
         uint vowgoldbefore = gold.balanceOf(bank);
 
+        // this hook always says collateral value is 0
         ZeroHook zhook = new ZeroHook();
-        Vat(bank).filk(gilk, 'hook', bytes32(uint(bytes32(bytes20(address(zhook))))));
+        Vat(bank).filk(gilk, 'hook', bytes32(bytes20(address(zhook))));
+
+        // bail should succeed and call bailhook, because collateral worthless
         vm.expectCall(address(zhook), abi.encodePacked(zhook.bailhook.selector));
         Vat(bank).bail(gilk, self);
+
+        // got all the gold
         assertEq(gold.balanceOf(bank), vowgoldbefore);
     }
 
-    function test_flop_deal() public {
+    function test_flop_deal() public
+    {
         // generate a flop, with nonnegligible joy and sin
         // vow should properly update cached joy and sin values after heal
         // so that deal is correct
@@ -369,18 +407,20 @@ contract VowTest is Test, RicoSetUp {
         skip(BANKYEAR * 10);
         Vat(bank).drip(gilk);
 
+        // sin > joy, and both nonnegligible
         uint sin = Vat(bank).sin() / RAY;
-        // both nonnegligible, and sin > joy
-        assertGt(sin, 100);
-        assertGt(sin, Vat(bank).joy());
         uint joy = Vat(bank).joy();
-        uint mcap = risk.totalSupply();
-        uint under = sin - joy;
+        assertGt(sin, 100);
+        assertGt(joy, 100);
+        assertGt(sin, joy);
+
         // feed price, pep, and pop are all 1
         // -> deal should be debt / (under + debt)
+        uint mcap = risk.totalSupply();
+        uint under = sin - joy;
         uint deal = rdiv(mcap, under + mcap);
 
-        // keep
+        // deficit auction
         uint earn = rico.balanceOf(self);
         uint sell = risk.balanceOf(self);
         Vow(bank).keep(empty);
@@ -391,33 +431,39 @@ contract VowTest is Test, RicoSetUp {
         assertClose(earn, rmul(sell, rpow(deal, 2)), 1000);
     }
 
-    function test_toll() public {
+    function test_toll() public
+    {
+        // set protocol fee == 1/3 of every flop
         File(bank).file('toll', bytes32(RAY / 3));
-        uint _dink = 10000 * WAD;
-        gold.mint(address(guy), _dink);
+
+        // risk:rico price 0.1
         risk.mint(address(guy), 1000000 * WAD);
         uint riskrico_price = RAY / 10;
         feedpush(RISK_RICO_TAG, bytes32(riskrico_price), type(uint).max);
 
-        vm.startPrank(address(guy));
-
         // frob some rico
-        gold.approve(bank, UINT256_MAX);
-        Vat(bank).frob(gilk, address(guy), abi.encodePacked(_dink), int(_dink));
+        uint amt = 10000 * WAD;
+        rico_mint(amt, false);
+
+        // guy will fill the flap
+        vm.startPrank(address(guy));
 
         // wait a few years and keep
         skip(BANKYEAR * 10);
-        uint guys  = rico.balanceOf(address(guy));
-        uint selfs = rico.balanceOf(self);
+
+        uint guys   = rico.balanceOf(address(guy));
+        uint selfs  = rico.balanceOf(self);
         uint burned = risk.balanceOf(address(guy));
 
-        for (uint i = 0; i < ilks.length; i++) Vat(bank).drip(ilks[i]);
+        // calculate mash after drip, so it's same as flap's mash
+        Vat(bank).drip(gilk);
+
         uint mcap  = rmul(riskrico_price, risk.totalSupply());
         uint flap  = Vat(bank).joy() - Vat(bank).sin() / RAY;
         uint mash  = rpow(rinv(rdiv(mcap + flap, mcap)), 2); // pep == 2
         uint price = rmul(10 * RAY, mash);
 
-        Vow(bank).keep(ilks);
+        Vow(bank).keep(single(gilk));
 
         // owner and guy's portions of the flap
         guys  = rico.balanceOf(address(guy)) - guys;
@@ -429,7 +475,8 @@ contract VowTest is Test, RicoSetUp {
         assertClose(burned, rmul(guys, price), 100000);
 
         vm.stopPrank();
-        // try with toll == 100%
+
+        // try with toll == 100%...so protocol takes whole flap
         File(bank).file('toll', bytes32(RAY));
         vm.startPrank(address(guy));
 
@@ -437,7 +484,7 @@ contract VowTest is Test, RicoSetUp {
         skip(BANKYEAR * 10);
         guys  = rico.balanceOf(address(guy));
         selfs = rico.balanceOf(self);
-        Vow(bank).keep(ilks);
+        Vow(bank).keep(single(gilk));
 
         // owner and guy's portions of the flap
         guys  = rico.balanceOf(address(guy)) - guys;
@@ -448,24 +495,28 @@ contract VowTest is Test, RicoSetUp {
         assertGt(selfs, 0);
 
         vm.stopPrank();
-
     }
 
-    function test_high_toll() public {
+    function test_high_toll() public
+    {
+        // toll can't be > 100%
         File(bank).file('toll', bytes32(RAY));
         vm.expectRevert(File.ErrHighToll.selector);
         File(bank).file('toll', bytes32(RAY + 1));
     }
 
-    function test_pep_pop() public {
+    function test_pep_pop() public
+    {
         // some awk numbers for pep and pop
         uint pep = 13;
         uint pop = RAY * 3;
         File(bank).file('plat.pep', bytes32(pep));
         File(bank).file('plat.pop', bytes32(pop));
 
+        // risk:rico price 100
         uint riskrico_price = 100 * RAY;
         feedpush(RISK_RICO_TAG, bytes32(riskrico_price), type(uint).max);
+
         // force surplus == debt_before_keep / 3
         force_fees(Vat(bank).sin() / RAY + Vat(bank).debt() / 3);
 
@@ -485,9 +536,12 @@ contract VowTest is Test, RicoSetUp {
         );
     }
 
-    function test_zero_flap() public {
+    function test_zero_flap() public
+    {
+        // risk:rico price 1
         feedpush(RISK_RICO_TAG, bytes32(RAY), type(uint).max);
 
+        // joy > sin, but joy too small to flap
         force_sin(0);
         force_fees(1);
         Vow(bank).keep(empty);
@@ -503,11 +557,14 @@ contract VowTest is Test, RicoSetUp {
         uint aft_rico = rico.balanceOf(self);
         uint aft_risk = risk.balanceOf(self);
 
+        // still burns a risk for rounding
         assertEq(aft_rico, pre_rico);
         assertEq(aft_risk, pre_risk - 1);
     }
 
-    function test_wel() public _check_integrity_after_ {
+    function test_wel() public _check_integrity_after_
+    {
+        // risk:rico price 1
         feedpush(RISK_RICO_TAG, bytes32(RAY), type(uint).max);
 
         // can't flap more rico than surplus
@@ -538,7 +595,7 @@ contract VowTest is Test, RicoSetUp {
         uint aft_rico = rico.balanceOf(self);
         uint aft_risk = risk.balanceOf(self);
 
-        assertClose(aft_rico - pre_rico, joy / 7, 100000000000);
+        assertClose(aft_rico - pre_rico, wmul(joy, wel), 100000000000);
 
         uint act_price = rdiv(pre_risk - aft_risk, aft_rico - pre_rico);
         assertClose(act_price, exp_mash, 1000000);
@@ -546,53 +603,13 @@ contract VowTest is Test, RicoSetUp {
 
 }
 
-contract FrobHook is Hook {
-    function frobhook(FHParams calldata p) external pure returns (bool safer) {
-        return int(uint(bytes32(p.dink[:32]))) >= 0 && p.dart <= 0;
-    }
-    function bailhook(BHParams calldata) external returns (bytes memory) {}
-    function safehook(
-        bytes32 , address
-    ) external pure returns (uint, uint, uint) {
-        return(10 ** 45, 10 ** 45, type(uint256).max);
-    }
-    function ink(bytes32, address) pure external returns (bytes memory) {
-        return abi.encode(uint(0));
-    }
-}
-
-contract ZeroHook is Hook {
-    function frobhook(FHParams calldata) external returns (bool safer) {}
-    function bailhook(BHParams calldata) external returns (bytes memory) {}
-    function safehook(
-        bytes32 , address
-    ) external pure returns (uint, uint, uint) {
-        return(0, 0, type(uint256).max);
-    }
-    function ink(bytes32, address) pure external returns (bytes memory) {
-        return abi.encode(uint(0));
-    }
-}
-
-contract Usr {
+contract Usr is Guy {
     WethLike weth;
-    address payable bank;
-    Vat vat;
-    constructor(address payable _bank, WethLike _weth) {
+    constructor(address payable _bank, WethLike _weth) Guy(_bank) {
         weth = _weth;
-        bank = _bank;
     }
     function deposit() public payable {
         weth.deposit{value: msg.value}();
-    }
-    function approve(address usr, uint amt) public {
-        weth.approve(usr, amt);
-    }
-    function frob(bytes32 ilk, address usr, bytes calldata dink, int dart) public {
-        Vat(bank).frob(ilk, usr, dink, dart);
-    }
-    function transfer(address gem, address dst, uint amt) public {
-        Gem(gem).transfer(dst, amt);
     }
 }
 
@@ -603,109 +620,107 @@ contract VowJsTest is Test, RicoSetUp {
     Usr cat;
     address b;
     address c;
-    address rico_risk_pool;
     WethLike weth;
-    bytes32 i0;
-    bytes32[] ilks;
+    bytes32 constant wilk = WETH_ILK;
 
-    function setUp() public {
+    function setUp() public
+    {
         make_bank();
         init_dai();
         init_gold();
+
         weth = WethLike(WETH);
         me = address(this);
         bob = new Usr(bank, weth);
         cat = new Usr(bank, weth);
         b = address(bob);
         c = address(cat);
-        i0 = WETH_ILK;
-        ilks.push(i0);
 
         weth.deposit{value: 6000 * WAD}();
         risk.mint(me, 10000 * WAD);
         weth.approve(bank, UINT256_MAX);
-
-        File(bank).file('ceil', bytes32(uint(10000 * RAD)));
-        Vat(bank).filk(i0, 'line', bytes32(10000 * RAD));
-        Vat(bank).filk(i0, 'chop', bytes32(RAY * 11 / 10));
-
-        File(bank).file('rel', bytes32(uint(WAD / 10000)));
-        File(bank).file('bel', bytes32(uint(0)));
-        File(bank).file('cel', bytes32(uint(60)));
-
-        feedpush(wrtag, bytes32(RAY), block.timestamp + 2 * BANKYEAR);
-        feedpush(grtag, bytes32(RAY), block.timestamp + 2 * BANKYEAR);
-        uint fee = 1000000001546067052200000000; // == ray(1.05 ** (1/BANKYEAR))
-        Vat(bank).filk(i0, 'fee', bytes32(fee));
-        Vat(bank).frob(i0, me, abi.encodePacked(100 * WAD), 0);
-        Vat(bank).frob(i0, me, abi.encodePacked(int(0)), int(99 * WAD));
-
-        uint bal = rico.balanceOf(me);
-        assertEq(bal, 99 * WAD);
-        (Vat.Spot safe1,,) = Vat(bank).safe(i0, me);
-        assertEq(uint(safe1), uint(Vat.Spot.Safe));
-
-        cat.deposit{value: 7000 * WAD}();
-        cat.approve(bank, UINT256_MAX);
-        cat.frob(i0, c, abi.encodePacked(4001 * WAD), int(4000 * WAD));
-        cat.transfer(arico, me, 4000 * WAD);
-
-        weth.approve(address(router), UINT256_MAX);
-        rico.approve(address(router), UINT256_MAX);
-        risk.approve(address(router), UINT256_MAX);
-        dai.approve(address(router), UINT256_MAX);
-        weth.approve(bank, UINT256_MAX);
         dai.approve(bank, UINT256_MAX);
 
-        PoolArgs memory dai_rico_args = getArgs(DAI, 2000 * WAD, arico, 2000 * WAD, 500, x96(1));
-        join_pool(dai_rico_args);
+        File(bank).file('ceil', bytes32(uint(10000 * RAD)));
+        Vat(bank).filk(wilk, 'line', bytes32(10000 * RAD));
+        Vat(bank).filk(wilk, 'chop', bytes32(RAY * 11 / 10));
 
-        PoolArgs memory risk_rico_args = getArgs(arisk, 2000 * WAD, arico, 2000 * WAD, 3000, x96(1));
-        join_pool(risk_rico_args);
-        rico_risk_pool = getPoolAddr(arisk, arico, 3000);
+        // weth:ref price 1
+        // gold:ref price 1
+        feedpush(wrtag, bytes32(RAY), block.timestamp + 2 * BANKYEAR);
+        feedpush(grtag, bytes32(RAY), block.timestamp + 2 * BANKYEAR);
+
+        // fee == 5%/yr == ray(1.05 ** (1/BANKYEAR))
+        uint fee = 1000000001546067052200000000;
+        Vat(bank).filk(wilk, 'fee', bytes32(fee));
+        Vat(bank).frob(wilk, me, abi.encodePacked(100 * WAD), 0);
+        Vat(bank).frob(wilk, me, abi.encodePacked(int(0)), int(99 * WAD));
+
+        // cat frobs some rico and transfers to me
+        cat.deposit{value: 7000 * WAD}();
+        cat.approve(address(weth), bank, UINT256_MAX);
+        cat.frob(wilk, c, abi.encodePacked(4001 * WAD), int(4000 * WAD));
+        cat.transfer(arico, me, 4000 * WAD);
+
+        // used to setup uni pools here, no more though
+        // transfer the rico to 1 instead so balances/supplies are same
+        dai.transfer(address(1), 2000 * WAD);
+        rico.transfer(address(1), 4000 * WAD);
+        risk.transfer(address(1), 2000 * WAD);
         
         File(bank).file('rel', bytes32(uint(WAD)));
         File(bank).file('bel', bytes32(uint(block.timestamp)));
         File(bank).file('cel', bytes32(uint(1)));
+
         guy = new Guy(bank);
     }
 
-    function test_bail_urns_1yr_unsafe() public {
-        // wait a year, flap the surplus
-        skip(BANKYEAR);
-        uint start_ink = _ink(i0, me);
-        feedpush(RISK_RICO_TAG, bytes32(RAY), UINT256_MAX);
-        Vow(bank).keep(ilks);
-
-        (Vat.Spot spot,,) = Vat(bank).safe(i0, me);
-        assertEq(uint(spot), uint(Vat.Spot.Sunk));
-
-        // should be balanced
-        uint sin0 = Vat(bank).sin();
-        uint joy0 = Vat(bank).joy();
-        assertEq(sin0 / RAY, 0);
-        assertEq(joy0, 1);
-
-        // bail the urn frobbed in setup
-        rico_mint(1000 * WAD, false);
-        rico.transfer(address(guy), 1000 * WAD);
-        vm.expectCall(address(hook), abi.encodePacked(ERC20Hook.bailhook.selector));
-        Vat(bank).bail(i0, me);
-        // urn should be bailed
-        uint ink = _ink(i0, me); uint art = _art(i0, me);
-        assertEq(art, 0);
-        assertLt(ink, start_ink);
-
-        uint sin1 = Vat(bank).sin();
-        uint joy1 = Vat(bank).joy();
-        assertEq(art, 0);
-        assertGt(sin1, 1);
-        assertGt(joy1, 1);
+    function test_init_conditions() public
+    {
+        // frobbed the rico and no time has passed, so should be safe
+        assertEq(rico.balanceOf(me), 99 * WAD);
+        (Vat.Spot safe1,,) = Vat(bank).safe(wilk, me);
+        assertEq(uint(safe1), uint(Vat.Spot.Safe));
     }
 
-    function test_bail_urns_when_safe() public {
+    function test_bail_urns_1yr_unsafe() public
+    {
+        // wait a year, flap the surplus
+        skip(BANKYEAR);
+
+        // risk:rico price 1
+        feedpush(RISK_RICO_TAG, bytes32(RAY), UINT256_MAX);
+        Vow(bank).keep(single(wilk));
+
+        (Vat.Spot spot,,) = Vat(bank).safe(wilk, me);
+        assertEq(uint(spot), uint(Vat.Spot.Sunk));
+
+        // should be balanced (enough)
+        assertEq(Vat(bank).sin(), 0);
+        assertEq(Vat(bank).joy(), 1);
+
+        // bail the urn frobbed in setup
+        assertGt(_ink(wilk, me), 0);
+        vm.expectCall(address(hook), abi.encodePacked(ERC20Hook.bailhook.selector));
+        Vat(bank).bail(wilk, me);
+
+        // urn should be bailed, excess ink should be sent back to urn holder
+        uint ink = _ink(wilk, me); uint art = _art(wilk, me);
+        assertEq(art, 0);
+        assertEq(ink, 0);
+
+        // more joy and more sin
+        uint joy = Vat(bank).joy();
+        uint sin = Vat(bank).sin();
+        assertGt(sin / RAY, joy);
+        assertGt(joy, 1);
+    }
+
+    function test_bail_urns_when_safe() public
+    {
+        // can't bail a safe urn
         vm.expectRevert(Vat.ErrSafeBail.selector);
-        Vat(bank).bail(i0, me);
+        Vat(bank).bail(wilk, me);
 
         uint sin0 = Vat(bank).sin();
         assertEq(sin0 / RAY, 0);
@@ -713,58 +728,78 @@ contract VowJsTest is Test, RicoSetUp {
         skip(BANKYEAR);
         feedpush(wrtag, bytes32(0), UINT256_MAX);
 
+        // it's unsafe now; can bail
         vm.expectCall(address(hook), abi.encodePacked(hook.bailhook.selector));
-        Vat(bank).bail(i0, me);
+        Vat(bank).bail(wilk, me);
+
+        // was just bailed, so now it's safe
         vm.expectRevert(Vat.ErrSafeBail.selector);
-        Vat(bank).bail(i0, me);
+        Vat(bank).bail(wilk, me);
     }
 
-    function test_keep_vow_1yr_drip_flap() public {
+    function test_keep_vow_1yr_drip_flap() public
+    {
+        // wait a year to drip 5%
         uint initial_total = rico.totalSupply();
         skip(BANKYEAR);
+
+        // risk:rico price 1
         feedpush(RISK_RICO_TAG, bytes32(RAY), UINT256_MAX);
-        //vm.expectCall(address(hook), abi.encodePacked(hook.flow.selector));
-        Vow(bank).keep(ilks);
-        uint final_total = rico.totalSupply();
-        assertGt(final_total, initial_total);
+
+        // should flap
+        Vow(bank).keep(single(wilk));
+
         // minted 4099, fee is 1.05. 0.05*4099 as no surplus buffer
+        uint final_total = rico.totalSupply();
         assertGe(final_total - initial_total, 204.94e18);
         assertLe(final_total - initial_total, 204.96e18);
     }
 
-    function test_keep_vow_1yr_drip_flop() public {
+    function test_keep_vow_1yr_drip_flop() public
+    {
         // wait a year, bail the existing urns
-        // bails should leave more sin than rico dripped
+        // bails will drip some rico, but should still create a deficit
         skip(BANKYEAR);
+
+        // weth:ref price crash to 0.5
         feedpush(wrtag, bytes32(RAY / 2), UINT256_MAX);
         vm.expectCall(address(hook), abi.encodePacked(hook.bailhook.selector));
-        Vat(bank).bail(i0, me);
+        Vat(bank).bail(wilk, me);
+
+        // borrow some rico to fill the flip for cat's urn
         rico_mint(WAD * 5000, false);
-        Vat(bank).bail(i0, address(cat));
+        Vat(bank).bail(wilk, address(cat));
 
         // more sin than rico, should flop
         feedpush(RISK_RICO_TAG, bytes32(RAY), UINT256_MAX);
-        Vow(bank).keep(ilks);
+        uint pre_risk = risk.balanceOf(self);
+        Vow(bank).keep(single(wilk));
+        assertGt(risk.balanceOf(self), pre_risk);
     }
 
-    function test_keep_rate_limiting_flop() public {
+    function test_keep_rate_limiting_flop() public
+    {
+        // high ceil, high line
         File(bank).file('ceil', bytes32(uint(100000 * RAD)));
-        Vat(bank).filk(i0, 'line', bytes32(uint(100000 * RAD)));
+        Vat(bank).filk(wilk, 'line', bytes32(uint(100000 * RAD)));
+
+        // 1s passed since bel
         File(bank).file('rel', bytes32(uint(WAD)));
         File(bank).file('bel', bytes32(uint(block.timestamp - 1)));
         File(bank).file('cel', bytes32(uint(1)));
 
-        assertGt(risk.totalSupply(), WAD);
+        // keep should flop totalSupply risk, since rel == 1
         uint risksupply = risk.totalSupply();
         prepguyrico(10000 * WAD, true);
-        guy.keep(ilks);
+        guy.keep(single(wilk));
         assertEq(risk.totalSupply(), risksupply + risksupply);
     }
 
-    function test_e2e_all_actions() public {
+    function test_e2e_all_actions() public
+    {
         // run a flap and ensure risk is burnt
         // pep a little bit more to account for chop >1 now that liqr is in hook
-        Vat(bank).filh(i0, 'pep', empty, bytes32(uint(3)));
+        Vat(bank).filh(wilk, 'pep', empty, bytes32(uint(3)));
         uint risk_initial_supply = risk.totalSupply();
         skip(BANKYEAR);
         feedpush(RISK_RICO_TAG, bytes32(RAY / 2), UINT256_MAX);
@@ -772,7 +807,7 @@ contract VowJsTest is Test, RicoSetUp {
         risk.mint(address(guy), 1000 * WAD);
         File(bank).file('rel', bytes32(WAD / 1000));
 
-        guy.keep(ilks);
+        guy.keep(single(wilk));
 
         uint risk_post_flap_supply = risk.totalSupply();
         assertLt(risk_post_flap_supply, risk_initial_supply + 1000 * WAD * 2);
@@ -781,7 +816,7 @@ contract VowJsTest is Test, RicoSetUp {
         feedpush(wrtag, bytes32(RAY / 10), UINT256_MAX);
         uint joy0 = Vat(bank).joy();
         vm.expectCall(address(hook), abi.encodePacked(hook.bailhook.selector));
-        Vat(bank).bail(i0, me);
+        Vat(bank).bail(wilk, me);
         uint joy1 = Vat(bank).joy();
         assertGt(joy1, joy0);
 
@@ -789,19 +824,21 @@ contract VowJsTest is Test, RicoSetUp {
         uint pre_flop_joy = Vat(bank).joy();
         feedpush(RISK_RICO_TAG, bytes32(10 * RAY), UINT256_MAX);
         prepguyrico(2000 * WAD, false);
-        guy.keep(ilks);
+        guy.keep(single(wilk));
 
         // after flop bank should have more joy
         uint post_flop_joy = Vat(bank).joy();
         assertGt(post_flop_joy, pre_flop_joy);
     }
 
-    function test_flop_clipping() public {
+    function test_flop_clipping() public
+    {
+        // wait 10s to drip a little bit
         skip(10);
         feedpush(RISK_RICO_TAG, bytes32(RAY), UINT256_MAX);
         feedpush(wrtag, bytes32(0), UINT256_MAX);
         // cause bank deficit by flipping with zero price
-        Vat(bank).bail(i0, me);
+        Vat(bank).bail(wilk, me);
 
         // set rel small so first flop will not cover deficit
         File(bank).file('rel', bytes32(uint(WAD / 1_000_000)));
@@ -812,7 +849,7 @@ contract VowJsTest is Test, RicoSetUp {
         prepguyrico(2000 * WAD, false);
         uint ts0 = risk.totalSupply();
         uint gr0 = rico.balanceOf(address(guy));
-        guy.keep(ilks);
+        guy.keep(single(wilk));
         uint ts1 = risk.totalSupply();
         uint gr1 = rico.balanceOf(address(guy));
         uint price_unclipped = WAD * (gr0 - gr1) / (ts1 - ts0);
@@ -825,11 +862,11 @@ contract VowJsTest is Test, RicoSetUp {
         Vat(bank).drip(WETH_ILK);
 
         uint under = Vat(bank).sin() / RAY - Vat(bank).joy();
-        uint ts2 = risk.totalSupply();
-        uint gr2 = rico.balanceOf(address(guy));
-        guy.keep(ilks);
-        uint ts3 = risk.totalSupply();
-        uint gr3 = rico.balanceOf(address(guy));
+        uint ts2   = risk.totalSupply();
+        uint gr2   = rico.balanceOf(address(guy));
+        guy.keep(single(wilk));
+        uint ts3   = risk.totalSupply();
+        uint gr3   = rico.balanceOf(address(guy));
         // with large rel flop size should have been clipped
         assertEq(under, gr2 - gr3);
 
@@ -849,16 +886,16 @@ contract VowJsTest is Test, RicoSetUp {
 
     }
 
-    function test_sparse_flop_bel() public {
+    function test_sparse_flop_bel() public
+    {
         // test bel when elapsed time is >> cel
-
         uint cel = 100;
         File(bank).file('cel', bytes32(cel));
         feedpush(RISK_RICO_TAG, bytes32(RAY), UINT256_MAX);
 
         // cause bank deficit by flipping with zero price
         feedpush(wrtag, bytes32(0), UINT256_MAX);
-        Vat(bank).bail(i0, me);
+        Vat(bank).bail(wilk, me);
 
         // set rel high so flop is clipped
         File(bank).file('rel', bytes32(uint(WAD * 20)));
@@ -874,7 +911,6 @@ contract VowJsTest is Test, RicoSetUp {
         uint bel = Vow(bank).ramp().bel;
         assertGt(bel, block.timestamp - cel);
         assertLt(bel, block.timestamp);
-        
     }
 
 }

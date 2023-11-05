@@ -4,22 +4,17 @@ pragma solidity ^0.8.19;
 import 'forge-std/Test.sol';
 
 import '../src/mixin/math.sol';
-import { Feedbase } from '../lib/feedbase/src/Feedbase.sol';
 import { Block } from '../lib/feedbase/src/mixin/Read.sol';
-import { Divider } from '../lib/feedbase/src/combinators/Divider.sol';
-import { Multiplier } from '../lib/feedbase/src/combinators/Multiplier.sol';
-import { Medianizer } from '../lib/feedbase/src/Medianizer.sol';
-import { GemFab, Gem } from '../lib/gemfab/src/gem.sol';
-import { Ball } from '../src/ball.sol';
-import { Vat } from '../src/vat.sol';
-import { Vow } from '../src/vow.sol';
-import { Vox } from '../src/vox.sol';
-import { ERC20Hook } from '../src/hook/ERC20hook.sol';
-import { UniNFTHook } from '../src/hook/nfpm/UniV3NFTHook.sol';
-import { BaseHelper, WethLike } from './BaseHelper.sol';
+import { Gem, GemFab } from '../lib/gemfab/src/gem.sol';
 import { Bank } from '../src/bank.sol';
-import { File } from '../src/file.sol';
-import { BankDiamond } from '../src/diamond.sol';
+import { BaseHelper, BankDiamond, WethLike } from './BaseHelper.sol';
+import { 
+    Ball, File, Vat, Vow, Vox, ERC20Hook, Medianizer, Multiplier,
+    Divider, Feedbase
+} from '../src/ball.sol';
+import { Hook } from '../src/hook/hook.sol';
+
+import { UniNFTHook } from '../src/hook/nfpm/UniV3NFTHook.sol';
 
 contract Guy {
     address payable bank;
@@ -44,17 +39,47 @@ contract Guy {
     }
 }
 
+// pretty normal single-uint frobhook
+contract FrobHook is Hook {
+    function frobhook(FHParams calldata p) pure external returns (bool) {
+        // safer when dink >= 0 and dart <= 0
+        return int(uint(bytes32(p.dink[:32]))) >= 0 && p.dart <= 0;
+    }
+    function bailhook(BHParams calldata) external returns (bytes memory) {}
+    function safehook(
+        bytes32, address
+    ) pure external returns (uint, uint, uint) {
+        // (1, 1, uint_max)
+        return(10 ** 45, 10 ** 45, type(uint256).max);
+    }
+    function ink(bytes32, address) external pure returns (bytes memory) {
+        return abi.encode(uint(0));
+    }
+}
+
+// doesn't really do anything, always returns 0 or false
+contract ZeroHook is Hook {
+    function frobhook(FHParams calldata) external returns (bool) {}
+    function bailhook(BHParams calldata) external returns (bytes memory) {}
+    function safehook(
+        bytes32, address
+    ) pure external returns (uint, uint, uint){
+        return(0, 0, type(uint256).max); // (almost) always unsafe
+    }
+    function ink(bytes32, address) external pure returns (bytes memory) {
+        return abi.encode(uint(0));
+    }
+}
+
 abstract contract RicoSetUp is BaseHelper {
     bytes32 constant public dilk  = "dai";
     bytes32 constant public gilk  = "gold";
-    bytes32 constant public rilk  = "ruby";
     bytes32 constant public uilk  = ":uninft";
     bytes32 constant public dutag = "dai:usd";
     bytes32 constant public grtag = "gold:ref";
-    bytes32 constant public rrtag = "ruby:ref";
     bytes32 constant public wrtag = "weth:ref";
     bytes32 constant public drtag = "dai:ref";
-    bytes32 constant public rtag  = "rico:usd";
+    bytes32 constant public rrtag = "rico:usd";
     uint160 constant public risk_price = 2 ** 96;
     uint256 constant public INIT_PAR   = RAY;
     uint256 constant public init_mint  = 10000;
@@ -62,6 +87,7 @@ abstract contract RicoSetUp is BaseHelper {
     uint256 constant public platpop    = RAY;
     uint256 constant public plotpep    = 2;
     uint256 constant public plotpop    = RAY;
+    uint256 constant public FEED_LOOKAHEAD = 1000;
 
     ERC20Hook  public hook;
     UniNFTHook public nfthook;
@@ -72,7 +98,6 @@ abstract contract RicoSetUp is BaseHelper {
     Feedbase   public feed;
     Gem        public dai;
     Gem        public gold;
-    Gem        public ruby;
     Gem        public rico;
     Gem        public risk;
     GemFab     public gemfab;
@@ -81,32 +106,39 @@ abstract contract RicoSetUp is BaseHelper {
     address    public arico;
     address    public arisk;
     address    public agold;
-    address    public aruby;
     address    payable public ahook;
     address    public uniwrapper;
+
 
     Guy _bob;
     Guy guy;
 
-    function single(bytes32 x) internal pure returns (bytes32[] memory res) {
-        res = new bytes32[](1);
-        res[0] = x;
-    }
-
+    // mint some gold to a fake account to frob some rico
     function rico_mint(uint amt, bool bail) internal {
         uint start_gold = gold.balanceOf(self);
+
+        // create fake account and mint some gold to it
         _bob = new Guy(bank);
-        (bytes32 v, uint t) = feedpull(grtag);
-        feedpush(grtag, bytes32(RAY * 10000), type(uint).max);
         gold.mint(address(_bob), amt);
         _bob.approve(agold, bank, amt);
+
+        // save last gold feed and temporarily set it high
+        (bytes32 v, uint t) = feedpull(grtag);
+        feedpush(grtag, bytes32(RAY * 10000), type(uint).max);
+
+        // bob borrows the rico and sends back to self
         _bob.frob(gilk, address(_bob), abi.encodePacked(amt), int(amt));
-        feedpush(grtag, bytes32(0), type(uint).max);
-        if (bail) Vat(bank).bail(gilk, address(_bob));
         _bob.transfer(arico, self, amt);
+
+        if (bail) {
+            // set feed to 0 and liquidate
+            feedpush(grtag, bytes32(0), type(uint).max);
+            Vat(bank).bail(gilk, address(_bob));
+        }
+
+        // restore gold feed and previous gold supply
         feedpush(grtag, v, t);
-        uint end_gold = gold.balanceOf(self);
-        gold.burn(self, end_gold - start_gold);
+        gold.burn(self, gold.balanceOf(self) - start_gold);
     }
 
     function force_fees(uint gain) public {
@@ -140,18 +172,7 @@ abstract contract RicoSetUp is BaseHelper {
         art = Vat(bank).urns(ilk, usr);
     }
 
-    function check_gas(uint gas, uint expectedgas) internal view {
-        /* // not used anymore
-        uint usedgas = gas - gasleft();
-        if (usedgas < expectedgas) {
-            console.log("saved %s gas...currently %s", expectedgas - usedgas, usedgas);
-        }
-        if (usedgas > expectedgas) {
-            console.log("gas increase by %s...currently %s", usedgas - expectedgas, usedgas);
-        }
-       */
-    }
-
+    // helpers for feeds, so we don't have to deal with mdn all the time
     function feedpull(bytes32 tag) internal view returns (bytes32, uint) {
         return feed.pull(address(mdn), tag);
     }
@@ -161,7 +182,9 @@ abstract contract RicoSetUp is BaseHelper {
         mdn.poke(tag);
     }
 
+    // create a new feed that's just feed(mdn, tag) == feed(self, tag)
     function make_feed(bytes32 tag) internal {
+        feed.push(bytes32("ONE"), bytes32(RAY), type(uint).max);
         address[] memory sources = new address[](2);
         bytes32[] memory tags    = new bytes32[](2);
         uint256[] memory scales  = new uint256[](2);
@@ -177,23 +200,17 @@ abstract contract RicoSetUp is BaseHelper {
     }
 
     function make_bank() public {
-        make_bank(true);
-    }
-    function make_bank(bool fork) public {
         feed   = new Feedbase();
         gemfab = new GemFab();
-        rico  = gemfab.build(bytes32("Rico"), bytes32("RICO"));
-        risk  = gemfab.build(bytes32("Rico Riskshare"), bytes32("RISK"));
-        arico = address(rico);
-        arisk = address(risk);
-        uint160 sqrt_ratio_x96 = 3479451586963517060052302675955;
-        if (fork) sqrt_ratio_x96 = get_rico_sqrtx96(INIT_PAR);
-        ricodai  = create_pool(arico, DAI,   RICO_FEE, sqrt_ratio_x96);
-        ricorisk = create_pool(arico, arisk, RISK_FEE, risk_price);
+        rico   = gemfab.build(bytes32("Rico"), bytes32("RICO"));
+        risk   = gemfab.build(bytes32("Rico Riskshare"), bytes32("RISK"));
+        arico  = address(rico);
+        arisk  = address(risk);
 
         uniwrapper = make_uniwrapper();
-        bank = make_diamond();
+        bank       = make_diamond();
 
+        // deploy bank with one ERC20 ilk and one NFPM ilk
         Ball.IlkParams[] memory ips = new Ball.IlkParams[](1);
         ips[0] = Ball.IlkParams(
             'weth',
@@ -242,98 +259,65 @@ abstract contract RicoSetUp is BaseHelper {
 
         ball = new Ball(bargs);
         BankDiamond(bank).transferOwnership(address(ball));
+
         ball.setup(bargs);
         ball.makeilk(ips[0]);
         ball.makeuni(ups);
         ball.approve(self);
         BankDiamond(bank).acceptOwnership();
 
-
         ////////// these are outside ball, but must be part of real deploy process, unless warding ball first w create2
         Gem(rico).ward(bank, true);
         Gem(risk).ward(bank, true);
-        // Gem(rico).ward(address(self), false);
-        // Gem(risk).ward(address(self), false);
         //////////
 
-        hook = ball.hook();
+        hook    = ball.hook();
         nfthook = ball.nfthook();
-        mdn  = ball.mdn();
+        mdn     = ball.mdn();
         divider = ball.divider();
+        ahook   = payable(address(hook));
 
-        ahook = payable(address(hook));
-
-        feed.push(bytes32("ONE"), bytes32(RAY), type(uint).max);
-        make_feed(rtag);
+        make_feed(rrtag);
         make_feed(wrtag);
         make_feed(grtag);
+        make_feed(drtag);
         make_feed(RISK_RICO_TAG);
         make_feed(RICO_RISK_TAG);
-        feedpush(RISK_RICO_TAG, bytes32(RAY), block.timestamp + 1000);
-        feedpush(RICO_RISK_TAG, bytes32(RAY), block.timestamp + 1000);
+        feedpush(RISK_RICO_TAG, bytes32(RAY), block.timestamp + FEED_LOOKAHEAD);
+        feedpush(RICO_RISK_TAG, bytes32(RAY), block.timestamp + FEED_LOOKAHEAD);
+    }
+
+    function init_erc20_ilk(bytes32 ilk, address gem, bytes32 tag) public {
+        Gem(gem).approve(bank, type(uint256).max);
+        Vat(bank).init(ilk, address(hook));
+        Vat(bank).filh(ilk, 'gem', empty, bytes32(bytes20(gem)));
+        Vat(bank).filh(ilk, 'src', empty, bytes32(bytes20(self)));
+        Vat(bank).filh(ilk, 'tag', empty, tag);
+        Vat(bank).filh(ilk, 'liqr', empty, bytes32(RAY));
+        Vat(bank).filh(ilk, 'pep', empty, bytes32(uint(2)));
+        Vat(bank).filh(ilk, 'pop', empty, bytes32(RAY));
+        Vat(bank).filk(ilk, 'hook', bytes32(uint(bytes32(bytes20(address(hook))))));
+        Vat(bank).filk(ilk, 'chop', bytes32(RAY));
+        Vat(bank).filk(ilk, 'line', bytes32(init_mint * 10 * RAD));
+        Vat(bank).filk(ilk, 'fee', bytes32(uint(1000000001546067052200000000)));  // 5%
+        feedpush(tag, bytes32(RAY), block.timestamp + FEED_LOOKAHEAD);
     }
 
     function init_dai() public {
         dai = Gem(DAI);
         vm.prank(VAULT);
         dai.transfer(address(this), 10000 * WAD);
-        dai.approve(bank, type(uint256).max);
-        Vat(bank).init(dilk, address(hook));
-        Vat(bank).filh(dilk, 'gem', empty, bytes32(bytes20(address(dai))));
-        Vat(bank).filh(dilk, 'src', empty, bytes32(bytes20(self)));
-        Vat(bank).filh(dilk, 'tag', empty, drtag);
-        Vat(bank).filh(dilk, 'liqr', empty, bytes32(RAY));
-        Vat(bank).filh(dilk, 'pep', empty, bytes32(uint(2)));
-        Vat(bank).filh(dilk, 'pop', empty, bytes32(RAY));
-        Vat(bank).filk(dilk, 'hook', bytes32(uint(bytes32(bytes20(address(hook))))));
-        Vat(bank).filk(dilk, 'chop', bytes32(RAD));
-        Vat(bank).filk(dilk, 'line', bytes32(init_mint * 10 * RAD));
-        Vat(bank).filk(dilk, 'fee', bytes32(uint(1000000001546067052200000000)));  // 5%
-        // feedpush(dutag, bytes32(RAY), block.timestamp + 1000);
-        make_feed(drtag);
+        init_erc20_ilk(dilk, DAI, drtag);
     }
 
     function init_gold() public {
         gold = Gem(address(gemfab.build(bytes32("Gold"), bytes32("GOLD"))));
         gold.mint(self, init_mint * WAD);
-        gold.approve(bank, type(uint256).max);
-        Vat(bank).init(gilk, address(hook));
-        Vat(bank).filh(gilk, 'gem',  empty, bytes32(bytes20(address(gold))));
-        Vat(bank).filh(gilk, 'src', empty, bytes32(bytes20(self)));
-        Vat(bank).filh(gilk, 'tag', empty, grtag);
-        Vat(bank).filh(gilk, 'liqr', empty, bytes32(RAY));
-        Vat(bank).filh(gilk, 'pep', empty, bytes32(uint(2)));
-        Vat(bank).filh(gilk, 'pop', empty, bytes32(RAY));
- 
-        Vat(bank).filk(gilk, 'hook', bytes32(uint(bytes32(bytes20(address(hook))))));
-        // todo fix other chops, should be rays
-        Vat(bank).filk(gilk, bytes32('chop'), bytes32(RAY));
-        Vat(bank).filk(gilk, bytes32('line'), bytes32(init_mint * 10 * RAD));
-        Vat(bank).filk(gilk, bytes32('fee'), bytes32(uint(1000000001546067052200000000)));  // 5%
-        feedpush(grtag, bytes32(RAY), block.timestamp + 1000);
         agold = address(gold);
+        init_erc20_ilk(gilk, agold, grtag);
     }
 
-    function init_ruby() public {
-        ruby = Gem(address(gemfab.build(bytes32("Ruby"), bytes32("RUBY"))));
-        ruby.mint(self, init_mint * WAD);
-        ruby.approve(bank, type(uint256).max);
-        Vat(bank).init(rilk, address(hook));
-        Vat(bank).filh(rilk, 'gem',  empty, bytes32(bytes20(address(ruby))));
-        Vat(bank).filh(rilk, 'src', empty, bytes32(bytes20(self)));
-        Vat(bank).filh(rilk, 'tag', empty, rrtag);
-        Vat(bank).filh(rilk, 'liqr', empty, bytes32(RAY));
-        Vat(bank).filh(rilk, 'pep', empty, bytes32(uint(2)));
-        Vat(bank).filh(rilk, 'pop', empty, bytes32(RAY));
- 
-        Vat(bank).filk(rilk, 'hook', bytes32(uint(bytes32(bytes20(address(hook))))));
-        Vat(bank).filk(rilk, bytes32('chop'), bytes32(RAY));
-        Vat(bank).filk(rilk, bytes32('line'), bytes32(init_mint * 10 * RAD));
-        Vat(bank).filk(rilk, bytes32('fee'), bytes32(uint(1000000001546067052200000000)));  // 5%
-        feedpush(rrtag, bytes32(RAY), block.timestamp + 1000);
-        aruby = address(ruby);
-    }
-
+    // mint some new rico and give it to guy
     function prepguyrico(uint amt, bool bail) internal {
         rico_mint(amt, bail);
         rico.transfer(address(guy), amt);

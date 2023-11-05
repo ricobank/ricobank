@@ -17,15 +17,16 @@ interface WethLike {
 }
 
 abstract contract BaseHelper is Math, Test, UniSetUp {
-    address constant public DAI  = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
-    address constant public RAI  = 0x03ab458634910AaD20eF5f1C8ee96F1D6ac54919;
-    address constant public WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+    address constant public DAI          = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
+    address constant public RAI          = 0x03ab458634910AaD20eF5f1C8ee96F1D6ac54919;
+    address constant public WETH         = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
     address constant public DAI_USD_AGG  = 0xAed0c38402a5d19df6E4c03F4E2DceD6e29c1ee9;
     address constant public XAU_USD_AGG  = 0x214eD9Da11D2fbe465a6fc601a91E62EbEc1a0D6;
     address constant public WETH_USD_AGG = 0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419;
     address constant public RAI_ETH_AGG  = 0x4ad7B025127e89263242aB68F0f9c4E5C033B489;
     address constant public NFPM         = 0xC36442b4a4522E871399CD717aBDD847Ab11FE88;
     address constant public VAULT        = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;
+
     bytes32 constant public RICO_RISK_TAG = "rico:risk";
     bytes32 constant public RISK_RICO_TAG = "risk:rico";
     bytes32 constant public RICO_REF_TAG  = "rico:ref";
@@ -33,8 +34,10 @@ abstract contract BaseHelper is Math, Test, UniSetUp {
     bytes32 constant public DAI_USD_TAG   = "dai:usd";
     bytes32 constant public WETH_REF_TAG  = "weth:ref";
     bytes32 constant public WETH_USD_TAG  = "weth:usd";
+
     bytes32 constant public RAI_ILK  = "rai";
     bytes32 constant public WETH_ILK = "weth";
+
     uint24  constant public RICO_FEE   = 500;
     uint24  constant public RISK_FEE   = 3000;
     uint256 constant public HOOK_ROOM  = 8;
@@ -67,6 +70,7 @@ abstract contract BaseHelper is Math, Test, UniSetUp {
         return payable(address(new BankDiamond()));
     }
 
+    // nfpm hook needs uniswap wrapper to interact with solc v7
     function make_uniwrapper() internal returns (address deployed) {
         bytes memory args = abi.encode('');
         bytes memory bytecode = abi.encodePacked(vm.getCode(
@@ -83,6 +87,7 @@ abstract contract BaseHelper is Math, Test, UniSetUp {
         assertLt(v1 - abs, v2);
     }
 
+    // Babylonian method for square root
     function sqrt(uint x) internal pure returns (uint y) {
         uint z = (x + 1) / 2;
         y = x;
@@ -90,5 +95,11 @@ abstract contract BaseHelper is Math, Test, UniSetUp {
             y = z;
             z = (x / z + z) / 2;
         }
+    }
+
+    // useful for clarity wrt which ilks keep drips
+    function single(bytes32 x) internal pure returns (bytes32[] memory res) {
+        res = new bytes32[](1);
+        res[0] = x;
     }
 }

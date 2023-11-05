@@ -10,6 +10,8 @@ import { Vox } from '../src/vox.sol';
 
 contract VoxTest is Test, RicoSetUp {
     uint pre_cap;
+    uint constant init_par = 7 * RAY;
+    uint constant init_cap = 3 * RAY;
 
     modifier _orig_ {
         File(bank).file(bytes32('cap'), bytes32(pre_cap));
@@ -18,129 +20,176 @@ contract VoxTest is Test, RicoSetUp {
 
     function setUp() public {
         make_bank();
+
         pre_cap = Vox(bank).cap();
-        File(bank).file('tip.tag', rtag);
-        File(bank).file('cap', bytes32(3 * RAY));
-        File(bank).file('par', bytes32(7 * WAD));
+        File(bank).file('tip.tag', rrtag);
+        File(bank).file('cap', bytes32(init_cap));
+        File(bank).file('par', bytes32(init_par));
     }
 
     function test_sway() public {
-        feedpush(rtag, bytes32(7 * WAD), block.timestamp + 1000);
+        // hardcoding way; price shouldn't matter
+        feedpush(rrtag, bytes32(UINT256_MAX / RAY), block.timestamp + 1000);
 
+        // way == 1 -> poke shouldn't change par
         skip(100);
         Vox(bank).poke();
-        assertEq(Vat(bank).par(), 7 * WAD);
+        assertEq(Vat(bank).par(), init_par);
 
+        // way == 2 -> par should double every second now
         File(bank).file(bytes32('way'), bytes32(2 * RAY));
         skip(2);
         Vox(bank).poke();
-        assertEq(Vat(bank).par(), 28 * WAD);
+        assertEq(Vat(bank).par(), init_par * 4);
     }
 
-    function test_poke_highmar_gas() public {
+    function test_poke_basic_highmar() public
+    {
         skip(1);
         uint way = Vox(bank).way();
-        feedpush(rtag, bytes32(10 * WAD), block.timestamp + 1000);
-        uint gas = gasleft();
+
+        // mar > par -> poke should lower way
+        feedpush(rrtag, bytes32(init_par * 10 / 7), block.timestamp + 1000);
         Vox(bank).poke();
-        check_gas(gas, 30065);
         assertLt(Vox(bank).way(), way);
     }
 
     function test_poke_lowmar_gas() public {
         skip(1);
         uint way = Vox(bank).way();
-        feedpush(rtag, bytes32(uint(1)), block.timestamp + 1000);
-        uint gas = gasleft();
+
+        // mar < par -> poke should raise way
+        feedpush(rrtag, bytes32(init_par / 2), block.timestamp + 1000);
         Vox(bank).poke();
-        check_gas(gas, 29578);
         assertGt(Vox(bank).way(), way);
     }
 
-    function test_ricolike_vox() public {
-        Vox(bank).poke(); // how > 1 but mar == par, par stuck at 7
+    function test_ricolike_vox() public
+    {
+        // how > 0 and mar < par
         uint how = RAY + (RAY * 12 / 10) / (10 ** 16);
         File(bank).file(bytes32('how'), bytes32(how));
-        feedpush(rtag, bytes32(0), 10 ** 12);
+        feedpush(rrtag, bytes32(0), 10 ** 12);
 
-        Vox(bank).poke(); // no time has passed
-        assertEq(Vat(bank).par(), 7 * WAD);
+        // no time has passed -> par and way unchanged
+        Vox(bank).poke();
+        assertEq(Vat(bank).par(), 7 * RAY);
+        assertEq(Vox(bank).way(), RAY);
+
+        // time has passed, but way changes after par change
+        // -> par still unchanged, way *= how
         skip(1);
         Vox(bank).poke();
-        assertEq(Vat(bank).par(), 7 * WAD); // way *= how, par will increase next
+        uint expectedpar = init_par;
+        assertEq(Vat(bank).par(), expectedpar);
+        uint expectedway = how;
+        assertEq(Vox(bank).way(), expectedway);
 
+        // way > 1 -> par rises
         skip(1);
         Vox(bank).poke();
-        uint expectedpar2 = 7 * WAD * how / RAY;
-        assertEq(Vat(bank).par(), expectedpar2); // way > 1 -> par increases
+        assertEq(Vat(bank).par(), expectedpar = rmul(expectedpar, expectedway));
+        assertEq(Vox(bank).way(), expectedway = rmul(expectedway, how));
 
+        // way rose again last poke -> par increases more this time
+        // mar > par this time -> way decreases
         skip(1);
-        feedpush(rtag, bytes32(10 * WAD), 10 ** 12); // raise mar above par
-        Vox(bank).poke(); // poke updates par before way, par should increase again
-        // this time it's multiplied by how ** 2
-        uint expectedpar3 = 7 * WAD * how / RAY * how / RAY * how / RAY;
-        assertEq(Vat(bank).par(), expectedpar3);
-
-        skip(1);
-        // way decreased but still > 1, par increases
+        feedpush(rrtag, bytes32(10 * RAY), 10 ** 12);
         Vox(bank).poke();
-        assertGt(Vat(bank).par(), expectedpar3);
+        assertEq(Vat(bank).par(), expectedpar = rmul(expectedpar, expectedway));
+        assertEq(Vox(bank).way(), expectedway = rdiv(expectedway, how));
+
+        // way decreased but still > 1 -> par increases
+        // mar > par -> way decreases
         skip(1);
+        Vox(bank).poke();
+        assertEq(Vat(bank).par(), expectedpar = rmul(expectedpar, expectedway));
+        assertEq(Vox(bank).way(), expectedway = rmul(expectedway, rinv(how)));
+
         // way ~= 1, par shouldn't change much
-        Vox(bank).poke();
-        assertGt(Vat(bank).par(), expectedpar3);
         skip(1);
-        // way < 1, should decrease, maybe rounding error goes a little under par3
         Vox(bank).poke();
-        assertLe(Vat(bank).par(), expectedpar3);
-        skip(1);
-        // way < 1, should decrease
-        Vox(bank).poke();
-        assertLe(Vat(bank).par(), expectedpar2);
+        assertClose(Vat(bank).par(), expectedpar, RAY / 10);
+        assertEq(Vat(bank).par(), expectedpar = rmul(expectedpar, expectedway));
+        assertEq(Vox(bank).way(), expectedway = rmul(expectedway, rinv(how)));
 
-        feedpush(rtag, bytes32(0), 10 ** 12);
-        skip(100000000);
+        // way < 1, par should decrease
+        skip(1);
+        Vox(bank).poke();
+        assertLt(Vat(bank).par(), expectedpar);
+        assertEq(Vat(bank).par(), expectedpar = rmul(expectedpar, expectedway));
+        assertEq(Vox(bank).way(), expectedway = rmul(expectedway, rinv(how)));
+
+        // way < 1, par should decrease
+        skip(1);
+        Vox(bank).poke();
+        assertLt(Vat(bank).par(), expectedpar);
+        assertEq(Vat(bank).par(), expectedpar = rmul(expectedpar, expectedway));
+        assertEq(Vox(bank).way(), expectedway = rmul(expectedway, rinv(how)));
+
+        // mar < par -> way should start increasing again
+        feedpush(rrtag, bytes32(0), 10 ** 12);
+
         // way doesn't change until after par update
+        skip(100000000);
         Vox(bank).poke();
         skip(100000000);
         Vox(bank).poke();
-        assertGe(Vat(bank).par(), 20 * WAD);
+        assertGe(Vat(bank).par(), init_par * 3);
     }
 
     function test_ttl() public {
         uint old_way = Vox(bank).way();
         vm.startPrank(Vox(bank).tip().src);
+
+        // push an expired mar
         File(bank).fb().push(Vox(bank).tip().tag, bytes32(Vat(bank).par()), block.timestamp - 1);
+
         vm.stopPrank();
+
+        // feed expired -> way shouldn't change
         Vox(bank).poke();
         assertEq(old_way, Vox(bank).way());
     }
 
     function test_cap_min() public _orig_ {
-        // _orig_ set cap back to original value, otw it's too big to reasonably reach
+        // _orig_ set cap back to original value, otw it's too big to quickly reach
         Vox(bank).poke();
         skip(100000000);
+
+        // push mar << par
         vm.startPrank(Vox(bank).tip().src);
         File(bank).fb().push(Vox(bank).tip().tag, 0, block.timestamp + 1);
         vm.stopPrank();
+
+        // accumulates the skipped mar changes as if mar < par the whole time
+        // -> way should hit cap
         Vox(bank).poke();
         assertEq(Vox(bank).way(), Vox(bank).cap());
+        assertEq(Vat(bank).par(), init_par);
     }
 
     function test_cap_max() public _orig_ {
+        // _orig_ set cap back to original value, otw it's too big to quickly reach
         Vox(bank).poke();
+        assertEq(Vat(bank).par(), init_par);
+
         skip(100000000);
+
+        // poke mar >> par
         vm.startPrank(Vox(bank).tip().src);
         uint256 high = 2 ** 128;
         File(bank).fb().push(Vox(bank).tip().tag, bytes32(high), block.timestamp + 1 );
         vm.stopPrank();
+
+        // waited a long time to poke -> way should hit cap
         Vox(bank).poke();
         assertEq(Vox(bank).way(), rinv(Vox(bank).cap()));
     }
 
     function test_par_grows_with_stale_tip() public _orig_ {
         // set rico market feed low and fresh
-        feedpush(rtag, bytes32(WAD), block.timestamp + 10000);
+        feedpush(rrtag, bytes32(RAY), block.timestamp + 10000);
         skip(10);
         Vox(bank).poke();
 
@@ -148,7 +197,7 @@ contract VoxTest is Test, RicoSetUp {
         uint par0 = Vat(bank).par();
 
         // set rico market feed low and stale
-        feedpush(rtag, bytes32(WAD), block.timestamp);
+        feedpush(rrtag, bytes32(RAY), block.timestamp);
         skip(10);
         Vox(bank).poke();
 
@@ -159,7 +208,7 @@ contract VoxTest is Test, RicoSetUp {
         assertGt(par1, par0);
 
         // set rico market feed low and fresh, without progressing time
-        feedpush(rtag, bytes32(WAD), block.timestamp + 10000);
+        feedpush(rrtag, bytes32(RAY), block.timestamp + 10000);
         Vox(bank).poke();
 
         // no delayed way change after feed refreshed
@@ -169,7 +218,7 @@ contract VoxTest is Test, RicoSetUp {
         assertEq(par2, par1);
 
         // with fresh rico market feed both should progress
-        feedpush(rtag, bytes32(WAD), block.timestamp + 10000);
+        feedpush(rrtag, bytes32(RAY), block.timestamp + 10000);
         skip(10);
         Vox(bank).poke();
 
@@ -179,7 +228,7 @@ contract VoxTest is Test, RicoSetUp {
         assertGt(par3, par2);
     }
 
-// Sanity test that release constants behave as expected
+    // Sanity test that release constants behave as expected
     function test_release_how_day() public _orig_ {
         Vox(bank).poke();
         uint par0 = Vat(bank).par();
@@ -187,7 +236,7 @@ contract VoxTest is Test, RicoSetUp {
         assertEq(way0, RAY);
 
         // wait a std day and poke with market price below par
-        feedpush(rtag, bytes32(0), block.timestamp + 10 * BANKYEAR);
+        feedpush(rrtag, bytes32(0), block.timestamp + 10 * BANKYEAR);
         skip(1 days);
         Vox(bank).poke();
 
@@ -203,12 +252,15 @@ contract VoxTest is Test, RicoSetUp {
         assertClose(incr, RAY * 101 / 100, 100000);
     }
 
-    function test_release_how_cap() public _orig_ {
+    // test how long it takes for way to reach cap
+    function test_release_how_cap_up() public _orig_ {
+        // no time passed, way unchanged
         Vox(bank).poke();
         uint way0 = Vox(bank).way();
         assertEq(way0, RAY);
 
-        feedpush(rtag, bytes32(0), block.timestamp + 10 * BANKYEAR);
+        // set mar << par
+        feedpush(rrtag, bytes32(0), block.timestamp + 10 * BANKYEAR);
         skip(68.9 days);
         Vox(bank).poke();
 
@@ -217,14 +269,37 @@ contract VoxTest is Test, RicoSetUp {
         skip(1 days);
         Vox(bank).poke();
 
-        // with single direction movement way should take 69 days to go from neutral to cap
+        // with single direction movement way should take 69 days
+        // to go from neutral to cap
         assertEq(Vox(bank).way(), Vox(bank).cap());
     }
 
-    function test_release_cap() public _orig_ {
+    // same as test_release_how_cap_up, except way decreasing
+    function test_release_how_cap_down() public _orig_ {
+        Vox(bank).poke();
+        uint way0 = Vox(bank).way();
+        assertEq(way0, RAY);
+
+        // set mar >> par
+        feedpush(rrtag, bytes32(1_000_000_000 * RAY), block.timestamp + 10 * BANKYEAR);
+        skip(68.9 days);
+        Vox(bank).poke();
+
+        assertGt(Vox(bank).way(), rinv(Vox(bank).cap()));
+
+        skip(1 days);
+        Vox(bank).poke();
+
+        // with single direction movement way should take 69 days
+        // to go from neutral to cap
+        assertEq(Vox(bank).way(), rinv(Vox(bank).cap()));
+    }
+
+    // test par movement while at cap
+    function test_release_cap_up() public _orig_ {
         // Let way grow to cap
         Vox(bank).poke();
-        feedpush(rtag, bytes32(0), block.timestamp + 10 * BANKYEAR);
+        feedpush(rrtag, bytes32(0), block.timestamp + 10 * BANKYEAR);
         skip(100 days);
         Vox(bank).poke();
 
@@ -239,6 +314,26 @@ contract VoxTest is Test, RicoSetUp {
         assertClose(incr, RAY * 2, 1_000);
     }
 
+    // same as test_release_cap_up, except way is at lower bound
+    function test_release_cap_down() public _orig_ {
+        // Let way grow to inv cap
+        Vox(bank).poke();
+        feedpush(rrtag, bytes32(1_000_000_000 * RAY), block.timestamp + 10 * BANKYEAR);
+        skip(100 days);
+        Vox(bank).poke();
+
+        // let par grow for a year at min way
+        uint par0 = Vat(bank).par();
+        skip(BANKYEAR);
+        Vox(bank).poke();
+        uint par1 = Vat(bank).par();
+        uint incr = rdiv(par1, par0);
+
+        // should halve
+        assertClose(incr, RAY / 2, 1_000);
+    }
+
+    // test that way changes at expected rate before reaching cap
     function test_release_how_day_down() public _orig_ {
         Vox(bank).poke();
         uint par0 = Vat(bank).par();
@@ -246,7 +341,7 @@ contract VoxTest is Test, RicoSetUp {
         assertEq(way0, RAY);
 
         // wait a std day and poke with market price above par
-        feedpush(rtag, bytes32(1_000_000_000 * WAD), block.timestamp + 10 * BANKYEAR);
+        feedpush(rrtag, bytes32(1_000_000_000 * RAY), block.timestamp + 10 * BANKYEAR);
         skip(1 days);
         Vox(bank).poke();
 
@@ -262,38 +357,4 @@ contract VoxTest is Test, RicoSetUp {
         assertClose(incr, RAY * 100 / 101, 100000);
     }
 
-    function test_release_how_cap_down() public _orig_ {
-        Vox(bank).poke();
-        uint way0 = Vox(bank).way();
-        assertEq(way0, RAY);
-
-        feedpush(rtag, bytes32(1_000_000_000 * WAD), block.timestamp + 10 * BANKYEAR);
-        skip(68.9 days);
-        Vox(bank).poke();
-
-        assertGt(Vox(bank).way(), rinv(Vox(bank).cap()));
-
-        skip(1 days);
-        Vox(bank).poke();
-
-        // with single direction movement way should take 69 days to go from neutral to cap
-        assertEq(Vox(bank).way(), rinv(Vox(bank).cap()));
-    }
-
-    function test_release_cap_down() public _orig_ {
-        // Let way grow to inv cap
-        Vox(bank).poke();
-        feedpush(rtag, bytes32(1_000_000_000 * WAD), block.timestamp + 10 * BANKYEAR);
-        skip(100 days);
-        Vox(bank).poke();
-
-        // let par grow for a year at min way
-        uint par0 = Vat(bank).par();
-        skip(BANKYEAR);
-        Vox(bank).poke();
-        uint par1 = Vat(bank).par();
-        uint incr = rdiv(par1, par0);
-
-        assertClose(incr, RAY / 2, 1_000);
-    }
 }

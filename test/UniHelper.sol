@@ -11,18 +11,19 @@ struct Asset {
 }
 
 struct PoolArgs {
-    Asset a1;
-    Asset a2;
-    uint24 fee;
+    Asset   a1;
+    Asset   a2;
+    uint24  fee;
     uint160 sqrtPriceX96;
     uint160 low; // sqrtx96
     uint160 high; // sqrtx96
-    int24 tickSpacing;
+    int24   tickSpacing;
 }
 
 abstract contract UniSetUp{
     INonfungiblePositionManager constant nfpm =
         INonfungiblePositionManager(0xC36442b4a4522E871399CD717aBDD847Ab11FE88);
+
     // copied from:
     // https://github.com/Uniswap/v3-core/blob/main/contracts/libraries/TickMath.sol
     // SPDX-License-Identifier: GPL-2.0-or-later
@@ -51,6 +52,9 @@ abstract contract UniSetUp{
         args = PoolArgs(a1, a2, fee, sqrtPriceX96, low, high, spacing);
     }
 
+    // create a new UniV3 pool
+    // modified from https://github.com/Uniswap/v3-periphery/blob/main/contracts/base/PoolInitializer.sol
+    // GPL2.0-or-later
     function create_pool(
         address token0,
         address token1,
@@ -74,6 +78,7 @@ abstract contract UniSetUp{
         }
     }
 
+    // create a new UniV3 pool and add some liquidity
     function create_and_join_pool(PoolArgs memory args) internal returns (
         uint256 tokenId,
         uint128 liquidity,
@@ -84,6 +89,7 @@ abstract contract UniSetUp{
         return join_pool(args);
     }
 
+    // add some liquidity to a UniV3 pool
     function join_pool(PoolArgs memory args) internal returns (
         uint256 tokenId,
         uint128 liquidity,
@@ -138,55 +144,6 @@ abstract contract UniSetUp{
 
     function x96div(uint160 x, uint160 y) internal pure returns (uint160) {
         return uint160(uint(x) * uint(X96) / uint(y));
-    }
-
-    // copied from:
-    // https://github.com/Uniswap/v3-periphery/blob/main/contracts/libraries/LiquidityAmounts.sol
-    // SPDX-License-Identifier: GPL-2.0-or-later
-    function getLiquidityForAmount0(
-        uint160 sqrtRatioAX96,
-        uint160 sqrtRatioBX96,
-        uint256 amount0
-    ) internal pure returns (uint128 liquidity) {
-        if (sqrtRatioAX96 > sqrtRatioBX96) (sqrtRatioAX96, sqrtRatioBX96) = (sqrtRatioBX96, sqrtRatioAX96);
-        uint256 intermediate = x96mul(sqrtRatioAX96, sqrtRatioBX96);
-        return uint128(x96div(x96mul(uint160(amount0), uint160(intermediate)), sqrtRatioBX96 - sqrtRatioAX96));
-    }
-
-    /// @notice Computes the amount of liquidity received for a given amount of token1 and price range
-    /// @dev Calculates amount1 / (sqrt(upper) - sqrt(lower)).
-    /// @param sqrtRatioAX96 A sqrt price representing the first tick boundary
-    /// @param sqrtRatioBX96 A sqrt price representing the second tick boundary
-    /// @param amount1 The amount1 being sent in
-    /// @return liquidity The amount of returned liquidity
-    function getLiquidityForAmount1(
-        uint160 sqrtRatioAX96,
-        uint160 sqrtRatioBX96,
-        uint256 amount1
-    ) internal pure returns (uint128 liquidity) {
-        if (sqrtRatioAX96 > sqrtRatioBX96) (sqrtRatioAX96, sqrtRatioBX96) = (sqrtRatioBX96, sqrtRatioAX96);
-        return uint128(x96mul(uint160(amount1), sqrtRatioBX96 - sqrtRatioAX96));
-    }
-
-    function getLiquidityForAmounts(
-        uint160 sqrtRatioX96,
-        uint160 sqrtRatioAX96,
-        uint160 sqrtRatioBX96,
-        uint256 amount0,
-        uint256 amount1
-    ) internal pure returns (uint128 liquidity) {
-        if (sqrtRatioAX96 > sqrtRatioBX96) (sqrtRatioAX96, sqrtRatioBX96) = (sqrtRatioBX96, sqrtRatioAX96);
-
-        if (sqrtRatioX96 <= sqrtRatioAX96) {
-            liquidity = getLiquidityForAmount0(sqrtRatioAX96, sqrtRatioBX96, amount0);
-        } else if (sqrtRatioX96 < sqrtRatioBX96) {
-            uint128 liquidity0 = getLiquidityForAmount0(sqrtRatioX96, sqrtRatioBX96, amount0);
-            uint128 liquidity1 = getLiquidityForAmount1(sqrtRatioAX96, sqrtRatioX96, amount1);
-
-            liquidity = liquidity0 < liquidity1 ? liquidity0 : liquidity1;
-        } else {
-            liquidity = getLiquidityForAmount1(sqrtRatioAX96, sqrtRatioBX96, amount1);
-        }
     }
 
     // getTickAtSqrtRatio
