@@ -14,7 +14,7 @@ import {Block} from "../lib/feedbase/src/mixin/Read.sol";
 import {ChainlinkAdapter} from "../lib/feedbase/src/adapters/ChainlinkAdapter.sol";
 import {Divider} from "../lib/feedbase/src/combinators/Divider.sol";
 import {Feedbase} from "../lib/feedbase/src/Feedbase.sol";
-import {Medianizer} from "../lib/feedbase/src/Medianizer.sol";
+import {Medianizer} from "../lib/feedbase/src/combinators/Medianizer.sol";
 import {Multiplier} from "../lib/feedbase/src/combinators/Multiplier.sol";
 import {UniswapV3Adapter, IUniWrapper} from "../lib/feedbase/src/adapters/UniswapV3Adapter.sol";
 import {Ward} from "../lib/feedbase/src/mixin/ward.sol";
@@ -114,8 +114,8 @@ contract Ball is Math, Ward {
         nfthook = new UniNFTHook();
 
         mdn = new Medianizer(args.feedbase);
-        uniadapt = new UniswapV3Adapter(Feedbase(args.feedbase), IUniWrapper(args.uniwrapper));
-        cladapt = new ChainlinkAdapter(args.feedbase);
+        uniadapt = new UniswapV3Adapter(IUniWrapper(args.uniwrapper));
+        cladapt = new ChainlinkAdapter();
         divider = new Divider(args.feedbase);
         multiplier = new Multiplier(args.feedbase);
 

@@ -193,7 +193,7 @@ abstract contract RicoSetUp is BaseHelper {
         divider.setConfig(tag, Block.Config(sources, tags));
         // todo quorum?
         Medianizer.Config memory mdnconf =
-            Medianizer.Config(new address[](1), new bytes32[](1), 0);
+            Medianizer.Config(new address[](1), new bytes32[](1), 1);
         mdnconf.srcs[0] = address(divider);
         mdnconf.tags[0] = tag;
         mdn.setConfig(tag, mdnconf);

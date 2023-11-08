@@ -212,7 +212,7 @@ describe('Vox', () => {
     })
 
     it('deploy gas', async () => {
-      await check(ethers.BigNumber.from(deploygas), 39405525)
+      await check(ethers.BigNumber.from(deploygas), 39406142)
     })
 
     it('poke gas', async () => {
@@ -297,7 +297,7 @@ describe('Vox', () => {
       let mar_tag = b32('rico:ref')
       let divider = await ball.divider()
       let mar_gas = await fb.estimateGas.pull(divider, mar_tag)
-      await check(mar_gas, 160902)
+      await check(mar_gas, 160815)
     })
 
     it('drip gas', async () => {

@@ -46,11 +46,11 @@ contract BallTest is BaseHelper {
         // time has skipped ahead while forked chainlink static
         // give adapters extra ttl equal to skipped time
         uint skipped = block.timestamp + 100_000 - start_time;
-        address agg; uint ttl; uint precision;
         bytes32[4] memory tags = [XAU_USD_TAG, DAI_USD_TAG, WETH_USD_TAG, RAI_ETH_TAG];
         for(uint i; i < tags.length; i++) {
-            (agg, ttl, precision) = cladapt.configs(tags[i]);
-            cladapt.setConfig(tags[i], ChainlinkAdapter.Config(agg, ttl + skipped, RAY));
+            ChainlinkAdapter.Config memory config = cladapt.getConfig(tags[i]);
+            config.ttl += skipped;
+            cladapt.setConfig(tags[i], config);
         }
     }
 
