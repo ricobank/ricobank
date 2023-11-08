@@ -42,12 +42,13 @@ contract Vat is Bank {
         )), (bytes));
     }
     function MINT() external pure returns (uint) {return _MINT;}
+    function FEE_MAX() external pure returns (uint) {return _FEE_MAX;}
 
     enum Spot {Sunk, Iffy, Safe}
 
-    uint256 internal constant _MINT = 2 ** 128;
+    uint256 constant _MINT    = 2 ** 128;
+    uint256 constant _FEE_MAX = 1000000072964521287979890107; // ~10x/yr
 
-    error ErrFeeMin();
     error ErrFeeRho();
     error ErrIlkInit();
     error ErrNotSafe();
@@ -280,9 +281,13 @@ contract Vat is Bank {
                if (key == "line") { i.line = _val;
         } else if (key == "dust") { i.dust = _val;
         } else if (key == "hook") { i.hook = address(bytes20(val));
-        } else if (key == "chop") { i.chop = _val;
+        } else if (key == "chop") {
+            must(_val, RAY, type(uint).max);
+            shld(_val, RAY, 10 * RAY);
+            i.chop = _val;
         } else if (key == "fee") {
-            if (_val < RAY)                revert ErrFeeMin();
+            must(_val, RAY, type(uint).max);
+            shld(_val, RAY, _FEE_MAX);
             if (block.timestamp != i.rho) revert ErrFeeRho();
             i.fee = _val;
         } else { revert ErrWrongKey(); }

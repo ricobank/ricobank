@@ -41,7 +41,6 @@ abstract contract BaseHelper is Math, Test, UniSetUp {
     uint24  constant public RICO_FEE   = 500;
     uint24  constant public RISK_FEE   = 3000;
     uint256 constant public HOOK_ROOM  = 8;
-    uint256 constant public BANKYEAR   = (365 * 24 + 6) * 3600;
     uint256 constant public CL_DEC     = 8;
     uint256 constant public WETH_REF_VAL = 805830286360171930170219164;
     address immutable public self      = payable(address(this));

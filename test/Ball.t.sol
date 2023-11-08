@@ -381,4 +381,129 @@ contract BallTest is BaseHelper {
         vm.prank(VAULT);
         File(bank).file('ceil', bytes32(WAD));
     }
+
+    modifier _care_ {
+        File(bank).file('care', bytes32(uint(1)));
+        _;
+    }
+
+    function test_care_fee() public _care_ {
+        bytes32 gilk = 'gold';
+        Vat(bank).init(gilk, address(0));
+
+        // shouldn't be able to go under min
+        vm.expectRevert(Bank.ErrBound.selector);
+        Vat(bank).filk(gilk, 'fee', bytes32(RAY - 1));
+
+        // test minimum...rack should stick
+        Vat(bank).filk(gilk, 'fee', bytes32(RAY));
+
+        skip(BANKYEAR);
+        Vat(bank).drip(gilk);
+        assertEq(Vat(bank).ilks(gilk).rack, RAY);
+
+        // test max...rack should grow 10x/yr
+        uint fee_max = Vat(bank).FEE_MAX();
+        Vat(bank).filk(gilk, 'fee', bytes32(fee_max));
+
+        skip(BANKYEAR * 2);
+        Vat(bank).drip(gilk);
+        assertClose(Vat(bank).ilks(gilk).rack, 100 * RAY, 1000000000000);
+
+        // shouldn't be able to go over max
+        vm.expectRevert(Bank.ErrBound.selector);
+        Vat(bank).filk(gilk, 'fee', bytes32(fee_max + 1));
+    }
+
+    function test_care_rel() public _care_ {
+        File(bank).file('rel', bytes32(0));
+
+        uint rel_max = File(bank).REL_MAX();
+        vm.expectRevert(Bank.ErrBound.selector);
+        File(bank).file('rel', bytes32(rel_max + 1));
+        File(bank).file('rel', bytes32(rel_max));
+
+        File(bank).file('cel', bytes32(UINT256_MAX));
+        uint wait = BANKYEAR - (block.timestamp - Vow(bank).ramp().bel);
+        skip(wait);
+
+        vm.prank(address(mdn));
+        fb.push(WETH_REF_TAG, bytes32(2 * init_par), UINT256_MAX);
+
+
+        Vat(bank).frob(wilk, self, abi.encodePacked(int(WAD)), int(WAD));
+
+        // prank a low but nonzero risk:rico price so no reflop error
+        vm.startPrank(address(mdn));
+        fb.push(RISK_RICO_TAG, bytes32(uint(1)), UINT256_MAX);
+        fb.push(WETH_REF_TAG, bytes32(uint(0)), UINT256_MAX);
+        vm.stopPrank();
+
+        // create some sin
+        Vat(bank).bail(wilk, self);
+
+        uint supply_pre = Gem(risk).totalSupply();
+        Vow(bank).keep(empty);
+        // 10 because rel, and 11 because of supply already there
+        assertLt(Gem(risk).totalSupply(), supply_pre * 11);
+        assertGt(Gem(risk).totalSupply(), supply_pre * 10);
+    }
+
+    function test_care_2() public _care_ {
+        File(bank).file('way', bytes32(RAY));
+        File(bank).file('wel', bytes32(0));
+        File(bank).file('wel', bytes32(WAD));
+        vm.expectRevert(Bank.ErrBound.selector);
+        File(bank).file('wel', bytes32(WAD+1));
+
+        File(bank).file('toll', bytes32(0));
+        File(bank).file('toll', bytes32(RAY));
+        vm.expectRevert(Bank.ErrBound.selector);
+        File(bank).file('toll', bytes32(RAY+1));
+
+        File(bank).file('how', bytes32(RAY));
+        File(bank).file('how', bytes32(UINT256_MAX));
+        vm.expectRevert(Bank.ErrBound.selector);
+        File(bank).file('how', bytes32(RAY-1));
+
+        File(bank).file('how', bytes32(RAY));
+        uint cap_max = File(bank).CAP_MAX();
+        File(bank).file('cap', bytes32(RAY));
+        File(bank).file('cap', bytes32(cap_max));
+        vm.expectRevert(Bank.ErrBound.selector);
+        File(bank).file('cap', bytes32(cap_max+1));
+
+        File(bank).file('how', bytes32(RAY * 3 / 2));
+        File(bank).file('way', bytes32(RAY));
+
+        Vox(bank).poke();
+
+        File(bank).file('tip.src', bytes32(bytes20(self)));
+        fb.push(RICO_REF_TAG, bytes32(0), UINT256_MAX);
+
+        File(bank).file('way', bytes32(cap_max));
+        File(bank).file('how', bytes32(uint(1000000000000003652500000000)));
+        vm.expectRevert(Bank.ErrBound.selector);
+        File(bank).file('way', bytes32(cap_max+1));
+
+        skip(BANKYEAR);
+
+        Vox(bank).poke();
+        assertClose(Vat(bank).par(), 10 * init_par, 10000000000);
+
+        File(bank).file('plot.pop', bytes32(RAY / 10));
+        File(bank).file('plat.pop', bytes32(RAY / 10));
+        File(bank).file('plot.pop', bytes32(RAY * 10));
+        File(bank).file('plat.pop', bytes32(RAY * 10));
+
+        vm.expectRevert(Bank.ErrBound.selector);
+        File(bank).file('plot.pop', bytes32(RAY / 10 - 1));
+        vm.expectRevert(Bank.ErrBound.selector);
+        File(bank).file('plat.pop', bytes32(RAY / 10 - 1));
+        vm.expectRevert(Bank.ErrBound.selector);
+        File(bank).file('plot.pop', bytes32(RAY * 10 + 1));
+        vm.expectRevert(Bank.ErrBound.selector);
+        File(bank).file('plat.pop', bytes32(RAY * 10 + 1));
+    }
+
 }

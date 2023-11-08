@@ -133,7 +133,7 @@ contract VatTest is Test, RicoSetUp {
         assertTrue(spot == Vat.Spot.Sunk);
 
         // can't refloat using fee, because fee must be >=1
-        vm.expectRevert(Vat.ErrFeeMin.selector);
+        vm.expectRevert(Bank.ErrBound.selector);
         Vat(bank).filk(gilk, 'fee', bytes32(RAY - 1));
     }
 
@@ -148,8 +148,12 @@ contract VatTest is Test, RicoSetUp {
         (spot,,) = Vat(bank).safe(gilk, self);
         assertTrue(spot == Vat.Spot.Sunk);
 
+        // can't have liqr < 1
+        vm.expectRevert(Bank.ErrBound.selector);
+        Vat(bank).filh(gilk, 'liqr', empty, bytes32(RAY - 1));
+
         // lower liqr back down...should refloat the urn
-        Vat(bank).filh(gilk, 'liqr', empty, bytes32(RAY - 1000000));
+        Vat(bank).filh(gilk, 'liqr', empty, bytes32(RAY));
         (spot,,) = Vat(bank).safe(gilk, self);
         assertTrue(spot == Vat.Spot.Safe);
     }
@@ -548,7 +552,7 @@ contract VatTest is Test, RicoSetUp {
 
     function test_drip_neg_fee() public {
         // can't set fee < RAY
-        vm.expectRevert(Vat.ErrFeeMin.selector);
+        vm.expectRevert(Bank.ErrBound.selector);
         Vat(bank).filk(gilk, 'fee', bytes32(RAY / 2));
 
         // have to accumulate pending fees before changing fee

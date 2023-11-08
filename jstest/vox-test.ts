@@ -212,7 +212,7 @@ describe('Vox', () => {
     })
 
     it('deploy gas', async () => {
-      await check(ethers.BigNumber.from(deploygas), 38897761)
+      await check(ethers.BigNumber.from(deploygas), 39415218)
     })
 
     it('poke gas', async () => {

@@ -37,6 +37,8 @@ contract Math {
     uint256 internal constant RAY = 10 ** 27;
     uint256 internal constant RAD = 10 ** 45;
 
+    uint256 internal constant BANKYEAR = ((365 * 24) + 6) * 3600;
+
     function min(uint256 x, uint256 y) internal pure returns (uint256 z) {
         z = x <= y ? x : y;
     }

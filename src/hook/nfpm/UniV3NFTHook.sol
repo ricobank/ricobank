@@ -206,10 +206,11 @@ contract UniNFTHook is HookMix {
             emit NewPalm1(key, i, val);
         } else if (xs.length == 1) {
             address gem = address(bytes20(xs[0]));
-
             if (key == "src") { hs.sources[gem].rudd.src = address(bytes20(val));
             } else if (key == "tag") { hs.sources[gem].rudd.tag = val;
-            } else if (key == "liqr") { hs.sources[gem].liqr = uint(val);
+            } else if (key == "liqr") { 
+                must(uint(val), RAY, type(uint).max);
+                hs.sources[gem].liqr = uint(val);
             } else { revert ErrWrongKey(); }
             emit NewPalm2(key, i, xs[0], val);
         } else {

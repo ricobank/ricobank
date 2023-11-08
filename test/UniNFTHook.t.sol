@@ -472,7 +472,7 @@ contract NFTHookTest is Test, RicoSetUp {
 
         Vat(bank).filh(uilk, 'src', single(bytes32(bytes20(self))), bytes32(uint(10)));
         Vat(bank).filh(uilk, 'tag', single(bytes32(bytes20(self))), bytes32(uint(100)));
-        Vat(bank).filh(uilk, 'liqr', single(bytes32(bytes20(self))), bytes32(uint(100)));
+        Vat(bank).filh(uilk, 'liqr', single(bytes32(bytes20(self))), bytes32(uint(100 * RAY)));
     }
 
     function test_not_found() public {

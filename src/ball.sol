@@ -152,8 +152,8 @@ contract Ball is Math, Ward {
 
     function setup(BallArgs calldata args) external _ward_ {
         IDiamondCuttable.FacetCut[] memory facetCuts = new IDiamondCuttable.FacetCut[](4);
-        bytes4[] memory filesels = new bytes4[](3);
-        bytes4[] memory vatsels  = new bytes4[](20);
+        bytes4[] memory filesels = new bytes4[](6);
+        bytes4[] memory vatsels  = new bytes4[](21);
         bytes4[] memory vowsels  = new bytes4[](6);
         bytes4[] memory voxsels  = new bytes4[](6);
         File fbank = File(bank);
@@ -161,6 +161,9 @@ contract Ball is Math, Ward {
         filesels[0] = File.file.selector;
         filesels[1] = File.fb.selector;
         filesels[2] = File.rico.selector;
+        filesels[3] = File.care.selector;
+        filesels[4] = File.CAP_MAX.selector;
+        filesels[5] = File.REL_MAX.selector;
         vatsels[0]  = Vat.filk.selector;
         vatsels[1]  = Vat.filh.selector;
         vatsels[2]  = Vat.init.selector;
@@ -177,10 +180,11 @@ contract Ball is Math, Ward {
         vatsels[13] = Vat.par.selector;
         vatsels[14] = Vat.drip.selector;
         vatsels[15] = Vat.MINT.selector;
-        vatsels[16] = Vat.ink.selector;
-        vatsels[17] = Vat.flash.selector;
-        vatsels[18] = Vat.geth.selector;
-        vatsels[19] = Vat.hookcallext.selector;
+        vatsels[16] = Vat.FEE_MAX.selector;
+        vatsels[17] = Vat.ink.selector;
+        vatsels[18] = Vat.flash.selector;
+        vatsels[19] = Vat.geth.selector;
+        vatsels[20] = Vat.hookcallext.selector;
         vowsels[0]  = Vow.keep.selector;
         vowsels[1]  = Vow.RISK.selector;
         vowsels[2]  = Vow.ramp.selector;

@@ -32,6 +32,7 @@ abstract contract Bank is Math, Flog, Palm, OwnableInternal {
     struct BankStorage {
         Gem      rico;
         Feedbase fb;
+        bool     care;
     }
 
     struct VatStorage {
@@ -109,6 +110,7 @@ abstract contract Bank is Math, Flog, Palm, OwnableInternal {
 
     error ErrWrongKey();
     error ErrWrongUrn();
+    error ErrBound();
 
     // bubble up error code from a reverted call
     function bubble(bytes memory data) internal pure {
@@ -122,4 +124,13 @@ abstract contract Bank is Math, Flog, Palm, OwnableInternal {
         return OwnableStorage.layout().owner;
     }
 
+    function must(uint actual, uint lo, uint hi) internal pure {
+        if (actual < lo || actual > hi) revert ErrBound();
+    }
+
+    function shld(uint actual, uint lo, uint hi) internal view {
+        if (getBankStorage().care) {
+            must(actual, lo, hi);
+        }
+    }
 }

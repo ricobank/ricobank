@@ -497,11 +497,12 @@ contract VowTest is Test, RicoSetUp {
         vm.stopPrank();
     }
 
-    function test_high_toll() public
-    {
+    function test_high_toll() public {
+        File(bank).file('care', bytes32(uint(1)));
+
         // toll can't be > 100%
         File(bank).file('toll', bytes32(RAY));
-        vm.expectRevert(File.ErrHighToll.selector);
+        vm.expectRevert(Bank.ErrBound.selector);
         File(bank).file('toll', bytes32(RAY + 1));
     }
 
@@ -568,8 +569,10 @@ contract VowTest is Test, RicoSetUp {
         feedpush(RISK_RICO_TAG, bytes32(RAY), type(uint).max);
 
         // can't flap more rico than surplus
-        vm.expectRevert(File.ErrHighWel.selector);
+        File(bank).file('care', bytes32(uint(1)));
+        vm.expectRevert(Bank.ErrBound.selector);
         File(bank).file('wel', bytes32(WAD + 1));
+        File(bank).file('care', bytes32(uint(0)));
 
         uint wel = WAD / 7;
         File(bank).file('wel', bytes32(wel));

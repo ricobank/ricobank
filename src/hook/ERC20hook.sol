@@ -121,9 +121,11 @@ contract ERC20Hook is HookMix {
             if (key == "gem") { hs.gem = address(bytes20(val));
             } else if (key == "src") { hs.rudd.src = address(bytes20(val));
             } else if (key == "tag") { hs.rudd.tag = val;
-            } else if (key == "liqr") { hs.liqr = uint(val);
-            } else if (key == "pep")  { hs.plot.pep  = uint(val);
-            } else if (key == "pop")  { hs.plot.pop  = uint(val);
+            } else if (key == "liqr") { 
+                must(uint(val), RAY, type(uint).max);
+                hs.liqr = uint(val);
+            } else if (key == "pep")  { hs.plot.pep = uint(val);
+            } else if (key == "pop")  { hs.plot.pop = uint(val);
             } else { revert ErrWrongKey(); }
             emit NewPalm1(key, i, val);
         } else {
