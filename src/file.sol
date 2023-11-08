@@ -9,7 +9,7 @@ import { Bank } from "./bank.sol";
 
 contract File is Bank {
     uint constant _CAP_MAX = 1000000072964521287979890107; // ~10x/yr
-    uint constant _REL_MAX = 10 * WAD / BANKYEAR; // ~10x/yr
+    uint constant _REL_MAX = 10 * RAY / BANKYEAR; // ~10x/yr
     function CAP_MAX() external pure returns (uint) {return _CAP_MAX;}
     function REL_MAX() external pure returns (uint) {return _REL_MAX;}
 
@@ -36,7 +36,7 @@ contract File is Bank {
         }
         else if (key == "cel") { vowS.ramp.cel = _val; }
         else if (key == "wel") {
-            must(_val, 0, WAD);
+            must(_val, 0, RAY);
             vowS.ramp.wel = _val;
         }
         else if (key == "toll") {

@@ -54,7 +54,7 @@ contract Vow is Bank {
             mash       = rmul(vowS.plat.pop, mash);
 
             // buy-and-burn risk with remaining (`flap`) rico
-            uint flap  = wmul(joy - 1, vowS.ramp.wel);
+            uint flap  = rmul(joy - 1, vowS.ramp.wel);
             joy       -= flap;
             vatS.joy   = joy;
             emit NewPalm0("joy", bytes32(joy));
@@ -88,7 +88,7 @@ contract Vow is Bank {
 
             // rate-limit flop
             uint elapsed = min(block.timestamp - vowS.ramp.bel, vowS.ramp.cel);
-            uint flop    = elapsed * wmul(vowS.ramp.rel, risk.totalSupply());
+            uint flop    = elapsed * rmul(vowS.ramp.rel, risk.totalSupply());
             if (0 == flop) revert ErrReflop();
 
             // swap RISK for rico to cover sin

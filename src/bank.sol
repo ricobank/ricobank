@@ -52,12 +52,11 @@ abstract contract Bank is Math, Flog, Palm, OwnableInternal {
     uint256 internal constant LOCKED = 1;
 
     // RISK mint rate. Used in struct, never extend in upgrade
-    // flop uses min(vel rate, rel rate)
     struct Ramp {
-        uint256 rel; // [wad] fraction of RISK supply/s
         uint256 bel; // [sec] last flop timestamp
         uint256 cel; // [sec] max seconds flop can ramp up
-        uint256 wel; // [wad] fraction of joy/flap
+        uint256 rel; // [ray] fraction of RISK supply/s
+        uint256 wel; // [ray] fraction of joy/flap
     }
 
     struct Plx {

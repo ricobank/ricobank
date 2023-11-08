@@ -85,7 +85,7 @@ task('deploy-ricobank', '')
         platpop:    ray(1),
         plotpep:    2,
         plotpop:    ray(1),
-        mintramp:   { rel: wad(0.02).div(BANKYEAR), bel: timestamp, cel: 1, wel: wad(1) },
+        mintramp:   { bel: timestamp, cel: 1, rel: ray(0.02).div(BANKYEAR), wel: ray(1) },
     }
 
     let ilks = []

@@ -141,7 +141,7 @@ contract BallTest is BaseHelper {
             RAY,  // plat.pop
             2,    // plot.pep
             RAY,  // plot.pop
-            Bank.Ramp(WAD / BLN, block.timestamp, 1, WAD)
+            Bank.Ramp(block.timestamp, 1, RAY / BLN, RAY)
         );
 
         Ball ball = new Ball(bargs);
@@ -335,7 +335,7 @@ contract BallTest is BaseHelper {
         uint art_pre = Vat(bank).urns(wilk, self);
         uint ink_pre = _ink(wilk, self);
 
-        assertEq(Vow(bank).ramp().wel, WAD);
+        assertEq(Vow(bank).ramp().wel, RAY);
         vm.expectCall(rico, abi.encodePacked(Gem.mint.selector));
         Vow(bank).keep(ilks); // drips
 
@@ -452,9 +452,9 @@ contract BallTest is BaseHelper {
     function test_care_2() public _care_ {
         File(bank).file('way', bytes32(RAY));
         File(bank).file('wel', bytes32(0));
-        File(bank).file('wel', bytes32(WAD));
+        File(bank).file('wel', bytes32(RAY));
         vm.expectRevert(Bank.ErrBound.selector);
-        File(bank).file('wel', bytes32(WAD+1));
+        File(bank).file('wel', bytes32(RAY+1));
 
         File(bank).file('toll', bytes32(0));
         File(bank).file('toll', bytes32(RAY));

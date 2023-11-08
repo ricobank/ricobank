@@ -254,7 +254,7 @@ abstract contract RicoSetUp is BaseHelper {
             platpop,
             plotpep,
             plotpop,
-            Bank.Ramp(WAD / BLN, block.timestamp, 1, WAD)
+            Bank.Ramp(block.timestamp, 1, RAY / BLN, RAY)
         );
 
         ball = new Ball(bargs);

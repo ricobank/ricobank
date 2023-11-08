@@ -6,7 +6,7 @@ import { ethers } from "hardhat"
 export { snapshot, revert, send, wad, ray, rad, apy, N, BANKYEAR, WAD, RAY, RAD, U256_MAX } from 'minihat'
 
 const debug = require('debug')('rico:test')
-const ramp_members = ['vel', 'rel', 'bel', 'cel']
+const ramp_members = ['bel', 'cel', 'rel', 'wel']
 export const ADDRZERO = '0x' + '00'.repeat(20)
 
 export function b32 (arg: any): Uint8Array {

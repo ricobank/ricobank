@@ -667,7 +667,7 @@ contract DssVowTest is DssJsTest {
     function _vow_setUp() internal {
         gold.mint(self, 10000 * WAD);
         gold.approve(bank, UINT256_MAX);
-        File(bank).file('rel', bytes32(WAD / BLN));
+        File(bank).file('rel', bytes32(RAY / BLN));
         File(bank).file('bel', bytes32(block.timestamp));
         File(bank).file('cel', bytes32(uint(1)));
     }
@@ -678,7 +678,7 @@ contract DssVowTest is DssJsTest {
 
     function test_no_reflop() public _vow_ {
         uint amt = WAD / 100;
-        File(bank).file('rel', bytes32(WAD / BLN));
+        File(bank).file('rel', bytes32(RAY / BLN));
         File(bank).file('bel', bytes32(block.timestamp));
         File(bank).file('cel', bytes32(uint(1)));
         skip(1);
@@ -746,7 +746,7 @@ contract DssVowTest is DssJsTest {
     //   uses ramps to rate limit both
 
     function test_no_surplus_after_good_flop() public _vow_ {
-        File(bank).file('rel', bytes32(WAD));
+        File(bank).file('rel', bytes32(RAY));
         File(bank).file('bel', bytes32(block.timestamp));
         File(bank).file('cel', bytes32(uint(1)));
 
