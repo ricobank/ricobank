@@ -49,7 +49,6 @@ contract Vat is Bank {
     uint256 constant _MINT    = 2 ** 128;
     uint256 constant _FEE_MAX = 1000000072964521287979890107; // ~10x/yr
 
-    error ErrFeeRho();
     error ErrIlkInit();
     error ErrNotSafe();
     error ErrUrnDust();
@@ -288,7 +287,7 @@ contract Vat is Bank {
         } else if (key == "fee") {
             must(_val, RAY, type(uint).max);
             shld(_val, RAY, _FEE_MAX);
-            if (block.timestamp != i.rho) revert ErrFeeRho();
+            _drip(ilk);
             i.fee = _val;
         } else { revert ErrWrongKey(); }
         emit NewPalm1(key, ilk, bytes32(val));

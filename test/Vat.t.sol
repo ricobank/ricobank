@@ -555,14 +555,23 @@ contract VatTest is Test, RicoSetUp {
         vm.expectRevert(Bank.ErrBound.selector);
         Vat(bank).filk(gilk, 'fee', bytes32(RAY / 2));
 
-        // have to accumulate pending fees before changing fee
+        // fees should be collected before changing fee
+        Vat(bank).frob(gilk, self, abi.encodePacked(100 * WAD), int(50 * WAD));
         skip(1);
-        vm.expectRevert(Vat.ErrFeeRho.selector);
+        uint pre_joy = Vat(bank).joy();
         Vat(bank).filk(gilk, 'fee', bytes32(RAY));
+        uint aft_joy = Vat(bank).joy();
+        uint rake = aft_joy - pre_joy;
+        assertGt(rake, 0);
 
-        // should work after drip
-        Vat(bank).drip(gilk);
-        Vat(bank).filk(gilk, 'fee', bytes32(RAY));
+        // fees should be based on previous rate rather than new
+        skip(10);
+        pre_joy = Vat(bank).joy();
+        Vat(bank).filk(gilk, 'fee', bytes32(Vat(bank).FEE_MAX()));
+        aft_joy = Vat(bank).joy();
+        rake = aft_joy - pre_joy;
+        // previous rate was RAY (zero fees)
+        assertEq(rake, 0);
     }
 
     function test_feed_plot_safe() public {
