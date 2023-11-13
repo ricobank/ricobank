@@ -165,12 +165,12 @@ contract VatTest is Test, RicoSetUp {
         assertTrue(spot == Vat.Spot.Safe);
 
         // crash gold price...should sink the urn
-        feed.push(grtag, bytes32(RAY / 2), block.timestamp + 1000);
+        feedpush(grtag, bytes32(RAY / 2), block.timestamp + 1000);
         (spot,,) = Vat(bank).safe(gilk, self);
         assertTrue(spot == Vat.Spot.Sunk);
 
         // no one bailed, now pump gold price back up.  should refloat
-        feed.push(grtag, bytes32(RAY * 2), block.timestamp + 1000);
+        feedpush(grtag, bytes32(RAY * 2), block.timestamp + 1000);
         (spot,,) = Vat(bank).safe(gilk, self);
         assertTrue(spot == Vat.Spot.Safe);
     }
@@ -188,7 +188,7 @@ contract VatTest is Test, RicoSetUp {
         assertTrue(spot == Vat.Spot.Iffy);
 
         // without a drip an update should refloat urn
-        feed.push(grtag, bytes32(RAY), block.timestamp + 1000);
+        feedpush(grtag, bytes32(RAY), block.timestamp + 1000);
         (spot,,) = Vat(bank).safe(gilk, self);
         assertTrue(spot == Vat.Spot.Safe);
     }
@@ -201,7 +201,7 @@ contract VatTest is Test, RicoSetUp {
         assertTrue(spot == Vat.Spot.Safe);
 
         // sink the urn
-        feed.push(grtag, bytes32(RAY / 2), block.timestamp + 1000);
+        feedpush(grtag, bytes32(RAY / 2), block.timestamp + 1000);
         (spot,,) = Vat(bank).safe(gilk, self);
         assertTrue(spot == Vat.Spot.Sunk);
 
@@ -218,7 +218,7 @@ contract VatTest is Test, RicoSetUp {
         assertTrue(spot == Vat.Spot.Safe);
 
         // sink it
-        feed.push(grtag, bytes32(RAY / 2), block.timestamp + 1000);
+        feedpush(grtag, bytes32(RAY / 2), block.timestamp + 1000);
         (spot,,) = Vat(bank).safe(gilk, self);
         assertTrue(spot == Vat.Spot.Sunk);
 
@@ -745,12 +745,11 @@ contract VatTest is Test, RicoSetUp {
         skip(1);
         Vat(bank).drip(gilk);
 
-        // frob while pranking medianizer address
-        address amdn = address(mdn);
-        gold.mint(amdn, 1000 * WAD);
-        vm.startPrank(amdn);
+        // frob while pranking fsrc address
+        gold.mint(fsrc, 1000 * WAD);
+        vm.startPrank(fsrc);
         gold.approve(bank, 1000 * WAD);
-        Vat(bank).frob(gilk, address(mdn), abi.encodePacked(WAD * 2), int(WAD / 2));
+        Vat(bank).frob(gilk, fsrc, abi.encodePacked(WAD * 2), int(WAD / 2));
 
         // send the rico back to self
         rico.transfer(self, 100);
@@ -762,11 +761,11 @@ contract VatTest is Test, RicoSetUp {
 
         // can't help because dust
         vm.expectRevert(Vat.ErrUrnDust.selector);
-        Vat(bank).frob(gilk, amdn, abi.encodePacked(WAD), -int(1));
+        Vat(bank).frob(gilk, fsrc, abi.encodePacked(WAD), -int(1));
 
         // can't hurt because permissions
         vm.expectRevert(Bank.ErrWrongUrn.selector);
-        Vat(bank).frob(gilk, amdn, abi.encodePacked(WAD), int(1));
+        Vat(bank).frob(gilk, fsrc, abi.encodePacked(WAD), int(1));
 
         // ok now frob my own urn...but it's not safe
         vm.expectRevert(Vat.ErrNotSafe.selector);
@@ -777,7 +776,7 @@ contract VatTest is Test, RicoSetUp {
         vm.expectRevert(Vat.ErrUrnDust.selector);
         Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(1));
 
-        // frob a non-dusty amount...but mdn already frobbed a bunch
+        // frob a non-dusty amount...but fsrc already frobbed a bunch
         // should exceed ceil
         vm.expectRevert(Vat.ErrDebtCeil.selector);
         Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(WAD));
@@ -799,32 +798,31 @@ contract VatTest is Test, RicoSetUp {
 
         // gold:ref price 1k
         feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
-        address amdn = address(mdn);
-        gold.mint(amdn, 1000 * WAD);
+        gold.mint(fsrc, 1000 * WAD);
 
-        // frob from medianizer address
-        // could prank any non-self address, just chose medianizer's
-        vm.startPrank(amdn);
+        // frob from fsrc address
+        // could prank any non-self address, just chose fsrc's
+        vm.startPrank(fsrc);
         gold.approve(bank, 1000 * WAD);
-        Vat(bank).frob(gilk, address(mdn), abi.encodePacked(WAD * 2), int(WAD / 2));
+        Vat(bank).frob(gilk, fsrc, abi.encodePacked(WAD * 2), int(WAD / 2));
         vm.stopPrank();
 
         // bypasses some checks when dink >= 0 and dart <= 0
         feedpush(grtag, bytes32(0), type(uint).max);
         File(bank).file('ceil', bytes32(0));
 
-        // self removes some ink from amdn - should fail because unauthorized
+        // self removes some ink from fsrc - should fail because unauthorized
         vm.expectRevert(Bank.ErrWrongUrn.selector);
-        Vat(bank).frob(gilk, amdn, abi.encodePacked(-int(1)), int(0));
+        Vat(bank).frob(gilk, fsrc, abi.encodePacked(-int(1)), int(0));
 
-        // mdn removes some ink from mdn - should fail because not safe
-        vm.prank(amdn);
+        // fsrc removes some ink from fsrc - should fail because not safe
+        vm.prank(fsrc);
         vm.expectRevert(Vat.ErrNotSafe.selector);
-        Vat(bank).frob(gilk, amdn, abi.encodePacked(-int(1)), int(0));
+        Vat(bank).frob(gilk, fsrc, abi.encodePacked(-int(1)), int(0));
 
         // ...but it's fine when dink >= 0
-        Vat(bank).frob(gilk, amdn, abi.encodePacked(int(0)), int(0));
-        Vat(bank).frob(gilk, amdn, abi.encodePacked(int(1)), int(0));
+        Vat(bank).frob(gilk, fsrc, abi.encodePacked(int(0)), int(0));
+        Vat(bank).frob(gilk, fsrc, abi.encodePacked(int(1)), int(0));
     }
 
     function test_frob_err_ordering_dinks_darts() public {
@@ -839,13 +837,12 @@ contract VatTest is Test, RicoSetUp {
 
         // gold:ref price 1k
         feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
-        address amdn = address(mdn);
-        gold.mint(amdn, 1000 * WAD);
+        gold.mint(fsrc, 1000 * WAD);
 
-        // could prank anything non-self; chose medianizer
-        vm.startPrank(amdn);
+        // could prank anything non-self; chose fsrc
+        vm.startPrank(fsrc);
         gold.approve(bank, 1000 * WAD);
-        Vat(bank).frob(gilk, address(mdn), abi.encodePacked(WAD * 2), int(WAD / 2));
+        Vat(bank).frob(gilk, fsrc, abi.encodePacked(WAD * 2), int(WAD / 2));
 
         // 2 for accumulated debt, 1 for rounding
         rico.transfer(self, 3);
@@ -857,25 +854,25 @@ contract VatTest is Test, RicoSetUp {
 
         // can't steal ink from someone else's urn
         vm.expectRevert(Bank.ErrWrongUrn.selector);
-        Vat(bank).frob(gilk, amdn, abi.encodePacked(-int(1)), int(1));
+        Vat(bank).frob(gilk, fsrc, abi.encodePacked(-int(1)), int(1));
 
         // ...can remove ink from your own, but it has to be safe
-        vm.prank(amdn);
+        vm.prank(fsrc);
         vm.expectRevert(Vat.ErrNotSafe.selector);
-        Vat(bank).frob(gilk, amdn, abi.encodePacked(-int(1)), int(1));
+        Vat(bank).frob(gilk, fsrc, abi.encodePacked(-int(1)), int(1));
 
         // set gold price so it's safe
         // nothing wrong with frobbing 0
         feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
-        Vat(bank).frob(gilk, amdn, abi.encodePacked(int(0)), int(0));
+        Vat(bank).frob(gilk, fsrc, abi.encodePacked(int(0)), int(0));
 
         // can't reduce debt below dust
         vm.expectRevert(Vat.ErrUrnDust.selector);
-        Vat(bank).frob(gilk, amdn, abi.encodePacked(int(1)), int(-1));
+        Vat(bank).frob(gilk, fsrc, abi.encodePacked(int(1)), int(-1));
 
         // ...raise dust - now it's fine
         Vat(bank).filk(gilk, 'dust', bytes32(RAD / 2));
-        Vat(bank).frob(gilk, amdn, abi.encodePacked(int(1)), int(-1));
+        Vat(bank).frob(gilk, fsrc, abi.encodePacked(int(1)), int(-1));
     }
 
     function test_frob_ilk_uninitialized() public {
@@ -980,7 +977,7 @@ contract VatTest is Test, RicoSetUp {
 
     function test_geth() public {
         bytes32 val = Vat(bank).geth(gilk, 'src', empty);
-        assertEq(address(bytes20(val)), self);
+        assertEq(address(bytes20(val)), fsrc);
 
         val = Vat(bank).geth(gilk, 'tag', empty);
         assertEq(val, grtag);
@@ -995,7 +992,7 @@ contract VatTest is Test, RicoSetUp {
 
     function test_filh() public {
         bytes32 val = Vat(bank).geth(gilk, 'src', empty);
-        assertEq(address(bytes20(val)), self);
+        assertEq(address(bytes20(val)), fsrc);
         Vat(bank).filh(gilk, 'src', empty, bytes32(bytes20(0)));
 
         val = Vat(bank).geth(gilk, 'src', empty);

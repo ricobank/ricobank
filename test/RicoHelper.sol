@@ -9,8 +9,7 @@ import { Gem, GemFab } from '../lib/gemfab/src/gem.sol';
 import { Bank } from '../src/bank.sol';
 import { BaseHelper, BankDiamond, WethLike } from './BaseHelper.sol';
 import { 
-    Ball, File, Vat, Vow, Vox, ERC20Hook, Medianizer, Multiplier,
-    Divider, Feedbase
+    Ball, File, Vat, Vow, Vox, ERC20Hook, Multiplier, Divider, Feedbase
 } from '../src/ball.sol';
 import { Hook } from '../src/hook/hook.sol';
 
@@ -88,10 +87,10 @@ abstract contract RicoSetUp is BaseHelper {
     uint256 constant public plotpep    = 2;
     uint256 constant public plotpop    = RAY;
     uint256 constant public FEED_LOOKAHEAD = 1000;
+    address constant public fsrc = 0xF33df33dF33dF33df33df33df33dF33DF33Df33D;
 
     ERC20Hook  public hook;
     UniNFTHook public nfthook;
-    Medianizer public mdn;
     Ball       public ball;
     Divider    public divider;
     Multiplier public multiplier;
@@ -172,31 +171,14 @@ abstract contract RicoSetUp is BaseHelper {
         art = Vat(bank).urns(ilk, usr);
     }
 
-    // helpers for feeds, so we don't have to deal with mdn all the time
+    // helpers for feeds, so we don't have to deal with feed's structure
     function feedpull(bytes32 tag) internal view returns (bytes32, uint) {
-        return feed.pull(address(mdn), tag);
+        return feed.pull(fsrc, tag);
     }
 
     function feedpush(bytes32 tag, bytes32 val, uint ttl) internal {
+        vm.prank(fsrc);
         feed.push(tag, val, ttl);
-        mdn.poke(tag);
-    }
-
-    // create a new feed that's just feed(mdn, tag) == feed(self, tag)
-    function make_feed(bytes32 tag) internal {
-        feed.push(bytes32("ONE"), bytes32(RAY), type(uint).max);
-        address[] memory sources = new address[](2);
-        bytes32[] memory tags    = new bytes32[](2);
-        uint256[] memory scales  = new uint256[](2);
-        sources[0] = address(this); tags[0] = bytes32(tag);   scales[0] = RAY;
-        sources[1] = address(this); tags[1] = bytes32("ONE"); scales[1] = RAY;
-        divider.setConfig(tag, Block.Config(sources, tags));
-        // todo quorum?
-        Medianizer.Config memory mdnconf =
-            Medianizer.Config(new address[](1), new bytes32[](1), 1);
-        mdnconf.srcs[0] = address(divider);
-        mdnconf.tags[0] = tag;
-        mdn.setConfig(tag, mdnconf);
     }
 
     function make_bank() public {
@@ -273,16 +255,15 @@ abstract contract RicoSetUp is BaseHelper {
 
         hook    = ball.hook();
         nfthook = ball.nfthook();
-        mdn     = ball.mdn();
         divider = ball.divider();
         ahook   = payable(address(hook));
 
-        make_feed(rrtag);
-        make_feed(wrtag);
-        make_feed(grtag);
-        make_feed(drtag);
-        make_feed(RISK_RICO_TAG);
-        make_feed(RICO_RISK_TAG);
+        File(bank).file('rudd.src', bytes32(bytes20(fsrc)));
+        File(bank).file('tip.src', bytes32(bytes20(fsrc)));
+        Vat(bank).filh(gilk, 'src', empty, bytes32(bytes20(fsrc)));
+        Vat(bank).filh(WETH_ILK, 'src', empty, bytes32(bytes20(fsrc)));
+        Vat(bank).filh(dilk, 'src', empty, bytes32(bytes20(fsrc)));
+
         feedpush(RISK_RICO_TAG, bytes32(RAY), block.timestamp + FEED_LOOKAHEAD);
         feedpush(RICO_RISK_TAG, bytes32(RAY), block.timestamp + FEED_LOOKAHEAD);
     }
@@ -291,7 +272,7 @@ abstract contract RicoSetUp is BaseHelper {
         Gem(gem).approve(bank, type(uint256).max);
         Vat(bank).init(ilk, address(hook));
         Vat(bank).filh(ilk, 'gem', empty, bytes32(bytes20(gem)));
-        Vat(bank).filh(ilk, 'src', empty, bytes32(bytes20(self)));
+        Vat(bank).filh(ilk, 'src', empty, bytes32(bytes20(fsrc)));
         Vat(bank).filh(ilk, 'tag', empty, tag);
         Vat(bank).filh(ilk, 'liqr', empty, bytes32(RAY));
         Vat(bank).filh(ilk, 'pep', empty, bytes32(uint(2)));

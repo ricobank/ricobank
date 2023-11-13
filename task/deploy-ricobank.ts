@@ -150,7 +150,6 @@ task('deploy-ricobank', '')
 
     debug('packing feeds')
     const contracts = [
-        ['mdn', 'Medianizer', await getartifact('Medianizer')],
         ['divider', 'Divider', await getartifact('Divider')],
         ['uniadapt', 'UniswapV3Adapter', await getartifact('UniswapV3Adapter')],
         ['cladapt', 'ChainlinkAdapter', await getartifact('ChainlinkAdapter')],

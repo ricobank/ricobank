@@ -14,7 +14,6 @@ import {Block} from "../lib/feedbase/src/mixin/Read.sol";
 import {ChainlinkAdapter} from "../lib/feedbase/src/adapters/ChainlinkAdapter.sol";
 import {Divider} from "../lib/feedbase/src/combinators/Divider.sol";
 import {Feedbase} from "../lib/feedbase/src/Feedbase.sol";
-import {Medianizer} from "../lib/feedbase/src/combinators/Medianizer.sol";
 import {Multiplier} from "../lib/feedbase/src/combinators/Multiplier.sol";
 import {UniswapV3Adapter, IUniWrapper} from "../lib/feedbase/src/adapters/UniswapV3Adapter.sol";
 import {Ward} from "../lib/feedbase/src/mixin/ward.sol";
@@ -47,7 +46,6 @@ contract Ball is Math, Ward {
     UniNFTHook public nfthook;
     address public feedbase;
 
-    Medianizer public mdn;
     UniswapV3Adapter public uniadapt;
     Divider public divider;
     Multiplier public multiplier;
@@ -113,7 +111,6 @@ contract Ball is Math, Ward {
         hook = new ERC20Hook();
         nfthook = new UniNFTHook();
 
-        mdn = new Medianizer(args.feedbase);
         uniadapt = new UniswapV3Adapter(IUniWrapper(args.uniwrapper));
         cladapt = new ChainlinkAdapter();
         divider = new Divider(args.feedbase);
@@ -145,9 +142,6 @@ contract Ball is Math, Ward {
             RISK_RICO_TAG,
             UniswapV3Adapter.Config(args.ricorisk, args.adaptrange, args.adaptttl, args.risk < args.rico)
         );
-        Medianizer.Config memory mdnconf = Medianizer.Config(new address[](1), new bytes32[](1), 1);
-        mdnconf.srcs[0] = address(uniadapt); mdnconf.tags[0] = RISK_RICO_TAG;
-        mdn.setConfig(RISK_RICO_TAG, mdnconf);
     }
 
     function setup(BallArgs calldata args) external _ward_ {
@@ -215,7 +209,7 @@ contract Ball is Math, Ward {
         fbank.file("plat.pep", bytes32(args.platpep));
         fbank.file("plat.pop", bytes32(args.platpop));
         fbank.file("rudd.tag", RISK_RICO_TAG);
-        fbank.file("rudd.src", bytes32(bytes20(address(mdn))));
+        fbank.file("rudd.src", bytes32(bytes20(address(uniadapt))));
         fbank.file("plot.pep", bytes32(args.plotpep));
         fbank.file("plot.pop", bytes32(args.plotpop));
 
@@ -242,15 +236,10 @@ contract Ball is Math, Ward {
         Vat(bank).filk(ilk, "line", bytes32(ilkparams.line));
         Vat(bank).filh(ilk, "liqr", empty, bytes32(ilkparams.liqr));
         Vat(bank).filh(ilk, "gem", empty, bytes32(bytes20(ilkparams.gem)));
-        Vat(bank).filh(ilk, "src", empty, bytes32(bytes20(address(mdn))));
+        Vat(bank).filh(ilk, "src", empty, bytes32(bytes20(address(divider))));
         Vat(bank).filh(ilk, "tag", empty, gemreftag);
         Vat(bank).filh(ilk, "pep", empty, bytes32(uint(2)));
         Vat(bank).filh(ilk, "pop", empty, bytes32(RAY));
-        {
-            Medianizer.Config memory mdnconf = Medianizer.Config(new address[](1), new bytes32[](1), 1);
-            mdnconf.srcs[0] = address(divider); mdnconf.tags[0] = gemreftag;
-            mdn.setConfig(gemreftag, mdnconf);
-        }
         bytes32 gemusdtag = concat(ilk, ":usd");
         bytes32 gemclatag;
         address gemusdsrc;
@@ -289,7 +278,6 @@ contract Ball is Math, Ward {
     }
 
     function approve(address usr) external _ward_ {
-        mdn.give(usr);
         divider.give(usr);
         multiplier.give(usr);
         uniadapt.give(usr);

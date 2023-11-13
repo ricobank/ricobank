@@ -6,7 +6,7 @@ import { UniswapV3Adapter } from "../lib/feedbase/src/adapters/UniswapV3Adapter.
 import { ChainlinkAdapter } from "../lib/feedbase/src/adapters/ChainlinkAdapter.sol";
 import {
     File, Bank, Vat, Vow, Vox, ERC20Hook, BaseHelper, BankDiamond, WethLike,
-    Medianizer, Divider, Feedbase, Gem, GemFab, Ball
+    Divider, Feedbase, Gem, GemFab, Ball
 } from './RicoHelper.sol';
 import 'forge-std/Test.sol';
 
@@ -23,8 +23,8 @@ contract BallTest is BaseHelper {
     ChainlinkAdapter cladapt;
     UniswapV3Adapter uniadapt;
     Divider          divider;
-    Medianizer       mdn;
     Feedbase         fb;
+    address constant fsrc = 0xF33df33dF33dF33df33df33df33dF33DF33Df33D;
 
     GemFab           gf;
 
@@ -56,9 +56,6 @@ contract BallTest is BaseHelper {
 
     function look_poke() internal {
         advance_chainlink();
-        mdn.poke(RISK_RICO_TAG);
-        mdn.poke(WETH_REF_TAG);
-        mdn.poke(RAI_REF_TAG);
     }
 
     function setUp() public {
@@ -164,7 +161,6 @@ contract BallTest is BaseHelper {
         cladapt  = ball.cladapt();
         uniadapt = ball.uniadapt();
         divider  = ball.divider();
-        mdn      = ball.mdn();
 
         // need to wait some time for uni adapters to work
         skip(BANKYEAR / 2);
@@ -175,7 +171,7 @@ contract BallTest is BaseHelper {
         Gem(risk).mint(address(this), initial_risk_supply);
 
         // find a rico borrow amount which will be safe by about 10%
-        (bytes32 val,) = fb.pull(address(mdn), WETH_REF_TAG);
+        (bytes32 val,) = fb.pull(address(divider), WETH_REF_TAG);
 
         // weth * wethref = art * par
         safedart = int(wethamt * uint(val) / init_par * 10 / 11);
@@ -242,7 +238,7 @@ contract BallTest is BaseHelper {
         assertEq(me_rico_1, me_rico_2);
     }
 
-    function test_basic() public {
+    function test_basic_feeds() public {
         // at block 16445606 ethusd about 1554, xau  about 1925
         // initial par is 4, so ricousd should be 1925*4
         (bytes32 val,) = fb.pull(address(divider), RICO_REF_TAG);
@@ -251,15 +247,15 @@ contract BallTest is BaseHelper {
         assertLt(uint(vox_price), init_par * 100 / 99);
 
         // should have a reasonable weth:ref (==weth:gold) price
-        (val,) = fb.pull(address(mdn), WETH_REF_TAG);
+        (val,) = fb.pull(address(divider), WETH_REF_TAG);
         assertClose(uint(val), 1554 * RAY / 1925, 100);
     }
 
     function test_eth_denominated_ilks_feed() public {
         // make sure ilk feeds combining properly
         look_poke();
-        (bytes32 rai_ref_price,)  = fb.pull(address(mdn), RAI_REF_TAG);
-        (bytes32 weth_ref_price,) = fb.pull(address(mdn), WETH_REF_TAG);
+        (bytes32 rai_ref_price,)  = fb.pull(address(divider), RAI_REF_TAG);
+        (bytes32 weth_ref_price,) = fb.pull(address(divider), WETH_REF_TAG);
         (bytes32 rai_weth_price,)  = fb.pull(address(cladapt), RAI_ETH_TAG);
         assertClose(rdiv(uint(rai_ref_price), uint(weth_ref_price)), uint(rai_weth_price), 1000);
     }
@@ -427,14 +423,16 @@ contract BallTest is BaseHelper {
         uint wait = BANKYEAR - (block.timestamp - Vow(bank).ramp().bel);
         skip(wait);
 
-        vm.prank(address(mdn));
+        Vat(bank).filh(wilk, 'src', new bytes32[](0), bytes32(bytes20(fsrc)));
+        File(bank).file('rudd.src', bytes32(bytes20(fsrc)));
+        vm.prank(fsrc);
         fb.push(WETH_REF_TAG, bytes32(2 * init_par), UINT256_MAX);
 
 
         Vat(bank).frob(wilk, self, abi.encodePacked(int(WAD)), int(WAD));
 
         // prank a low but nonzero risk:rico price so no reflop error
-        vm.startPrank(address(mdn));
+        vm.startPrank(fsrc);
         fb.push(RISK_RICO_TAG, bytes32(uint(1)), UINT256_MAX);
         fb.push(WETH_REF_TAG, bytes32(uint(0)), UINT256_MAX);
         vm.stopPrank();

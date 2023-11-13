@@ -5,37 +5,31 @@
     "ERC20Hook": {
       "typename": "ERC20Hook",
       "artifact": {
-        "/": "bafkreiavxzwa64wmjprbux5djwcqefm44l3jaai6yp3rkwuyjz3vh2sxce"
+        "/": "bafkreigcoirxxgy34ypd27yf5nn6jvhyvvh4m3zqf4qt25i42cmupobdeq"
       }
     },
     "UniNFTHook": {
       "typename": "UniNFTHook",
       "artifact": {
-        "/": "bafkreia2pfl4xvd56dsvjcyjafj7y3riimz2zklkzp6axz4y3gbvrpas34"
+        "/": "bafkreicc2r3w6eh6oiwpjko3a5nscm3aas6uxll6ok4pqt7wpb3rapghqe"
       }
     },
-    "Ploker": {
-      "typename": "Ploker",
+    "UniWrapper": {
+      "typename": "UniWrapper",
       "artifact": {
-        "/": "bafkreibjdgnehnxco7xynbve43b2clts4sddyvq3pii37vayco7743mwse"
+        "/": "bafkreiclbxhevpeluer3js7mqfweqaqpermoipgvwns4vxcyfqnb2u5ln4"
       }
     },
     "Ball": {
       "typename": "Ball",
       "artifact": {
-        "/": "bafkreihfxq74xq3fmxv6hw2edudqdquanr4fdv2kgpjsahovfa4sbdqmvy"
+        "/": "bafkreietd2xvfd36stquuzkv3x2q6lnld2rnskqr7ehmaqp6atyj5unn5m"
       }
     },
     "Ricobank": {
       "typename": "Ricobank",
       "artifact": {
-        "/": "bafkreiei2mp4k3yseavinwaq6xj376g6nhvmtaxu6ymuhvc4mhqeduxudi"
-      }
-    },
-    "SwapRouter": {
-      "typename": "SwapRouter",
-      "artifact": {
-        "/": "bafkreib2n35tcvimnxjzxrl6qqzg5eyxclbc33kswygf2cqgmleidef5o4"
+        "/": "bafkreiaax3qktxo2htzjxvtotclbo2n3o2hox5xlxshmzlpnptrrdgzloe"
       }
     },
     "UniswapV3Factory": {
@@ -65,131 +59,129 @@
     "Feedbase": {
       "typename": "Feedbase",
       "artifact": {
-        "/": "bafkreidajew76haqrjgod5mldhsq65hlo6nte253pkxf7hl7nvys5evv3q"
+        "/": "bafkreicl2u5372swslshp7niohrop2rga6yfodjrgx7vkqjljazsewmzzq"
       }
     },
     "Medianizer": {
       "typename": "Medianizer",
       "artifact": {
-        "/": "bafkreig4ogxjhck4u6ldxrarj3vbek57le4unmhi5u7zscxlc4ly3n5xqi"
+        "/": "bafkreigvikbmkzegtak6nxouj6j3hzaac6pzromdta23gk3pdpyt6xlcfa"
+      }
+    },
+    "Poker": {
+      "typename": "Poker",
+      "artifact": {
+        "/": "bafkreiaznw6krsbakhw4tyyl77t2z7mffchgtqvcizopz4i7gi6sjq3dli"
       }
     },
     "Divider": {
       "typename": "Divider",
       "artifact": {
-        "/": "bafkreibe464tvr5burh5b2jyxfqreecc4alfb5v6bhve2g5w22xnx3njze"
+        "/": "bafkreifmagxlu2z5j6f5yltkusdi2ibvqa32yffkhop5eknrvh7wu6kocq"
       }
     },
     "TWAP": {
       "typename": "TWAP",
       "artifact": {
-        "/": "bafkreidynmftvo5qz332p7odokucum6pvk3p6n6n2qb4fhd2ucidvmxexi"
+        "/": "bafkreiblfdamdp62gvc2yybrraqb7csb4fwahzww7pm552kp35oiudws6a"
       }
     },
     "UniswapV3Adapter": {
       "typename": "UniswapV3Adapter",
       "artifact": {
-        "/": "bafkreihvm2ceobuntlq4ovmsjk2tmygn477tyvrat7rbfyjmc6fi5e4tey"
+        "/": "bafkreifl4rk3sqlgbg4fxvksb3b23u2rcp5yqiq2i57mze2hv2lugek5ae"
       }
     },
     "ChainlinkAdapter": {
       "typename": "ChainlinkAdapter",
       "artifact": {
-        "/": "bafkreigaf46s3hspfewxgovk7bpfui4mfkenukvhdsesufxiueteo3idtu"
+        "/": "bafkreihhule7tpfkycgltcj3ctgoxo3bny4rk6aaqczk3ickzt5av5vbwu"
       }
     },
     "GemFab": {
       "typename": "GemFab",
       "artifact": {
-        "/": "bafybeifigdvp52bqvzz2xunuuimrgwnuurda6wdonhnhxwhuj75lcrhhbm"
+        "/": "bafybeid4zujx6upnggnf3kbvhkymqzs4jercf2yiypyg662alvxkytgm4y"
       }
     },
     "Gem": {
       "typename": "Gem",
       "artifact": {
-        "/": "bafybeigfeiirjbhx7n5eaksa5wfr5wth5674nagyed6p3vxba6ft3ebfuq"
+        "/": "bafybeiey7wh7j53xcmogh5kzy4tdrgvbfm3omyehbts5op5t7ay3w4vmsu"
       }
     }
   },
   "objects": {
     "mdn": {
       "objectname": "mdn",
-      "address": "0xb0e48453Ef3B7B1e10517fD58610aD6b41c34C35",
+      "address": "0xFFA862e7Eb5E1D43Ee41aF3698985089D9A40C49",
       "typename": "Medianizer",
       "artifact": {
-        "/": "bafkreig4ogxjhck4u6ldxrarj3vbek57le4unmhi5u7zscxlc4ly3n5xqi"
+        "/": "bafkreigvikbmkzegtak6nxouj6j3hzaac6pzromdta23gk3pdpyt6xlcfa"
       }
     },
     "divider": {
       "objectname": "divider",
-      "address": "0xcD664ce4A6F06Da6BACb8A134f0F513769140383",
+      "address": "0x25572d447D9bA659c4BE13664F39B32a3243cd65",
       "typename": "Divider",
       "artifact": {
-        "/": "bafkreibe464tvr5burh5b2jyxfqreecc4alfb5v6bhve2g5w22xnx3njze"
+        "/": "bafkreifmagxlu2z5j6f5yltkusdi2ibvqa32yffkhop5eknrvh7wu6kocq"
       }
     },
     "uniadapt": {
       "objectname": "uniadapt",
-      "address": "0x480FCfa10F50a5D8793FfB6B9901D3e06e422729",
+      "address": "0x08bd238793F1Abd1CA674Bb7e0Ec30A6e9F22A5c",
       "typename": "UniswapV3Adapter",
       "artifact": {
-        "/": "bafkreihvm2ceobuntlq4ovmsjk2tmygn477tyvrat7rbfyjmc6fi5e4tey"
+        "/": "bafkreifl4rk3sqlgbg4fxvksb3b23u2rcp5yqiq2i57mze2hv2lugek5ae"
       }
     },
     "cladapt": {
       "objectname": "cladapt",
-      "address": "0x7339f08BC6eE95d0a2CeA045b0cb0837D6422702",
+      "address": "0xe217Ba1A9414a935334464ac44df0d6FC7bD13Aa",
       "typename": "ChainlinkAdapter",
       "artifact": {
-        "/": "bafkreigaf46s3hspfewxgovk7bpfui4mfkenukvhdsesufxiueteo3idtu"
+        "/": "bafkreihhule7tpfkycgltcj3ctgoxo3bny4rk6aaqczk3ickzt5av5vbwu"
       }
     },
     "hook": {
       "objectname": "hook",
-      "address": "0x4Cac3F176F80DC3df5a62d255e07c035b3107eCC",
+      "address": "0xeD5ab48FAc18A3DF53F35BB89211dFd4CbcDFcB8",
       "typename": "ERC20Hook",
       "artifact": {
-        "/": "bafkreiavxzwa64wmjprbux5djwcqefm44l3jaai6yp3rkwuyjz3vh2sxce"
+        "/": "bafkreigcoirxxgy34ypd27yf5nn6jvhyvvh4m3zqf4qt25i42cmupobdeq"
       }
     },
     "nfthook": {
       "objectname": "nfthook",
-      "address": "0x48b9f1361d0761e3B8e843f38784e6C0E770f05D",
+      "address": "0xC9e239A6F1AaA60CC55eBEA785134c91C1988892",
       "typename": "UniNFTHook",
       "artifact": {
-        "/": "bafkreia2pfl4xvd56dsvjcyjafj7y3riimz2zklkzp6axz4y3gbvrpas34"
+        "/": "bafkreicc2r3w6eh6oiwpjko3a5nscm3aas6uxll6ok4pqt7wpb3rapghqe"
       }
     },
-    "ploker": {
-      "objectname": "ploker",
-      "address": "0xB0facD8071493F4c82C8c6AdbBE95be79d9C2528",
-      "typename": "Ploker",
+    "uniswapV3Wrapper": {
+      "objectname": "uniswapV3Wrapper",
+      "address": "0x6814F9a2038FA7ef41F62ab8dbA2de34d39306B4",
+      "typename": "UniWrapper",
       "artifact": {
-        "/": "bafkreibjdgnehnxco7xynbve43b2clts4sddyvq3pii37vayco7743mwse"
+        "/": "bafkreiclbxhevpeluer3js7mqfweqaqpermoipgvwns4vxcyfqnb2u5ln4"
       }
     },
     "ball": {
       "objectname": "ball",
-      "address": "0x5E53a920b5547eF0C881dD266c2A12449D795337",
+      "address": "0xafe8E1b4D99EC0e140Efa1D5660D4384639661A1",
       "typename": "Ball",
       "artifact": {
-        "/": "bafkreihfxq74xq3fmxv6hw2edudqdquanr4fdv2kgpjsahovfa4sbdqmvy"
+        "/": "bafkreietd2xvfd36stquuzkv3x2q6lnld2rnskqr7ehmaqp6atyj5unn5m"
       }
     },
     "bank": {
       "objectname": "bank",
-      "address": "0x0e2a34fbC4E75f570A717A5fE235A0940d76A7f8",
+      "address": "0x4477Dd0972acca6dB0c3414cb2693f011D57db53",
       "typename": "Ricobank",
       "artifact": {
-        "/": "bafkreiei2mp4k3yseavinwaq6xj376g6nhvmtaxu6ymuhvc4mhqeduxudi"
-      }
-    },
-    "swapRouter": {
-      "objectname": "swapRouter",
-      "address": "0xab7664500b19a7a2362Ab26081e6DfB971B6F1B0",
-      "typename": "SwapRouter",
-      "artifact": {
-        "/": "bafkreib2n35tcvimnxjzxrl6qqzg5eyxclbc33kswygf2cqgmleidef5o4"
+        "/": "bafkreiaax3qktxo2htzjxvtotclbo2n3o2hox5xlxshmzlpnptrrdgzloe"
       }
     },
     "uniswapV3Factory": {
@@ -218,43 +210,43 @@
     },
     "feedbase": {
       "objectname": "feedbase",
-      "address": "0x0712A2B94fb8Af101Aec6a3de9956A36C2eb9ad5",
+      "address": "0x084b44a22ffDDc6D2c167aD3c57AD8655a92e29C",
       "typename": "Feedbase",
       "artifact": {
-        "/": "bafkreidajew76haqrjgod5mldhsq65hlo6nte253pkxf7hl7nvys5evv3q"
+        "/": "bafkreicl2u5372swslshp7niohrop2rga6yfodjrgx7vkqjljazsewmzzq"
       }
     },
     "gemfab": {
       "objectname": "gemfab",
       "typename": "GemFab",
       "artifact": {
-        "/": "bafybeifigdvp52bqvzz2xunuuimrgwnuurda6wdonhnhxwhuj75lcrhhbm"
+        "/": "bafybeid4zujx6upnggnf3kbvhkymqzs4jercf2yiypyg662alvxkytgm4y"
       },
-      "address": "0x212022a944F39b8b5099E6a7ef2C7593274a3888"
+      "address": "0xf520051AD3bcA7F7D1a0009072B153c2a04A830b"
     },
     "rico": {
       "objectname": "rico",
       "typename": "Gem",
       "artifact": {
-        "/": "bafkreib46kjuq7hwhmiqfmlo675m5j2f2plecmkotsrfoaanzkmzfdydfu"
+        "/": "bafkreiengkcjjtvh65vw6hcat26x3j3caklc62lmrrsulzi5m26aiqa5zu"
       },
-      "address": "0x1fAEdFfdbB742467498FC40457C7A8d899b9BBDD"
+      "address": "0x6947FB667317A619DABf8b9084AA1c2B3E652B17"
     },
     "risk": {
       "objectname": "risk",
       "typename": "Gem",
       "artifact": {
-        "/": "bafkreib46kjuq7hwhmiqfmlo675m5j2f2plecmkotsrfoaanzkmzfdydfu"
+        "/": "bafkreiengkcjjtvh65vw6hcat26x3j3caklc62lmrrsulzi5m26aiqa5zu"
       },
-      "address": "0x244C6f1FE68aDA8919aeb45983Fd7086396908a8"
+      "address": "0x6efD430E10b13aF7a69376E070f3fd70212488eC"
     },
     "dai": {
       "objectname": "dai",
       "typename": "Gem",
       "artifact": {
-        "/": "bafkreib46kjuq7hwhmiqfmlo675m5j2f2plecmkotsrfoaanzkmzfdydfu"
+        "/": "bafkreiengkcjjtvh65vw6hcat26x3j3caklc62lmrrsulzi5m26aiqa5zu"
       },
-      "address": "0xC0280481D15633112d27dAb30404c93043058c3B"
+      "address": "0x9a959630C508244379f9e8C21b1775A5faa034f5"
     },
     "ricorisk": {
       "objectname": "ricorisk",
@@ -262,7 +254,7 @@
       "artifact": {
         "/": "bafkreihifi6scj7hjyyhvvh6qxvzow3zpijbugveepskqm2nil2vxrl5oe"
       },
-      "address": "0x425146aDD6FC9588a18f0B341d336ab07169c4e1"
+      "address": "0x6e74dbfa9FB1BC569Fbaf39a48499C681fbD437e"
     },
     "ricodai": {
       "objectname": "ricodai",
@@ -270,23 +262,23 @@
       "artifact": {
         "/": "bafkreihifi6scj7hjyyhvvh6qxvzow3zpijbugveepskqm2nil2vxrl5oe"
       },
-      "address": "0x6a8b3f66176e1c0492923577780eed63cd106656"
+      "address": "0x0D828B6fA0Ed8D3db58F9F124c6441E1232F5edD"
     },
     "weth": {
       "objectname": "weth",
       "typename": "Gem",
       "artifact": {
-        "/": "bafkreib46kjuq7hwhmiqfmlo675m5j2f2plecmkotsrfoaanzkmzfdydfu"
+        "/": "bafkreiengkcjjtvh65vw6hcat26x3j3caklc62lmrrsulzi5m26aiqa5zu"
       },
-      "address": "0x5Bd2c68aa07AC850Ea22BC5503BeF16744A5E1d7"
+      "address": "0x980B62Da83eFf3D4576C647993b0c1D7faf17c73"
     },
     "wsteth": {
       "objectname": "wsteth",
       "typename": "Gem",
       "artifact": {
-        "/": "bafkreib46kjuq7hwhmiqfmlo675m5j2f2plecmkotsrfoaanzkmzfdydfu"
+        "/": "bafkreiengkcjjtvh65vw6hcat26x3j3caklc62lmrrsulzi5m26aiqa5zu"
       },
-      "address": "0x348cACC83C8ab06ff88516E48AFDf91C453fFe7A"
+      "address": "0x550144D2D29DcAB005DE88aE6ceE501A5a0db24B"
     }
   }
 }

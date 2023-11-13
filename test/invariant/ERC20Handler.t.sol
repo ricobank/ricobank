@@ -34,24 +34,24 @@ contract ERC20HandlerTest is Test, BaseHelper {
     }
 
     function test_handler_move() public {
-        (bytes32 val1,) = feed.pull(address(handler.mdn()), WETH_REF_TAG);
+        (bytes32 val1,) = feed.pull(handler.fsrc(), WETH_REF_TAG);
         handler.move(true);
-        (bytes32 val2,) = feed.pull(address(handler.mdn()), WETH_REF_TAG);
+        (bytes32 val2,) = feed.pull(handler.fsrc(), WETH_REF_TAG);
 
         assertGt(uint(val2), uint(val1));
 
         handler.move(false);
-        (bytes32 val3,) = feed.pull(address(handler.mdn()), WETH_REF_TAG);
+        (bytes32 val3,) = feed.pull(handler.fsrc(), WETH_REF_TAG);
 
         assertLt(uint(val3), uint(val2));
         assertClose(uint(val3), uint(val1), 1_000_000);
     }
 
     function test_handler_date() public {
-        (, uint ttl1) = feed.pull(address(handler.mdn()), WETH_REF_TAG);
+        (, uint ttl1) = feed.pull(handler.fsrc(), WETH_REF_TAG);
         skip(10);
         handler.date(10);
-        (, uint ttl2) = feed.pull(address(handler.mdn()), WETH_REF_TAG);
+        (, uint ttl2) = feed.pull(handler.fsrc(), WETH_REF_TAG);
 
         assertNotEq(ttl1, ttl2);
     }

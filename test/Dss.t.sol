@@ -799,7 +799,7 @@ contract DssDogTest is DssJsTest {
 
     // create an urn
     function setUrn(uint ink, uint art) internal {
-        (bytes32 price, uint ttl) = feed.pull(self, grtag);
+        (bytes32 price, uint ttl) = feedpull(grtag);
         feedpush(grtag, bytes32(2 * RAY * art / ink), UINT256_MAX);
         Vat(bank).frob(gilk, self, abi.encodePacked(ink), int(art));
         feedpush(grtag, price, ttl);

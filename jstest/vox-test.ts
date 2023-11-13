@@ -67,7 +67,7 @@ const join_pool = async (args) => {
 describe('Vox', () => {
   let ali, bob, cat
   let ALI, BOB, CAT
-  let fb, mdn
+  let fb
   let bank, ball
   let weth, rico, risk
   let pack
@@ -83,7 +83,6 @@ describe('Vox', () => {
     dapp = await dpack.load(pack, ethers, ali)
 
     fb   = dapp.feedbase
-    mdn  = dapp.mdn
     bank = dapp.bank
     ball = dapp.ball
     weth = dapp.weth
@@ -120,13 +119,6 @@ describe('Vox', () => {
 
   beforeEach(async () => {
     await revert(hh);
-  })
-
-  it('poke', async () => {
-    for (const tag of ['weth:ref', 'risk:rico']) {
-        debug(`poking ${tag}`)
-        await send(mdn.poke, b32(tag))
-    }
   })
 
   it('sway', async () => {
@@ -212,21 +204,7 @@ describe('Vox', () => {
     })
 
     it('deploy gas', async () => {
-      await check(ethers.BigNumber.from(deploygas), 39404900)
-    })
-
-    it('poke gas', async () => {
-      // impersonate adapters to set different non zero values
-      // 'weth:ref' has only two relevant chain link tags
-      let cladapt = await ball.cladapt()
-      await hh.network.provider.send("hardhat_setBalance", [cladapt, "0x100000000000000000000"]);
-      const cladapterSigner = await ethers.getImpersonatedSigner(cladapt);
-      await send(fb.connect(cladapterSigner).push, b32('weth:usd'), b32(ray(1)), ray(1))
-      await send(fb.connect(cladapterSigner).push, b32('xau:usd'),  b32(ray(1)), ray(1))
-      await send(mdn.poke, b32('weth:ref'))
-      // measure gas for poking non zero to non zero slot
-      let gas = await mdn.estimateGas.poke(b32('weth:ref'))
-      await check(gas, 73653)
+      await check(ethers.BigNumber.from(deploygas), 37800137)
     })
 
     it('frob cold gas', async () => {
@@ -297,7 +275,7 @@ describe('Vox', () => {
       let mar_tag = b32('rico:ref')
       let divider = await ball.divider()
       let mar_gas = await fb.estimateGas.pull(divider, mar_tag)
-      await check(mar_gas, 160770)
+      await check(mar_gas, 160993)
     })
 
     it('drip gas', async () => {

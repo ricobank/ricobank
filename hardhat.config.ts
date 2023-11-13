@@ -370,6 +370,13 @@ export default {
             mnemonic: process.env["ARB_GOERLI_MNEMONIC"]
           },
           chainId: 421613
+      },
+      arbitrum_sepolia: {
+          url: process.env["ARB_SEPOLIA_RPC_URL"],
+          accounts: {
+            mnemonic: process.env["ARB_SEPOLIA_MNEMONIC"]
+          },
+          chainId: 421614
       }
   }
 }
