@@ -93,8 +93,6 @@ describe('Vox', () => {
     await send(bank.file, b32("tip.tag"), TAG)
     await send(bank.file, b32("tip.src"), ALI + '00'.repeat(12))
 
-    await send(bank.file, b32("cap"), b32(ray(3)))
-
     await send(bank.file, b32('par'), b32(wad(7)))
 
     await send(bank.filh, b32('weth'), b32('src'), [], ALI + '00'.repeat(12))
@@ -147,16 +145,17 @@ describe('Vox', () => {
     const par1 = await bank.par() // still at 7 because way == RAY
     want(par1.eq(wad(7))).true
 
-    const t2 = await gettime()
-
-    await send(bank.file, b32('way'), bn2b32(ray(2)))// doubles every second (!)
+    let cap = await bank.cap()
+    await send(bank.file, b32('way'), bn2b32(cap))
     await send(bank.poke)
 
-    await warp(hh, progress += 10)
+    await warp(hh, progress += BANKYEAR)
     await mine(hh)
+    await send(bank.poke)
 
     const par2 = await bank.par()
-    want(par2.eq(wad(28))).true
+    want(par2.gt(wad(13.9))).true
+    want(par2.lt(wad(14.1))).true
   })
 
   it('ricolike vox', async () => {
@@ -204,7 +203,7 @@ describe('Vox', () => {
     })
 
     it('deploy gas', async () => {
-      await check(ethers.BigNumber.from(deploygas), 37800137)
+      await check(ethers.BigNumber.from(deploygas), 37640094)
     })
 
     it('frob cold gas', async () => {
@@ -229,7 +228,7 @@ describe('Vox', () => {
       await send(fb.push, b32('weth:ref'), bn2b32(ray(0.1)), constants.MaxUint256)
       debug('bail')
       let gas = await bank.estimateGas.bail(b32('weth'), ALI)
-      await check(gas, 253300, 253409)
+      await check(gas, 253240, 253409)
     })
 
     it('keep surplus gas', async () => {
@@ -261,14 +260,14 @@ describe('Vox', () => {
       await mine(hh, 100)
       await send(fb.push, TAG, bn2b32(ray(0.5)), constants.MaxUint256)
       let gas = await bank.estimateGas.poke()
-      await check(gas, 68616, 68865)
+      await check(gas, 68616, 69450)
     })
 
     it('poke down gas', async () => {
       await mine(hh, 100)
       await send(fb.push, TAG, bn2b32(ray(2)), constants.MaxUint256)
       let gas = await bank.estimateGas.poke()
-      await check(gas, 69109, 69358)
+      await check(gas, 69109, 69943)
     })
 
     it('read mar gas', async () => {

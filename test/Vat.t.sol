@@ -54,7 +54,7 @@ contract VatTest is Test, RicoSetUp {
     function test_drip_basic() public {
         // set fee to something >1 so joy changes
         Vat(bank).drip(gilk);
-        Vat(bank).filk(gilk, 'fee', bytes32(2 * RAY));
+        Vat(bank).filk(gilk, 'fee', bytes32(FEE_2X_ANN));
 
         skip(1);
 
@@ -432,7 +432,7 @@ contract VatTest is Test, RicoSetUp {
 
     function test_drip() public {
         // set a high fee
-        Vat(bank).filk(gilk, 'fee', bytes32(RAY + RAY / 50));
+        Vat(bank).filk(gilk, 'fee', bytes32(Vat(bank).FEE_MAX()));
 
         // drip a little bit so this isn't the first fee accumulation
         skip(1);
@@ -443,10 +443,9 @@ contract VatTest is Test, RicoSetUp {
         skip(1);
         uint debt0 = owed();
 
-        // fee is 1.5, so urn's debt should increase 1.5x/s
         skip(1);
         uint debt1 = owed();
-        assertEq(debt1, debt0 + debt0 / 50);
+        assertClose(debt1, rmul(debt0, Vat(bank).FEE_MAX()), 1_000_000_000_000);
     }
 
     function test_rest_monotonic() public {
@@ -488,14 +487,6 @@ contract VatTest is Test, RicoSetUp {
         skip(1);
         Vat(bank).drip(gilk);
         assertEq(Vat(bank).rest(), 2 * WAD);
-
-        // fee = 3x/s, and owed is 2*WAD
-        // wait 2 seconds and owed is 18*wad
-        // so rest is now  2*WAD + (18*WAD - 2*WAD)
-        Vat(bank).filk(gilk, 'fee', bytes32(3 * RAY));
-        skip(2);
-        Vat(bank).drip(gilk);
-        assertEq(Vat(bank).rest(), 18 * WAD);
     }
 
     function test_rest_drip_toggle_ones() public {
@@ -703,12 +694,12 @@ contract VatTest is Test, RicoSetUp {
 
     function test_frob_err_ordering_1() public {
         // high fee, low ceil, medium dust
-        Vat(bank).filk(gilk, 'fee', bytes32(2 * RAY));
+        Vat(bank).filk(gilk, 'fee', bytes32(FEE_2X_ANN));
         File(bank).file('ceil', bytes32(WAD - 1));
         Vat(bank).filk(gilk, 'dust', bytes32(RAD));
 
         // accumulate pending fees
-        skip(1);
+        skip(BANKYEAR);
         Vat(bank).drip(gilk);
 
         // ceily, not safe, wrong urn, dusty...should be wrong urn
@@ -727,11 +718,11 @@ contract VatTest is Test, RicoSetUp {
 
         //non-dusty, should be ceily
         vm.expectRevert(Vat.ErrDebtCeil.selector);
-        Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(WAD / 2));
+        Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int((WAD + WAD / 1_000) / 2 ));
 
         // raising ceil should fix ceilyness
-        File(bank).file('ceil', bytes32(WAD));
-        Vat(bank).frob(gilk, self, abi.encodePacked(WAD * 2), int(WAD / 2));
+        File(bank).file('ceil', bytes32(WAD + WAD / 1_000));
+        Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int((WAD + WAD / 10_000) / 2 ));
     }
 
     function test_frob_err_ordering_darts() public {
@@ -741,7 +732,7 @@ contract VatTest is Test, RicoSetUp {
         feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
 
         // check how it works with some fees dripped
-        Vat(bank).filk(gilk, 'fee', bytes32(2 * RAY));
+        Vat(bank).filk(gilk, 'fee', bytes32(Vat(bank).FEE_MAX()));
         skip(1);
         Vat(bank).drip(gilk);
 
@@ -749,7 +740,7 @@ contract VatTest is Test, RicoSetUp {
         gold.mint(fsrc, 1000 * WAD);
         vm.startPrank(fsrc);
         gold.approve(bank, 1000 * WAD);
-        Vat(bank).frob(gilk, fsrc, abi.encodePacked(WAD * 2), int(WAD / 2));
+        Vat(bank).frob(gilk, fsrc, abi.encodePacked(WAD * 2), int(1 + WAD * RAY / Vat(bank).FEE_MAX()));
 
         // send the rico back to self
         rico.transfer(self, 100);
@@ -788,7 +779,7 @@ contract VatTest is Test, RicoSetUp {
 
     function test_frob_err_ordering_dinks_1() public {
         // high fee, low ceil, medium dust
-        Vat(bank).filk(gilk, 'fee', bytes32(2 * RAY));
+        Vat(bank).filk(gilk, 'fee', bytes32(FEE_2X_ANN));
         File(bank).file('ceil', bytes32(WAD));
         Vat(bank).filk(gilk, 'dust', bytes32(RAD));
 
@@ -804,7 +795,7 @@ contract VatTest is Test, RicoSetUp {
         // could prank any non-self address, just chose fsrc's
         vm.startPrank(fsrc);
         gold.approve(bank, 1000 * WAD);
-        Vat(bank).frob(gilk, fsrc, abi.encodePacked(WAD * 2), int(WAD / 2));
+        Vat(bank).frob(gilk, fsrc, abi.encodePacked(WAD * 2), int(1 + WAD * RAY / FEE_2X_ANN));
         vm.stopPrank();
 
         // bypasses some checks when dink >= 0 and dart <= 0
@@ -827,7 +818,7 @@ contract VatTest is Test, RicoSetUp {
 
     function test_frob_err_ordering_dinks_darts() public {
         // high fee, high ceil, medium dust
-        Vat(bank).filk(gilk, 'fee', bytes32(2 * RAY));
+        Vat(bank).filk(gilk, 'fee', bytes32(FEE_2X_ANN));
         File(bank).file('ceil', bytes32(WAD * 10000));
         Vat(bank).filk(gilk, 'dust', bytes32(RAD));
 
@@ -842,7 +833,7 @@ contract VatTest is Test, RicoSetUp {
         // could prank anything non-self; chose fsrc
         vm.startPrank(fsrc);
         gold.approve(bank, 1000 * WAD);
-        Vat(bank).frob(gilk, fsrc, abi.encodePacked(WAD * 2), int(WAD / 2));
+        Vat(bank).frob(gilk, fsrc, abi.encodePacked(WAD * 2), int(1 + WAD * RAY / FEE_2X_ANN));
 
         // 2 for accumulated debt, 1 for rounding
         rico.transfer(self, 3);
@@ -883,16 +874,16 @@ contract VatTest is Test, RicoSetUp {
     function test_debt_not_normalized() public {
         // accumulate pending fees, then set fee high
         Vat(bank).drip(gilk);
-        Vat(bank).filk(gilk, 'fee', bytes32(2 * RAY));
+        Vat(bank).filk(gilk, 'fee', bytes32(Vat(bank).FEE_MAX()));
 
         // rack == 1, so debt should increase by dart
         Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(WAD));
         assertEq(Vat(bank).debt(), WAD);
 
-        // if drip doubles rack, it should (roughly) double debt
-        skip(1);
+        // if drip 10X rack, it should (roughly) 10X debt
+        skip(BANKYEAR);
         Vat(bank).drip(gilk);
-        assertEq(Vat(bank).debt(), WAD * 2);
+        assertClose(Vat(bank).debt(), WAD * 10, 1_000_000_000);
     }
 
     function test_dtab_not_normalized() public {
@@ -901,13 +892,13 @@ contract VatTest is Test, RicoSetUp {
 
         // accumulate pending fees, then set fee high
         Vat(bank).drip(gilk);
-        Vat(bank).filk(gilk, 'fee', bytes32(2 * RAY));
+        Vat(bank).filk(gilk, 'fee', bytes32(FEE_2X_ANN));
 
         // rack is 0, so debt should increase by dart
         Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(WAD));
         assertEq(Vat(bank).debt(), WAD);
 
-        skip(1);
+        skip(BANKYEAR);
         Vat(bank).drip(gilk);
 
         // dart > 0, so dtab > 0
@@ -915,7 +906,7 @@ contract VatTest is Test, RicoSetUp {
         uint ricobefore = rico.balanceOf(self);
         Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(WAD));
         uint ricoafter  = rico.balanceOf(self);
-        assertEq(ricoafter, ricobefore + WAD * 2);
+        assertClose(ricoafter, ricobefore + WAD * 2, 1_000_000);
 
         // dart < 0 -> dtab < 0
         // dart == -1, rack == 2 -> dtab should be -2
@@ -923,31 +914,31 @@ contract VatTest is Test, RicoSetUp {
         ricobefore = rico.balanceOf(self);
         Vat(bank).frob(gilk, self, abi.encodePacked(int(0)), -int(WAD));
         ricoafter = rico.balanceOf(self);
-        assertEq(ricoafter, ricobefore - (WAD * 2 + 1));
+        assertClose(ricoafter, ricobefore - (WAD * 2 + 1), 1_000_000);
     }
 
     function test_drip_all_rest_1() public {
         // gold:ref price 1k
         feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
-        Vat(bank).filk(gilk, 'fee', bytes32(RAY * 3 / 2));
+        Vat(bank).filk(gilk, 'fee', bytes32(FEE_1_5X_ANN));
 
         // raise rack to 1.5
-        skip(1);
+        skip(BANKYEAR);
         // now frob 1, so debt is 1
         // and rest is 0.5 * RAY
         Vat(bank).drip(gilk);
         Vat(bank).frob(gilk, self, abi.encodePacked(int(1)), int(1));
-        assertEq(Vat(bank).rest(), RAY / 2);
+        assertClose(Vat(bank).rest(), RAY / 2, 1_000_000);
         assertEq(Vat(bank).debt(), 1);
         // need to wait for drip to do anything...
         Vat(bank).drip(gilk);
         assertEq(Vat(bank).debt(), 1);
-        assertEq(Vat(bank).rest(), RAY / 2);
+        assertClose(Vat(bank).rest(), RAY / 2, 1_000_000);
 
         // frob again so rest reaches RAY
         Vat(bank).frob(gilk, self, abi.encodePacked(int(1)), int(1));
         assertEq(Vat(bank).debt(), 2);
-        assertEq(Vat(bank).rest(), RAY);
+        assertClose(Vat(bank).rest(), RAY, 1_000_000);
 
         // so regardless of fee next drip should drip 1 (== rest / RAY)
         Vat(bank).filk(gilk, 'fee', bytes32(RAY));
@@ -955,7 +946,7 @@ contract VatTest is Test, RicoSetUp {
         Vat(bank).drip(gilk);
 
         assertEq(Vat(bank).debt(), 3);
-        assertEq(Vat(bank).rest(), 0);
+        assertLt(Vat(bank).rest(), RAY / 1_000_000);
         assertEq(rico.totalSupply(), 2);
         assertEq(Vat(bank).joy(), 1);
         assertEq(Vat(bank).joy() + rico.totalSupply(), Vat(bank).debt());

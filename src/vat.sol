@@ -281,12 +281,10 @@ contract Vat is Bank {
         } else if (key == "dust") { i.dust = _val;
         } else if (key == "hook") { i.hook = address(bytes20(val));
         } else if (key == "chop") {
-            must(_val, RAY, type(uint).max);
-            shld(_val, RAY, 10 * RAY);
+            must(_val, RAY, 10 * RAY);
             i.chop = _val;
         } else if (key == "fee") {
-            must(_val, RAY, type(uint).max);
-            shld(_val, RAY, _FEE_MAX);
+            must(_val, RAY, _FEE_MAX);
             _drip(ilk);
             i.fee = _val;
         } else { revert ErrWrongKey(); }

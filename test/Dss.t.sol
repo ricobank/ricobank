@@ -498,11 +498,12 @@ contract DssFoldTest is DssVatTest {
         draw(gilk, WAD);
 
         // high fee
-        Vat(bank).filk(gilk, 'fee', bytes32(RAY * 21 / 20));
+        Vat(bank).filk(gilk, 'fee', bytes32(Vat(bank).FEE_MAX()));
         assertEq(tab(gilk, self), RAD);
 
-        // drip should accumulate 1/20 the urn's tab from 1s ago
-        skip(1);
+        // drip should accumulate 1/20 the urn's tab from 1s ago.
+        // fee_max is 10X/year: 668226 sec for 5% growth; log(1.05)/log(10)*seconds/year
+        skip(668226);
         uint mejoy0 = Vat(bank).joy() * RAY; // rad
         Vat(bank).drip(gilk);
         uint djoy = Vat(bank).joy() * RAY - mejoy0;
@@ -701,10 +702,10 @@ contract DssVowTest is DssJsTest {
 
         // create a surplus
         Vat(bank).drip(gilk);
-        Vat(bank).filk(gilk, 'fee',  bytes32(RAY * 15 / 10));
+        Vat(bank).filk(gilk, 'fee',  bytes32(Vat(bank).FEE_MAX()));
         Vat(bank).filk(gilk, 'line', bytes32(10_000 * RAD));
         rico_mint(1000 * WAD, false);
-        skip(1);
+        skip(BANKYEAR);
 
         // get ready to call keep
         feedpush(RISK_RICO_TAG, bytes32(10 * RAY), UINT256_MAX);
@@ -721,7 +722,7 @@ contract DssVowTest is DssJsTest {
         risk.mint(self, 10000 * WAD);
         Vat(bank).drip(gilk);
         Vat(bank).filk(gilk, bytes32('chop'), bytes32(RAY * 11 / 10));
-        Vat(bank).filk(gilk, 'fee', bytes32(RAY * 15 / 10));
+        Vat(bank).filk(gilk, 'fee', bytes32(Vat(bank).FEE_MAX()));
 
         Vat(bank).frob(gilk, self, abi.encodePacked(200 * WAD), int(100 * WAD));
 
@@ -746,12 +747,12 @@ contract DssVowTest is DssJsTest {
     //   uses ramps to rate limit both
 
     function test_no_surplus_after_good_flop() public _vow_ {
-        File(bank).file('rel', bytes32(RAY));
+        File(bank).file('rel', bytes32(File(bank).REL_MAX()));
         File(bank).file('bel', bytes32(block.timestamp));
         File(bank).file('cel', bytes32(uint(1)));
 
-        Vat(bank).filk(gilk, 'fee', bytes32(RAY * 21 / 20));
-        Vat(bank).frob(gilk, self, abi.encodePacked(int(100)), 100);
+        Vat(bank).filk(gilk, 'fee', bytes32(Vat(bank).FEE_MAX()));
+        Vat(bank).frob(gilk, self, abi.encodePacked(int(WAD)), int(WAD));
         feedpush(grtag, bytes32(0), UINT256_MAX); // now unsafe
         
         // accrue some interest so vat has some joy
@@ -769,8 +770,8 @@ contract DssVowTest is DssJsTest {
         uint self_rico2 = rico.balanceOf(self);
 
         // should have lost some rico to risk sale +1 extra for rounding
-        uint vows_expected_rico = self_rico1 - self_rico2 + 1;
-        assertEq(Vat(bank).joy(), vows_expected_rico);
+        uint banks_expected_rico = self_rico1 - self_rico2 + 1;
+        assertEq(Vat(bank).joy(), banks_expected_rico);
 
         // should be balanced now, since the sale was clipped
         assertEq(Vat(bank).joy(), Vat(bank).sin() / RAY);

@@ -78,7 +78,7 @@ abstract contract RicoSetUp is BaseHelper {
     bytes32 constant public grtag = "gold:ref";
     bytes32 constant public wrtag = "weth:ref";
     bytes32 constant public drtag = "dai:ref";
-    bytes32 constant public rrtag = "rico:usd";
+    bytes32 constant public rutag = "rico:usd";
     uint160 constant public risk_price = 2 ** 96;
     uint256 constant public INIT_PAR   = RAY;
     uint256 constant public init_mint  = 10000;
@@ -87,6 +87,8 @@ abstract contract RicoSetUp is BaseHelper {
     uint256 constant public plotpep    = 2;
     uint256 constant public plotpop    = RAY;
     uint256 constant public FEED_LOOKAHEAD = 1000;
+    uint256 constant public FEE_2X_ANN = uint(1000000021964508944519921664);
+    uint256 constant public FEE_1_5X_ANN = uint(1000000012848414058163994624);
     address constant public fsrc = 0xF33df33dF33dF33df33df33df33dF33DF33Df33D;
 
     ERC20Hook  public hook;

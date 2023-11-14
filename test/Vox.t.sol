@@ -11,7 +11,6 @@ import { Vox } from '../src/vox.sol';
 contract VoxTest is Test, RicoSetUp {
     uint pre_cap;
     uint constant init_par = 7 * RAY;
-    uint constant init_cap = 3 * RAY;
 
     modifier _orig_ {
         File(bank).file(bytes32('cap'), bytes32(pre_cap));
@@ -22,25 +21,25 @@ contract VoxTest is Test, RicoSetUp {
         make_bank();
 
         pre_cap = Vox(bank).cap();
-        File(bank).file('tip.tag', rrtag);
-        File(bank).file('cap', bytes32(init_cap));
+        File(bank).file('tip.tag', rutag);
+        File(bank).file('cap', bytes32(File(bank).CAP_MAX()));
         File(bank).file('par', bytes32(init_par));
     }
 
     function test_sway() public {
         // hardcoding way; price shouldn't matter
-        feedpush(rrtag, bytes32(UINT256_MAX / RAY), block.timestamp + 1000);
+        feedpush(rutag, bytes32(UINT256_MAX / RAY), block.timestamp + 1000);
 
         // way == 1 -> poke shouldn't change par
         skip(100);
         Vox(bank).poke();
         assertEq(Vat(bank).par(), init_par);
 
-        // way == 2 -> par should double every second now
-        File(bank).file(bytes32('way'), bytes32(2 * RAY));
-        skip(2);
+        // way == 2 -> par should 10X every year
+        File(bank).file(bytes32('way'), bytes32(File(bank).CAP_MAX()));
+        skip(2 * BANKYEAR);
         Vox(bank).poke();
-        assertEq(Vat(bank).par(), init_par * 4);
+        assertClose(Vat(bank).par(), init_par * 100, 1_000_000_000);
     }
 
     function test_poke_basic_highmar() public
@@ -49,7 +48,7 @@ contract VoxTest is Test, RicoSetUp {
         uint way = Vox(bank).way();
 
         // mar > par -> poke should lower way
-        feedpush(rrtag, bytes32(init_par * 10 / 7), block.timestamp + 1000);
+        feedpush(rutag, bytes32(init_par * 10 / 7), block.timestamp + 1000);
         Vox(bank).poke();
         assertLt(Vox(bank).way(), way);
     }
@@ -59,7 +58,7 @@ contract VoxTest is Test, RicoSetUp {
         uint way = Vox(bank).way();
 
         // mar < par -> poke should raise way
-        feedpush(rrtag, bytes32(init_par / 2), block.timestamp + 1000);
+        feedpush(rutag, bytes32(init_par / 2), block.timestamp + 1000);
         Vox(bank).poke();
         assertGt(Vox(bank).way(), way);
     }
@@ -69,7 +68,7 @@ contract VoxTest is Test, RicoSetUp {
         // how > 0 and mar < par
         uint how = RAY + (RAY * 12 / 10) / (10 ** 16);
         File(bank).file(bytes32('how'), bytes32(how));
-        feedpush(rrtag, bytes32(0), 10 ** 12);
+        feedpush(rutag, bytes32(0), 10 ** 12);
 
         // no time has passed -> par and way unchanged
         Vox(bank).poke();
@@ -94,7 +93,7 @@ contract VoxTest is Test, RicoSetUp {
         // way rose again last poke -> par increases more this time
         // mar > par this time -> way decreases
         skip(1);
-        feedpush(rrtag, bytes32(10 * RAY), 10 ** 12);
+        feedpush(rutag, bytes32(10 * RAY), 10 ** 12);
         Vox(bank).poke();
         assertEq(Vat(bank).par(), expectedpar = rmul(expectedpar, expectedway));
         assertEq(Vox(bank).way(), expectedway = rdiv(expectedway, how));
@@ -128,7 +127,7 @@ contract VoxTest is Test, RicoSetUp {
         assertEq(Vox(bank).way(), expectedway = rmul(expectedway, rinv(how)));
 
         // mar < par -> way should start increasing again
-        feedpush(rrtag, bytes32(0), 10 ** 12);
+        feedpush(rutag, bytes32(0), 10 ** 12);
 
         // way doesn't change until after par update
         skip(100000000);
@@ -189,7 +188,7 @@ contract VoxTest is Test, RicoSetUp {
 
     function test_par_grows_with_stale_tip() public _orig_ {
         // set rico market feed low and fresh
-        feedpush(rrtag, bytes32(RAY), block.timestamp + 10000);
+        feedpush(rutag, bytes32(RAY), block.timestamp + 10000);
         skip(10);
         Vox(bank).poke();
 
@@ -197,7 +196,7 @@ contract VoxTest is Test, RicoSetUp {
         uint par0 = Vat(bank).par();
 
         // set rico market feed low and stale
-        feedpush(rrtag, bytes32(RAY), block.timestamp);
+        feedpush(rutag, bytes32(RAY), block.timestamp);
         skip(10);
         Vox(bank).poke();
 
@@ -208,7 +207,7 @@ contract VoxTest is Test, RicoSetUp {
         assertGt(par1, par0);
 
         // set rico market feed low and fresh, without progressing time
-        feedpush(rrtag, bytes32(RAY), block.timestamp + 10000);
+        feedpush(rutag, bytes32(RAY), block.timestamp + 10000);
         Vox(bank).poke();
 
         // no delayed way change after feed refreshed
@@ -218,7 +217,7 @@ contract VoxTest is Test, RicoSetUp {
         assertEq(par2, par1);
 
         // with fresh rico market feed both should progress
-        feedpush(rrtag, bytes32(RAY), block.timestamp + 10000);
+        feedpush(rutag, bytes32(RAY), block.timestamp + 10000);
         skip(10);
         Vox(bank).poke();
 
@@ -236,7 +235,7 @@ contract VoxTest is Test, RicoSetUp {
         assertEq(way0, RAY);
 
         // wait a std day and poke with market price below par
-        feedpush(rrtag, bytes32(0), block.timestamp + 10 * BANKYEAR);
+        feedpush(rutag, bytes32(0), block.timestamp + 10 * BANKYEAR);
         skip(1 days);
         Vox(bank).poke();
 
@@ -260,7 +259,7 @@ contract VoxTest is Test, RicoSetUp {
         assertEq(way0, RAY);
 
         // set mar << par
-        feedpush(rrtag, bytes32(0), block.timestamp + 10 * BANKYEAR);
+        feedpush(rutag, bytes32(0), block.timestamp + 10 * BANKYEAR);
         skip(68.9 days);
         Vox(bank).poke();
 
@@ -281,7 +280,7 @@ contract VoxTest is Test, RicoSetUp {
         assertEq(way0, RAY);
 
         // set mar >> par
-        feedpush(rrtag, bytes32(1_000_000_000 * RAY), block.timestamp + 10 * BANKYEAR);
+        feedpush(rutag, bytes32(1_000_000_000 * RAY), block.timestamp + 10 * BANKYEAR);
         skip(68.9 days);
         Vox(bank).poke();
 
@@ -299,7 +298,7 @@ contract VoxTest is Test, RicoSetUp {
     function test_release_cap_up() public _orig_ {
         // Let way grow to cap
         Vox(bank).poke();
-        feedpush(rrtag, bytes32(0), block.timestamp + 10 * BANKYEAR);
+        feedpush(rutag, bytes32(0), block.timestamp + 10 * BANKYEAR);
         skip(100 days);
         Vox(bank).poke();
 
@@ -318,7 +317,7 @@ contract VoxTest is Test, RicoSetUp {
     function test_release_cap_down() public _orig_ {
         // Let way grow to inv cap
         Vox(bank).poke();
-        feedpush(rrtag, bytes32(1_000_000_000 * RAY), block.timestamp + 10 * BANKYEAR);
+        feedpush(rutag, bytes32(1_000_000_000 * RAY), block.timestamp + 10 * BANKYEAR);
         skip(100 days);
         Vox(bank).poke();
 
@@ -341,7 +340,7 @@ contract VoxTest is Test, RicoSetUp {
         assertEq(way0, RAY);
 
         // wait a std day and poke with market price above par
-        feedpush(rrtag, bytes32(1_000_000_000 * RAY), block.timestamp + 10 * BANKYEAR);
+        feedpush(rutag, bytes32(1_000_000_000 * RAY), block.timestamp + 10 * BANKYEAR);
         skip(1 days);
         Vox(bank).poke();
 

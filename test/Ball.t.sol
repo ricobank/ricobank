@@ -378,12 +378,7 @@ contract BallTest is BaseHelper {
         File(bank).file('ceil', bytes32(WAD));
     }
 
-    modifier _care_ {
-        File(bank).file('care', bytes32(uint(1)));
-        _;
-    }
-
-    function test_care_fee() public _care_ {
+    function test_bounds_fee() public {
         bytes32 gilk = 'gold';
         Vat(bank).init(gilk, address(0));
 
@@ -411,7 +406,7 @@ contract BallTest is BaseHelper {
         Vat(bank).filk(gilk, 'fee', bytes32(fee_max + 1));
     }
 
-    function test_care_rel() public _care_ {
+    function test_bounds_rel() public {
         File(bank).file('rel', bytes32(0));
 
         uint rel_max = File(bank).REL_MAX();
@@ -442,12 +437,12 @@ contract BallTest is BaseHelper {
 
         uint supply_pre = Gem(risk).totalSupply();
         Vow(bank).keep(empty);
-        // 10 because rel, and 11 because of supply already there
-        assertLt(Gem(risk).totalSupply(), supply_pre * 11);
-        assertGt(Gem(risk).totalSupply(), supply_pre * 10);
+        // 100 because rel, and 101 because of supply already there
+        assertLt(Gem(risk).totalSupply(), supply_pre * 101);
+        assertGt(Gem(risk).totalSupply(), supply_pre * 100);
     }
 
-    function test_care_2() public _care_ {
+    function test_bounds_2() public {
         File(bank).file('way', bytes32(RAY));
         File(bank).file('wel', bytes32(0));
         File(bank).file('wel', bytes32(RAY));
