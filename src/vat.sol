@@ -205,7 +205,6 @@ contract Vat is Bank {
         emit NewPalm2("art", i, bytes32(bytes20(u)), bytes32(uint(0)));
 
         // bill is the debt hook will attempt to cover when auctioning ink
-        // todo maybe make this +1?
         uint dtab = art * rack;
         uint owed = dtab / RAY;
         uint bill = rmul(ilk.chop, owed);
