@@ -121,7 +121,8 @@ contract Vat is Bank {
         VatStorage storage vs = getVatStorage();
         Ilk storage ilk = vs.ilks[i];
 
-        if (ilk.rack == 0) revert ErrIlkInit();
+        uint rack = _drip(i);
+        if (rack == 0) revert ErrIlkInit();
 
         // modify normalized debt
         uint256 art   = add(vs.urns[i][u], dart);
@@ -132,34 +133,35 @@ contract Vat is Bank {
         ilk.tart      = add(ilk.tart, dart);
         emit NewPalm1("tart", i, bytes32(ilk.tart));
 
-        // rico mint/burn amount increases with rack
-        int dtab      = mul(ilk.rack, dart);
         uint _debt;
         uint _rest;
+        {
+            // rico mint/burn amount increases with rack
+            int dtab = mul(rack, dart);
+            if (dtab > 0) {
+                // borrow
+                uint wad = uint(dtab) / RAY;
 
-        if (dtab > 0) {
-            // borrow
-            uint wad = uint(dtab) / RAY;
+                _debt = vs.debt += wad;
+                emit NewPalm0("debt", bytes32(_debt));
 
-            _debt = vs.debt += wad;
-            emit NewPalm0("debt", bytes32(_debt));
+                _rest = vs.rest += uint(dtab) % RAY;
+                emit NewPalm0("rest", bytes32(_rest));
 
-            _rest = vs.rest += uint(dtab) % RAY;
-            emit NewPalm0("rest", bytes32(_rest));
+                getBankStorage().rico.mint(msg.sender, wad);
+            } else if (dtab < 0) {
+                // paydown
+                // dtab is a rad, so burn one extra to round in system's favor
+                uint wad = uint(-dtab) / RAY + 1;
 
-            getBankStorage().rico.mint(msg.sender, wad);
-        } else if (dtab < 0) {
-            // paydown
-            // dtab is a rad, so burn one extra to round in system's favor
-            uint wad = uint(-dtab) / RAY + 1;
+                _debt = vs.debt -= wad;
+                emit NewPalm0("debt", bytes32(_debt));
 
-            _debt = vs.debt -= wad;
-            emit NewPalm0("debt", bytes32(_debt));
+                _rest = vs.rest += add(wad * RAY, dtab);
+                emit NewPalm0("rest", bytes32(_rest));
 
-            _rest = vs.rest += add(wad * RAY, dtab);
-            emit NewPalm0("rest", bytes32(_rest));
-
-            getBankStorage().rico.burn(msg.sender, wad);
+                getBankStorage().rico.burn(msg.sender, wad);
+            }
         }
 
         // safer if less/same art and more/same ink
@@ -176,11 +178,11 @@ contract Vat is Bank {
         }
 
         // urn has no debt, or a non-dusty amount
-        if (art != 0 && ilk.rack * art < ilk.dust) revert ErrUrnDust();
+        if (art != 0 && rack * art < ilk.dust) revert ErrUrnDust();
 
         // either debt has decreased, or debt ceilings are not exceeded
         if (dart > 0) {
-            if (ilk.tart * ilk.rack > ilk.line) revert ErrDebtCeil();
+            if (ilk.tart * rack > ilk.line) revert ErrDebtCeil();
             else if (_debt + _rest / RAY > vs.ceil) revert ErrDebtCeil();
         }
     }
@@ -188,10 +190,13 @@ contract Vat is Bank {
     function bail(bytes32 i, address u)
       external payable _flog_ _lock_ returns (bytes memory)
     {
-        _drip(i);
-        (Spot spot, uint deal, uint tot) = safe(i, u);
-        if (spot != Spot.Sunk) revert ErrSafeBail();
-
+        uint rack = _drip(i);
+        uint deal; uint tot;
+        {
+            Spot spot;
+            (spot, deal, tot) = safe(i, u);
+            if (spot != Spot.Sunk) revert ErrSafeBail();
+        }
         VatStorage storage vs = getVatStorage();
         Ilk storage ilk = vs.ilks[i];
 
@@ -201,7 +206,7 @@ contract Vat is Bank {
 
         // bill is the debt hook will attempt to cover when auctioning ink
         // todo maybe make this +1?
-        uint dtab = art * ilk.rack;
+        uint dtab = art * rack;
         uint owed = dtab / RAY;
         uint bill = rmul(ilk.chop, owed);
 
@@ -224,14 +229,16 @@ contract Vat is Bank {
     function drip(bytes32 i) external payable _flog_ { _drip(i); }
 
     // drip without flog
-    function _drip(bytes32 i) internal {
+    function _drip(bytes32 i) internal returns (uint rack) {
         VatStorage storage vs = getVatStorage();
         Ilk storage ilk       = vs.ilks[i];
-        if (block.timestamp == ilk.rho) return;
+        if (block.timestamp == ilk.rho) {
+            return ilk.rack;
+        }
 
         // multiply rack by fee every second
         uint prev = ilk.rack;
-        uint rack = grow(prev, ilk.fee, block.timestamp - ilk.rho);
+        rack = grow(prev, ilk.fee, block.timestamp - ilk.rho);
 
         // difference between current and previous rack determines interest
         uint256 delt = rack - prev;

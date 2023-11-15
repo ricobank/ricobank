@@ -295,33 +295,6 @@ contract BallTest is BaseHelper {
         assertGt(WethLike(WETH).balanceOf(self), meweth);
     }
 
-    function test_ball_flap() public _flap_after_ {
-        // setup had some delay, so this frob is at an "earlier" rack
-        // -> should be able to flap immediately after
-        Vat(bank).frob(wilk, self, abi.encodePacked(wethamt), safedart);
-        vm.expectRevert(Vat.ErrSafeBail.selector);
-        Vat(bank).bail(wilk, self);
-    }
-
-    // user (mostly) pays down the urn first, then try to flap
-    function test_ball_pay_flap_1() public _flap_after_ {
-        Vat(bank).frob(wilk, self, abi.encodePacked(wethamt), safedart);
-
-        skip(BANKYEAR * 100); look_poke();
-
-        uint art_pre = Vat(bank).urns(wilk, self);
-        uint ink_pre = _ink(wilk, self);
-        uint rack    = Vat(bank).ilks(wilk).rack;
-        uint dust    = Vat(bank).ilks(wilk).dust;
-
-        Vat(bank).frob(wilk, self, abi.encodePacked(int(0)), -int((art_pre * rack - dust) / rack));
-
-        uint art_aft = Vat(bank).urns(wilk, self);
-        uint ink_aft = _ink(wilk, self);
-        assertEq(ink_aft, ink_pre);
-        assertEq(art_aft, dust / rack);
-    }
-
     // frob, then flap (with wel == 100%), and check balanced
     function test_ball_pay_flap_success() public  _balanced_after_ {
         Vat(bank).frob(wilk, self, abi.encodePacked(wethamt), safedart);

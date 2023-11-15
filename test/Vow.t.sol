@@ -287,17 +287,11 @@ contract VowTest is Test, RicoSetUp {
 
         skip(BANKYEAR);
 
-        // test rack...right now can only mint a wad rico for a wad gold
-        Vat(bank).frob(gilk, address(this), abi.encodePacked(WAD), int(WAD));
-        assertEq(rico.balanceOf(self), firstrico);
+        // test rack, frob auto drips so should be able to draw double after a year at 2X fee
+        Vat(bank).frob(gilk, address(this), abi.encodePacked(WAD), int(WAD * 1));
+        assertClose(rico.balanceOf(self), firstrico * 2, 1_000_000);
         rico_mint(1, false); // rounding
         Vat(bank).frob(gilk, address(this), abi.encodePacked(-int(WAD)), -int(WAD));
-
-        // until drip updates rack, then can mint more
-        Vat(bank).drip(gilk);
-        assertEq(rico.balanceOf(self), 0);
-        Vat(bank).frob(gilk, address(this), abi.encodePacked(WAD), int(WAD));
-        assertClose(rico.balanceOf(self), firstrico * 2, 1_000_000);
     }
 
     function test_keep_balanced() public
