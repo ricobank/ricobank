@@ -77,6 +77,7 @@ contract UniNFTHook is HookMix {
             safer = p.dart <= 0;
             unchecked {
                 // add uni positions
+                uint room = hs.room;
                 for (uint idx = 32; idx < dinkLen; idx += 32) {
                     uint tokenId = uint(bytes32(p.dink[idx:idx+32]));
                     hs.nfpm.transferFrom(p.sender, address(this), tokenId);
@@ -85,7 +86,7 @@ contract UniNFTHook is HookMix {
                     tokenIds.push(tokenId);
 
                     // limit the number of positions in the CDP
-                    if (tokenIds.length > hs.room) revert ErrFull();
+                    if (tokenIds.length > room) revert ErrFull();
                 }
             }
         } else if (dir == FREE) {

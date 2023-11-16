@@ -77,18 +77,21 @@ contract ERC20Hook is HookMix {
         // tot is RAD, deal is RAY, so bank earns a WAD.
         // sell - sold collateral
         // earn - rico "earned" by bank in this liquidation
-        uint sell = hs.inks[p.u];
+        uint full = hs.inks[p.u];
+        uint sell;
         uint earn = rmul(p.tot / RAY, rmul(rpow(p.deal, hs.plot.pep), hs.plot.pop));
 
         // clamp `sell` so bank only gets enough to underwrite urn.
         if (earn > p.bill) {
-            sell = sell * p.bill / earn;
+            sell = full * p.bill / earn;
             earn = p.bill;
+        } else {
+            sell = full;
         }
         vsync(p.i, earn, p.owed, 0);
 
         // update collateral balance
-        uint _ink  = hs.inks[p.u] - sell;
+        uint _ink  = full - sell;
         hs.inks[p.u] = _ink;
         emit NewPalmBytes2("ink", p.i, bytes32(bytes20(p.u)), abi.encodePacked(_ink));
 
@@ -105,8 +108,9 @@ contract ERC20Hook is HookMix {
 
         // total value of collateral == ink * price feed val
         (bytes32 val, uint _ttl) = getBankStorage().fb.pull(hs.rudd.src, hs.rudd.tag);
-        tot = uint(val) * hs.inks[u];
-        cut = uint(val) * rdiv(hs.inks[u], hs.liqr);
+        uint _ink = hs.inks[u];
+        tot = uint(val) * _ink;
+        cut = uint(val) * rdiv(_ink, hs.liqr);
         ttl = _ttl;
     }
 
