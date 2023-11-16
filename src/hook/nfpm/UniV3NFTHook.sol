@@ -49,20 +49,19 @@ contract UniNFTHook is HookMix {
         }
     }
 
-    function ink(bytes32 i, address u) external view returns (bytes memory) {
-        return abi.encode(getStorage(i).inks[u]);
-    }
-
-    int256 internal constant LOCK = 1;
-    int256 internal constant FREE = -1;
-
     error ErrDinkLength();
     error ErrNotFound();
     error ErrDir();
     error ErrFull();
 
-    function frobhook(FHParams calldata p) external payable returns (bool safer)
-    {
+    int256 internal constant LOCK = 1;
+    int256 internal constant FREE = -1;
+
+    function ink(bytes32 i, address u) external view returns (bytes memory) {
+        return abi.encode(getStorage(i).inks[u]);
+    }
+
+    function frobhook(FHParams calldata p) external payable returns (bool safer) {
         UniNFTHookStorage storage hs = getStorage(p.i);
         uint[] storage tokenIds      = hs.inks[p.u];
         uint dinkLen                 = p.dink.length;
@@ -114,8 +113,7 @@ contract UniNFTHook is HookMix {
         emit NewPalmBytes2("ink", p.i, bytes32(bytes20(p.u)), abi.encodePacked(tokenIds));
     }
 
-    function bailhook(BHParams calldata p) external payable returns (bytes memory)
-    {
+    function bailhook(BHParams calldata p) external payable returns (bytes memory) {
         UniNFTHookStorage storage hs  = getStorage(p.i);
         uint[]            memory  ids = hs.inks[p.u];
 
@@ -147,7 +145,8 @@ contract UniNFTHook is HookMix {
 
     // respective amounts of token0 and token1 that this position
     // would yield if burned now
-    function amounts(uint tokenId, UniNFTHookStorage storage hs) internal view returns (Amounts memory) {
+    function amounts(uint tokenId, UniNFTHookStorage storage hs)
+      internal view returns (Amounts memory) {
         Amounts memory amts;
         uint24 fee;
 

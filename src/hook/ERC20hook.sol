@@ -28,13 +28,12 @@ contract ERC20Hook is HookMix {
     error ErrTransfer();
     error ErrDinkSize();
 
-    function ink(bytes32 i, address u) external view returns (bytes memory data) {
-        data = abi.encodePacked(getStorage(i).inks[u]);
+    function ink(bytes32 i, address u) external view returns (bytes memory) {
+        return abi.encode(getStorage(i).inks[u]);
     }
 
     function frobhook(FHParams calldata p)
-      external payable returns (bool safer)
-    {
+      external payable returns (bool safer) {
         ERC20HookStorage storage hs = getStorage(p.i);
 
         // read dink as a single uint
@@ -72,8 +71,7 @@ contract ERC20Hook is HookMix {
     }
 
     function bailhook(BHParams calldata p)
-      external payable returns (bytes memory)
-    {
+      external payable returns (bytes memory) {
         ERC20HookStorage storage hs  = getStorage(p.i);
 
         // tot is RAD, deal is RAY, so bank earns a WAD.
@@ -102,8 +100,7 @@ contract ERC20Hook is HookMix {
     }
 
     function safehook(bytes32 i, address u)
-      external view returns (uint tot, uint cut, uint ttl)
-    {
+      external view returns (uint tot, uint cut, uint ttl) {
         ERC20HookStorage storage hs  = getStorage(i);
 
         // total value of collateral == ink * price feed val
