@@ -61,8 +61,8 @@ contract ERC20Hook is HookMix {
 
         } else if (dink < 0) {
 
-            // return tokens to sender
-            if (!gem.transfer(p.sender, uint(-dink))) {
+            // return tokens to urn holder
+            if (!gem.transfer(p.u, uint(-dink))) {
                 revert ErrTransfer();
             }
 
