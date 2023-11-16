@@ -203,13 +203,13 @@ describe('Vox', () => {
     })
 
     it('deploy gas', async () => {
-      await check(ethers.BigNumber.from(deploygas), 37618753)
+      await check(ethers.BigNumber.from(deploygas), 37619805)
     })
 
     it('frob cold gas', async () => {
       let dink = ethers.utils.solidityPack(['int'], [wad(5)])
       let gas = await bank.estimateGas.frob(b32('weth'), ALI, dink, wad(2))
-      await check(gas, 345427)
+      await check(gas, 345433)
     })
 
     it('frob hot gas', async () => {
@@ -220,7 +220,7 @@ describe('Vox', () => {
       let gas = await bank.estimateGas.frob(
         b32('weth'), ALI, ethers.utils.solidityPack(['int'], [wad(5)]), wad(2)
       )
-      await check(gas, 191157)
+      await check(gas, 191163)
     })
 
     it('bail gas', async () => {
@@ -230,7 +230,7 @@ describe('Vox', () => {
       await send(fb.push, b32('weth:ref'), bn2b32(ray(0.1)), constants.MaxUint256)
       debug('bail')
       let gas = await bank.estimateGas.bail(b32('weth'), ALI)
-      await check(gas, 234243)
+      await check(gas, 234269)
     })
 
     it('keep surplus gas', async () => {
@@ -284,7 +284,7 @@ describe('Vox', () => {
       await send(bank.frob, b32('weth'), ALI, dink, wad(2))
       await mine(hh, BANKYEAR)
       let gas = await bank.estimateGas.drip(b32('weth'))
-      await check(gas, 91700)
+      await check(gas, 91723)
     })
 
     it('uni nft frob down gas', async () => {
@@ -348,7 +348,7 @@ describe('Vox', () => {
             ['int', 'uint', 'uint'], [-1, ricodaitokids[2], ricodaitokids[1]]
         )
         let gas = await bank.estimateGas.frob(b32(':uninft'), ALI, dink, wad(-9))
-        await check(gas, 472449)
+        await check(gas, 472455)
         await send(bank.frob, b32(':uninft'), ALI, dink, wad(-9))
     })
   })

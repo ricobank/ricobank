@@ -1266,6 +1266,16 @@ contract VatTest is Test, RicoSetUp {
         uint line2 = Vat(bank).ilks(gilk).line;
         assertEq(line2, 0);
     }
+
+    function test_no_drip_uninitialized_ilk() public {
+        vm.expectRevert(Vat.ErrIlkInit.selector);
+        Vat(bank).drip('hello');
+    }
+
+    function test_no_bail_unitialized_ilk() public {
+        vm.expectRevert(Vat.ErrIlkInit.selector);
+        Vat(bank).bail('hello', self);
+    }
 }
 
 // always reverts on safehook

@@ -122,7 +122,6 @@ contract Vat is Bank {
         Ilk storage ilk = vs.ilks[i];
 
         uint rack = _drip(i);
-        if (rack == 0) revert ErrIlkInit();
 
         // modify normalized debt
         uint256 art   = add(vs.urns[i][u], dart);
@@ -231,12 +230,15 @@ contract Vat is Bank {
     function _drip(bytes32 i) internal returns (uint rack) {
         VatStorage storage vs = getVatStorage();
         Ilk storage ilk       = vs.ilks[i];
+        // multiply rack by fee every second
+        uint prev = ilk.rack;
+        if (prev == 0) revert ErrIlkInit();
+ 
         if (block.timestamp == ilk.rho) {
             return ilk.rack;
         }
 
         // multiply rack by fee every second
-        uint prev = ilk.rack;
         rack = grow(prev, ilk.fee, block.timestamp - ilk.rho);
 
         // difference between current and previous rack determines interest
