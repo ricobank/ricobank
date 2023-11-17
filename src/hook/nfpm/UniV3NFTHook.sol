@@ -139,12 +139,12 @@ contract UniNFTHook is HookMix {
         // send the uni positions to keeper
         uint len = ids.length;
         uint idx;
-        while (true) {
+        while (idx < len) {
             uint id = ids[idx];
             NFPM.transferFrom(address(this), p.keeper, id);
             unchecked{ idx++; }
-            if (idx >= len) break;
         }
+
         return abi.encodePacked(ids);
     }
 

@@ -730,4 +730,20 @@ contract NFTHookTest is Test, RicoSetUp {
             self, uilk, self, abi.encodePacked(int(0)), 0)
         ));
     }
+
+    function setrico(address hook, address _rico) internal {
+        bytes32 bank_info = 'ricobank.0';
+        bytes32 bank_pos = keccak256(abi.encodePacked(bank_info));
+        // rico @idx 0
+        vm.store(hook, bank_pos,  bytes32(uint(bytes32(bytes20(_rico))) >> (12 * 8)));
+    }
+
+    function test_empty_ink_bailhook() public {
+        setrico(address(nfthook), address(rico));
+        rico.ward(address(nfthook), true);
+        Hook.BHParams memory p = Hook.BHParams(uilk, self, WAD, WAD, self, 0, WAD);
+        //vm.expectCall(address(nfpm), abi.encodePacked(nfpm.transferFrom.selector), 0);
+        bytes memory ids = nfthook.bailhook(p);
+        assertEq(ids.length, 0);
+    }
 }
