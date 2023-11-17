@@ -203,7 +203,7 @@ describe('Vox', () => {
     })
 
     it('deploy gas', async () => {
-      await check(ethers.BigNumber.from(deploygas), 37619805)
+      await check(ethers.BigNumber.from(deploygas), 37528866)
     })
 
     it('frob cold gas', async () => {
@@ -348,7 +348,7 @@ describe('Vox', () => {
             ['int', 'uint', 'uint'], [-1, ricodaitokids[2], ricodaitokids[1]]
         )
         let gas = await bank.estimateGas.frob(b32(':uninft'), ALI, dink, wad(-9))
-        await check(gas, 472455)
+        await check(gas, 469893)
         await send(bank.frob, b32(':uninft'), ALI, dink, wad(-9))
     })
   })

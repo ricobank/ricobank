@@ -30,7 +30,6 @@ contract UniNFTHook is HookMix {
         mapping(address gem => Source source) sources;
         mapping(address usr => uint[] tokenIds) inks;
         IUniWrapper wrap; // wrapper for uniswap libraries that use earlier solc
-        INFPM   nfpm; // uni NFT
         uint256 room;  // maximum position list length
         Plx     plot;  // [int] discount exponent, [ray] sale price multiplier
     }
@@ -54,8 +53,13 @@ contract UniNFTHook is HookMix {
     error ErrDir();
     error ErrFull();
 
-    int256 internal constant LOCK = 1;
-    int256 internal constant FREE = -1;
+    int256 internal constant  LOCK = 1;
+    int256 internal constant  FREE = -1;
+    INFPM  internal immutable NFPM;
+
+    constructor(address nfpm) {
+        NFPM = INFPM(nfpm);
+    }
 
     function ink(bytes32 i, address u) external view returns (bytes memory) {
         return abi.encode(getStorage(i).inks[u]);
@@ -80,7 +84,7 @@ contract UniNFTHook is HookMix {
                 uint room = hs.room;
                 for (uint idx = 32; idx < dinkLen; idx += 32) {
                     uint tokenId = uint(bytes32(p.dink[idx:idx+32]));
-                    hs.nfpm.transferFrom(p.sender, address(this), tokenId);
+                    NFPM.transferFrom(p.sender, address(this), tokenId);
 
                     // record it in ink
                     tokenIds.push(tokenId);
@@ -99,7 +103,7 @@ contract UniNFTHook is HookMix {
                         if (tokenIds[k] == toss) {
                             tokenIds[k] = tokenIds[size - 1];
                             tokenIds.pop();
-                            hs.nfpm.transferFrom(address(this), p.u, toss);
+                            NFPM.transferFrom(address(this), p.u, toss);
                             break;
                         }
                     }
@@ -137,7 +141,7 @@ contract UniNFTHook is HookMix {
         uint idx;
         while (true) {
             uint id = ids[idx];
-            hs.nfpm.transferFrom(address(this), p.keeper, id);
+            NFPM.transferFrom(address(this), p.keeper, id);
             unchecked{ idx++; }
             if (idx >= len) break;
         }
@@ -151,16 +155,15 @@ contract UniNFTHook is HookMix {
         Amounts memory amts;
         uint24 fee;
 
-        INFPM nfpm = hs.nfpm;
         IUniWrapper wrap = hs.wrap;
-        (,,amts.tok0, amts.tok1, fee,,,,,,,) = nfpm.positions(tokenId);
+        (,,amts.tok0, amts.tok1, fee,,,,,,,) = NFPM.positions(tokenId);
 
         // get the current price
-        address pool = wrap.computeAddress(nfpm.factory(), amts.tok0, amts.tok1, fee);
+        address pool = wrap.computeAddress(NFPM.factory(), amts.tok0, amts.tok1, fee);
         (uint160 sqrtPriceX96,,,,,,) = IUniswapV3Pool(pool).slot0();
 
         // uni library function to get amounts
-        (amts.amt0, amts.amt1) = wrap.total(nfpm, tokenId, sqrtPriceX96);
+        (amts.amt0, amts.amt1) = wrap.total(NFPM, tokenId, sqrtPriceX96);
         return amts;
     }
 
@@ -197,8 +200,7 @@ contract UniNFTHook is HookMix {
         UniNFTHookStorage storage hs  = getStorage(i);
 
         if (xs.length == 0) {
-            if (key == "nfpm") { hs.nfpm = INFPM(address(bytes20(val)));
-            } else if (key == "room") { hs.room = uint(val);
+                   if (key == "room") { hs.room = uint(val);
             } else if (key == "wrap") { hs.wrap = IUniWrapper(address(bytes20(val)));
             } else if (key == "pep")  { hs.plot.pep = uint(val);
             } else if (key == "pop")  { hs.plot.pop = uint(val);
@@ -223,8 +225,7 @@ contract UniNFTHook is HookMix {
         UniNFTHookStorage storage hs  = getStorage(i);
 
         if (xs.length == 0) {
-            if (key == "nfpm") { return bytes32(bytes20(address(hs.nfpm)));
-            } else if (key == "room") { return bytes32(hs.room);
+                   if (key == "room") { return bytes32(hs.room);
             } else if (key == "wrap") { return bytes32(bytes20(address(hs.wrap)));
             } else if (key == "pep")  { return bytes32(hs.plot.pep);
             } else if (key == "pop")  { return bytes32(hs.plot.pop);

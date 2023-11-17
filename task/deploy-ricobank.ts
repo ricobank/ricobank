@@ -54,7 +54,6 @@ task('deploy-ricobank', '')
     const uniwrapper = await uniwrapper_type.deploy({gasLimit: args.gasLimit});
     // TODO uni debt ceil
     const ups = {
-            nfpm: deps.objects.nonfungiblePositionManager.address,
             ilk: b32(':uninft'),
             fee: hre.ethers.BigNumber.from("1000000001546067052200000000"),
             chop: ray(1),
@@ -70,6 +69,7 @@ task('deploy-ricobank', '')
         ricodai: deps.objects.ricodai.address,
         ricorisk: deps.objects.ricorisk.address,
         uniwrapper: uniwrapper.address,
+        nfpm: deps.objects.nonfungiblePositionManager.address,
         dai: deps.objects.dai.address,
         dai_usd_agg: agg_daiusd.address,
         xau_usd_agg: agg_xauusd.address,

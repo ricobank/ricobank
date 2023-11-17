@@ -68,7 +68,6 @@ contract Ball is Math, Ward {
     }
 
     struct UniParams {
-        address nfpm;
         bytes32 ilk;
         uint256 fee;
         uint256 chop;
@@ -84,6 +83,7 @@ contract Ball is Math, Ward {
         address ricodai;
         address ricorisk;
         address uniwrapper;
+        address nfpm;
         address dai;
         address dai_usd_agg;
         address xau_usd_agg;
@@ -109,7 +109,7 @@ contract Ball is Math, Ward {
         vox  = new Vox();
         file = new File();
         hook = new ERC20Hook();
-        nfthook = new UniNFTHook();
+        nfthook = new UniNFTHook(args.nfpm);
 
         uniadapt = new UniswapV3Adapter(IUniWrapper(args.uniwrapper));
         cladapt = new ChainlinkAdapter();
@@ -265,7 +265,6 @@ contract Ball is Math, Ward {
 
     function makeuni(UniParams calldata ups) external _ward_ {
         Vat(bank).init(ups.ilk, address(nfthook));
-        Vat(bank).filh(ups.ilk, "nfpm", empty, bytes32(bytes20(address(ups.nfpm))));
         Vat(bank).filh(ups.ilk, "room", empty, bytes32(ups.room));
         Vat(bank).filh(ups.ilk, "wrap", empty, bytes32(bytes20(address(ups.uniwrapper))));
 

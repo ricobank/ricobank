@@ -109,7 +109,6 @@ contract BallTest is BaseHelper {
         );
 
         Ball.UniParams memory ups = Ball.UniParams(
-            NFPM,
             ':uninft',
             1000000001546067052200000000,
             RAY,
@@ -125,6 +124,7 @@ contract BallTest is BaseHelper {
             ricodai,
             ricorisk,
             uniwrapper,
+            NFPM,
             DAI,
             DAI_USD_AGG,
             XAU_USD_AGG,

@@ -423,7 +423,6 @@ contract NFTHookTest is Test, RicoSetUp {
 
     // test uni hook's getters
     function test_geth() public {
-        assertEq(address(bytes20(Vat(bank).geth(uilk, 'nfpm', empty))), address(nfpm));
         assertEq(uint(Vat(bank).geth(uilk, 'room', empty)), HOOK_ROOM);
         assertEq(address(bytes20(Vat(bank).geth(uilk, 'wrap', empty))), uniwrapper);
         vm.expectRevert(Bank.ErrWrongKey.selector);
@@ -455,7 +454,6 @@ contract NFTHookTest is Test, RicoSetUp {
         Vat(bank).filh(uilk, 'room', new bytes32[](1), bytes32(uint(6)));
 
         Vat(bank).filh(uilk, 'room', empty, bytes32(uint(5)));
-        Vat(bank).filh(uilk, 'nfpm', empty, bytes32(bytes20(address(nfpm))));
         Vat(bank).filh(uilk, 'wrap', empty, bytes32(bytes20(fsrc)));
 
         // wrong key
@@ -696,7 +694,6 @@ contract NFTHookTest is Test, RicoSetUp {
 
         // not enough room
         bytes memory dink = abi.encodePacked(int(1), golddaitokid, goldwethtokid);
-        nfthook.file('nfpm', uilk, empty, bytes32(bytes20(UNI_NFT_ADDR)));
         vm.expectRevert(UniNFTHook.ErrFull.selector);
         nfthook.frobhook(Hook.FHParams(self, uilk, self, dink, 0));
 
