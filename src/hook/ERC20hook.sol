@@ -83,7 +83,7 @@ contract ERC20Hook is HookMix {
 
         // clamp `sell` so bank only gets enough to underwrite urn.
         if (earn > p.bill) {
-            sell = full * p.bill / earn;
+            sell = (full * p.bill) / earn;
             earn = p.bill;
         } else {
             sell = full;

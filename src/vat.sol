@@ -183,7 +183,7 @@ contract Vat is Bank {
         // either debt has decreased, or debt ceilings are not exceeded
         if (dart > 0) {
             if (ilk.tart * rack > ilk.line) revert ErrDebtCeil();
-            else if (_debt + _rest / RAY > vs.ceil) revert ErrDebtCeil();
+            else if (_debt + (_rest / RAY) > vs.ceil) revert ErrDebtCeil();
         }
     }
 
@@ -253,14 +253,14 @@ contract Vat is Bank {
         ilk.rack     = rack;
         emit NewPalm1("rack", i, bytes32(rack));
 
-        vs.debt      = vs.debt + all / RAY;
+        vs.debt      = vs.debt + (all / RAY);
         emit NewPalm0("debt", bytes32(vs.debt));
 
         // tart * rack is a rad, interest is a wad, rest is the change
         vs.rest      = all % RAY;
         emit NewPalm0("rest", bytes32(vs.rest));
 
-        vs.joy       = vs.joy + all / RAY;
+        vs.joy       = vs.joy + (all / RAY);
         emit NewPalm0("joy", bytes32(vs.joy));
     }
 

@@ -97,7 +97,7 @@ contract Vow is Bank {
             if (earn > under) {
                 // always advances >= 1s from max(vowS.bel, timestamp - cel)
                 bel  -= wmul(elapsed, WAD - wdiv(under, earn));
-                flop  = flop * under / earn;
+                flop  = (flop * under) / earn;
                 earn  = under;
             }
 

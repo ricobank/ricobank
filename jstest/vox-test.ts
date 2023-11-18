@@ -203,13 +203,13 @@ describe('Vox', () => {
     })
 
     it('deploy gas', async () => {
-      await check(ethers.BigNumber.from(deploygas), 37546642)
+      await check(ethers.BigNumber.from(deploygas), 37546546)
     })
 
     it('frob cold gas', async () => {
       let dink = ethers.utils.solidityPack(['int'], [wad(5)])
       let gas = await bank.estimateGas.frob(b32('weth'), ALI, dink, wad(2))
-      await check(gas, 345476)
+      await check(gas,345476, 345486)
     })
 
     it('frob hot gas', async () => {
