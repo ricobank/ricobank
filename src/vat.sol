@@ -58,6 +58,7 @@ contract Vat is Bank {
     error ErrLock();
     error ErrSafeBail();
     error ErrHookCallerNotBank();
+    error ErrNoHook();
 
     modifier _lock_ {
         VatStorage storage vs = getVatStorage();
@@ -299,13 +300,21 @@ contract Vat is Bank {
         emit NewPalm1(key, ilk, bytes32(val));
     }
 
+    // delegatecall the ilk's hook
     function _hookcall(bytes32 i, bytes memory indata)
       internal returns (bytes memory outdata) {
+        // call will succeed if nonzero hook has no code (i.e. EOA)
+        address hook = getVatStorage().ilks[i].hook;
+        if (hook == address(0)) revert ErrNoHook();
+
         bool ok;
-        (ok, outdata) = getVatStorage().ilks[i].hook.delegatecall(indata);
+        (ok, outdata) = hook.delegatecall(indata);
         if (!ok) bubble(outdata);
     }
 
+    // similar to _hookcall, but uses staticcall to avoid modifying state
+    // can't delegatecall within a view function
+    // so, _hookview calls hookcallext instead, which delegatecalls _hookcall
     function _hookview(bytes32 i, bytes memory indata)
       internal view returns (bytes memory outdata) {
         bool ok;
@@ -316,6 +325,7 @@ contract Vat is Bank {
         outdata = abi.decode(outdata, (bytes));
     }
 
+    // helps caller call hook functions without delegatecall
     function hookcallext(bytes32 i, bytes memory indata)
       external payable returns (bytes memory) {
         if (msg.sender != address(this)) revert ErrHookCallerNotBank();

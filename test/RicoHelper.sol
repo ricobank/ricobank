@@ -262,9 +262,7 @@ abstract contract RicoSetUp is BaseHelper {
 
         File(bank).file('rudd.src', bytes32(bytes20(fsrc)));
         File(bank).file('tip.src', bytes32(bytes20(fsrc)));
-        Vat(bank).filh(gilk, 'src', empty, bytes32(bytes20(fsrc)));
         Vat(bank).filh(WETH_ILK, 'src', empty, bytes32(bytes20(fsrc)));
-        Vat(bank).filh(dilk, 'src', empty, bytes32(bytes20(fsrc)));
 
         feedpush(RISK_RICO_TAG, bytes32(RAY), block.timestamp + FEED_LOOKAHEAD);
         feedpush(RICO_RISK_TAG, bytes32(RAY), block.timestamp + FEED_LOOKAHEAD);

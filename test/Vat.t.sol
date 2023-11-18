@@ -1276,6 +1276,22 @@ contract VatTest is Test, RicoSetUp {
         vm.expectRevert(Vat.ErrIlkInit.selector);
         Vat(bank).bail('hello', self);
     }
+
+    function test_empty_hook() public {
+        // hook is zero address, should revert instead of delegatecall
+        Vat(bank).filk(gilk, 'hook', bytes32(0));
+        // can only call hookcallext from bank address
+        vm.prank(bank);
+        vm.expectRevert(Vat.ErrNoHook.selector);
+        Vat(bank).hookcallext(gilk, 'hello');
+
+        // hook is random EOA, has no code, should still delegatecall
+        address eoa = 0xa27CEF8aF2B6575903b676e5644657FAe96F491F;
+        Vat(bank).filk(gilk, 'hook', bytes32(bytes20(eoa)));
+        vm.prank(bank);
+        bytes memory res = Vat(bank).hookcallext(gilk, 'hello');
+        assertEq(res.length, 0);
+    }
 }
 
 // always reverts on safehook
