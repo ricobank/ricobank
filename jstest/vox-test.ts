@@ -10,7 +10,7 @@ import { constants } from 'ethers'
 import { send, fail, wad, ray, rad, BANKYEAR, warp, mine } from 'minihat'
 const { hexZeroPad } = ethers.utils
 
-import { b32, snapshot, revert } from './helpers'
+import { b32, revert_pop, revert_name, revert_clear, snapshot_name } from './helpers'
 const dpack = require('@etherpacks/dpack')
 
 const bn2b32 = (bn) => hexZeroPad(bn.toHexString(), 32)
@@ -112,11 +112,13 @@ describe('Vox', () => {
     await send(bank.filk, b32(':uninft'), b32('line'), bn2b32(rad(10000)))
 
 
-    await snapshot(hh);
+    await snapshot_name(hh);
   })
 
-  beforeEach(async () => {
-    await revert(hh);
+  beforeEach(async () => revert_name(hh))
+  after(async () => {
+      revert_pop(hh)
+      revert_clear(hh)
   })
 
   it('sway', async () => {
@@ -203,7 +205,7 @@ describe('Vox', () => {
     })
 
     it('deploy gas', async () => {
-      await check(ethers.BigNumber.from(deploygas), 37546546)
+      await check(ethers.BigNumber.from(deploygas), 37546630)
     })
 
     it('frob cold gas', async () => {
@@ -287,37 +289,23 @@ describe('Vox', () => {
       await check(gas, 91723)
     })
 
-    it('uni nft frob down gas', async () => {
+    describe('uni nft gas', async () => {
 
-        await send(
-            bank.filh, b32(':uninft'), b32('src'),
-            [dai.address + '00'.repeat(12)], ALI + '00'.repeat(12)
-        )
-        await send(
-            bank.filh, b32(':uninft'), b32('tag'),
-            [dai.address + '00'.repeat(12)], b32('dai:ref')
-        )
-        await send(
-            bank.filh, b32(':uninft'), b32('liqr'),
-            [dai.address + '00'.repeat(12)], bn2b32(ray(1))
-        )
+      let ricodaitokids = []
+      before(async () => {
+        const apad = (addr) => {
+          return addr + '00'.repeat(12)
+        }
+        await send(bank.filh, b32(':uninft'), b32('src'), [apad(dai.address)], apad(ALI))
+        await send(bank.filh, b32(':uninft'), b32('tag'), [apad(dai.address)], b32('dai:ref'))
+        await send(bank.filh, b32(':uninft'), b32('liqr'), [apad(dai.address)], bn2b32(ray(1)))
         await send(fb.push, b32('dai:ref'), bn2b32(ray(1)), constants.MaxUint256)
 
-        await send(
-            bank.filh, b32(':uninft'), b32('src'),
-            [rico.address + '00'.repeat(12)], ALI + '00'.repeat(12)
-        )
-        await send(
-            bank.filh, b32(':uninft'), b32('tag'),
-            [rico.address + '00'.repeat(12)], b32('rico:ref')
-        )
-        await send(
-            bank.filh, b32(':uninft'), b32('liqr'),
-            [rico.address + '00'.repeat(12)], bn2b32(ray(1))
-        )
+        await send(bank.filh, b32(':uninft'), b32('src'),[apad(rico.address)], apad(ALI))
+        await send(bank.filh, b32(':uninft'), b32('tag'), [apad(rico.address)], b32('rico:ref'))
+        await send(bank.filh, b32(':uninft'), b32('liqr'), [apad(rico.address)], bn2b32(ray(1)))
         await send(fb.push, b32('rico:ref'), bn2b32(ray(0.8)), constants.MaxUint256)
 
-        let ricodaitokids = []
         let amt = wad(10)
         let dink = ethers.utils.solidityPack(['int'], [wad(50)])
         await send(bank.frob, b32('weth'), ALI, dink, amt.mul(3))
@@ -339,17 +327,53 @@ describe('Vox', () => {
             ricodaitokids.push(joinres.tokenId)
         }
 
-        dink = ethers.utils.solidityPack(
+        await snapshot_name(hh)
+      })
+
+      beforeEach(async () => { await revert_name(hh) })
+      after(async () => { await revert_pop(hh) })
+
+      it('uni nft frob down gas', async () => {
+        let dink = ethers.utils.solidityPack(
             ['int', 'uint', 'uint', 'uint'], [1].concat(ricodaitokids)
         )
         await send(bank.frob, b32(':uninft'), ALI, dink, wad(10))
 
+        // partial wipe so slots are hot and avoids setting art to 0
         dink = ethers.utils.solidityPack(
             ['int', 'uint', 'uint'], [-1, ricodaitokids[2], ricodaitokids[1]]
         )
         let gas = await bank.estimateGas.frob(b32(':uninft'), ALI, dink, wad(-9))
-        await check(gas, 469939)
-        await send(bank.frob, b32(':uninft'), ALI, dink, wad(-9))
+        await check(gas, 452811)
+      })
+
+      it('uni nft frob up gas', async () => {
+        let dink = ethers.utils.solidityPack(
+            ['int', 'uint', 'uint', 'uint'], [1].concat(ricodaitokids)
+        )
+        await send(bank.frob, b32(':uninft'), ALI, dink, wad(10))
+
+        // partial wipe so slots are hot and avoids setting art to 0
+        dink = ethers.utils.solidityPack(
+            ['int', 'uint', 'uint'], [-1, ricodaitokids[2], ricodaitokids[1]]
+        )
+        let gas = await bank.estimateGas.frob(b32(':uninft'), ALI, dink, wad(1))
+        await check(gas, 456364)
+      })
+
+      it('uni nft bail gas', async () => {
+        let dink = ethers.utils.solidityPack(
+            ['int', 'uint', 'uint', 'uint'], [1].concat(ricodaitokids)
+        )
+        await send(bank.frob, b32(':uninft'), ALI, dink, wad(40))
+
+        // make somewhat unsafe (but not 0)
+        await send(fb.push, b32('dai:ref'), bn2b32(constants.Zero), constants.MaxUint256)
+        await send(fb.push, b32('rico:ref'), bn2b32(constants.Zero), constants.MaxUint256)
+
+        let gas = await bank.estimateGas.bail(b32(':uninft'), ALI)
+        await check(gas, 635959)
+      })
     })
   })
 })
