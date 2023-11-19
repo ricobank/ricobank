@@ -122,8 +122,8 @@ contract Ball is Math, Ward {
         feedbase = args.feedbase;
 
         // rico/usd, rico/ref
-        cladapt.setConfig(XAU_USD_TAG, ChainlinkAdapter.Config(args.xau_usd_agg, args.xauusdttl, RAY));
-        cladapt.setConfig(DAI_USD_TAG, ChainlinkAdapter.Config(args.dai_usd_agg, args.daiusdttl, RAY));
+        cladapt.setConfig(XAU_USD_TAG, ChainlinkAdapter.Config(args.xau_usd_agg, args.xauusdttl));
+        cladapt.setConfig(DAI_USD_TAG, ChainlinkAdapter.Config(args.dai_usd_agg, args.daiusdttl));
         // rico/dai, dai/rico (== 1 / (rico/dai))
         uniadapt.setConfig(
             RICO_DAI_TAG,
@@ -244,13 +244,13 @@ contract Ball is Math, Ward {
         address gemusdsrc;
         if (ilkparams.gemethagg == address(0)) {
             // ilk has feed sequence of gem/usd / rico/usd
-            cladapt.setConfig(gemusdtag, ChainlinkAdapter.Config(ilkparams.gemusdagg, ilkparams.ttl, RAY));
+            cladapt.setConfig(gemusdtag, ChainlinkAdapter.Config(ilkparams.gemusdagg, ilkparams.ttl));
             gemusdsrc = address(cladapt);
             gemclatag = gemusdtag;
         } else {
             // ilk has feed sequence of gem/eth * eth/usd / rico/usd
             bytes32 gemethtag = concat(ilk, ":eth");
-            cladapt.setConfig(gemethtag, ChainlinkAdapter.Config(ilkparams.gemethagg, ilkparams.ttl, RAY));
+            cladapt.setConfig(gemethtag, ChainlinkAdapter.Config(ilkparams.gemethagg, ilkparams.ttl));
             // add a multiplier config which reads gem/usd. Relies on weth ilk existing for weth:usd cladapter
             _configureBlock(multiplier, gemusdtag,
                             address(cladapt), gemethtag,

@@ -12,8 +12,8 @@ import toml
 
 
 timeout = 60
-start_seed = 630
-end_seed = 660
+start_seed = 700
+end_seed = 710
 
 
 class TestMode(Enum):
