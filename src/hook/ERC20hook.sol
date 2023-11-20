@@ -39,7 +39,7 @@ contract ERC20Hook is HookMix {
         // read dink as a single uint
         int dink;
         if (p.dink.length == 0) { dink = 0;
-        } else if (p.dink.length == 32) { dink = int(uint(bytes32(p.dink)));
+        } else if (p.dink.length == 32) { dink = abi.decode(p.dink, (int));
         } else { revert ErrDinkSize(); }
 
         // safer if locking ink and wiping art
@@ -49,7 +49,7 @@ contract ERC20Hook is HookMix {
         // update balance before transfering tokens
         uint _ink  = add(hs.inks[p.u], dink);
         hs.inks[p.u] = _ink;
-        emit NewPalmBytes2("ink", p.i, bytes32(bytes20(p.u)), abi.encodePacked(_ink));
+        emit NewPalmBytes2("ink", p.i, bytes32(bytes20(p.u)), abi.encode(_ink));
 
         Gem gem = Gem(hs.gem);
         if (dink > 0) {
@@ -93,13 +93,13 @@ contract ERC20Hook is HookMix {
         // update collateral balance
         uint _ink  = full - sell;
         hs.inks[p.u] = _ink;
-        emit NewPalmBytes2("ink", p.i, bytes32(bytes20(p.u)), abi.encodePacked(_ink));
+        emit NewPalmBytes2("ink", p.i, bytes32(bytes20(p.u)), abi.encode(_ink));
 
         // trade collateral with keeper for rico
         getBankStorage().rico.burn(p.keeper, earn);
         if (!Gem(hs.gem).transfer(p.keeper, sell)) revert ErrTransfer();
 
-        return abi.encodePacked(sell);
+        return abi.encode(sell);
     }
 
     function safehook(bytes32 i, address u)

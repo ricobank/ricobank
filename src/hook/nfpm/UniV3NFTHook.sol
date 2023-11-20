@@ -48,7 +48,6 @@ contract UniNFTHook is HookMix {
         }
     }
 
-    error ErrDinkLength();
     error ErrNotFound();
     error ErrDir();
     error ErrFull();
@@ -68,13 +67,15 @@ contract UniNFTHook is HookMix {
     function frobhook(FHParams calldata p) external payable returns (bool safer) {
         UniNFTHookStorage storage hs = getStorage(p.i);
         uint[] storage tokenIds      = hs.inks[p.u];
-        uint dinkLen                 = p.dink.length;
 
         // dink is a nonempty packed list of uint tokenIds
-        unchecked {if (dinkLen % 32 != 0) revert ErrDinkLength();}
-
-        // first word must either be LOCK (add token) or FREE (remove token)
-        int dir = dinkLen == 0 ? LOCK : int(uint(bytes32(p.dink[:32])));
+        // first uint must either be LOCK (add token) or FREE (remove token)
+        uint[] memory dink;
+        int dir = LOCK;
+        if (p.dink.length > 0) {
+            dink = abi.decode(p.dink, (uint[]));
+            dir  = int(dink[0]);
+        }
 
         if (dir == LOCK) {
             // safer if locking ink and wiping art
@@ -82,22 +83,23 @@ contract UniNFTHook is HookMix {
             unchecked {
                 // add uni positions
                 uint room = hs.room;
-                for (uint idx = 32; idx < dinkLen; idx += 32) {
-                    uint tokenId = uint(bytes32(p.dink[idx:idx+32]));
+                for (uint idx = 1; idx < dink.length; idx++) {
+                    uint tokenId = dink[idx];
                     NFPM.transferFrom(p.sender, address(this), tokenId);
 
                     // record it in ink
                     tokenIds.push(tokenId);
 
                     // limit the number of positions in the CDP
+                    // TODO probably can me moved outside the loop...
                     if (tokenIds.length > room) revert ErrFull();
                 }
             }
         } else if (dir == FREE) {
             unchecked {
                 // remove uni positions
-                for (uint j = 32; j < dinkLen; j += 32) {
-                    uint toss = uint(bytes32(p.dink[j:j+32]));
+                for (uint j = 1; j < dink.length; j++) {
+                    uint toss = dink[j];
                     uint size = tokenIds.length;
                     for (uint k = 0; k < size; ++k) {
                         if (tokenIds[k] == toss) {
@@ -115,7 +117,7 @@ contract UniNFTHook is HookMix {
         // can't steal collateral or rico from others' urns
         if (!(safer || p.u == p.sender)) revert ErrWrongUrn();
 
-        emit NewPalmBytes2("ink", p.i, bytes32(bytes20(p.u)), abi.encodePacked(tokenIds));
+        emit NewPalmBytes2("ink", p.i, bytes32(bytes20(p.u)), abi.encode(tokenIds));
     }
 
     function bailhook(BHParams calldata p) external payable returns (bytes memory) {
@@ -145,7 +147,7 @@ contract UniNFTHook is HookMix {
             unchecked{ idx++; }
         }
 
-        return abi.encodePacked(ids);
+        return abi.encode(ids);
     }
 
     // respective amounts of token0 and token1 that this position
