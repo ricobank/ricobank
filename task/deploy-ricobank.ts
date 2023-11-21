@@ -30,7 +30,7 @@ task('deploy-ricobank', '')
 
     const pb = new dpack.PackBuilder(hre.network.name)
 
-    const agg_artifact = require('../artifacts/src/test/MockChainlinkAggregator.sol/MockChainlinkAggregator.json')
+    const agg_artifact = require('../lib/feedbase/artifacts/src/test/MockChainlinkAggregator.sol/MockChainlinkAggregator.json')
     const agg_type = hre.ethers.ContractFactory.fromSolidity(agg_artifact, ali)
     const agg_daiusd = await agg_type.deploy(deps.objects.feedbase.address, ali.address, b32('dai:usd'), 8, {gasLimit: args.gasLimit})
     const agg_xauusd = await agg_type.deploy(deps.objects.feedbase.address, ali.address, b32('xau:usd'), 8, {gasLimit: args.gasLimit})
