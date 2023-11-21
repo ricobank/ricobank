@@ -152,7 +152,6 @@ contract NFTHookTest is Test, RicoSetUp {
         feedpush(grtag, bytes32(0 * RAY), type(uint).max);
         Vat(bank).bail(uilk, self);
         assertEq(Vat(bank).urns(uilk, self), 0);
-        // todo test successful swaps, compare to master
     }
 
     // flip pricing mechanism

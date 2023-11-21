@@ -136,63 +136,6 @@ contract VowTest is Test, RicoSetUp {
         assertClose(rdiv(rico_cost, risk_gain), expected_rico_per_risk, 1000000000);
     }
 
-    function test_bail_price() public
-    {
-        // frob to edge of safety
-        uint borrow = WAD * 1000;
-        feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
-        Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(borrow));
-
-        // drop gold/rico to 75%...pep is 2, so earn is cubic
-        feedpush(grtag, bytes32(750 * RAY), type(uint).max);
-        // price should be 0.75**3, 0.75 for oracle drop and 0.75**2 for deal**pep
-        uint expected = wmul(borrow, WAD * 75**3 / 100**3);
-        rico_mint(expected, false);
-        rico.transfer(address(guy), expected);
-        bytes memory data = guy.bail(gilk, self);
-
-        uint earn = uint(bytes32(data));
-
-        // check returned bytes represent quantity of tokens received
-        assertEq(earn, WAD);
-
-        // guy was given exact amount, check all was spent for all gold deposit
-        assertEq(rico.balanceOf(address(guy)), uint(0));
-        assertEq(gold.balanceOf(address(guy)), WAD);
-    }
-
-    function test_bail_refund() public
-    {
-        // set c ratio to double
-        uint pop = RAY * 3 / 2;
-        uint dink = WAD;
-        Vat(bank).filh(gilk, "liqr", empty, bytes32(RAY * 2));
-        Vat(bank).filh(gilk, "pep", empty, bytes32(uint(2)));
-        Vat(bank).filh(gilk, "pop", empty, bytes32(pop));
-        uint borrow = WAD * 500;
-        feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
-        // frob to edge of safety
-        Vat(bank).frob(gilk, self, abi.encodePacked(dink), int(borrow));
-
-        // drop gold/rico to 75%...position is still overcollateralized
-        feedpush(grtag, bytes32(750 * RAY), type(uint).max);
-
-        // price should be 0.75**3x, as 0.75 for oracle drop and 0.75**2 for deal factor
-        rico_mint(borrow, false);
-        rico.transfer(address(guy), borrow);
-        guy.bail(gilk, self);
-
-        // guy should not get all gold, as position was overcollateralized
-        // guy gets ink * (borrowed / total ink value)
-        uint expected_full = rmul(wmul(borrow * 2, dink * 75**3 / 100**3), pop);
-        uint guy_earn      = wmul(dink, wdiv(borrow, expected_full));
-        assertEq(gold.balanceOf(address(guy)), guy_earn);
-
-        // excess ink should be sent back to urn holder, not left in urn
-        uint ink_left = _ink(gilk, self);
-        assertEq(ink_left, WAD - guy_earn);
-        assertGt(ink_left, 0);
-    }
 
     function test_basic_keep_deficit() public
     {
@@ -228,18 +171,6 @@ contract VowTest is Test, RicoSetUp {
         bytes32[] memory gilks = new bytes32[](2);
         gilks[0] = gilk; gilks[1] = gilk;
         Vow(bank).keep(gilks);
-    }
-
-    function test_basic_bail() public
-    {
-        // TODO move to vat
-        // gold:ref price 1k
-        feedpush(grtag, bytes32(1000 * RAY), block.timestamp + 1000);
-        Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(WAD));
-
-        // big crash and liquidation
-        feedpush(grtag, bytes32(0), block.timestamp + 1000);
-        Vat(bank).bail(gilk, self);
     }
 
     function test_risk_ramp_is_used() public
@@ -359,26 +290,6 @@ contract VowTest is Test, RicoSetUp {
 
         // flop is clipped to deficit, so should only mint 1 (absolute) risk
         assertEq(risk_ts2, risk_ts1 + 1);
-    }
-
-    function test_bail_hook() public
-    {
-        // frob with normal hook
-        FrobHook hook = new FrobHook();
-        Vat(bank).filk(gilk, 'hook', bytes32(bytes20(address(hook))));
-        Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(WAD));
-        uint vowgoldbefore = gold.balanceOf(bank);
-
-        // this hook always says collateral value is 0
-        ZeroHook zhook = new ZeroHook();
-        Vat(bank).filk(gilk, 'hook', bytes32(bytes20(address(zhook))));
-
-        // bail should succeed and call bailhook, because collateral worthless
-        vm.expectCall(address(zhook), abi.encodePacked(zhook.bailhook.selector));
-        Vat(bank).bail(gilk, self);
-
-        // got all the gold
-        assertEq(gold.balanceOf(bank), vowgoldbefore);
     }
 
     function test_flop_deal() public

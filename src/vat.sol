@@ -60,6 +60,8 @@ contract Vat is Bank {
     error ErrHookCallerNotBank();
     error ErrNoHook();
 
+    // lock for CDP manipulation functions
+    // not necessary for drip, because frob and bail drip
     modifier _lock_ {
         VatStorage storage vs = getVatStorage();
         if (vs.lock == LOCKED) revert ErrLock();
@@ -116,6 +118,9 @@ contract Vat is Bank {
         }
     }
 
+    // modify CDP
+    // locked with bail to make individual urn manipulations atomic
+    // e.g. avoid making the urn safe in the middle of an unsafe borrow
     function frob(bytes32 i, address u, bytes calldata dink, int dart)
       external payable _flog_ _lock_
     {
@@ -140,11 +145,12 @@ contract Vat is Bank {
             int dtab = mul(rack, dart);
             if (dtab > 0) {
                 // borrow
+                // dtab is a rad, debt is a wad
                 uint wad = uint(dtab) / RAY;
-
-                _debt = vs.debt += wad;
+                _debt    = vs.debt += wad;
                 emit NewPalm0("debt", bytes32(_debt));
 
+                // remainder is a ray
                 _rest = vs.rest += uint(dtab) % RAY;
                 emit NewPalm0("rest", bytes32(_rest));
 
@@ -153,7 +159,6 @@ contract Vat is Bank {
                 // paydown
                 // dtab is a rad, so burn one extra to round in system's favor
                 uint wad = uint(-dtab) / RAY + 1;
-
                 _debt = vs.debt -= wad;
                 emit NewPalm0("debt", bytes32(_debt));
 
@@ -187,6 +192,9 @@ contract Vat is Bank {
         }
     }
 
+    // liquidate CDP
+    // locked with frob to make individual urn manipulations atomic
+    // e.g. avoid making the urn safe in the middle of a liquidation
     function bail(bytes32 i, address u)
       external payable _flog_ _lock_ returns (bytes memory)
     {
@@ -264,6 +272,8 @@ contract Vat is Bank {
         emit NewPalm0("joy", bytes32(vs.joy));
     }
 
+    // flash borrow
+    // locked with itself to avoid flashing more than MINT
     function flash(address code, bytes calldata data)
       external payable returns (bytes memory result) {
         // lock->mint->call->burn->unlock

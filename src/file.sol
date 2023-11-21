@@ -19,62 +19,51 @@ contract File is Bank {
         VoxStorage storage voxS = getVoxStorage();
         BankStorage storage bankS = getBankStorage();
         uint _val = uint(val);
-        // bank
-        if (key == "rico") { bankS.rico = Gem(address(bytes20(val))); }
-        else if (key == "fb") { bankS.fb = Feedbase(address(bytes20(val))); }
-        // vat
-        else if (key == "ceil") { vatS.ceil = _val; }
-        else if (key == "par") { vatS.par = _val; }
-        // vow
-        else if (key == "rel") {
+
+               if (key == "rico") { bankS.rico = Gem(address(bytes20(val)));
+        } else if (key == "fb") { bankS.fb = Feedbase(address(bytes20(val)));
+        } else if (key == "ceil") { vatS.ceil = _val;
+        } else if (key == "par") { vatS.par = _val;
+        } else if (key == "rel") {
             must(_val, 0, _REL_MAX);
             vowS.ramp.rel = _val;
-        }
-        else if (key == "bel") {
+        } else if (key == "bel") {
             must(_val, 0, block.timestamp);
             vowS.ramp.bel = _val;
-        }
-        else if (key == "cel") { vowS.ramp.cel = _val; }
-        else if (key == "wel") {
+        } else if (key == "cel") { vowS.ramp.cel = _val;
+        } else if (key == "wel") {
             must(_val, 0, RAY);
             vowS.ramp.wel = _val;
-        }
-        else if (key == "toll") {
+        } else if (key == "toll") {
             must(_val, 0, RAY);
             vowS.toll = _val;
-        }
-        else if (key == "plot.pep") { vowS.plot.pep = _val; }
-        else if (key == "plat.pep") { vowS.plat.pep = _val; }
-        else if (key == "plot.pop") {
+        } else if (key == "plot.pep") { vowS.plot.pep = _val;
+        } else if (key == "plat.pep") { vowS.plat.pep = _val;
+        } else if (key == "plot.pop") {
             must(_val, RAY / 10, 10 * RAY);
             vowS.plot.pop = _val;
-        }
-        else if (key == "plat.pop") {
+        } else if (key == "plat.pop") {
             must(_val, RAY / 10, 10 * RAY);
             vowS.plat.pop = _val;
-        }
-        else if (key == "rudd.src") { vowS.rudd.src = address(bytes20(bytes32(val))); }
-        else if (key == "rudd.tag") { vowS.rudd.tag = val; }
-        else if (key == "risk") { vowS.risk = Gem(address(bytes20(val))); }
-        // vox
-        else if (key == "tip.src") { voxS.tip.src = address(bytes20(val)); }
-        else if (key == "tip.tag") { voxS.tip.tag = val; }
-        else if (key == "how") {
+        } else if (key == "rudd.src") { vowS.rudd.src = address(bytes20(val));
+        } else if (key == "rudd.tag") { vowS.rudd.tag = val;
+        } else if (key == "risk") { vowS.risk = Gem(address(bytes20(val)));
+        } else if (key == "tip.src") { voxS.tip.src = address(bytes20(val));
+        } else if (key == "tip.tag") { voxS.tip.tag = val;
+        } else if (key == "how") {
             must(_val, RAY, type(uint).max);
-            voxS.how = _val; }
-        else if (key == "cap") {
+            voxS.how = _val;
+        } else if (key == "cap") {
             must(_val, RAY, _CAP_MAX);
             voxS.cap = _val;
-        }
-        else if (key == "tau") {
+        } else if (key == "tau") {
             must(_val, block.timestamp, type(uint).max);
             voxS.tau = _val;
-        }
-        else if (key == "way") {
+        } else if (key == "way") {
             must(_val, rinv(voxS.cap), voxS.cap);
             voxS.way = _val;
-        }
-        else revert ErrWrongKey();
+        } else revert ErrWrongKey();
+
         emit NewPalm0(key, val);
     }
 

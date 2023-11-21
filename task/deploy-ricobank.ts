@@ -153,8 +153,6 @@ task('deploy-ricobank', '')
         ['divider', 'Divider', await getartifact('Divider')],
         ['uniadapt', 'UniswapV3Adapter', await getartifact('UniswapV3Adapter')],
         ['cladapt', 'ChainlinkAdapter', await getartifact('ChainlinkAdapter')],
-        ['hook', 'ERC20Hook', require('../artifacts/src/hook/ERC20hook.sol/ERC20Hook.json')],
-        ['nfthook', 'UniNFTHook', require('../artifacts/src/hook/nfpm/UniV3NFTHook.sol/UniNFTHook.json')]
     ]
 
     for await (const [state_var, typename, artifact] of contracts) {
@@ -184,14 +182,6 @@ task('deploy-ricobank', '')
         typename: 'Ball',
         artifact: require('../artifacts/src/ball.sol/Ball.json')
     })
-
-    const artifact_dirs = [
-        '../artifacts/src/bank.sol/Bank.json',
-        '../artifacts/src/file.sol/File.json',
-        '../artifacts/src/vat.sol/Vat.json',
-        '../artifacts/src/vow.sol/Vow.json',
-        '../artifacts/src/vox.sol/Vox.json'
-    ]
 
     debug('packing Ricobank diamond')
     let top_artifact = require('../artifacts/hardhat-diamond-abi/HardhatDiamondABI.sol/BankDiamond.json')

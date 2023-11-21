@@ -153,8 +153,7 @@ contract UniNFTHook is HookMix {
     // respective amounts of token0 and token1 that this position
     // would yield if burned now
     function amounts(uint tokenId, UniNFTHookStorage storage hs)
-      internal view returns (Amounts memory) {
-        Amounts memory amts;
+      internal view returns (Amounts memory amts) {
         uint24 fee;
 
         IUniWrapper wrap = hs.wrap;
@@ -166,7 +165,6 @@ contract UniNFTHook is HookMix {
 
         // uni library function to get amounts
         (amts.amt0, amts.amt1) = wrap.total(NFPM, tokenId, sqrtPriceX96);
-        return amts;
     }
 
     function safehook(bytes32 i, address u)
