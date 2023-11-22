@@ -232,9 +232,7 @@ contract BallTest is BaseHelper {
         uint me_risk_2 = Gem(risk).balanceOf(self);
         uint me_rico_2 = Gem(rico).balanceOf(self);
 
-        // burned one risk for rounding
-        uint expected_me_risk = Vat(bank).sin() == 0 ? me_risk_2 + 1 : me_risk_2;
-        assertEq(me_risk_1, expected_me_risk);
+        assertEq(me_risk_1, me_risk_2);
         assertEq(me_rico_1, me_rico_2);
     }
 

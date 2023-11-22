@@ -457,9 +457,8 @@ contract VowTest is Test, RicoSetUp {
         uint aft_rico = rico.balanceOf(self);
         uint aft_risk = risk.balanceOf(self);
 
-        // still burns a risk for rounding
         assertEq(aft_rico, pre_rico);
-        assertEq(aft_risk, pre_risk - 1);
+        assertEq(aft_risk, pre_risk);
     }
 
     function test_wel() public _check_integrity_after_
