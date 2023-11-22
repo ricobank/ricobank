@@ -31,18 +31,21 @@ abstract contract BaseHelper is Math, Test, UniSetUp {
     bytes32 constant public RISK_RICO_TAG = "risk:rico";
     bytes32 constant public RICO_REF_TAG  = "rico:ref";
     bytes32 constant public XAU_USD_TAG   = "xau:usd";
+    bytes32 constant public DAI_REF_TAG   = "dai:ref";
     bytes32 constant public DAI_USD_TAG   = "dai:usd";
     bytes32 constant public WETH_REF_TAG  = "weth:ref";
     bytes32 constant public WETH_USD_TAG  = "weth:usd";
 
     bytes32 constant public RAI_ILK  = "rai";
     bytes32 constant public WETH_ILK = "weth";
+    bytes32 constant public uilk     = "uninft";
 
     uint24  constant public RICO_FEE   = 500;
     uint24  constant public RISK_FEE   = 3000;
     uint256 constant public HOOK_ROOM  = 8;
     uint256 constant public CL_DEC     = 8;
     uint256 constant public WETH_REF_VAL = 805830286360171930170219164;
+    uint256 constant public GOLD_REF_VAL = 1000000000000000000000000000;
     address immutable public self      = payable(address(this));
 
     bytes32[] public empty = new bytes32[](0);
@@ -62,7 +65,7 @@ abstract contract BaseHelper is Math, Test, UniSetUp {
         uint xauusd = uint(res);
         uint ratio = par * xauusd / 10**CL_DEC;
         uint sqrt_ratio = sqrt(ratio * RAY);
-        sqrt_ratio_x96 = uint160(sqrt_ratio * (2 ** 96) / RAY);
+        sqrt_ratio_x96 = uint160(sqrt_ratio * X96 / RAY);
     }
 
     function make_diamond() internal returns (address payable deployed) {

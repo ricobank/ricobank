@@ -20,7 +20,7 @@ solc_version='0.8.19'
 [invariant]
 fail_on_revert = false
 runs = 1
-depth = 10000
+depth = 10_000
 
 [profile.disallow_reverts.invariant]
 fail_on_revert = true

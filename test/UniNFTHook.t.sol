@@ -33,17 +33,16 @@ contract NFTHookTest is Test, RicoSetUp {
 
         // create two tokenIds - one from gold:weth pool and
         // one from gold:dai pool
-        uint160 onex96 = 2 ** 96;
         WethLike(WETH).deposit{value: 10000 * WAD}();
         PoolArgs memory args = PoolArgs(
             Asset(agold, 1000 * WAD), Asset(WETH, 1000 * WAD),
-            500, onex96, onex96 * 3 / 4, onex96 * 4 / 3, 10
+            500, X96, X96 * 3 / 4, X96 * 4 / 3, 10, self
         );
         (goldwethtokid,,,) = create_and_join_pool(args);
 
         args = PoolArgs(
             Asset(agold, 1000 * WAD), Asset(DAI, 1000 * WAD),
-            500, onex96, onex96 * 3 / 4, onex96 * 4 / 3, 10
+            500, X96, X96 * 3 / 4, X96 * 4 / 3, 10, self
         );
         (golddaitokid,,,) = create_and_join_pool(args);
 
@@ -116,10 +115,9 @@ contract NFTHookTest is Test, RicoSetUp {
     // number of nfts per urn should be limited
     function test_max_urn_nfts() public {
         uint nft_id;
-        uint160 onex96 = 2 ** 96;
         PoolArgs memory args = PoolArgs(
             Asset(agold, 1 * WAD), Asset(WETH, 1 * WAD),
-            500, onex96, onex96 * 3 / 4, onex96 * 4 / 3, 10
+            500, X96, X96 * 3 / 4, X96 * 4 / 3, 10, self
         );
 
         for(uint i = 0; i < HOOK_ROOM + 1; i++) {
@@ -361,10 +359,9 @@ contract NFTHookTest is Test, RicoSetUp {
 
     // build a urn with a lot of tokenIds, make sure it can be wiped
     function test_frob_down_five() public {
-        uint160 onex96 = 2 ** 96;
         PoolArgs memory args = PoolArgs(
             Asset(agold, 1000 * WAD), Asset(WETH, 1000 * WAD),
-            500, onex96, onex96 * 3 / 4, onex96 * 4 / 3, 10
+            500, X96, X96 * 3 / 4, X96 * 4 / 3, 10, self
         );
 
         // make some extra gold:weth nfts

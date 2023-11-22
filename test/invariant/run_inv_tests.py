@@ -8,17 +8,20 @@ import argparse
 import os
 import re
 import subprocess
+import sys
 import toml
 
 
 timeout = 60
-start_seed = 700
-end_seed = 710
+start_seed = 710
+end_seed = 720
 
 
 class TestMode(Enum):
     INVARIANTS = auto()  # params can be anything, look for any way to get into bad state
     REVERTS = auto()     # limit fuzz to conditions which should not revert, and look for reverts
+    UNI_INV = auto()     # uses uni hook
+    ALL = auto()     # uses uni hook
 
 
 def run_forge(mode):
@@ -36,8 +39,16 @@ def run_forge(mode):
         case TestMode.REVERTS:
             command[3] = 'invariant_revert_search'
             env.update({"FOUNDRY_PROFILE": "disallow_reverts"})
-        case _:
-            raise ValueError(f"Unimplemented test mode: {mode}")
+        case TestMode.UNI_INV:
+            command[3] = 'invariant_uni_core'
+        case TestMode.ALL:
+            # No mode selected, run them all
+            script_path = os.path.abspath(__file__)  # Get the absolute path of the current script
+            # Iterate through all TestMode values and spawn a new process for each
+            for tm in (tm for tm in TestMode if tm is not TestMode.ALL):
+                new_command = ['python3', script_path, tm.name]
+                subprocess.run(new_command)
+            sys.exit(0)
 
     for seed in range(start_seed, end_seed):
         output = ''

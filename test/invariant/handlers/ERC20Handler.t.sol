@@ -3,11 +3,11 @@ pragma solidity ^0.8.19;
 
 import "forge-std/Test.sol";
 
-import { Feedbase } from '../../lib/feedbase/src/Feedbase.sol';
-import { Gem } from '../../lib/gemfab/src/gem.sol';
-import { Vat }  from '../../src/vat.sol';
-import { ERC20Handler } from './ERC20Handler.sol';
-import { BaseHelper } from "../BaseHelper.sol";
+import { Feedbase } from "../../../lib/feedbase/src/Feedbase.sol";
+import { Gem } from "../../../lib/gemfab/src/gem.sol";
+import { Vat }  from "../../../src/vat.sol";
+import { ERC20Handler } from "./ERC20Handler.sol";
+import { BaseHelper } from "../../BaseHelper.sol";
 
 contract ERC20HandlerTest is Test, BaseHelper {
     ERC20Handler handler;

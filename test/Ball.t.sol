@@ -16,7 +16,7 @@ contract BallTest is BaseHelper {
     bytes32 constant RICO_DAI_TAG = "rico:dai";
     bytes32 constant wilk         = WETH_ILK;
 
-    uint160 constant risk_price = 2 ** 96;
+    uint160 constant risk_price = X96;
     uint256 constant init_par   = RAY * 4;
     uint256 constant wethamt    = WAD;
     

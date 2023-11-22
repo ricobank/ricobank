@@ -73,13 +73,12 @@ contract ZeroHook is Hook {
 abstract contract RicoSetUp is BaseHelper {
     bytes32 constant public dilk  = "dai";
     bytes32 constant public gilk  = "gold";
-    bytes32 constant public uilk  = ":uninft";
     bytes32 constant public dutag = "dai:usd";
     bytes32 constant public grtag = "gold:ref";
     bytes32 constant public wrtag = "weth:ref";
     bytes32 constant public drtag = "dai:ref";
     bytes32 constant public rutag = "rico:usd";
-    uint160 constant public risk_price = 2 ** 96;
+    uint160 constant public risk_price = X96;
     uint256 constant public INIT_PAR   = RAY;
     uint256 constant public init_mint  = 10000;
     uint256 constant public platpep    = 2;
@@ -210,7 +209,7 @@ abstract contract RicoSetUp is BaseHelper {
             BANKYEAR / 4 // range
         );
         Ball.UniParams memory ups = Ball.UniParams(
-            ':uninft',
+            uilk,
             1000000001546067052200000000,
             RAY,
             HOOK_ROOM,

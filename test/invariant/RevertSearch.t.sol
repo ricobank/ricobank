@@ -7,7 +7,7 @@ import { Gem } from '../../lib/gemfab/src/gem.sol';
 import { Vat }  from '../../src/vat.sol';
 import { Vox }  from '../../src/vox.sol';
 import { BaseHelper } from "../BaseHelper.sol";
-import { ERC20Handler } from './ERC20Handler.sol';
+import { ERC20Handler } from "./handlers/ERC20Handler.sol";
 
 // Uses single WETH ilk and modifies WETH and RICO price during run
 contract InvariantRevertSearch is Test, BaseHelper {

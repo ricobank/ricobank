@@ -18,6 +18,7 @@ struct PoolArgs {
     uint160 low; // sqrtx96
     uint160 high; // sqrtx96
     int24   tickSpacing;
+    address recipient;
 }
 
 abstract contract UniSetUp{
@@ -49,7 +50,7 @@ abstract contract UniSetUp{
         uint160 low = x96div(sqrtPriceX96, sqrtSpreadX96);
         uint160 high = x96mul(sqrtPriceX96, sqrtSpreadX96);
         int24  spacing = IUniswapV3Factory(factory).feeAmountTickSpacing(fee);
-        args = PoolArgs(a1, a2, fee, sqrtPriceX96, low, high, spacing);
+        args = PoolArgs(a1, a2, fee, sqrtPriceX96, low, high, spacing, address(this));
     }
 
     // create a new UniV3 pool
@@ -126,12 +127,12 @@ abstract contract UniSetUp{
                 args.fee,
                 tickLower, tickUpper,
                 args.a1.amountIn, args.a2.amountIn,
-                0, 0, address(this), block.timestamp + 1000
+                0, 0, args.recipient, type(uint).max
         ));
     }
 
     function x96(uint160 x) internal pure returns (uint160) {
-        return x * uint160(2 ** 96);
+        return x * X96;
     }
 
     function x96mul(uint160 x, uint160 y) internal pure returns (uint160) {

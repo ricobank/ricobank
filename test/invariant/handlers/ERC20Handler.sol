@@ -4,14 +4,14 @@ pragma solidity ^0.8.19;
 import "forge-std/Test.sol";
 import { VmSafe } from "lib/forge-std/src/Vm.sol";
 
-import { RicoSetUp } from '../RicoHelper.sol';
-import { Gem } from '../../lib/gemfab/src/gem.sol';
-import { Vat }  from '../../src/vat.sol';
-import { Vow }  from '../../src/vow.sol';
-import { Vox }  from '../../src/vox.sol';
-import { Bank } from '../../src/bank.sol';
-import { File } from '../../src/file.sol';
-import { Local } from './Local.sol';
+import { RicoSetUp } from "../../RicoHelper.sol";
+import { Gem } from "../../../lib/gemfab/src/gem.sol";
+import { Vat }  from "../../../src/vat.sol";
+import { Vow }  from "../../../src/vow.sol";
+import { Vox }  from "../../../src/vox.sol";
+import { Bank } from "../../../src/bank.sol";
+import { File } from "../../../src/file.sol";
+import { Local } from "../Local.sol";
 
 contract ERC20Handler is Test, Local, RicoSetUp {
     uint256   public constant ACTOR_WETH = 1000 * WAD;
