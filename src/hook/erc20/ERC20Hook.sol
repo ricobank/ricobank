@@ -4,8 +4,8 @@
 
 pragma solidity ^0.8.19;
 
-import { Gem } from "../bank.sol";
-import { HookMix } from "./hook.sol";
+import { Gem } from "../../bank.sol";
+import { HookMix } from "../hook.sol";
 
 // hook that interprets ink as a single uint and dink as a single int.
 contract ERC20Hook is HookMix {

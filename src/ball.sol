@@ -23,7 +23,7 @@ import {Vow} from "./vow.sol";
 import {Vox} from "./vox.sol";
 import {File} from "./file.sol";
 import {Math} from "./mixin/math.sol";
-import {ERC20Hook} from "./hook/ERC20hook.sol";
+import {ERC20Hook} from "./hook/erc20/ERC20Hook.sol";
 import {UniNFTHook} from "./hook/nfpm/UniV3NFTHook.sol";
 
 contract Ball is Math, Ward {
