@@ -209,10 +209,12 @@ abstract contract RicoSetUp is BaseHelper {
             BANKYEAR / 4 // range
         );
         Ball.UniParams memory ups = Ball.UniParams(
-            uilk,
-            1000000001546067052200000000,
-            RAY,
-            HOOK_ROOM,
+            uilk,                          // ilk
+            1000000001546067052200000000,  // fee
+            RAY,                           // chop
+            RAD / 10,                      // dust
+            100000 * RAD,                  // line
+            HOOK_ROOM,                     // room
             uniwrapper
         );
         Ball.BallArgs memory bargs = Ball.BallArgs(

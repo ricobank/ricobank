@@ -21,7 +21,7 @@ class TestMode(Enum):
     INVARIANTS = auto()  # params can be anything, look for any way to get into bad state
     REVERTS = auto()     # limit fuzz to conditions which should not revert, and look for reverts
     UNI_INV = auto()     # uses uni hook
-    ALL = auto()     # uses uni hook
+    ALL = auto()         # run all above serially
 
 
 def run_forge(mode):
@@ -42,9 +42,8 @@ def run_forge(mode):
         case TestMode.UNI_INV:
             command[3] = 'invariant_uni_core'
         case TestMode.ALL:
-            # No mode selected, run them all
-            script_path = os.path.abspath(__file__)  # Get the absolute path of the current script
-            # Iterate through all TestMode values and spawn a new process for each
+            script_path = os.path.abspath(__file__)
+            # Iterate through all tests serially, single anvil instance
             for tm in (tm for tm in TestMode if tm is not TestMode.ALL):
                 new_command = ['python3', script_path, tm.name]
                 subprocess.run(new_command)

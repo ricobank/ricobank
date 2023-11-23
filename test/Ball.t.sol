@@ -109,10 +109,12 @@ contract BallTest is BaseHelper {
         );
 
         Ball.UniParams memory ups = Ball.UniParams(
-            ':uninft',
-            1000000001546067052200000000,
-            RAY,
-            8,
+            ':uninft',                     // ilk
+            1000000001546067052200000000,  // fee
+            RAY,                           // chop
+            init_dust,                     // dust
+            100000 * RAD,                  // line
+            8,                             // room
             uniwrapper
         );
 

@@ -67,7 +67,6 @@ contract NFTHookTest is Test, RicoSetUp {
         Vat(bank).filh(uilk, 'liqr', single(bytes32(bytes20(DAI))), bytes32(RAY));
         feedpush(drtag, bytes32(RAY), type(uint).max);
 
-        Vat(bank).filk(uilk, 'line', bytes32(100000 * RAD));
         guy = new Guy(bank);
     }
 

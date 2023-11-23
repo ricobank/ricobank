@@ -16,8 +16,9 @@ import { IERC721, INonfungiblePositionManager } from "../../Univ3Interface.sol";
 import "../../UniHelper.sol";
 
 contract UniV3Handler is Test, Local, RicoSetUp {
-    uint256   public constant ACTOR_TOK_WAD = 1000 * WAD;
+    uint256   public constant LP_AMOUNT = 100 * WAD;
     uint8     public constant NUM_ACTORS = 2;
+    uint256   public constant SELF_MINT = LP_AMOUNT * NUM_ACTORS * 100;
     uint256 internal constant LOCK = 1;
     uint256 internal constant FREE = uint(-int(1));
 
@@ -38,10 +39,10 @@ contract UniV3Handler is Test, Local, RicoSetUp {
             deploy_local_deps();
 
         make_bank();
-        Vat(bank).filk(uilk, 'line', bytes32(100000 * RAD));
         File(bank).file('tip.src', bytes32(bytes20(self)));
         ilks.push(uilk);
         init_gold();
+        Gem weth = Gem(WETH);
         create_pool(agold, WETH, 500, X96);
 
         // uni ilk needs feeds and liqrs for both erc20 tokens - weth and gold
@@ -51,16 +52,21 @@ contract UniV3Handler is Test, Local, RicoSetUp {
         feedpush(wrtag, bytes32(WETH_REF_VAL), type(uint).max);
 
         Vat(bank).filh(uilk, 'src',  single(bytes32(bytes20(agold))), bytes32(bytes20(fsrc)));
-        Vat(bank).filh(uilk, 'tag',  single(bytes32(bytes20(agold))), drtag);
+        Vat(bank).filh(uilk, 'tag',  single(bytes32(bytes20(agold))), grtag);
         Vat(bank).filh(uilk, 'liqr', single(bytes32(bytes20(agold))), bytes32(RAY));
-        feedpush(drtag, bytes32(GOLD_REF_VAL), type(uint).max);
+        feedpush(grtag, bytes32(GOLD_REF_VAL), type(uint).max);
 
         weth_ref_val = WETH_REF_VAL;
         gold_ref_val = GOLD_REF_VAL;
 
-        deal(WETH,  self, 100_000 * WAD);
-        deal(agold, self, 100_000 * WAD);
-        Gem(WETH).approve(address(nfpm), type(uint).max);
+        deal(WETH,  self, SELF_MINT);
+        deal(agold, self, SELF_MINT);
+        uint gold0 = gold.balanceOf(self);
+        uint weth0 = weth.balanceOf(self);
+
+        Vat(bank).filk(uilk, 'line', bytes32(100000 * RAD));
+
+        weth.approve(address(nfpm), type(uint).max);
         gold.approve(address(nfpm), type(uint).max);
 
         for (uint i = 1; i < NUM_ACTORS + 1; ++i) {
@@ -73,8 +79,8 @@ contract UniV3Handler is Test, Local, RicoSetUp {
 
             // initial version - each actor gets room + 1 liquidity positions of equal size and range
             PoolArgs memory args = PoolArgs(
-                Asset(agold, ACTOR_TOK_WAD / (HOOK_ROOM + 2)),
-                Asset(WETH,  ACTOR_TOK_WAD / (HOOK_ROOM + 2)),
+                Asset(agold, LP_AMOUNT),
+                Asset(WETH,  LP_AMOUNT),
                 500, X96, X96 * 3 / 4, X96 * 4 / 3, 10, actor
             );
             uint nft_id;
@@ -87,10 +93,18 @@ contract UniV3Handler is Test, Local, RicoSetUp {
         uint par     = Vat(bank).par();
         minPar       = par;
         rico_ref_val = par;
-        artCap       = int((ACTOR_TOK_WAD * 2 * weth_ref_val) / (HOOK_ROOM + 2 * par));
+        artCap       = int(LP_AMOUNT * (weth_ref_val + gold_ref_val) / par);
+        artCap       = artCap * 4 / 3;
+
+        uint dist_gold = gold0 - gold.balanceOf(self);
+        uint dist_weth = weth0 - weth.balanceOf(self);
+        uint line = dist_gold * gold_ref_val + dist_weth * weth_ref_val;
+        line = line * 4 / 3;
+        Vat(bank).filk(uilk, 'line', bytes32(line));
 
         feed.push(RICO_REF_TAG, bytes32(rico_ref_val), block.timestamp * 2);
         feedpush(WETH_REF_TAG, bytes32(weth_ref_val), block.timestamp * 2);
+        feedpush(grtag,        bytes32(gold_ref_val), block.timestamp * 2);
     }
 
     /* --------------------------- target functions expecting reverts --------------------------- */

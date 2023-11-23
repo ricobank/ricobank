@@ -71,6 +71,8 @@ contract Ball is Math, Ward {
         bytes32 ilk;
         uint256 fee;
         uint256 chop;
+        uint256 dust;
+        uint256 line;
         uint256 room;
         address uniwrapper;
     }
@@ -270,6 +272,8 @@ contract Ball is Math, Ward {
 
         Vat(bank).filk(ups.ilk, "fee",  bytes32(ups.fee));
         Vat(bank).filk(ups.ilk, "chop", bytes32(ups.chop));
+        Vat(bank).filk(ups.ilk, "dust", bytes32(ups.dust));
+        Vat(bank).filk(ups.ilk, "line", bytes32(ups.line));
 
         Vat(bank).filh(ups.ilk, "pep",  empty, bytes32(uint(2)));
         Vat(bank).filh(ups.ilk, "pop",  empty, bytes32(RAY));

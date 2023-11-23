@@ -52,11 +52,12 @@ task('deploy-ricobank', '')
     const uniwrapper_type = hre.ethers.ContractFactory.fromSolidity(uniwrapper_artifact, ali)
     debug('deploying uni wrapper')
     const uniwrapper = await uniwrapper_type.deploy({gasLimit: args.gasLimit});
-    // TODO uni debt ceil
     const ups = {
             ilk: b32(':uninft'),
             fee: hre.ethers.BigNumber.from("1000000001546067052200000000"),
             chop: ray(1),
+            dust: rad(0.1),
+            line: rad(10000),
             room: 8,
             uniwrapper: uniwrapper.address
     }
