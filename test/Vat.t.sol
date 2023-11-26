@@ -9,6 +9,7 @@ import { RicoSetUp, Guy, FrobHook, ZeroHook } from "./RicoHelper.sol";
 import { BankDiamond } from '../src/diamond.sol';
 import { Bank, Math, Gem } from '../src/bank.sol';
 import { Hook } from '../src/hook/hook.sol';
+import { ERC20Hook } from '../src/hook/erc20/ERC20Hook.sol';
 
 contract VatTest is Test, RicoSetUp {
     uint constant init_join = 1000;
@@ -1379,6 +1380,86 @@ contract VatTest is Test, RicoSetUp {
         vm.prank(bank);
         bytes memory res = Vat(bank).hookcallext(gilk, 'hello');
         assertEq(res.length, 0);
+    }
+
+    function test_dink_size() public {
+        feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
+
+        // should fail to decode when dink is wrong size
+        vm.expectRevert();
+        Vat(bank).frob(gilk, self, abi.encodePacked(int8(0)), int(0));
+        vm.expectRevert();
+        Vat(bank).frob(gilk, self, abi.encodePacked(int200(0)), int(0));
+
+        Vat(bank).frob(gilk, self, abi.encodePacked(int256(0)), int(0));
+        Vat(bank).frob(gilk, self, abi.encodePacked(''), int(0));
+    }
+
+    // test behavior when transfer/transferFrom returns false
+    function test_ErrTransfer() public {
+        feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
+        FalseGem fgem = new FalseGem();
+
+        // fgem doesn't revert but always returns false.  Should fail
+        Vat(bank).filh(gilk, 'gem', empty, bytes32(bytes20(address(fgem))));
+        vm.expectRevert(ERC20Hook.ErrTransfer.selector);
+        Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(WAD));
+
+        // lock some gold (don't really need to but just for niceness)
+        Vat(bank).filh(gilk, 'gem', empty, bytes32(bytes20(agold)));
+        Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(WAD));
+
+        // switch back and try to free some gem.  should fail bc returns false
+        Vat(bank).filh(gilk, 'gem', empty, bytes32(bytes20(address(fgem))));
+        vm.expectRevert(ERC20Hook.ErrTransfer.selector);
+        Vat(bank).frob(gilk, self, abi.encodePacked(-int(WAD / 2)), 0);
+    }
+
+    function test_ErrHookData() public {
+        feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
+        Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(WAD));
+
+        BadDataHook bdh = new BadDataHook();
+        Vat(bank).filk(gilk, 'hook', bytes32(bytes20(address(bdh))));
+
+        vm.expectRevert(Vat.ErrHookData.selector);
+        Vat(bank).safe(gilk, self);
+
+        vm.expectRevert(Vat.ErrHookData.selector);
+        Vat(bank).frob(gilk, self, '', -int(WAD / 2));
+    }
+
+    function test_ErrHookCallerNotBank() public {
+        // hookcallext is only for bank to call
+        // it's an internal tool used to delegatecall view functions
+        bytes memory indata = abi.encodeWithSelector(
+            Hook.safehook.selector, gilk, self
+        );
+        vm.expectRevert(Vat.ErrHookCallerNotBank.selector);
+        Vat(bank).hookcallext(gilk, indata);
+    }
+
+}
+
+contract BadDataHook {
+    uint count = type(uint).max / 2;
+    function frobhook(Hook.FHParams calldata) external returns (uint, uint) {
+        return (count++, type(uint).max);
+    }
+    function safehook(bytes32,address) external pure returns (uint, uint) {
+        return ((10 ** 45) * 1000, (10 ** 45) * 1000);
+    }
+}
+
+contract FalseGem {
+    uint count;
+    function transferFrom(address,address,uint) external returns (bool) {
+        count++;
+        return false;
+    }
+    function transfer(address,uint) external returns (bool) {
+        count++;
+        return false;
     }
 }
 

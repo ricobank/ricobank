@@ -500,6 +500,18 @@ contract VowTest is Test, RicoSetUp {
         assertClose(act_price, exp_mash, 1000000);
     }
 
+    function test_time_elapsed_but_zero_flop() public {
+        // flop is 0 because of rel, not because of timestamp - bel
+        File(bank).file('rel', bytes32(0));
+        force_sin(RAD);
+        force_fees(WAD / 2);
+
+        skip(1000);
+
+        vm.expectRevert(Vow.ErrReflop.selector);
+        Vow(bank).keep(empty);
+    }
+
 }
 
 contract Usr is Guy {

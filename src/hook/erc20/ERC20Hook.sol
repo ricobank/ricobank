@@ -12,7 +12,7 @@ contract ERC20Hook is HookMix {
 
     struct ERC20HookStorage {
         mapping (address u => uint) inks; // amount
-        address gem;   // this ilk's gem
+        Gem     gem;   // this ilk's gem
         uint256 liqr;  // [ray] liquidation ratio
         Rudd    rudd;  // [obj] feed src,tag
         Plx     plot;  // [obj] discount exponent and offset
@@ -26,7 +26,6 @@ contract ERC20Hook is HookMix {
     }
 
     error ErrTransfer();
-    error ErrDinkSize();
 
     function ink(bytes32 i, address u) external view returns (bytes memory) {
         return abi.encode(getStorage(i).inks[u]);
@@ -37,10 +36,7 @@ contract ERC20Hook is HookMix {
         ERC20HookStorage storage hs = getStorage(p.i);
 
         // read dink as a single uint
-        int dink;
-        if (p.dink.length == 0) { dink = 0;
-        } else if (p.dink.length == 32) { dink = abi.decode(p.dink, (int));
-        } else { revert ErrDinkSize(); }
+        int dink = p.dink.length == 0 ? int(0) : abi.decode(p.dink, (int));
 
         // safer if locking ink and wiping art
         safer = dink >= 0 && p.dart <= 0;
@@ -51,18 +47,17 @@ contract ERC20Hook is HookMix {
         hs.inks[p.u] = _ink;
         emit NewPalmBytes2("ink", p.i, bytes32(bytes20(p.u)), abi.encode(_ink));
 
-        Gem gem = Gem(hs.gem);
         if (dink > 0) {
 
             // pull tokens from sender
-            if (!gem.transferFrom(p.sender, address(this), uint(dink))) {
+            if (!hs.gem.transferFrom(p.sender, address(this), uint(dink))) {
                 revert ErrTransfer();
             }
 
         } else if (dink < 0) {
 
             // return tokens to urn holder
-            if (!gem.transfer(p.u, uint(-dink))) {
+            if (!hs.gem.transfer(p.u, uint(-dink))) {
                 revert ErrTransfer();
             }
 
@@ -97,7 +92,7 @@ contract ERC20Hook is HookMix {
 
         // trade collateral with keeper for rico
         getBankStorage().rico.burn(p.keeper, earn);
-        if (!Gem(hs.gem).transfer(p.keeper, sell)) revert ErrTransfer();
+        if (!hs.gem.transfer(p.keeper, sell)) revert ErrTransfer();
 
         return abi.encode(sell);
     }
@@ -119,7 +114,7 @@ contract ERC20Hook is HookMix {
         ERC20HookStorage storage hs  = getStorage(i);
 
         if (xs.length == 0) {
-            if (key == "gem") { hs.gem = address(bytes20(val));
+            if (key == "gem") { hs.gem = Gem(address(bytes20(val)));
             } else if (key == "src") { hs.rudd.src = address(bytes20(val));
             } else if (key == "tag") { hs.rudd.tag = val;
             } else if (key == "liqr") { 
@@ -139,7 +134,7 @@ contract ERC20Hook is HookMix {
         ERC20HookStorage storage hs  = getStorage(i);
 
         if (xs.length == 0) {
-            if (key == "gem") { return bytes32(bytes20(hs.gem));
+            if (key == "gem") { return bytes32(bytes20(address(hs.gem)));
             } else if (key == "src") { return bytes32(bytes20(hs.rudd.src));
             } else if (key == "tag") { return hs.rudd.tag;
             } else if (key == "liqr") { return bytes32(hs.liqr);
