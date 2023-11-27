@@ -14,13 +14,13 @@ remappings = [
     'hardhat/=node_modules/hardhat/',
 ]
 optimizer=true
-optimizer-runs=10_000
+optimizer-runs=10000
 solc_version='0.8.19'
 
 [invariant]
 fail_on_revert = false
 runs = 1
-depth = 10_000
+depth = 10000
 
 [profile.disallow_reverts.invariant]
 fail_on_revert = true

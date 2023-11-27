@@ -9,12 +9,11 @@ import os
 import re
 import subprocess
 import sys
-import toml
 
 
 timeout = 60
-start_seed = 710
-end_seed = 720
+start_seed = 730
+end_seed = 740
 
 
 class TestMode(Enum):
@@ -27,7 +26,9 @@ class TestMode(Enum):
 def run_forge(mode):
     script_dir = os.path.dirname(os.path.abspath(__file__))
     toml_path = os.path.join(script_dir, '..', '..', 'foundry.toml')
-    depth = toml.load(toml_path)["invariant"]["depth"]
+    with open(toml_path) as file:
+        depth = int(next(line for line in file if line.startswith('depth =')).split('=')[1])
+
     env = {**os.environ}
 
     subprocess.run(["forge", "build"])
@@ -54,13 +55,14 @@ def run_forge(mode):
         expired = failed = False
         print(f"seed {seed}: ", end="")
         try:
-            output = subprocess.run(command + [str(seed)], env=env, timeout=timeout, capture_output=True, text=True).stdout
+            output = subprocess.run(
+                command + [str(seed)], env=env, timeout=timeout, capture_output=True, text=True).stdout
         except subprocess.TimeoutExpired:
             expired = True
         else:
             # clear colour instructions for terminal output
             output = re.sub(r'\x1b\[[0-9;]*m', '', output)
-            match = re.search('calls: (\d+)', output)
+            match = re.search(r'calls: (\d+)', output)
             calls = int(match.group(1))
             failed = (calls != depth or any(err_str in output for err_str in ("FAIL", "Error: ")))
 
