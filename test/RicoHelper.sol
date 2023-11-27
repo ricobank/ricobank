@@ -308,14 +308,15 @@ abstract contract RicoSetUp is BaseHelper {
     function check_integrity() internal {
         uint sup  = rico.totalSupply();
         uint joy  = Vat(bank).joy();
-        uint sin  = Vat(bank).sin() / RAY;
+        uint sin  = Vat(bank).sin();
         uint debt = Vat(bank).debt();
+        uint rest = Vat(bank).rest();
         uint tart = Vat(bank).ilks(gilk).tart;
         uint rack = Vat(bank).ilks(gilk).rack;
 
         assertEq(rico.balanceOf(bank), 0);
         assertEq(joy + sup, debt);
-        assertEq(rmul(tart, rack), sup + joy - sin);
+        assertEq(tart * rack + sin, (sup + joy) * RAY + rest);
     }
 
     modifier _check_integrity_after_ {
