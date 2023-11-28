@@ -2,34 +2,22 @@
   "format": "dpack-1",
   "network": "arbitrum_goerli",
   "types": {
-    "ERC20Hook": {
-      "typename": "ERC20Hook",
-      "artifact": {
-        "/": "bafkreigcoirxxgy34ypd27yf5nn6jvhyvvh4m3zqf4qt25i42cmupobdeq"
-      }
-    },
-    "UniNFTHook": {
-      "typename": "UniNFTHook",
-      "artifact": {
-        "/": "bafkreicc2r3w6eh6oiwpjko3a5nscm3aas6uxll6ok4pqt7wpb3rapghqe"
-      }
-    },
     "UniWrapper": {
       "typename": "UniWrapper",
       "artifact": {
-        "/": "bafkreiclbxhevpeluer3js7mqfweqaqpermoipgvwns4vxcyfqnb2u5ln4"
+        "/": "bafkreidf5ceqtlnoq52uss7dr3h6jk7ckmztd6ek6cfj6mfjvg45amgz3e"
       }
     },
     "Ball": {
       "typename": "Ball",
       "artifact": {
-        "/": "bafkreietd2xvfd36stquuzkv3x2q6lnld2rnskqr7ehmaqp6atyj5unn5m"
+        "/": "bafkreibq4ufobpaxdjandvhpyecmfnjyguhqhkvotaivvpaakyxeekafvq"
       }
     },
     "Ricobank": {
       "typename": "Ricobank",
       "artifact": {
-        "/": "bafkreiaax3qktxo2htzjxvtotclbo2n3o2hox5xlxshmzlpnptrrdgzloe"
+        "/": "bafkreige7tlatoxdwx6p5swacdf3tt4wx6heqnnnmgyyacrghly2imwv4u"
       }
     },
     "UniswapV3Factory": {
@@ -59,13 +47,13 @@
     "Feedbase": {
       "typename": "Feedbase",
       "artifact": {
-        "/": "bafkreicl2u5372swslshp7niohrop2rga6yfodjrgx7vkqjljazsewmzzq"
+        "/": "bafkreicx2dn4nmxk4w3hkp2md43ww54yvlx2e5yrhhtsldrcvnk4s5gn3e"
       }
     },
     "Medianizer": {
       "typename": "Medianizer",
       "artifact": {
-        "/": "bafkreigvikbmkzegtak6nxouj6j3hzaac6pzromdta23gk3pdpyt6xlcfa"
+        "/": "bafkreigv323ot5qkcxwfhgquhllkwyttakzfygaeaxq2n5jm25xwrvf4ky"
       }
     },
     "Poker": {
@@ -77,25 +65,25 @@
     "Divider": {
       "typename": "Divider",
       "artifact": {
-        "/": "bafkreifmagxlu2z5j6f5yltkusdi2ibvqa32yffkhop5eknrvh7wu6kocq"
+        "/": "bafkreiaokzefly22xppc56pbr2povlqgarpyyoa45p7fpy6qktq6lf6sj4"
       }
     },
     "TWAP": {
       "typename": "TWAP",
       "artifact": {
-        "/": "bafkreiblfdamdp62gvc2yybrraqb7csb4fwahzww7pm552kp35oiudws6a"
+        "/": "bafkreiahivpxx7zjyu75imk5h74vjfzarg4r6jtf7nfkdevepc553m3aj4"
       }
     },
     "UniswapV3Adapter": {
       "typename": "UniswapV3Adapter",
       "artifact": {
-        "/": "bafkreifl4rk3sqlgbg4fxvksb3b23u2rcp5yqiq2i57mze2hv2lugek5ae"
+        "/": "bafkreidplirnt33u57ojhisd6vecmjsid2vwaqh7yz6of3kampub4hiuxq"
       }
     },
     "ChainlinkAdapter": {
       "typename": "ChainlinkAdapter",
       "artifact": {
-        "/": "bafkreihhule7tpfkycgltcj3ctgoxo3bny4rk6aaqczk3ickzt5av5vbwu"
+        "/": "bafkreif75dukocvb5blbu35ip4b2g7km5mdm3u2ar3mq5doqzxqbtu4d3q"
       }
     },
     "GemFab": {
@@ -112,76 +100,52 @@
     }
   },
   "objects": {
-    "mdn": {
-      "objectname": "mdn",
-      "address": "0xFFA862e7Eb5E1D43Ee41aF3698985089D9A40C49",
-      "typename": "Medianizer",
-      "artifact": {
-        "/": "bafkreigvikbmkzegtak6nxouj6j3hzaac6pzromdta23gk3pdpyt6xlcfa"
-      }
-    },
     "divider": {
       "objectname": "divider",
-      "address": "0x25572d447D9bA659c4BE13664F39B32a3243cd65",
+      "address": "0xF82f57d03269b34E6888Fbd1b54D0bEFBcd2156f",
       "typename": "Divider",
       "artifact": {
-        "/": "bafkreifmagxlu2z5j6f5yltkusdi2ibvqa32yffkhop5eknrvh7wu6kocq"
+        "/": "bafkreiaokzefly22xppc56pbr2povlqgarpyyoa45p7fpy6qktq6lf6sj4"
       }
     },
     "uniadapt": {
       "objectname": "uniadapt",
-      "address": "0x08bd238793F1Abd1CA674Bb7e0Ec30A6e9F22A5c",
+      "address": "0x6442adcBD1CbeA22F26b77BcA480A8a703cb13D8",
       "typename": "UniswapV3Adapter",
       "artifact": {
-        "/": "bafkreifl4rk3sqlgbg4fxvksb3b23u2rcp5yqiq2i57mze2hv2lugek5ae"
+        "/": "bafkreidplirnt33u57ojhisd6vecmjsid2vwaqh7yz6of3kampub4hiuxq"
       }
     },
     "cladapt": {
       "objectname": "cladapt",
-      "address": "0xe217Ba1A9414a935334464ac44df0d6FC7bD13Aa",
+      "address": "0x81967279bd36914a0181a8d469d657F1F07C363d",
       "typename": "ChainlinkAdapter",
       "artifact": {
-        "/": "bafkreihhule7tpfkycgltcj3ctgoxo3bny4rk6aaqczk3ickzt5av5vbwu"
-      }
-    },
-    "hook": {
-      "objectname": "hook",
-      "address": "0xeD5ab48FAc18A3DF53F35BB89211dFd4CbcDFcB8",
-      "typename": "ERC20Hook",
-      "artifact": {
-        "/": "bafkreigcoirxxgy34ypd27yf5nn6jvhyvvh4m3zqf4qt25i42cmupobdeq"
-      }
-    },
-    "nfthook": {
-      "objectname": "nfthook",
-      "address": "0xC9e239A6F1AaA60CC55eBEA785134c91C1988892",
-      "typename": "UniNFTHook",
-      "artifact": {
-        "/": "bafkreicc2r3w6eh6oiwpjko3a5nscm3aas6uxll6ok4pqt7wpb3rapghqe"
+        "/": "bafkreif75dukocvb5blbu35ip4b2g7km5mdm3u2ar3mq5doqzxqbtu4d3q"
       }
     },
     "uniswapV3Wrapper": {
       "objectname": "uniswapV3Wrapper",
-      "address": "0x6814F9a2038FA7ef41F62ab8dbA2de34d39306B4",
+      "address": "0x9090A34CB6A29757461019280213230515699AB4",
       "typename": "UniWrapper",
       "artifact": {
-        "/": "bafkreiclbxhevpeluer3js7mqfweqaqpermoipgvwns4vxcyfqnb2u5ln4"
+        "/": "bafkreidf5ceqtlnoq52uss7dr3h6jk7ckmztd6ek6cfj6mfjvg45amgz3e"
       }
     },
     "ball": {
       "objectname": "ball",
-      "address": "0xafe8E1b4D99EC0e140Efa1D5660D4384639661A1",
+      "address": "0xd462d004B20e82857D707076F1Dbd5A352932186",
       "typename": "Ball",
       "artifact": {
-        "/": "bafkreietd2xvfd36stquuzkv3x2q6lnld2rnskqr7ehmaqp6atyj5unn5m"
+        "/": "bafkreibq4ufobpaxdjandvhpyecmfnjyguhqhkvotaivvpaakyxeekafvq"
       }
     },
     "bank": {
       "objectname": "bank",
-      "address": "0x4477Dd0972acca6dB0c3414cb2693f011D57db53",
+      "address": "0x5D00C6A7aB8614Ebc5d8E9bD79089526B1469024",
       "typename": "Ricobank",
       "artifact": {
-        "/": "bafkreiaax3qktxo2htzjxvtotclbo2n3o2hox5xlxshmzlpnptrrdgzloe"
+        "/": "bafkreige7tlatoxdwx6p5swacdf3tt4wx6heqnnnmgyyacrghly2imwv4u"
       }
     },
     "uniswapV3Factory": {
@@ -210,10 +174,10 @@
     },
     "feedbase": {
       "objectname": "feedbase",
-      "address": "0x084b44a22ffDDc6D2c167aD3c57AD8655a92e29C",
+      "address": "0x1dE162F7B87A9290c639f6f7bd4b3ea9a7B1a355",
       "typename": "Feedbase",
       "artifact": {
-        "/": "bafkreicl2u5372swslshp7niohrop2rga6yfodjrgx7vkqjljazsewmzzq"
+        "/": "bafkreicx2dn4nmxk4w3hkp2md43ww54yvlx2e5yrhhtsldrcvnk4s5gn3e"
       }
     },
     "gemfab": {
@@ -222,7 +186,7 @@
       "artifact": {
         "/": "bafybeid4zujx6upnggnf3kbvhkymqzs4jercf2yiypyg662alvxkytgm4y"
       },
-      "address": "0xf520051AD3bcA7F7D1a0009072B153c2a04A830b"
+      "address": "0x9631D4Ca921b42ddFa09E41E956d29cB339A31c6"
     },
     "rico": {
       "objectname": "rico",
@@ -230,7 +194,7 @@
       "artifact": {
         "/": "bafkreiengkcjjtvh65vw6hcat26x3j3caklc62lmrrsulzi5m26aiqa5zu"
       },
-      "address": "0x6947FB667317A619DABf8b9084AA1c2B3E652B17"
+      "address": "0xc42Cb657DD6cD676a37Bc8d3F7006e71e26ae247"
     },
     "risk": {
       "objectname": "risk",
@@ -238,7 +202,7 @@
       "artifact": {
         "/": "bafkreiengkcjjtvh65vw6hcat26x3j3caklc62lmrrsulzi5m26aiqa5zu"
       },
-      "address": "0x6efD430E10b13aF7a69376E070f3fd70212488eC"
+      "address": "0xb9e4eB71B930742bB11e2f667c43258A7600D7ED"
     },
     "dai": {
       "objectname": "dai",
@@ -246,7 +210,7 @@
       "artifact": {
         "/": "bafkreiengkcjjtvh65vw6hcat26x3j3caklc62lmrrsulzi5m26aiqa5zu"
       },
-      "address": "0x9a959630C508244379f9e8C21b1775A5faa034f5"
+      "address": "0xe5d8036151b700922dDB49E1177273FD5721E944"
     },
     "ricorisk": {
       "objectname": "ricorisk",
@@ -254,7 +218,7 @@
       "artifact": {
         "/": "bafkreihifi6scj7hjyyhvvh6qxvzow3zpijbugveepskqm2nil2vxrl5oe"
       },
-      "address": "0x6e74dbfa9FB1BC569Fbaf39a48499C681fbD437e"
+      "address": "0x19701CD4a19e39DFb2399E234bb6C933688747C9"
     },
     "ricodai": {
       "objectname": "ricodai",
@@ -262,7 +226,7 @@
       "artifact": {
         "/": "bafkreihifi6scj7hjyyhvvh6qxvzow3zpijbugveepskqm2nil2vxrl5oe"
       },
-      "address": "0x0D828B6fA0Ed8D3db58F9F124c6441E1232F5edD"
+      "address": "0x792A964805c93D28FeDcA4706Cf85a25Be216F14"
     },
     "weth": {
       "objectname": "weth",
@@ -270,7 +234,7 @@
       "artifact": {
         "/": "bafkreiengkcjjtvh65vw6hcat26x3j3caklc62lmrrsulzi5m26aiqa5zu"
       },
-      "address": "0x980B62Da83eFf3D4576C647993b0c1D7faf17c73"
+      "address": "0x5Bd2c68aa07AC850Ea22BC5503BeF16744A5E1d7"
     },
     "wsteth": {
       "objectname": "wsteth",
@@ -278,7 +242,7 @@
       "artifact": {
         "/": "bafkreiengkcjjtvh65vw6hcat26x3j3caklc62lmrrsulzi5m26aiqa5zu"
       },
-      "address": "0x550144D2D29DcAB005DE88aE6ceE501A5a0db24B"
+      "address": "0x527b41e9E0B42e2706f678e85B0A183f2b3CEc34"
     }
   }
 }
