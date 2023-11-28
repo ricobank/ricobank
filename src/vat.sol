@@ -158,10 +158,11 @@ contract Vat is Bank {
             } else if (dtab < 0) {
                 // paydown
                 // dtab is a rad, so burn one extra to round in system's favor
-                uint wad = uint(-dtab) / RAY + 1;
+                uint wad = (uint(-dtab) / RAY) + 1;
                 _debt = vs.debt -= wad;
                 emit NewPalm0("debt", bytes32(_debt));
 
+                // accrue excess from rounding to rest
                 _rest = vs.rest += add(wad * RAY, dtab);
                 emit NewPalm0("rest", bytes32(_rest));
 

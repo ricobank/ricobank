@@ -39,7 +39,7 @@ abstract contract Bank is Math, Flog, Palm, OwnableInternal {
         mapping (bytes32 => mapping (address => uint256)) urns; // CDPs
         uint256 joy;   // [wad]
         uint256 sin;   // [rad]
-        uint256 rest;  // [rad] Remainder from
+        uint256 rest;  // [rad] Debt remainder
         uint256 debt;  // [wad] Total Rico Issued
         uint256 ceil;  // [wad] Total Debt Ceiling
         uint256 par;   // [ray] System Price (rico/ref)
