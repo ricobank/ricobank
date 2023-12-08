@@ -117,9 +117,14 @@ task('deploy-mock-tokens', '')
     if ('dai' == tokenname) continue;
     let token = tokensPlusWeth[tokenname]
     let token_addr = token.gem
-    if (!token_addr) token_addr = await gf_dapp.gemfab.callStatic.build(
-      b32(tokenname), b32(tokenname.toUpperCase())
-    )
+    if (!token_addr) {
+        token_addr = await gf_dapp.gemfab.callStatic.build(
+            b32(tokenname), b32(tokenname.toUpperCase())
+        )
+        await send(gf_dapp.gemfab.build,
+            b32(tokenname), b32(tokenname.toUpperCase())
+        )
+    }
 
     await pb.packObject({
       objectname: tokenname,
