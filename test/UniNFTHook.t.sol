@@ -234,15 +234,16 @@ contract NFTHookTest is Test, RicoSetUp {
         assertEq(nfpm.ownerOf(goldwethtokid), bank);
         assertEq(nfpm.ownerOf(golddaitokid), bank);
 
-        feedpush(grtag, bytes32(0 * RAY), type(uint).max);
+        // with a single zero feed the other LP should still keep it safe
         feedpush(wrtag, bytes32(0 * RAY), type(uint).max);
         vm.expectRevert(Vat.ErrSafeBail.selector);
         Vat(bank).bail(uilk, self);
 
-        feedpush(drtag, bytes32(RAY / uint(100_000)), type(uint).max);
+        feedpush(drtag, bytes32(RAY / uint(200_000)), type(uint).max);
+        feedpush(grtag, bytes32(RAY / uint(200_000)), type(uint).max);
         (,uint deal,) = Vat(bank).safe(uilk, self);
 
-        // only asset of value is 1000 dai worth 1% -> discount should be 0.01 ^ 2
+        // only LP of value is golddai worth 1% -> discount should be 0.01 ^ 2
         uint wad_cost = rmul(WAD, rmul(deal, rmul(deal, deal)));
         rico_mint(WAD, true);
         rico.transfer(address(guy), wad_cost);
@@ -319,16 +320,22 @@ contract NFTHookTest is Test, RicoSetUp {
         (dink[0], dink[1], dink[2]) = (1, goldwethtokid, golddaitokid);
         Vat(bank).frob(uilk, self, abi.encode(dink), int(900 * WAD));
 
-        // crash 2/3 tokens...weth keeps it safe
+        // if either token in a position has zero price feed position is worthless
         feedpush(drtag, bytes32(0), type(uint).max);
         (Vat.Spot spot,,) = Vat(bank).safe(uilk, self);
+        // still safe due to goldweth
         assertTrue(spot == Vat.Spot.Safe);
         feedpush(grtag, bytes32(0), type(uint).max);
         (spot,,) = Vat(bank).safe(uilk, self);
+        //goldweth now also worthless
+        assertTrue(spot == Vat.Spot.Sunk);
+
+        feedpush(grtag, bytes32(RAY), type(uint).max);
+        (spot,,) = Vat(bank).safe(uilk, self);
         assertTrue(spot == Vat.Spot.Safe);
 
-        // but now wait a decade...fee accumulator (rack) makes it unsafe
-        skip(BANKYEAR * 10);
+        // but now wait a couple decades...fee accumulator (rack) makes it unsafe
+        skip(BANKYEAR * 20);
         Vat(bank).drip(uilk);
         (spot,,) = Vat(bank).safe(uilk, self);
         assertTrue(spot == Vat.Spot.Sunk);
@@ -642,11 +649,12 @@ contract NFTHookTest is Test, RicoSetUp {
         File(bank).file('ceil', bytes32(WAD * 1_000_000_000));
         Vat(bank).filk(uilk, 'line', bytes32(RAD * 1_000_000_000));
         Vat(bank).filk(gilk, 'line', bytes32(RAD * 1_000_000_000));
+        feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
 
-        // the NFT has 1000 each of gold and weth, valued at 1900 and 1000
+        // the NFT has 1000 each of gold and weth, both valued at 1000 and 1000
         uint[] memory dink = new uint[](2);
         (dink[0], dink[1]) = (1, goldwethtokid);
-        uint borrow = WAD * uint(2_900_000 - 1);
+        uint borrow = WAD * uint(2_000_000 - 1);
 
         // safe debt level should come from the safest liqr of either token
         Vat(bank).filh(uilk, 'liqr', single(bytes32(bytes20(WETH))),  bytes32(RAY * 1));
