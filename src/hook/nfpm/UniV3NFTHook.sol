@@ -13,7 +13,6 @@ import { INonfungiblePositionManager as INFPM } from "./interfaces/INonfungibleP
 // uniswap libraries to get total token amounts in uniswap positions
 interface IUniWrapper {
     function total(INFPM nfpm, uint tokenId, uint160 sqrtPriceX96) external view returns (uint amount0, uint amount1);
-    function computeAddress(address factory, address t0, address t1, uint24 fee) external view returns (address);
 }
 
 // hook for uni NonfungiblePositionManager
@@ -34,11 +33,13 @@ contract UniNFTHook is HookMix {
         Plx     plot;  // [int] discount exponent, [ray] sale price multiplier
     }
 
-    struct Amounts {
+    struct Position {
         address tok0;
         address tok1;
         uint256 amt0;
         uint256 amt1;
+        uint256 id;
+        uint160 sqrtRatioX96;
     }
 
     function getStorage(bytes32 i) internal pure returns (UniNFTHookStorage storage hs) {
@@ -54,6 +55,7 @@ contract UniNFTHook is HookMix {
 
     int256 internal constant  LOCK = 1;
     int256 internal constant  FREE = -1;
+    uint160 internal constant X96 = 2 ** 96;
     INFPM  internal immutable NFPM;
 
     constructor(address nfpm) {
@@ -150,48 +152,69 @@ contract UniNFTHook is HookMix {
         return abi.encode(ids);
     }
 
-    // respective amounts of token0 and token1 that this position
-    // would yield if burned now
-    function amounts(uint tokenId, UniNFTHookStorage storage hs)
-      internal view returns (Amounts memory amts) {
-        uint24 fee;
-
-        IUniWrapper wrap = hs.wrap;
-        (,,amts.tok0, amts.tok1, fee,,,,,,,) = NFPM.positions(tokenId);
-
-        // get the current price
-        address pool = wrap.computeAddress(NFPM.factory(), amts.tok0, amts.tok1, fee);
-        (uint160 sqrtPriceX96,,,,,,) = IUniswapV3Pool(pool).slot0();
-
-        // uni library function to get amounts
-        (amts.amt0, amts.amt1) = wrap.total(NFPM, tokenId, sqrtPriceX96);
-    }
-
     function safehook(bytes32 i, address u)
       external view returns (uint tot, uint cut, uint minttl) {
         Feedbase fb = getBankStorage().fb;
         UniNFTHookStorage storage hs       = getStorage(i);
         uint256[]         storage tokenIds = hs.inks[u];
         minttl = type(uint256).max;
-        uint256 ttl; bytes32 val;
+        bytes32 val0; bytes32 val1;
+        IUniWrapper wrap = hs.wrap;
 
         for (uint idx = 0; idx < tokenIds.length;) {
-            // get amounts of token0 and token1
-            Amounts memory amts = amounts(tokenIds[idx], hs);
-            Source storage src0 = hs.sources[amts.tok0];
-            Source storage src1 = hs.sources[amts.tok1];
-            uint256 liqr = max(src0.liqr, src1.liqr);
+            Position memory pos;  // todo compare malloc outside loop gas
+            pos.id = tokenIds[idx];
+            (,, pos.tok0, pos.tok1,,,,,,,,) = NFPM.positions(pos.id);
+            Source storage src0 = hs.sources[pos.tok0];
+            Source storage src1 = hs.sources[pos.tok1];
+            (val0, minttl) = fb.pull(src0.rudd.src, src0.rudd.tag);
+            {
+                uint ttl;
+                (val1, ttl) = fb.pull(src1.rudd.src, src1.rudd.tag);
+                minttl = min(minttl, ttl);
+            }
+
+            // if a feed is zero, continue without increasing tot or cut
+            if (uint(val0) == 0 || uint(val1) == 0){
+                unchecked {++idx;}
+                continue;
+            }
+            // TODO will very low priced feed for val1 cause overflow and inability to liquidate? << 96 * 2 is a lot
+            uint ratioX96 = (uint(val0) << 96) / uint(val1);
+            pos.sqrtRatioX96 = sqrt(ratioX96 << 96);
+            (pos.amt0, pos.amt1) = wrap.total(NFPM, pos.id, pos.sqrtRatioX96);
 
             // find total value of tok0 + tok1, and allowed debt cut off
-            (val, minttl) = fb.pull(src0.rudd.src, src0.rudd.tag);
-            tot += amts.amt0 * uint(val);
-            cut += amts.amt0 * rdiv(uint(val), liqr);
-
-            (val, ttl) = fb.pull(src1.rudd.src, src1.rudd.tag);
-            minttl = min(minttl, ttl);
-            tot += amts.amt1 * uint(val);
-            cut += amts.amt1 * rdiv(uint(val), liqr);
+            uint256 liqr = max(src0.liqr, src1.liqr);
+            tot += pos.amt0 * uint(val0) + pos.amt1 * uint(val1);
+            cut += pos.amt0 * rdiv(uint(val0), liqr) + pos.amt1 * rdiv(uint(val1), liqr);
             unchecked {++idx;}
+        }
+    }
+
+    // TODO is this best, and any change for solidity 0.8.x required? unchanged copy paste
+    // FROM https://github.com/abdk-consulting/abdk-libraries-solidity/blob/16d7e1dd8628dfa2f88d5dadab731df7ada70bdd/ABDKMath64x64.sol#L687
+    function sqrt(uint256 _x) private pure returns (uint128) {
+        if (_x == 0) return 0;
+        else {
+            uint256 xx = _x;
+            uint256 r = 1;
+            if (xx >= 0x100000000000000000000000000000000) { xx >>= 128; r <<= 64; }
+            if (xx >= 0x10000000000000000) { xx >>= 64; r <<= 32; }
+            if (xx >= 0x100000000) { xx >>= 32; r <<= 16; }
+            if (xx >= 0x10000) { xx >>= 16; r <<= 8; }
+            if (xx >= 0x100) { xx >>= 8; r <<= 4; }
+            if (xx >= 0x10) { xx >>= 4; r <<= 2; }
+            if (xx >= 0x8) { r <<= 1; }
+            r = (r + _x / r) >> 1;
+            r = (r + _x / r) >> 1;
+            r = (r + _x / r) >> 1;
+            r = (r + _x / r) >> 1;
+            r = (r + _x / r) >> 1;
+            r = (r + _x / r) >> 1;
+            r = (r + _x / r) >> 1; // Seven iterations should be enough
+            uint256 r1 = _x / r;
+            return uint128 (r < r1 ? r : r1);
         }
     }
 
