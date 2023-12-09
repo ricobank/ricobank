@@ -338,7 +338,7 @@ contract VatTest is Test, RicoSetUp {
         Vat(bank).filh(gilk, "pep", empty, bytes32(pep));
         Vat(bank).filh(gilk, "pop", empty, bytes32(pop));
         Vat(bank).filh(gilk, "pup", empty, bytes32(uint(pup)));
- 
+
         feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
         Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(borrow));
 
@@ -355,7 +355,6 @@ contract VatTest is Test, RicoSetUp {
         // guy was given exact amount, check all was spent for all gold deposit
         assertEq(rico.balanceOf(address(guy)), uint(0));
         assertEq(gold.balanceOf(address(guy)), WAD);
-        console.log("HIHI");
 
         // clamping
         pep = 2; pop = 3 * RAY / 2; pup = -int(RAY / 8);
