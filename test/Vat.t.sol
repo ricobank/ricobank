@@ -329,6 +329,46 @@ contract VatTest is Test, RicoSetUp {
         assertEq(gold.balanceOf(address(guy)), WAD);
     }
 
+    function test_bail_price_pup_1() public {
+        // frob to edge of safety
+        uint borrow = WAD * 1000;
+        uint pep = 1;
+        uint pop = 2 * RAY;
+        int  pup = -int(RAY);
+        Vat(bank).filh(gilk, "pep", empty, bytes32(pep));
+        Vat(bank).filh(gilk, "pop", empty, bytes32(pop));
+        Vat(bank).filh(gilk, "pup", empty, bytes32(uint(pup)));
+ 
+        feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
+        Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(borrow));
+
+        // drop gold/rico to 75%...pep is 1, so earn is linear
+        feedpush(grtag, bytes32(750 * RAY), type(uint).max);
+        uint expected = rmul(borrow, rmul(RAY * 3 / 4, rmash(RAY * 3 / 4, pep, pop, pup)));
+        prepguyrico(expected, false);
+        bytes memory data = guy.bail(gilk, self);
+
+        // check returned bytes represent quantity of tokens received
+        uint earn = uint(bytes32(data));
+        assertEq(earn, WAD);
+
+        // guy was given exact amount, check all was spent for all gold deposit
+        assertEq(rico.balanceOf(address(guy)), uint(0));
+        assertEq(gold.balanceOf(address(guy)), WAD);
+        console.log("HIHI");
+
+        // clamping
+        pep = 2; pop = 3 * RAY / 2; pup = -int(RAY / 8);
+        Vat(bank).filh(gilk, "pep", empty, bytes32(pep));
+        Vat(bank).filh(gilk, "pop", empty, bytes32(pop));
+        Vat(bank).filh(gilk, "pup", empty, bytes32(uint(pup)));
+        feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
+        Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(borrow));
+        feedpush(grtag, bytes32(250 * RAY), type(uint).max);
+        assertEq(abi.decode(guy.bail(gilk, self), (uint)), WAD);
+        assertEq(rico.balanceOf(address(guy)), 0);
+    }
+
     function test_bail_refund() public {
         // set c ratio to double
         uint pop = RAY * 3 / 2;

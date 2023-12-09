@@ -121,4 +121,11 @@ contract Math {
         }
         res = a | (b >> (i << 3));
     }
+
+    function rmash(uint deal, uint pep, uint pop, int pup)
+      internal pure returns (uint res) {
+        res = rmul(pop, rpow(deal, pep));
+        if (pup < 0 && uint(-pup) > res) return 0;
+        res = add(res, pup);
+    }
 }

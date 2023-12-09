@@ -129,7 +129,8 @@ contract UniNFTHook is HookMix {
         emit NewPalmBytes2("ink", p.i, bytes32(bytes20(p.u)), bytes(""));
 
         // tot is RAD, deal is RAY, so bank earns a WAD
-        uint earn = rmul(p.tot / RAY, rmul(rpow(p.deal, hs.plot.pep), hs.plot.pop));
+        uint mash = rmash(p.deal, hs.plot.pep, hs.plot.pop, hs.plot.pup);
+        uint earn = rmul(p.tot / RAY, mash);
 
         // take from keeper to underwrite urn, return what's left to urn owner.
         Gem rico = getBankStorage().rico;
@@ -204,6 +205,7 @@ contract UniNFTHook is HookMix {
             } else if (key == "wrap") { hs.wrap = IUniWrapper(address(bytes20(val)));
             } else if (key == "pep")  { hs.plot.pep = uint(val);
             } else if (key == "pop")  { hs.plot.pop = uint(val);
+            } else if (key == "pup")  { hs.plot.pup = int(uint(val));
             } else { revert ErrWrongKey(); }
             emit NewPalm1(key, i, val);
         } else if (xs.length == 1) {
@@ -229,6 +231,7 @@ contract UniNFTHook is HookMix {
             } else if (key == "wrap") { return bytes32(bytes20(address(hs.wrap)));
             } else if (key == "pep")  { return bytes32(hs.plot.pep);
             } else if (key == "pop")  { return bytes32(hs.plot.pop);
+            } else if (key == "pup")  { return bytes32(uint(hs.plot.pup));
             } else { revert ErrWrongKey(); }
         } else if (xs.length == 1) {
             address gem = address(bytes20(xs[0]));

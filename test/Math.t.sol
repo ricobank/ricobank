@@ -151,4 +151,21 @@ contract MathTest is Test, Math {
             bytes32(uint(bigger_s) >> (3 << 3) << (3 << 3))
         );
     }
+
+    function test_rmash() public {
+        assertEq(rmash(RAY, 0, RAY, 0), RAY);
+        assertEq(rmash(RAY, 1, RAY, 0), RAY);
+        assertEq(rmash(RAY / 2, 0, RAY, 0), RAY);
+        assertEq(rmash(RAY / 2, 1, RAY, 0), RAY / 2);
+        assertEq(rmash(RAY / 2, 1, RAY * 2, 0), RAY);
+        assertEq(rmash(RAY / 2, 1, RAY / 2, 0), RAY / 4);
+
+        // deal == 0
+        assertEq(rmash(0, 1, RAY / 2, int(RAY)), RAY);
+        assertEq(rmash(0, 1, RAY / 2, int(RAY / 2)), RAY / 2);
+        assertEq(rmash(0, 1, RAY, -int(RAY / 4)), 0);
+        assertEq(rmash(0, 1, 2 * RAY, -int(RAY)), 0);
+
+        assertEq(rmash(RAY * 3 / 4, 2, 4 * RAY, -int(RAY)), RAY * 9 / 16 * 4 - RAY);
+    }
 }
