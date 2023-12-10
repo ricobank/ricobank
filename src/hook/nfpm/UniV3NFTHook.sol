@@ -39,7 +39,6 @@ contract UniNFTHook is HookMix {
         uint256 amt0;
         uint256 amt1;
         uint256 id;
-        uint160 sqrtRatioX96;
     }
 
     function getStorage(bytes32 i) internal pure returns (UniNFTHookStorage storage hs) {
@@ -56,6 +55,7 @@ contract UniNFTHook is HookMix {
     int256 internal constant  LOCK = 1;
     int256 internal constant  FREE = -1;
     uint160 internal constant X96 = 2 ** 96;
+    uint256 internal constant MAX_RATIO = 2**(256 - 96 - 96) - 2;
     INFPM  internal immutable NFPM;
 
     constructor(address nfpm) {
@@ -160,9 +160,8 @@ contract UniNFTHook is HookMix {
         minttl = type(uint256).max;
         bytes32 val0; bytes32 val1;
         IUniWrapper wrap = hs.wrap;
-
+        Position memory pos;
         for (uint idx = 0; idx < tokenIds.length;) {
-            Position memory pos;  // todo compare malloc outside loop gas
             pos.id = tokenIds[idx];
             (,, pos.tok0, pos.tok1,,,,,,,,) = NFPM.positions(pos.id);
             Source storage src0 = hs.sources[pos.tok0];
@@ -173,16 +172,12 @@ contract UniNFTHook is HookMix {
                 (val1, ttl) = fb.pull(src1.rudd.src, src1.rudd.tag);
                 minttl = min(minttl, ttl);
             }
-
-            // if a feed is zero, continue without increasing tot or cut
-            if (uint(val0) == 0 || uint(val1) == 0){
-                unchecked {++idx;}
-                continue;
+            uint160 sqrtRatioX96 = type(uint160).max;
+            if(uint(val1) != 0 && uint(val0) / uint(val1) < MAX_RATIO) {
+                uint ratioX96 = (uint(val0) << 96) / uint(val1);
+                sqrtRatioX96 = sqrt(ratioX96 << 96);
             }
-            // TODO will very low priced feed for val1 cause overflow and inability to liquidate? << 96 * 2 is a lot
-            uint ratioX96 = (uint(val0) << 96) / uint(val1);
-            pos.sqrtRatioX96 = sqrt(ratioX96 << 96);
-            (pos.amt0, pos.amt1) = wrap.total(NFPM, pos.id, pos.sqrtRatioX96);
+            (pos.amt0, pos.amt1) = wrap.total(NFPM, pos.id, sqrtRatioX96);
 
             // find total value of tok0 + tok1, and allowed debt cut off
             uint256 liqr = max(src0.liqr, src1.liqr);
@@ -192,29 +187,31 @@ contract UniNFTHook is HookMix {
         }
     }
 
-    // TODO is this best, and any change for solidity 0.8.x required? unchanged copy paste
+    // Only change is unchecked block for solidity 0.8.x
     // FROM https://github.com/abdk-consulting/abdk-libraries-solidity/blob/16d7e1dd8628dfa2f88d5dadab731df7ada70bdd/ABDKMath64x64.sol#L687
     function sqrt(uint256 _x) private pure returns (uint128) {
-        if (_x == 0) return 0;
-        else {
-            uint256 xx = _x;
-            uint256 r = 1;
-            if (xx >= 0x100000000000000000000000000000000) { xx >>= 128; r <<= 64; }
-            if (xx >= 0x10000000000000000) { xx >>= 64; r <<= 32; }
-            if (xx >= 0x100000000) { xx >>= 32; r <<= 16; }
-            if (xx >= 0x10000) { xx >>= 16; r <<= 8; }
-            if (xx >= 0x100) { xx >>= 8; r <<= 4; }
-            if (xx >= 0x10) { xx >>= 4; r <<= 2; }
-            if (xx >= 0x8) { r <<= 1; }
-            r = (r + _x / r) >> 1;
-            r = (r + _x / r) >> 1;
-            r = (r + _x / r) >> 1;
-            r = (r + _x / r) >> 1;
-            r = (r + _x / r) >> 1;
-            r = (r + _x / r) >> 1;
-            r = (r + _x / r) >> 1; // Seven iterations should be enough
-            uint256 r1 = _x / r;
-            return uint128 (r < r1 ? r : r1);
+        unchecked {
+            if (_x == 0) return 0;
+            else {
+                uint256 xx = _x;
+                uint256 r = 1;
+                if (xx >= 0x100000000000000000000000000000000) { xx >>= 128; r <<= 64; }
+                if (xx >= 0x10000000000000000) { xx >>= 64; r <<= 32; }
+                if (xx >= 0x100000000) { xx >>= 32; r <<= 16; }
+                if (xx >= 0x10000) { xx >>= 16; r <<= 8; }
+                if (xx >= 0x100) { xx >>= 8; r <<= 4; }
+                if (xx >= 0x10) { xx >>= 4; r <<= 2; }
+                if (xx >= 0x8) { r <<= 1; }
+                r = (r + _x / r) >> 1;
+                r = (r + _x / r) >> 1;
+                r = (r + _x / r) >> 1;
+                r = (r + _x / r) >> 1;
+                r = (r + _x / r) >> 1;
+                r = (r + _x / r) >> 1;
+                r = (r + _x / r) >> 1; // Seven iterations should be enough
+                uint256 r1 = _x / r;
+                return uint128 (r < r1 ? r : r1);
+            }
         }
     }
 
