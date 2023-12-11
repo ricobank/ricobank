@@ -74,7 +74,8 @@ contract ERC20Hook is HookMix {
         // earn - rico "earned" by bank in this liquidation
         uint full = hs.inks[p.u];
         uint sell;
-        uint earn = rmul(p.tot / RAY, rmul(rpow(p.deal, hs.plot.pep), hs.plot.pop));
+        uint mash = rmash(p.deal, hs.plot.pep, hs.plot.pop, hs.plot.pup);
+        uint earn = rmul(p.tot / RAY, mash);
 
         // clamp `sell` so bank only gets enough to underwrite urn.
         if (earn > p.bill) {
@@ -122,6 +123,7 @@ contract ERC20Hook is HookMix {
                 hs.liqr = uint(val);
             } else if (key == "pep")  { hs.plot.pep = uint(val);
             } else if (key == "pop")  { hs.plot.pop = uint(val);
+            } else if (key == "pup")  { hs.plot.pup = int(uint(val));
             } else { revert ErrWrongKey(); }
             emit NewPalm1(key, i, val);
         } else {
@@ -140,6 +142,7 @@ contract ERC20Hook is HookMix {
             } else if (key == "liqr") { return bytes32(hs.liqr);
             } else if (key == "pep")  { return bytes32(hs.plot.pep);
             } else if (key == "pop")  { return bytes32(hs.plot.pop);
+            } else if (key == "pup")  { return bytes32(uint(hs.plot.pup));
             } else { revert ErrWrongKey(); }
         } else {
             revert ErrWrongKey();

@@ -50,8 +50,8 @@ contract Vow is Bank {
             // surplus the system deduces that it's overpricing rico
             uint price = _price();
             uint mcap  = rmul(price, risk.totalSupply());
-            uint mash  = rpow(rdiv(mcap, mcap + joy), vowS.plat.pep);
-            mash       = rmul(vowS.plat.pop, mash);
+            uint mash  = rdiv(mcap, mcap + joy);
+            mash       = rmash(mash, vowS.plat.pep, vowS.plat.pop, vowS.plat.pup);
 
             // buy-and-burn risk with remaining (`flap`) rico
             uint flap  = rmul(joy - 1, vowS.ramp.wel);
@@ -83,8 +83,8 @@ contract Vow is Bank {
             // that it's overpricing RISK
             uint price = _price();
             uint mcap  = rmul(price, risk.totalSupply());
-            uint mash  = rpow(rdiv(mcap, mcap + under), vowS.plot.pep);
-            mash       = rmul(vowS.plot.pop, mash);
+            uint mash  = rdiv(mcap, mcap + under);
+            mash       = rmash(mash, vowS.plot.pep, vowS.plot.pop, vowS.plot.pup);
 
             // rate-limit flop
             uint elapsed = min(block.timestamp - vowS.ramp.bel, vowS.ramp.cel);

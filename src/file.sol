@@ -45,6 +45,8 @@ contract File is Bank {
         } else if (key == "plat.pop") {
             must(_val, RAY / 10, 10 * RAY);
             vowS.plat.pop = _val;
+        } else if (key == "plot.pup") { vowS.plot.pup = int(_val);
+        } else if (key == "plat.pup") { vowS.plat.pup = int(_val);
         } else if (key == "rudd.src") { vowS.rudd.src = address(bytes20(val));
         } else if (key == "rudd.tag") { vowS.rudd.tag = val;
         } else if (key == "risk") { vowS.risk = Gem(address(bytes20(val)));
