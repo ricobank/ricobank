@@ -10,7 +10,7 @@ import {
 import "./UniHelper.sol";
 import '../src/mixin/math.sol';
 import { UniNFTHook } from '../src/hook/nfpm/UniV3NFTHook.sol';
-import { IERC721, INonfungiblePositionManager } from './Univ3Interface.sol';
+import { IERC721, INonfungiblePositionManager, IUniswapV3Pool } from './Univ3Interface.sol';
 
 contract NFTHookTest is Test, RicoSetUp {
     uint256   init_join = 1000;
@@ -130,44 +130,100 @@ contract NFTHookTest is Test, RicoSetUp {
     }
 
     function test_nft_bail() public {
+        File(bank).file('ceil', bytes32(WAD * 1_000_000_000));
+        Vat(bank).filk(uilk, 'line', bytes32(RAD * 1_000_000_000));
+        Vat(bank).filh(uilk, 'liqr', single(bytes32(bytes20(WETH))),  bytes32(RAY * 1));
+        Vat(bank).filh(uilk, 'liqr', single(bytes32(bytes20(agold))), bytes32(RAY * 1));
+        File(bank).file('ceil', bytes32(WAD * 1_000_000_000));
+        Vat(bank).filk(uilk, 'line', bytes32(RAD * 1_000_000_000));
+        rico_mint(100, true);
+
         uint[] memory dink = new uint[](2);
         (dink[0], dink[1]) = (1, goldwethtokid);
-        Vat(bank).frob(uilk, self, abi.encode(dink), int(WAD));
+        feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
+        Vat(bank).frob(uilk, self, abi.encode(dink), int(0 * WAD));
 
-        // just gold dip can't make collateral worthless
-        feedpush(grtag, bytes32(0 * RAY), type(uint).max);
-        vm.expectRevert(Vat.ErrSafeBail.selector);
-        Vat(bank).bail(uilk, self);
-        feedpush(grtag, bytes32(1900 * RAY), type(uint).max);
+        // LP has a thousand of each, both worth 1000, liqr 1.0, max debt would be nearly 2M
+        vm.expectRevert(Vat.ErrNotSafe.selector);
+        Vat(bank).frob(uilk, self, "",   int((2_000_001    ) * WAD));
+        Vat(bank).frob(uilk, self, "",   int((2_000_001 - 2) * WAD));
+        // pay off to reset
+        Vat(bank).frob(uilk, self, "", - int(Vat(bank).urns(uilk, self)));
 
-        // just weth dip can't make collateral worthless
-        feedpush(wrtag, bytes32(0 * RAY), type(uint).max);
-        vm.expectRevert(Vat.ErrSafeBail.selector);
-        Vat(bank).bail(uilk, self);
+        // Increasing oracle price of one asset by 10% should give less than 5% extra allowance as
+        // position owns more of less valuable token in derived tick
+        feedpush(grtag, bytes32(1100 * RAY), type(uint).max);
+        vm.expectRevert(Vat.ErrNotSafe.selector);
+        Vat(bank).frob(uilk, self, "",   int(2_099_000 * WAD));
+        // remains in same tick but collateral is is worth more
+        Vat(bank).frob(uilk, self, "",   int(2_090_000 * WAD));
+        Vat(bank).frob(uilk, self, "",   - int(Vat(bank).urns(uilk, self)));
 
-        // both dip, collateral is worthless
-        feedpush(grtag, bytes32(0 * RAY), type(uint).max);
-        Vat(bank).bail(uilk, self);
-        assertEq(Vat(bank).urns(uilk, self), 0);
+        // this LP is not full range, the value change should be clipped
+        // tick about a third higher and traded at about average of halfway tick
+        feedpush(grtag, bytes32(1_000_000_000_000 * RAY), type(uint).max);
+        vm.expectRevert(Vat.ErrNotSafe.selector);
+        Vat(bank).frob(uilk, self, "",   int(2_400_300 * WAD));
+        Vat(bank).frob(uilk, self, "",   int(2_300_000 * WAD));
+    }
+
+    // added a callback as directly interacting with pool
+    function uniswapV3SwapCallback(
+        int256 amount0Delta,
+        int256 ,  // amount1Delta
+        bytes calldata data
+    ) external {
+        address pool = abi.decode(data, (address));
+        Gem(agold).transfer(pool, uint(amount0Delta));
+    }
+    function test_moving_tick_with_swap() public {
+        File(bank).file('ceil', bytes32(WAD * 1_000_000_000));
+        Vat(bank).filk(uilk, 'line', bytes32(RAD * 1_000_000_000));
+        Vat(bank).filh(uilk, 'liqr', single(bytes32(bytes20(WETH))),  bytes32(RAY * 1));
+        Vat(bank).filh(uilk, 'liqr', single(bytes32(bytes20(agold))), bytes32(RAY * 1));
+        File(bank).file('ceil', bytes32(WAD * 1_000_000_000));
+        Vat(bank).filk(uilk, 'line', bytes32(RAD * 1_000_000_000));
+        rico_mint(100, true);
+
+        uint[] memory dink = new uint[](2);
+        (dink[0], dink[1]) = (1, goldwethtokid);
+        feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
+        // frob about limit
+        Vat(bank).frob(uilk, self, abi.encode(dink), int((2_000_000 - 1) * WAD));
+
+        // swap to push tick far from oracle expected value
+        address pool = IUniswapV3Factory(factory).getPool(agold, WETH, 500);
+        (uint160 sqrtPriceX96,,,,,,) = IUniswapV3Pool(pool).slot0();
+        IUniswapV3Pool(pool).swap(address(this), true, int(100 * WAD), sqrtPriceX96 / 1000, abi.encode(pool));
+
+        // Have done a decent swap, position was at limit, should now be safer
+        (Vat.Spot spot,,) = Vat(bank).safe(uilk, self);
+        assertTrue(spot == Vat.Spot.Safe);
+        // by trading 100 wad at value of 1000 gained fees in rico are 100_000 * 0.0005 = 50
+        Vat(bank).frob(uilk, self, "",   int(50 * WAD));
+        // that was limit, one more won't work
+        vm.expectRevert(Vat.ErrNotSafe.selector);
+        Vat(bank).frob(uilk, self, "",   int(1 * WAD));
     }
 
     // flip pricing mechanism
     function test_nft_bail_price() public {
-        // the NFT has 1000 each of gold and weth, valued at 1900 and 1000
-        // frob to max safe debt with double cratio, 1.45MM rico
+        // the NFT has 1000 each of gold and weth, valued at 1000 and 1000
+        // frob to max safe debt with 1.0 cratio, 1=2M rico
+        feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
         File(bank).file('ceil', bytes32(WAD * 1_000_000_000));
         Vat(bank).filk(uilk, 'line', bytes32(RAD * 1_000_000_000));
         Vat(bank).filk(gilk, 'line', bytes32(RAD * 1_000_000_000));
         uint[] memory dink = new uint[](2);
         (dink[0], dink[1]) = (1, goldwethtokid);
-        uint borrow = WAD * uint(2_900_000 - 1);
+        uint borrow = WAD * uint(2_000_000 - 1);
         assertEq(nfpm.ownerOf(goldwethtokid), self);
         Vat(bank).frob(uilk, self, abi.encode(dink), int(borrow));
         assertEq(nfpm.ownerOf(goldwethtokid), bank);
 
         // set prices to 75%
-        feedpush(wrtag, bytes32(750  * RAY), type(uint).max);
-        feedpush(grtag, bytes32(1425 * RAY), type(uint).max);
+        feedpush(wrtag, bytes32(750 * RAY), type(uint).max);
+        feedpush(grtag, bytes32(750 * RAY), type(uint).max);
 
         // price should be 0.75**3, cubed comes from for oracle drop decreasing value, and deal factor ** pep(2)
         uint expected = wmul(borrow, WAD * 75**3 / 100**3);
@@ -185,10 +241,11 @@ contract NFTHookTest is Test, RicoSetUp {
     // excess flip proceeds are sent to user
     function test_nft_bail_refund() public {
         uint pop = RAY * 2;
+        feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
         Vat(bank).filh(uilk, 'pop', empty, bytes32(pop));
 
-        // the NFT has 1000 each of gold and weth, valued at 1900 and 1000
-        // frob to max safe debt with double cratio, 1.45MM rico
+        // the NFT has 1000 each of gold and weth, valued at 1000 and 1000
+        // frob to max safe debt with double cratio, 1M rico
         File(bank).file('ceil', bytes32(WAD * 1_000_000_000));
         Vat(bank).filk(uilk, 'line', bytes32(RAD * 1_000_000_000));
         Vat(bank).filk(gilk, 'line', bytes32(RAD * 1_000_000_000));
@@ -197,12 +254,12 @@ contract NFTHookTest is Test, RicoSetUp {
 
         uint[] memory dink = new uint[](2);
         (dink[0], dink[1]) = (1, goldwethtokid);
-        uint borrow = WAD * uint(1_450_000 - 1);
+        uint borrow = WAD * uint(1_000_000 - 1);
         Vat(bank).frob(uilk, self, abi.encode(dink), int(borrow));
 
         // set prices to 75%
         feedpush(wrtag, bytes32(750 * RAY), type(uint).max);
-        feedpush(grtag, bytes32(1425 * RAY), type(uint).max);
+        feedpush(grtag, bytes32(750 * RAY), type(uint).max);
 
         // price should be pop(2) * 0.75**3, as 0.75 for oracle drop and 0.75**2 for deal factor (pep = 2)
         uint expected_cost_for_keeper = rmul(wmul(borrow * 2, WAD * 75**3 / 100**3), pop);
@@ -234,15 +291,16 @@ contract NFTHookTest is Test, RicoSetUp {
         assertEq(nfpm.ownerOf(goldwethtokid), bank);
         assertEq(nfpm.ownerOf(golddaitokid), bank);
 
-        feedpush(grtag, bytes32(0 * RAY), type(uint).max);
+        // with a single zero feed the other LP should still keep it safe
         feedpush(wrtag, bytes32(0 * RAY), type(uint).max);
         vm.expectRevert(Vat.ErrSafeBail.selector);
         Vat(bank).bail(uilk, self);
 
-        feedpush(drtag, bytes32(RAY / uint(100_000)), type(uint).max);
+        feedpush(drtag, bytes32(RAY / uint(200_000)), type(uint).max);
+        feedpush(grtag, bytes32(RAY / uint(200_000)), type(uint).max);
         (,uint deal,) = Vat(bank).safe(uilk, self);
 
-        // only asset of value is 1000 dai worth 1% -> discount should be 0.01 ^ 2
+        // only LP of value is golddai worth 1% -> discount should be 0.01 ^ 2
         uint wad_cost = rmul(WAD, rmul(deal, rmul(deal, deal)));
         rico_mint(WAD, true);
         rico.transfer(address(guy), wad_cost);
@@ -319,16 +377,22 @@ contract NFTHookTest is Test, RicoSetUp {
         (dink[0], dink[1], dink[2]) = (1, goldwethtokid, golddaitokid);
         Vat(bank).frob(uilk, self, abi.encode(dink), int(900 * WAD));
 
-        // crash 2/3 tokens...weth keeps it safe
+        // if either token in a position has zero price feed position is worthless
         feedpush(drtag, bytes32(0), type(uint).max);
         (Vat.Spot spot,,) = Vat(bank).safe(uilk, self);
+        // still safe due to goldweth
         assertTrue(spot == Vat.Spot.Safe);
         feedpush(grtag, bytes32(0), type(uint).max);
         (spot,,) = Vat(bank).safe(uilk, self);
+        //goldweth now also worthless
+        assertTrue(spot == Vat.Spot.Sunk);
+
+        feedpush(grtag, bytes32(RAY), type(uint).max);
+        (spot,,) = Vat(bank).safe(uilk, self);
         assertTrue(spot == Vat.Spot.Safe);
 
-        // but now wait a decade...fee accumulator (rack) makes it unsafe
-        skip(BANKYEAR * 10);
+        // but now wait a couple decades...fee accumulator (rack) makes it unsafe
+        skip(BANKYEAR * 20);
         Vat(bank).drip(uilk);
         (spot,,) = Vat(bank).safe(uilk, self);
         assertTrue(spot == Vat.Spot.Sunk);
@@ -642,11 +706,12 @@ contract NFTHookTest is Test, RicoSetUp {
         File(bank).file('ceil', bytes32(WAD * 1_000_000_000));
         Vat(bank).filk(uilk, 'line', bytes32(RAD * 1_000_000_000));
         Vat(bank).filk(gilk, 'line', bytes32(RAD * 1_000_000_000));
+        feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
 
-        // the NFT has 1000 each of gold and weth, valued at 1900 and 1000
+        // the NFT has 1000 each of gold and weth, both valued at 1000 and 1000
         uint[] memory dink = new uint[](2);
         (dink[0], dink[1]) = (1, goldwethtokid);
-        uint borrow = WAD * uint(2_900_000 - 1);
+        uint borrow = WAD * uint(2_000_000 - 1);
 
         // safe debt level should come from the safest liqr of either token
         Vat(bank).filh(uilk, 'liqr', single(bytes32(bytes20(WETH))),  bytes32(RAY * 1));
