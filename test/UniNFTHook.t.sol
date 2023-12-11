@@ -170,7 +170,7 @@ contract NFTHookTest is Test, RicoSetUp {
     // added a callback as directly interacting with pool
     function uniswapV3SwapCallback(
         int256 amount0Delta,
-        int256 amount1Delta,
+        int256 ,  // amount1Delta
         bytes calldata data
     ) external {
         address pool = abi.decode(data, (address));

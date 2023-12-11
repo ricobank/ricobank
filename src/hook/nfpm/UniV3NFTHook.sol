@@ -55,7 +55,7 @@ contract UniNFTHook is HookMix {
     int256 internal constant  LOCK = 1;
     int256 internal constant  FREE = -1;
     uint160 internal constant X96 = 2 ** 96;
-    uint256 internal constant MAX_RATIO = 2**(256 - 96 - 96) - 2;
+    uint256 internal constant MAX_SHIFT = 2**(256 - 96) - 1;
     INFPM  internal immutable NFPM;
 
     constructor(address nfpm) {
@@ -159,7 +159,6 @@ contract UniNFTHook is HookMix {
         uint256[]         storage tokenIds = hs.inks[u];
         minttl = type(uint256).max;
         bytes32 val0; bytes32 val1;
-        IUniWrapper wrap = hs.wrap;
         Position memory pos;
         for (uint idx = 0; idx < tokenIds.length;) {
             pos.id = tokenIds[idx];
@@ -173,11 +172,11 @@ contract UniNFTHook is HookMix {
                 minttl = min(minttl, ttl);
             }
             uint160 sqrtRatioX96 = type(uint160).max;
-            if(uint(val1) != 0 && uint(val0) / uint(val1) < MAX_RATIO) {
+            if(uint(val1) != 0 && uint(val0) < MAX_SHIFT) {
                 uint ratioX96 = (uint(val0) << 96) / uint(val1);
-                sqrtRatioX96 = sqrt(ratioX96 << 96);
+                sqrtRatioX96 = ratioX96 < MAX_SHIFT ? sqrtu(ratioX96 << 96) : sqrtu(ratioX96) << 48;
             }
-            (pos.amt0, pos.amt1) = wrap.total(NFPM, pos.id, sqrtRatioX96);
+            (pos.amt0, pos.amt1) = hs.wrap.total(NFPM, pos.id, sqrtRatioX96);
 
             // find total value of tok0 + tok1, and allowed debt cut off
             uint256 liqr = max(src0.liqr, src1.liqr);
@@ -187,13 +186,19 @@ contract UniNFTHook is HookMix {
         }
     }
 
-    // Only change is unchecked block for solidity 0.8.x
-    // FROM https://github.com/abdk-consulting/abdk-libraries-solidity/blob/16d7e1dd8628dfa2f88d5dadab731df7ada70bdd/ABDKMath64x64.sol#L687
-    function sqrt(uint256 _x) private pure returns (uint128) {
+    // FROM https://github.com/abdk-consulting/abdk-libraries-solidity/blob/5e1e7c11b35f8313d3f7ce11c1b86320d7c0b554/ABDKMath64x64.sol#L725C7-L725C7
+    /**
+    * Calculate sqrt (x) rounding down, where x is unsigned 256-bit integer
+    * number.
+    *
+    * @param x unsigned 256-bit integer number
+    * @return unsigned 128-bit integer number
+    */
+    function sqrtu (uint256 x) private pure returns (uint128) {
         unchecked {
-            if (_x == 0) return 0;
+            if (x == 0) return 0;
             else {
-                uint256 xx = _x;
+                uint256 xx = x;
                 uint256 r = 1;
                 if (xx >= 0x100000000000000000000000000000000) { xx >>= 128; r <<= 64; }
                 if (xx >= 0x10000000000000000) { xx >>= 64; r <<= 32; }
@@ -201,15 +206,15 @@ contract UniNFTHook is HookMix {
                 if (xx >= 0x10000) { xx >>= 16; r <<= 8; }
                 if (xx >= 0x100) { xx >>= 8; r <<= 4; }
                 if (xx >= 0x10) { xx >>= 4; r <<= 2; }
-                if (xx >= 0x8) { r <<= 1; }
-                r = (r + _x / r) >> 1;
-                r = (r + _x / r) >> 1;
-                r = (r + _x / r) >> 1;
-                r = (r + _x / r) >> 1;
-                r = (r + _x / r) >> 1;
-                r = (r + _x / r) >> 1;
-                r = (r + _x / r) >> 1; // Seven iterations should be enough
-                uint256 r1 = _x / r;
+                if (xx >= 0x4) { r <<= 1; }
+                r = (r + x / r) >> 1;
+                r = (r + x / r) >> 1;
+                r = (r + x / r) >> 1;
+                r = (r + x / r) >> 1;
+                r = (r + x / r) >> 1;
+                r = (r + x / r) >> 1;
+                r = (r + x / r) >> 1; // Seven iterations should be enough
+                uint256 r1 = x / r;
                 return uint128 (r < r1 ? r : r1);
             }
         }
