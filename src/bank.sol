@@ -59,8 +59,9 @@ abstract contract Bank is Math, Flog, Palm, OwnableInternal {
     }
 
     struct Plx {
-        uint256 pep; // [int] discount growth
-        uint256 pop; // [ray] relative discount
+        uint256 pep; // [int] discount growth exponent
+        uint256 pop; // [ray] relative discount factor
+        int256  pup; // [ray] relative discount y-axis shift
     }
 
     struct Rudd {

@@ -512,6 +512,64 @@ contract VowTest is Test, RicoSetUp {
         Vow(bank).keep(empty);
     }
 
+    function test_flap_pup() public {
+        // some random pep pop pup
+        int  pup = int(RAY / 10);
+        uint pop = RAY * 4;
+        uint pep = 1;
+        File(bank).file('plat.pup', bytes32(uint(pup)));
+        File(bank).file('plat.pop', bytes32(pop));
+        File(bank).file('plat.pep', bytes32(pep));
+
+        // create a surplus
+        force_sin(0);
+        force_fees(WAD * 2000);
+
+        // flap
+        feedpush(RISK_RICO_TAG, bytes32(RAY), UINT256_MAX);
+        uint risk_pre = risk.balanceOf(self);
+        uint joy_pre = Vat(bank).joy();
+        Vow(bank).keep(empty);
+        uint risk_aft = risk.balanceOf(self);
+
+        // compare actual flap price to expected
+        uint deal = rdiv(risk_pre, risk_pre + joy_pre);
+        uint mash = rmash(deal, pep, pop, pup);
+        uint welt = rmul(joy_pre, Vow(bank).ramp().wel);
+        assertClose(risk_pre - risk_aft, rmul(mash, welt), 10000000000);
+    }
+
+    function test_flop_pup() public {
+        // get some rico to fill the flop
+        vm.prank(address(1));
+        rico.transfer(self, 2000 * WAD);
+
+        int  pup = int(RAY / 10);
+        uint pop = RAY * 4;
+        uint pep = 1;
+        File(bank).file('plot.pup', bytes32(uint(pup)));
+        File(bank).file('plot.pop', bytes32(pop));
+        File(bank).file('plot.pep', bytes32(pep));
+
+        // create a deficit
+        force_sin(RAD * 2000);
+        force_fees(0);
+
+        // flop
+        feedpush(RISK_RICO_TAG, bytes32(RAY), UINT256_MAX);
+        uint rico_pre = rico.balanceOf(self);
+        uint risk_pre = risk.balanceOf(self);
+        uint sin_pre = Vat(bank).sin() / RAY;
+        Vow(bank).keep(empty);
+        uint rico_aft = rico.balanceOf(self);
+        uint risk_aft = risk.balanceOf(self);
+
+        // compare actual flop price to expected
+        uint deal = rdiv(risk_pre, risk_pre + sin_pre);
+        uint mash = rmash(deal, pep, pop, pup);
+        uint price = rdiv(rico_pre - rico_aft, risk_aft - risk_pre);
+        assertClose(price, mash, 10000000000);
+    }
 }
 
 contract Usr is Guy {
