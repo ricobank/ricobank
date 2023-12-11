@@ -39,6 +39,7 @@ contract UniNFTHook is HookMix {
         uint256 amt0;
         uint256 amt1;
         uint256 id;
+        uint256 len;
     }
 
     function getStorage(bytes32 i) internal pure returns (UniNFTHookStorage storage hs) {
@@ -159,19 +160,20 @@ contract UniNFTHook is HookMix {
         UniNFTHookStorage storage hs       = getStorage(i);
         uint256[]         storage tokenIds = hs.inks[u];
         minttl = type(uint256).max;
-        bytes32 val0; bytes32 val1;
         Position memory pos;
-        for (uint idx = 0; idx < tokenIds.length;) {
+        pos.len = tokenIds.length;
+        for (uint idx = 0; idx < pos.len;) {
             pos.id = tokenIds[idx];
             (,, pos.tok0, pos.tok1,,,,,,,,) = NFPM.positions(pos.id);
             Source storage src0 = hs.sources[pos.tok0];
             Source storage src1 = hs.sources[pos.tok1];
-            (val0, minttl) = fb.pull(src0.rudd.src, src0.rudd.tag);
-            {
-                uint ttl;
-                (val1, ttl) = fb.pull(src1.rudd.src, src1.rudd.tag);
-                minttl = min(minttl, ttl);
-            }
+
+            (bytes32 val0, uint ttl) = fb.pull(src0.rudd.src, src0.rudd.tag);
+            if (ttl < minttl) minttl = ttl;
+            bytes32 val1;
+            (val1, ttl) = fb.pull(src1.rudd.src, src1.rudd.tag);
+            if (ttl < minttl) minttl = ttl;
+
             uint160 sqrtRatioX96 = type(uint160).max;
             if(uint(val1) != 0 && uint(val0) < MAX_SHIFT) {
                 uint ratioX96 = (uint(val0) << 96) / uint(val1);
