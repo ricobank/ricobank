@@ -88,16 +88,16 @@ contract UniNFTHook is HookMix {
                 // add uni positions
                 uint room = hs.room;
                 for (uint idx = 1; idx < dink.length; idx++) {
+                    // pull the token
                     uint tokenId = dink[idx];
                     NFPM.transferFrom(p.sender, address(this), tokenId);
 
                     // record it in ink
                     tokenIds.push(tokenId);
-
-                    // limit the number of positions in the CDP
-                    // TODO probably can me moved outside the loop...
-                    if (tokenIds.length > room) revert ErrFull();
                 }
+
+                // limit the number of positions in the CDP
+                if (tokenIds.length > room) revert ErrFull();
             }
         } else if (dir == FREE) {
             unchecked {

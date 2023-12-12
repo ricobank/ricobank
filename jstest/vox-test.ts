@@ -205,7 +205,7 @@ describe('Vox', () => {
     })
 
     it('deploy gas', async () => {
-      await check(ethers.BigNumber.from(deploygas), 37565035)
+      await check(ethers.BigNumber.from(deploygas), 37564027)
     })
 
     it('frob cold gas', async () => {

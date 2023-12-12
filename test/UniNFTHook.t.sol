@@ -898,6 +898,11 @@ contract NFTHookTest is Test, RicoSetUp {
         feedpush(drtag, bytes32(RAY), block.timestamp);
         (,,ttl) = nfthook.safehook(uilk, self);
         assertEq(ttl, block.timestamp);
+
+        // end fresh
+        feedpush(wrtag, bytes32(RAY), block.timestamp - 1);
+        (,,ttl) = nfthook.safehook(uilk, self);
+        assertEq(ttl, block.timestamp - 1);
     }
 
     function test_dink_has_no_dir() public {
