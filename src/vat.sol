@@ -93,19 +93,9 @@ contract Vat is Bank {
         emit NewPalm1("dust", ilk, bytes32(uint(0)));
     }
 
-    // returns safety, max debt / debt, and collateral value in rico
-    // only safety is set if spot == safe
     function safe(bytes32 i, address u)
-      external view returns (Spot, uint, uint)
+      public view returns (Spot, uint, uint)
     {
-        return _safe(i, u, getVatStorage().urns[i][u]);
-    }
-
-    function _safe(bytes32 i, address u, uint art)
-      internal view returns (Spot, uint, uint)
-    {
-        if (art == 0) return (Spot.Safe, 0, 0);
-
         VatStorage storage vs = getVatStorage();
         Ilk storage ilk = vs.ilks[i];
         bytes memory data = _hookview(i, abi.encodeWithSelector(
@@ -114,14 +104,16 @@ contract Vat is Bank {
         if (data.length != 96) revert ErrHookData();
  
         (uint tot, uint cut, uint ttl) = abi.decode(data, (uint, uint, uint));
-        if (block.timestamp > ttl) return (Spot.Iffy, 0, 0);
+        uint art = vs.urns[i][u];
+        if (art == 0) return (Spot.Safe, RAY, tot);
+        if (block.timestamp > ttl) return (Spot.Iffy, 0, tot);
 
         // par acts as a multiplier for collateral requirements
         // par increase has same effect on cut as fee accumulation through rack
         // par decrease acts like a negative fee
         uint256 tab = art * rmul(vs.par, ilk.rack);
         if (tab <= cut) {
-            return (Spot.Safe, 0, 0);
+            return (Spot.Safe, RAY, tot);
         } else {
             uint256 deal = cut / (tab / RAY);
             return (Spot.Sunk, deal, tot);
@@ -189,7 +181,7 @@ contract Vat is Bank {
 
         // urn is safer, or it is safe
         if (!abi.decode(data, (bool))) {
-            (Spot spot,,) = _safe(i, u, art);
+            (Spot spot,,) = safe(i, u);
             if (spot != Spot.Safe) revert ErrNotSafe();
         }
 
@@ -210,18 +202,16 @@ contract Vat is Bank {
       external payable _flog_ _lock_ returns (bytes memory)
     {
         uint rack = _drip(i);
-
-        VatStorage storage vs = getVatStorage();
-        Ilk storage ilk = vs.ilks[i];
-        uint art = vs.urns[i][u];
-
         uint deal; uint tot;
         {
             Spot spot;
-            (spot, deal, tot) = _safe(i, u, art);
+            (spot, deal, tot) = safe(i, u);
             if (spot != Spot.Sunk) revert ErrSafeBail();
         }
+        VatStorage storage vs = getVatStorage();
+        Ilk storage ilk = vs.ilks[i];
 
+        uint art = vs.urns[i][u];
         delete vs.urns[i][u];
         emit NewPalm2("art", i, bytes32(bytes20(u)), bytes32(uint(0)));
 

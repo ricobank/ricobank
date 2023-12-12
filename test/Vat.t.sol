@@ -99,25 +99,35 @@ contract VatTest is Test, RicoSetUp {
         // position should be (barely) safe
         assertTrue(spot == Vat.Spot.Safe);
 
-        // drop price to 80%...position should sink underwater
-        uint tot1;
-        feedpush(grtag, bytes32(RAY * 4 / 5), block.timestamp + 1000);
-        (spot, deal, tot1) = Vat(bank).safe(gilk, self);
-        assertTrue(spot == Vat.Spot.Sunk);
+        // when safe deal should be 1
+        assertEq(deal, RAY);
 
         // tot should be feed price as a rad
         (bytes32 val,) = feedpull(grtag);
-        uint      tot2 = stack * uint(val);
-        assertEq(tot1, tot2);
+        uint      tot1 = stack * uint(val);
+        assertEq(tot, tot1);
+
+        // drop price to 80%...position should sink underwater
+        feedpush(grtag, bytes32(RAY * 4 / 5), block.timestamp + 1000);
+        (spot, deal, tot) = Vat(bank).safe(gilk, self);
+        assertTrue(spot == Vat.Spot.Sunk);
 
         // the deal should now be 0.8
         assertEq(deal, RAY * 4 / 5);
+        // collateral value should also be 80% of first result
+        assertEq(tot, tot1 * 4 / 5);
 
         // wait longer than ttl so price feed is stale
         // safe should be iffy
         skip(1100);
         (spot, deal, tot) = Vat(bank).safe(gilk, self);
         assertTrue(spot == Vat.Spot.Iffy);
+
+        // it's safe even when stale if debt is zero
+        rico_mint(WAD, true);
+        Vat(bank).frob(gilk, address(this), "", - int(Vat(bank).urns(gilk, self)));
+        (spot, deal, tot) = Vat(bank).safe(gilk, self);
+        assertTrue(spot == Vat.Spot.Safe);
     }
 
     function test_rack_puts_urn_underwater() public {
@@ -191,6 +201,22 @@ contract VatTest is Test, RicoSetUp {
         feedpush(grtag, bytes32(RAY), block.timestamp + 1000);
         (spot,,) = Vat(bank).safe(gilk, self);
         assertTrue(spot == Vat.Spot.Safe);
+    }
+
+    function test_free_without_feed() public {
+        Vat(bank).frob(gilk, address(this), abi.encodePacked(stack), int(10));
+        // make feed stale
+        feedpush(grtag, bytes32(RAY), block.timestamp);
+        skip(1);
+        // while debt is non zero withdrawing collateral should fail
+        vm.expectRevert(Vat.ErrNotSafe.selector);
+        Vat(bank).frob(gilk, address(this), abi.encodePacked(int(-1)), int(0));
+        // should still be able to pay off debt
+        rico_mint(WAD, true);
+        Vat(bank).frob(gilk, address(this), "", - int(Vat(bank).urns(gilk, self)));
+        // with zero debt and stale feed should be able to withdraw collateral
+        Vat(bank).frob(gilk, address(this), abi.encodePacked(-int(stack)), int(0));
+        assertEq(_ink(gilk, self), 0);
     }
 
     function test_frob_refloat() public {
