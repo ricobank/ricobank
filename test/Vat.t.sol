@@ -122,6 +122,12 @@ contract VatTest is Test, RicoSetUp {
         skip(1100);
         (spot, deal, tot) = Vat(bank).safe(gilk, self);
         assertTrue(spot == Vat.Spot.Iffy);
+
+        // it's safe even when stale if debt is zero
+        rico_mint(WAD, true);
+        Vat(bank).frob(gilk, address(this), "", - int(Vat(bank).urns(gilk, self)));
+        (spot, deal, tot) = Vat(bank).safe(gilk, self);
+        assertTrue(spot == Vat.Spot.Safe);
     }
 
     function test_rack_puts_urn_underwater() public {
@@ -195,6 +201,22 @@ contract VatTest is Test, RicoSetUp {
         feedpush(grtag, bytes32(RAY), block.timestamp + 1000);
         (spot,,) = Vat(bank).safe(gilk, self);
         assertTrue(spot == Vat.Spot.Safe);
+    }
+
+    function test_free_without_feed() public {
+        Vat(bank).frob(gilk, address(this), abi.encodePacked(stack), int(10));
+        // make feed stale
+        feedpush(grtag, bytes32(RAY), block.timestamp);
+        skip(1);
+        // while debt is non zero withdrawing collateral should fail
+        vm.expectRevert(Vat.ErrNotSafe.selector);
+        Vat(bank).frob(gilk, address(this), abi.encodePacked(int(-1)), int(0));
+        // should still be able to pay off debt
+        rico_mint(WAD, true);
+        Vat(bank).frob(gilk, address(this), "", - int(Vat(bank).urns(gilk, self)));
+        // with zero debt and stale feed should be able to withdraw collateral
+        Vat(bank).frob(gilk, address(this), abi.encodePacked(-int(stack)), int(0));
+        assertEq(_ink(gilk, self), 0);
     }
 
     function test_frob_refloat() public {

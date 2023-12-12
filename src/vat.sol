@@ -104,12 +104,14 @@ contract Vat is Bank {
         if (data.length != 96) revert ErrHookData();
  
         (uint tot, uint cut, uint ttl) = abi.decode(data, (uint, uint, uint));
+        uint art = vs.urns[i][u];
+        if (art == 0) return (Spot.Safe, RAY, tot);
         if (block.timestamp > ttl) return (Spot.Iffy, 0, tot);
 
         // par acts as a multiplier for collateral requirements
         // par increase has same effect on cut as fee accumulation through rack
         // par decrease acts like a negative fee
-        uint256 tab = vs.urns[i][u] * rmul(vs.par, ilk.rack);
+        uint256 tab = art * rmul(vs.par, ilk.rack);
         if (tab <= cut) {
             return (Spot.Safe, RAY, tot);
         } else {
