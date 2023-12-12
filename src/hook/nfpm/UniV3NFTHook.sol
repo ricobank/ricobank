@@ -33,6 +33,7 @@ contract UniNFTHook is HookMix {
         Plx     plot;  // [int] discount exponent, [ray] sale price multiplier
     }
 
+    // avoids stack too deep
     struct Position {
         address tok0;
         address tok1;
@@ -159,26 +160,38 @@ contract UniNFTHook is HookMix {
         Feedbase fb = getBankStorage().fb;
         UniNFTHookStorage storage hs       = getStorage(i);
         uint256[]         storage tokenIds = hs.inks[u];
+
         minttl = type(uint256).max;
         Position memory pos;
         pos.len = tokenIds.length;
+
         for (uint idx = 0; idx < pos.len;) {
             pos.id = tokenIds[idx];
             (,, pos.tok0, pos.tok1,,,,,,,,) = NFPM.positions(pos.id);
             Source storage src0 = hs.sources[pos.tok0];
             Source storage src1 = hs.sources[pos.tok1];
 
+            // pull prices for each token, save minttl
             (bytes32 val0, uint ttl) = fb.pull(src0.rudd.src, src0.rudd.tag);
             if (ttl < minttl) minttl = ttl;
             bytes32 val1;
             (val1, ttl) = fb.pull(src1.rudd.src, src1.rudd.tag);
             if (ttl < minttl) minttl = ttl;
 
+            // estimate pool's price based on quotient of tokens' prices vs ref
             uint160 sqrtRatioX96 = type(uint160).max;
             if(uint(val1) != 0 && uint(val0) < MAX_SHIFT) {
+
+                // pool token1/token0 = (ref/token0)/(ref/token1) = val0/val1
                 uint ratioX96 = (uint(val0) << 96) / uint(val1);
-                sqrtRatioX96 = ratioX96 < MAX_SHIFT ? sqrtu(ratioX96 << 96) : sqrtu(ratioX96) << 48;
+
+                // sqrt with as much precision as possible without overflow
+                // note that (2**48)**2 == 2**96
+                sqrtRatioX96 = ratioX96 < MAX_SHIFT ? sqrtu(ratioX96 << 96)
+                                                    : sqrtu(ratioX96) << 48;
             }
+
+            // based on pool price estimate, get amounts of each token
             (pos.amt0, pos.amt1) = hs.wrap.total(NFPM, pos.id, sqrtRatioX96);
 
             // find total value of tok0 + tok1, and allowed debt cut off
