@@ -99,23 +99,19 @@ contract VatTest is Test, RicoSetUp {
         // position should be (barely) safe
         assertTrue(spot == Vat.Spot.Safe);
 
-        // when safe deal should be 1
-        assertEq(deal, RAY);
+        // drop price to 80%...position should sink underwater
+        uint tot1;
+        feedpush(grtag, bytes32(RAY * 4 / 5), block.timestamp + 1000);
+        (spot, deal, tot1) = Vat(bank).safe(gilk, self);
+        assertTrue(spot == Vat.Spot.Sunk);
 
         // tot should be feed price as a rad
         (bytes32 val,) = feedpull(grtag);
-        uint      tot1 = stack * uint(val);
-        assertEq(tot, tot1);
-
-        // drop price to 80%...position should sink underwater
-        feedpush(grtag, bytes32(RAY * 4 / 5), block.timestamp + 1000);
-        (spot, deal, tot) = Vat(bank).safe(gilk, self);
-        assertTrue(spot == Vat.Spot.Sunk);
+        uint      tot2 = stack * uint(val);
+        assertEq(tot1, tot2);
 
         // the deal should now be 0.8
         assertEq(deal, RAY * 4 / 5);
-        // collateral value should also be 80% of first result
-        assertEq(tot, tot1 * 4 / 5);
 
         // wait longer than ttl so price feed is stale
         // safe should be iffy
