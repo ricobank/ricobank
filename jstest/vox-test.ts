@@ -205,7 +205,7 @@ describe('Vox', () => {
     })
 
     it('deploy gas', async () => {
-      await check(ethers.BigNumber.from(deploygas), 37564027)
+      await check(ethers.BigNumber.from(deploygas), 37560367)
     })
 
     it('frob cold gas', async () => {
@@ -232,7 +232,7 @@ describe('Vox', () => {
       await send(fb.push, b32('weth:ref'), bn2b32(ray(0.1)), constants.MaxUint256)
       debug('bail')
       let gas = await bank.estimateGas.bail(b32('weth'), ALI)
-      await check(gas, 237044)
+      await check(gas, 236961)
     })
 
     it('keep surplus gas', async () => {

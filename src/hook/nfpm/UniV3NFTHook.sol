@@ -139,9 +139,12 @@ contract UniNFTHook is HookMix {
         // take from keeper to underwrite urn, return what's left to urn owner.
         Gem rico = getBankStorage().rico;
         rico.burn(p.keeper, earn);
-        uint over = earn > p.bill ? earn - p.bill : 0;
-        if (over > 0) rico.mint(p.u, over);
-        vsync(p.i, earn, p.owed, over);
+
+        unchecked {
+            uint over = earn > p.bill ? earn - p.bill : 0;
+            if (over > 0) rico.mint(p.u, over);
+            vsync(p.i, earn, p.owed, over);
+        }
 
         // send the uni positions to keeper
         uint len = ids.length;
