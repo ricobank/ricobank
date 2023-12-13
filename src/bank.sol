@@ -72,7 +72,7 @@ abstract contract Bank is Math, Flog, Palm, OwnableInternal {
     struct VowStorage {
         Gem     risk;
         Ramp    ramp;
-        uint256 toll;
+        uint256 loot;
         Plx     plat; // flap plot
         Plx     plot; // flop plot
         Rudd    rudd; // risk:rico feed

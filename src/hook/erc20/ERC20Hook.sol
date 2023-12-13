@@ -87,9 +87,11 @@ contract ERC20Hook is HookMix {
         vsync(p.i, earn, p.owed, 0);
 
         // update collateral balance
-        uint _ink  = full - sell;
-        hs.inks[p.u] = _ink;
-        emit NewPalmBytes2("ink", p.i, bytes32(bytes20(p.u)), abi.encode(_ink));
+        unchecked {
+            uint _ink  = full - sell;
+            hs.inks[p.u] = _ink;
+            emit NewPalmBytes2("ink", p.i, bytes32(bytes20(p.u)), abi.encode(_ink));
+        }
 
         // trade collateral with keeper for rico
         getBankStorage().rico.burn(p.keeper, earn);

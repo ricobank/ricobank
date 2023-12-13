@@ -14,7 +14,7 @@ contract Vow is Bank {
     function ramp() external view returns (Ramp memory) {
         return getVowStorage().ramp;
     }
-    function toll() external view returns (uint) { return getVowStorage().toll; }
+    function loot() external view returns (uint) { return getVowStorage().loot; }
     function rudd() external view returns (Rudd memory) { return getVowStorage().rudd; }
     function plat() external view returns (Plx memory) { return getVowStorage().plat; }
     function plot() external view returns (Plx memory) { return getVowStorage().plot; }
@@ -59,7 +59,7 @@ contract Vow is Bank {
             vatS.joy   = joy;
             emit NewPalm0("joy", bytes32(joy));
 
-            uint sell  = rmul(flap, RAY - vowS.toll);
+            uint sell  = rmul(flap, vowS.loot);
             uint earn  = rmul(sell, rdiv(mash, price));
 
             // swap rico for RISK, pay protocol fee

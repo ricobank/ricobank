@@ -34,9 +34,9 @@ contract File is Bank {
         } else if (key == "wel") {
             must(_val, 0, RAY);
             vowS.ramp.wel = _val;
-        } else if (key == "toll") {
+        } else if (key == "loot") {
             must(_val, 0, RAY);
-            vowS.toll = _val;
+            vowS.loot = _val;
         } else if (key == "plot.pep") { vowS.plot.pep = _val;
         } else if (key == "plat.pep") { vowS.plat.pep = _val;
         } else if (key == "plot.pop") {

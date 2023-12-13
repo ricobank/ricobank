@@ -835,12 +835,74 @@ contract NFTHookTest is Test, RicoSetUp {
         vm.store(hook, bank_pos,  bytes32(uint(bytes32(bytes20(_rico))) >> (12 * 8)));
     }
 
+    function setfb(address hook, address _fb) internal {
+        // fb @idx 1
+        bytes32 bank_info = 'ricobank.0';
+        bytes32 fb_pos = bytes32(uint(keccak256(abi.encodePacked(bank_info))) + 1);
+        vm.store(hook, fb_pos,  bytes32(uint(bytes32(bytes20(_fb))) >> (12 * 8)));
+    }
+
+
+
     function test_empty_ink_bailhook() public {
         setrico(address(nfthook), address(rico));
         rico.ward(address(nfthook), true);
         Hook.BHParams memory p = Hook.BHParams(uilk, self, WAD, WAD, self, 0, WAD);
         uint[] memory ids = abi.decode(nfthook.bailhook(p), (uint[]));
         assertEq(ids.length, 0);
+    }
+
+    modifier _raw_ {
+        setrico(address(nfthook), address(rico));
+        rico.ward(address(nfthook), true);
+        nfthook.file('room', uilk, empty, bytes32(uint(5)));
+        nfthook.file('wrap', uilk, empty, bytes32(bytes20(address(uniwrapper))));
+        setfb(address(nfthook), address(feed));
+        nfthook.file('src', uilk, single(bytes32(bytes20(DAI))), bytes32(bytes20(fsrc)));
+        nfthook.file('src', uilk, single(bytes32(bytes20(agold))), bytes32(bytes20(fsrc)));
+        nfthook.file('src', uilk, single(bytes32(bytes20(WETH))), bytes32(bytes20(fsrc)));
+        nfthook.file('tag', uilk, single(bytes32(bytes20(DAI))), drtag);
+        nfthook.file('tag', uilk, single(bytes32(bytes20(agold))), grtag);
+        nfthook.file('tag', uilk, single(bytes32(bytes20(WETH))), wrtag);
+        nfthook.file('liqr', uilk, single(bytes32(bytes20(DAI))), bytes32(RAY));
+        nfthook.file('liqr', uilk, single(bytes32(bytes20(agold))), bytes32(RAY));
+        nfthook.file('liqr', uilk, single(bytes32(bytes20(WETH))), bytes32(RAY));
+        IERC721(UNI_NFT_ADDR).approve(address(nfthook), goldwethtokid);
+        IERC721(UNI_NFT_ADDR).approve(address(nfthook), golddaitokid);
+        _;
+    }
+
+    function test_multi_safehook() public _raw_ {
+        uint[] memory dink = new uint[](3);
+        (dink[0], dink[1], dink[2]) = (1, goldwethtokid, golddaitokid);
+        nfthook.frobhook(Hook.FHParams(self, uilk, self, abi.encode(dink), 0));
+
+        // all iffy
+        feedpush(grtag, bytes32(RAY), block.timestamp - 1);
+        feedpush(wrtag, bytes32(RAY), block.timestamp - 1);
+        feedpush(drtag, bytes32(RAY), block.timestamp - 1);
+
+        (,,uint ttl) = nfthook.safehook(uilk, self);
+        assertEq(ttl, block.timestamp - 1);
+
+        // one fresh
+        feedpush(grtag, bytes32(RAY), block.timestamp);
+        (,,ttl) = nfthook.safehook(uilk, self);
+        assertEq(ttl, block.timestamp - 1);
+
+        // two fresh
+        feedpush(wrtag, bytes32(RAY), block.timestamp);
+        (,,ttl) = nfthook.safehook(uilk, self);
+        assertEq(ttl, block.timestamp - 1);
+
+        feedpush(drtag, bytes32(RAY), block.timestamp);
+        (,,ttl) = nfthook.safehook(uilk, self);
+        assertEq(ttl, block.timestamp);
+
+        // end fresh
+        feedpush(wrtag, bytes32(RAY), block.timestamp - 1);
+        (,,ttl) = nfthook.safehook(uilk, self);
+        assertEq(ttl, block.timestamp - 1);
     }
 
     function test_dink_has_no_dir() public {
