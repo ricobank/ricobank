@@ -219,7 +219,7 @@ contract Ball is Math, Ward {
         fbank.file("rel", bytes32(args.mintramp.rel));
         fbank.file("wel", bytes32(args.mintramp.wel));
 
-        fbank.file("toll", bytes32(RAY));
+        fbank.file("loot", bytes32(RAY));
 
         fbank.file("tip.src", bytes32(bytes20(address(divider))));
         fbank.file("tip.tag", RICO_REF_TAG);

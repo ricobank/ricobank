@@ -422,10 +422,10 @@ contract BallTest is BaseHelper {
         vm.expectRevert(Bank.ErrBound.selector);
         File(bank).file('wel', bytes32(RAY+1));
 
-        File(bank).file('toll', bytes32(0));
-        File(bank).file('toll', bytes32(RAY));
+        File(bank).file('loot', bytes32(0));
+        File(bank).file('loot', bytes32(RAY));
         vm.expectRevert(Bank.ErrBound.selector);
-        File(bank).file('toll', bytes32(RAY+1));
+        File(bank).file('loot', bytes32(RAY+1));
 
         File(bank).file('how', bytes32(RAY));
         File(bank).file('how', bytes32(UINT256_MAX));

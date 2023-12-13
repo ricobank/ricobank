@@ -332,10 +332,10 @@ contract VowTest is Test, RicoSetUp {
         assertClose(earn, rmul(sell, rpow(deal, 2)), 1000);
     }
 
-    function test_toll() public
+    function test_loot() public
     {
         // set protocol fee == 1/3 of every flop
-        File(bank).file('toll', bytes32(RAY * 2 / 3));
+        File(bank).file('loot', bytes32(RAY * 2 / 3));
 
         // risk:rico price 0.1
         risk.mint(address(guy), 1000000 * WAD);
@@ -377,8 +377,8 @@ contract VowTest is Test, RicoSetUp {
 
         vm.stopPrank();
 
-        // try with toll == 100%...so protocol takes whole flap
-        File(bank).file('toll', bytes32(0));
+        // try with loot == 100%...so protocol takes whole flap
+        File(bank).file('loot', bytes32(0));
         vm.startPrank(address(guy));
 
         // wait a few years and keep
@@ -398,11 +398,11 @@ contract VowTest is Test, RicoSetUp {
         vm.stopPrank();
     }
 
-    function test_high_toll() public {
-        // toll can't be > 100%
-        File(bank).file('toll', bytes32(RAY));
+    function test_high_loot() public {
+        // loot can't be > 100%
+        File(bank).file('loot', bytes32(RAY));
         vm.expectRevert(Bank.ErrBound.selector);
-        File(bank).file('toll', bytes32(RAY + 1));
+        File(bank).file('loot', bytes32(RAY + 1));
     }
 
     function test_pep_pop() public
