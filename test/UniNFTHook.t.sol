@@ -771,12 +771,17 @@ contract NFTHookTest is Test, RicoSetUp {
         nfthook.frobhook(Hook.FHParams(self, uilk, agold, abi.encode(dink8), 0));
 
         // set dir to something that won't be truncated
-        // should fail because self doesn't own tokenId 4
+        // self doesn't own tokenId 4
+        // but, room check comes first
         dink8[0] = 1;
+        vm.expectRevert(UniNFTHook.ErrFull.selector);
+        nfthook.frobhook(Hook.FHParams(self, uilk, agold, abi.encode(dink8), 0));
+
+        // raise room a bit...should fail bc ownership this time
+        nfthook.file('room', uilk, empty, bytes32(uint(1)));
         vm.expectRevert("ERC721: transfer caller is not owner nor approved");
         nfthook.frobhook(Hook.FHParams(self, uilk, agold, abi.encode(dink8), 0));
 
-        nfthook.file('room', uilk, empty, bytes32(uint(1)));
         IERC721(UNI_NFT_ADDR).approve(address(nfthook), goldwethtokid);
         IERC721(UNI_NFT_ADDR).approve(address(nfthook), golddaitokid);
 

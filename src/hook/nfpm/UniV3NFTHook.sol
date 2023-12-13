@@ -85,9 +85,14 @@ contract UniNFTHook is HookMix {
             // safer if locking ink and wiping art
             safer = p.dart <= 0;
             unchecked {
+                // limit the number of positions in the CDP
+                uint len = dink.length;
+                if (len > 1 && tokenIds.length + len - 1 > hs.room) {
+                    revert ErrFull();
+                }
+ 
                 // add uni positions
-                uint room = hs.room;
-                for (uint idx = 1; idx < dink.length; idx++) {
+                for (uint idx = 1; idx < len; idx++) {
                     // pull the token
                     uint tokenId = dink[idx];
                     NFPM.transferFrom(p.sender, address(this), tokenId);
@@ -95,9 +100,6 @@ contract UniNFTHook is HookMix {
                     // record it in ink
                     tokenIds.push(tokenId);
                 }
-
-                // limit the number of positions in the CDP
-                if (tokenIds.length > room) revert ErrFull();
             }
         } else if (dir == FREE) {
             unchecked {
