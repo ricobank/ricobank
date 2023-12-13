@@ -93,11 +93,9 @@ contract UniNFTHook is HookMix {
  
                 // add uni positions
                 for (uint idx = 1; idx < len; idx++) {
-                    // pull the token
+                    // pull the token and record it in ink
                     uint tokenId = dink[idx];
                     NFPM.transferFrom(p.sender, address(this), tokenId);
-
-                    // record it in ink
                     tokenIds.push(tokenId);
                 }
             }
