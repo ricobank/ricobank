@@ -59,7 +59,7 @@ contract Vow is Bank {
             vatS.joy   = joy;
             emit NewPalm0("joy", bytes32(joy));
 
-            uint sell  = rmul(flap, RAY - vowS.toll);
+            uint sell  = rmul(flap, vowS.toll);
             uint earn  = rmul(sell, rdiv(mash, price));
 
             // swap rico for RISK, pay protocol fee

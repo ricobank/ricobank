@@ -335,7 +335,7 @@ contract VowTest is Test, RicoSetUp {
     function test_toll() public
     {
         // set protocol fee == 1/3 of every flop
-        File(bank).file('toll', bytes32(RAY / 3));
+        File(bank).file('toll', bytes32(RAY * 2 / 3));
 
         // risk:rico price 0.1
         risk.mint(address(guy), 1000000 * WAD);
@@ -378,7 +378,7 @@ contract VowTest is Test, RicoSetUp {
         vm.stopPrank();
 
         // try with toll == 100%...so protocol takes whole flap
-        File(bank).file('toll', bytes32(RAY));
+        File(bank).file('toll', bytes32(0));
         vm.startPrank(address(guy));
 
         // wait a few years and keep
