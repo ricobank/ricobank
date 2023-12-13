@@ -205,7 +205,7 @@ describe('Vox', () => {
     })
 
     it('deploy gas', async () => {
-      await check(ethers.BigNumber.from(deploygas), 37565035)
+      await check(ethers.BigNumber.from(deploygas), 37564759)
     })
 
     it('frob cold gas', async () => {
@@ -334,7 +334,7 @@ describe('Vox', () => {
       beforeEach(async () => { await revert_name(hh) })
       after(async () => { await revert_pop(hh) })
 
-      it('uni nft frob down gas', async () => {
+      it('uni nft withdraw+repay gas', async () => {
         let dink = ethers.utils.defaultAbiCoder.encode(['uint[]'], [[1].concat(ricodaitokids)]);
         await send(bank.frob, b32(':uninft'), ALI, dink, wad(10))
 
@@ -347,17 +347,17 @@ describe('Vox', () => {
         await check(gas, 450910)
       })
 
-      it('uni nft frob up gas', async () => {
-        let dink = ethers.utils.defaultAbiCoder.encode(['uint[]'], [[1].concat(ricodaitokids)]);
+      it('uni nft deposit+borrow gas', async () => {
+        let dink = ethers.utils.defaultAbiCoder.encode(['uint[]'], [[1].concat(ricodaitokids[0])]);
         await send(bank.frob, b32(':uninft'), ALI, dink, wad(10))
 
-        // partial wipe so slots are hot and avoids setting art to 0
+        // measure gas for depositing two LP NFTs and increasing art from nonzero
         dink = ethers.utils.defaultAbiCoder.encode(
-          ['uint[]'], [[constants.MaxUint256, ricodaitokids[2], ricodaitokids[1]]]
+          ['uint[]'], [[1, ricodaitokids[2], ricodaitokids[1]]]
         )
         let gas = await bank.estimateGas.frob(b32(':uninft'), ALI, dink, wad(1))
- 
-        await check(gas, 454466)
+
+        await check(gas, 556006)
       })
 
       it('uni nft bail gas', async () => {
