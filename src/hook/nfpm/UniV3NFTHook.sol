@@ -173,20 +173,20 @@ contract UniNFTHook is HookMix {
             Source storage src0 = hs.sources[pos.tok0];
             Source storage src1 = hs.sources[pos.tok1];
 
-            // pull prices for each token, save minttl
+            // pull prices for each token, scale prices down to wad, save minttl
             (bytes32 val0, uint ttl) = fb.pull(src0.rudd.src, src0.rudd.tag);
             val0 = bytes32(uint(val0) / BLN);
+            if (uint(val0) > MAX_SHIFT) revert ErrRatio();
             if (ttl < minttl) minttl = ttl;
+
             bytes32 val1;
             (val1, ttl) = fb.pull(src1.rudd.src, src1.rudd.tag);
-            if (ttl < minttl) minttl = ttl;
             val1 = bytes32(uint(val1) / BLN);
+            if (ttl < minttl) minttl = ttl;
 
-            if (uint(val0) > MAX_SHIFT) revert ErrRatio();
 
             // estimate pool's price based on quotient of tokens' prices vs ref
             uint160 sqrtRatioX96 = type(uint160).max;
-
             if(uint(val1) != 0) {
                 // pool token1/token0 = (ref/token0)/(ref/token1) = val0/val1
                 uint ratioX96 = (uint(val0) << 96) / uint(val1);
@@ -207,6 +207,7 @@ contract UniNFTHook is HookMix {
             unchecked {++idx;}
         }
 
+        // scale output up to rad
         tot *= BLN;
         cut *= BLN;
     }
