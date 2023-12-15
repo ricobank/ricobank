@@ -9,7 +9,7 @@ import {
 } from "./RicoHelper.sol";
 import "./UniHelper.sol";
 import '../src/mixin/math.sol';
-import { UniNFTHook } from '../src/hook/nfpm/UniV3NFTHook.sol';
+import { UniNFTHook, IUniWrapper, INFPM } from '../src/hook/nfpm/UniV3NFTHook.sol';
 import { IERC721, INonfungiblePositionManager, IUniswapV3Pool } from './Univ3Interface.sol';
 
 contract NFTHookTest is Test, RicoSetUp {
@@ -903,6 +903,37 @@ contract NFTHookTest is Test, RicoSetUp {
         feedpush(wrtag, bytes32(RAY), block.timestamp - 1);
         (,,ttl) = nfthook.safehook(uilk, self);
         assertEq(ttl, block.timestamp - 1);
+    }
+
+    function test_ratio_oob() public _raw_ {
+        uint[] memory dink = new uint[](2);
+        (dink[0], dink[1]) = (1, goldwethtokid);
+        nfthook.frobhook(Hook.FHParams(self, uilk, self, abi.encode(dink), 0));
+
+        uint MAX_SHIFT = 2**(256 - 96) - 1;
+        assertLt(uint(bytes32(bytes20(agold))), uint(bytes32(bytes20(WETH))));
+
+        // very high but not too high token1 price
+        // uni hook scales feeds down to wad
+        feedpush(grtag, bytes32(MAX_SHIFT * BLN), UINT256_MAX);
+        feedpush(wrtag, bytes32(RAY), UINT256_MAX);
+        (uint tot,,) = nfthook.safehook(uilk, self);
+        (,uint wamt) = IUniWrapper(uniwrapper).total(
+            INFPM(UNI_NFT_ADDR), goldwethtokid, type(uint160).max
+        );
+        assertEq(tot, wamt * RAY);
+
+        // too high token1 price
+        feedpush(grtag, bytes32((MAX_SHIFT + 1) * BLN), UINT256_MAX);
+        vm.expectRevert(UniNFTHook.ErrRatio.selector);
+        nfthook.safehook(uilk, self);
+
+        // token0 crashes to 0, should assume ratio is MAX_UINT
+        // so plenty of a worthless token
+        feedpush(grtag, bytes32(MAX_SHIFT * BLN), UINT256_MAX);
+        feedpush(wrtag, bytes32(0), UINT256_MAX);
+        (tot,,) = nfthook.safehook(uilk, self);
+        assertEq(tot, 0);
     }
 
     function test_dink_has_no_dir() public {

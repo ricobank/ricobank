@@ -53,6 +53,7 @@ contract UniNFTHook is HookMix {
     error ErrNotFound();
     error ErrDir();
     error ErrFull();
+    error ErrRatio();
 
     int256 internal constant  LOCK = 1;
     int256 internal constant  FREE = -1;
@@ -172,17 +173,21 @@ contract UniNFTHook is HookMix {
             Source storage src0 = hs.sources[pos.tok0];
             Source storage src1 = hs.sources[pos.tok1];
 
-            // pull prices for each token, save minttl
+            // pull prices for each token, scale prices down to wad, save minttl
             (bytes32 val0, uint ttl) = fb.pull(src0.rudd.src, src0.rudd.tag);
+            val0 = bytes32(uint(val0) / BLN);
+            if (uint(val0) > MAX_SHIFT) revert ErrRatio();
             if (ttl < minttl) minttl = ttl;
+
             bytes32 val1;
             (val1, ttl) = fb.pull(src1.rudd.src, src1.rudd.tag);
+            val1 = bytes32(uint(val1) / BLN);
             if (ttl < minttl) minttl = ttl;
+
 
             // estimate pool's price based on quotient of tokens' prices vs ref
             uint160 sqrtRatioX96 = type(uint160).max;
-            if(uint(val1) != 0 && uint(val0) < MAX_SHIFT) {
-
+            if(uint(val1) != 0) {
                 // pool token1/token0 = (ref/token0)/(ref/token1) = val0/val1
                 uint ratioX96 = (uint(val0) << 96) / uint(val1);
 
@@ -201,6 +206,10 @@ contract UniNFTHook is HookMix {
             cut += pos.amt0 * rdiv(uint(val0), liqr) + pos.amt1 * rdiv(uint(val1), liqr);
             unchecked {++idx;}
         }
+
+        // scale output up to rad
+        tot *= BLN;
+        cut *= BLN;
     }
 
     // FROM https://github.com/abdk-consulting/abdk-libraries-solidity/blob/5e1e7c11b35f8313d3f7ce11c1b86320d7c0b554/ABDKMath64x64.sol#L725C7-L725C7
