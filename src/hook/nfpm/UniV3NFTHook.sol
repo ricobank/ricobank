@@ -173,23 +173,26 @@ contract UniNFTHook is HookMix {
             Source storage src0 = hs.sources[pos.tok0];
             Source storage src1 = hs.sources[pos.tok1];
 
-            // pull prices for each token, scale prices down to wad, save minttl
-            (bytes32 val0, uint ttl) = fb.pull(src0.rudd.src, src0.rudd.tag);
-            val0 = bytes32(uint(val0) / BLN);
-            if (uint(val0) > MAX_SHIFT) revert ErrRatio();
-            if (ttl < minttl) minttl = ttl;
+            uint p0; uint p1;
+            {
+                // pull prices for each token, scale prices down to wad, save minttl
+                (bytes32 val0, uint ttl) = fb.pull(src0.rudd.src, src0.rudd.tag);
+                p0 = uint(val0) / BLN;
+                if (p0 > MAX_SHIFT) revert ErrRatio();
+                if (ttl < minttl) minttl = ttl;
 
-            bytes32 val1;
-            (val1, ttl) = fb.pull(src1.rudd.src, src1.rudd.tag);
-            val1 = bytes32(uint(val1) / BLN);
-            if (ttl < minttl) minttl = ttl;
+                bytes32 val1;
+                (val1, ttl) = fb.pull(src1.rudd.src, src1.rudd.tag);
+                p1 = uint(val1) / BLN;
+                if (ttl < minttl) minttl = ttl;
+            }
 
 
             // estimate pool's price based on quotient of tokens' prices vs ref
             uint160 sqrtRatioX96 = type(uint160).max;
-            if(uint(val1) != 0) {
-                // pool token1/token0 = (ref/token0)/(ref/token1) = val0/val1
-                uint ratioX96 = (uint(val0) << 96) / uint(val1);
+            if(p1 != 0) {
+                // pool token1/token0 = (ref/token0)/(ref/token1) = p0/p1
+                uint ratioX96 = (p0 << 96) / p1;
 
                 // sqrt with as much precision as possible without overflow
                 // note that (2**48)**2 == 2**96
@@ -202,8 +205,8 @@ contract UniNFTHook is HookMix {
 
             // find total value of tok0 + tok1, and allowed debt cut off
             uint256 liqr = max(src0.liqr, src1.liqr);
-            tot += pos.amt0 * uint(val0) + pos.amt1 * uint(val1);
-            cut += pos.amt0 * rdiv(uint(val0), liqr) + pos.amt1 * rdiv(uint(val1), liqr);
+            tot += pos.amt0 * p0 + pos.amt1 * p1;
+            cut += pos.amt0 * rdiv(p0, liqr) + pos.amt1 * rdiv(p1, liqr);
             unchecked {++idx;}
         }
 
