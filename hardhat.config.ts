@@ -5,6 +5,7 @@ import './lib/feedbase/task/deploy-feedbase'
 import './lib/weth/task/deploy-mock-weth'
 import './lib/uniswapv3/task/deploy-uniswapv3'
 
+import './task/combine-packs'
 import './task/deploy-mock-gemfab'
 import './task/deploy-mock-feedbase'
 import './task/deploy-mock-tokens'
@@ -353,8 +354,6 @@ export default {
   },
   networks: {
       hardhat: {
-          allowUnlimitedContractSize: true,
-          blockGasLimit: 10000000000000,
           forking: {
               url: process.env["RPC_URL"],
               blockNumber: 16445606,
@@ -377,6 +376,11 @@ export default {
             mnemonic: process.env["ARB_SEPOLIA_MNEMONIC"]
           },
           chainId: 421614
-      }
+      },
+      sepolia: {
+          url: process.env["SEPOLIA_RPC_URL"],
+          accounts: [process.env["ARB_SEPOLIA_KEY"]],
+          chainId: 11155111
+        }
   }
 }

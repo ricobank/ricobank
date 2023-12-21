@@ -21,7 +21,12 @@ task('deploy-ricobank', '')
     }
     let deps
     if (args.dependencies) {
-      deps = JSON.parse(args.dependencies)
+        try {
+            deps = JSON.parse(args.dependencies);
+        } catch (e) {
+            // allow deps to be passed as ipfs CID
+            deps = await dpack.getIpfsJson(args.dependencies);
+        }
     } else if (args.mock) {
       deps = await hre.run('deploy-mock-dependencies', { tokens: args.tokens, netname: args.netname})
     } else {
@@ -48,10 +53,16 @@ task('deploy-ricobank', '')
     const ball_type = hre.ethers.ContractFactory.fromSolidity(ball_artifact, ali)
     timestamp = (await hre.ethers.provider.getBlock('latest')).timestamp
 
-    const uniwrapper_artifact = require('../lib/feedbase/artifacts/src/adapters/UniWrapper.sol/UniWrapper.json')
-    const uniwrapper_type = hre.ethers.ContractFactory.fromSolidity(uniwrapper_artifact, ali)
-    debug('deploying uni wrapper')
-    const uniwrapper = await uniwrapper_type.deploy({gasLimit: args.gasLimit});
+    debug('deploying erc20 hook')
+    const tokhook_artifact = require('../artifacts/src/hook/erc20/ERC20Hook.sol/ERC20Hook.json')
+    const tokhook_type = hre.ethers.ContractFactory.fromSolidity(tokhook_artifact, ali)
+    const tokhook = await tokhook_type.deploy({gasLimit: args.gasLimit})
+
+    debug('deploying uni hook')
+    const unihook_artifact = require('../artifacts/src/hook/nfpm/UniV3NFTHook.sol/UniNFTHook.json')
+    const unihook_type = hre.ethers.ContractFactory.fromSolidity(unihook_artifact, ali)
+    const unihook = await unihook_type.deploy(deps.objects.nonfungiblePositionManager.address, {gasLimit: args.gasLimit})
+
     const ups = {
             ilk: b32(':uninft'),
             fee: hre.ethers.BigNumber.from("1000000001546067052200000000"),
@@ -59,18 +70,22 @@ task('deploy-ricobank', '')
             dust: rad(0.1),
             line: rad(10000),
             room: 8,
-            uniwrapper: uniwrapper.address
+            uniwrapper: deps.objects.uniwrapper.address
     }
 
     const ballargs = {
         bank: diamond.address,
         feedbase: deps.objects.feedbase.address,
+        uniadapt: deps.objects.uniswapv3adapter.address,
+        divider: deps.objects.divider.address,
+        multiplier: deps.objects.multiplier.address,
+        cladapt: deps.objects.chainlinkadapter.address,
+        tokhook: tokhook.address,
+        unihook: unihook.address,
         rico: deps.objects.rico.address,
         risk: deps.objects.risk.address,
         ricodai: deps.objects.ricodai.address,
         ricorisk: deps.objects.ricorisk.address,
-        uniwrapper: uniwrapper.address,
-        nfpm: deps.objects.nonfungiblePositionManager.address,
         dai: deps.objects.dai.address,
         dai_usd_agg: agg_daiusd.address,
         xau_usd_agg: agg_xauusd.address,
@@ -124,8 +139,14 @@ task('deploy-ricobank', '')
     const ball = await ball_type.deploy(ballargs, {gasLimit: args.gasLimit})
     debug('transferring diamond to ball')
     await send(diamond.transferOwnership, ball.address)
-    debug('running ball setup...')
+    debug('add ball as ward in fb components')
+    const deps_dapp = await dpack.load(deps, hre.ethers, ali)
+    await send(deps_dapp.uniswapv3adapter.ward, ball.address, true)
+    await send(deps_dapp.divider.ward, ball.address, true)
+    await send(deps_dapp.multiplier.ward, ball.address, true)
+    await send(deps_dapp.chainlinkadapter.ward, ball.address, true)
 
+    debug('running ball setup...')
     await send(ball.setup, ballargs)
     debug(`done deploying ball at ${ball.address}...making ilks`)
     for (let ilk of ilks) {
@@ -135,7 +156,6 @@ task('deploy-ricobank', '')
     await send(ball.makeuni, ups);
     await send(ball.approve, ali.address);
     debug('done making uni hook')
-    const deps_dapp = await dpack.load(deps, hre.ethers, ali)
     debug('ward rico and risk')
     await send(deps_dapp.rico.ward, diamond.address, 1)
     await send(deps_dapp.risk.ward, diamond.address, 1)
@@ -147,34 +167,6 @@ task('deploy-ricobank', '')
         debug(`getting artifact for ${ty}`)
         return dpack.getIpfsJson(deps.types[ty].artifact['/']);
     }
-
-
-    debug('packing feeds')
-    const contracts = [
-        ['divider', 'Divider', await getartifact('Divider')],
-        ['uniadapt', 'UniswapV3Adapter', await getartifact('UniswapV3Adapter')],
-        ['cladapt', 'ChainlinkAdapter', await getartifact('ChainlinkAdapter')],
-    ]
-
-    for await (const [state_var, typename, artifact] of contracts) {
-      const pack_type = [
-          'Gem', 'Divider', 'Medianizer', 'TWAP', 'UniswapV3Adapter',
-          'ChainlinkAdapter'
-      ].indexOf(typename) == -1
-      await pb.packObject({
-        objectname: state_var,
-        address: await ball[state_var](),
-        typename: typename,
-        artifact: artifact
-      }, pack_type)
-    }
-
-    await pb.packObject({
-        objectname: 'uniswapV3Wrapper',
-        address: uniwrapper.address,
-        typename: 'UniWrapper',
-        artifact: uniwrapper_artifact
-    })
 
     debug('packing ball')
     await pb.packObject({

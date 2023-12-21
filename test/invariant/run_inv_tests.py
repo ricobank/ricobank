@@ -12,8 +12,8 @@ import sys
 
 
 timeout = 60
-start_seed = 730
-end_seed = 740
+start_seed = 740
+end_seed = 745
 
 
 class TestMode(Enum):

@@ -4,9 +4,10 @@ import { UniSetUp, PoolArgs, Asset } from "../test/UniHelper.sol";
 import { INonfungiblePositionManager as INFPM } from './Univ3Interface.sol';
 import { UniswapV3Adapter } from "../lib/feedbase/src/adapters/UniswapV3Adapter.sol";
 import { ChainlinkAdapter } from "../lib/feedbase/src/adapters/ChainlinkAdapter.sol";
+import { IUniWrapper } from '../lib/feedbase/src/adapters/UniswapV3Adapter.sol';
 import {
     File, Bank, Vat, Vow, Vox, ERC20Hook, BaseHelper, BankDiamond, WethLike,
-    Divider, Feedbase, Gem, GemFab, Ball
+    Divider, Multiplier, Feedbase, Gem, GemFab, Ball, UniNFTHook
 } from './RicoHelper.sol';
 import 'forge-std/Test.sol';
 
@@ -19,10 +20,13 @@ contract BallTest is BaseHelper {
     uint160 constant risk_price = X96;
     uint256 constant init_par   = RAY * 4;
     uint256 constant wethamt    = WAD;
-    
+
+    ERC20Hook        tokhook;
+    UniNFTHook       unihook;
     ChainlinkAdapter cladapt;
     UniswapV3Adapter uniadapt;
     Divider          divider;
+    Multiplier       multiplier;
     Feedbase         fb;
     address constant fsrc = 0xF33df33dF33dF33df33df33df33dF33DF33Df33D;
 
@@ -73,6 +77,14 @@ contract BallTest is BaseHelper {
         ricodai                = create_pool(rico, DAI, 500, sqrt_ratio_x96);
         ricorisk               = create_pool(rico, risk, RISK_FEE, risk_price);
 
+        uniadapt   = new UniswapV3Adapter(IUniWrapper(uniwrapper));
+        divider    = new Divider(address(fb));
+        multiplier = new Multiplier(address(fb));
+        cladapt    = new ChainlinkAdapter();
+
+        tokhook = new ERC20Hook();
+        unihook = new UniNFTHook(NFPM);
+
         Ball.IlkParams[] memory ips = new Ball.IlkParams[](2);
 
         // bank with ilks for weth and rai
@@ -121,12 +133,16 @@ contract BallTest is BaseHelper {
         Ball.BallArgs memory bargs = Ball.BallArgs(
             bank,
             address(fb),
+            address(uniadapt),
+            address(divider),
+            address(multiplier),
+            address(cladapt),
+            address(tokhook),
+            address(unihook),
             rico,
             risk,
             ricodai,
             ricorisk,
-            uniwrapper,
-            NFPM,
             DAI,
             DAI_USD_AGG,
             XAU_USD_AGG,
@@ -144,7 +160,12 @@ contract BallTest is BaseHelper {
         );
 
         Ball ball = new Ball(bargs);
+
         BankDiamond(bank).transferOwnership(address(ball));
+        uniadapt.ward(address(ball), true);
+        divider.ward(address(ball), true);
+        multiplier.ward(address(ball), true);
+        cladapt.ward(address(ball), true);
 
         // setup bank and ilks
         ball.setup(bargs);
@@ -159,10 +180,6 @@ contract BallTest is BaseHelper {
         // give bank mint/burn power
         Gem(rico).ward(bank, true);
         Gem(risk).ward(bank, true);
-
-        cladapt  = ball.cladapt();
-        uniadapt = ball.uniadapt();
-        divider  = ball.divider();
 
         // need to wait some time for uni adapters to work
         skip(BANKYEAR / 2);
