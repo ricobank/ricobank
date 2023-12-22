@@ -670,7 +670,7 @@ contract VowJsTest is Test, RicoSetUp {
 
         // bail the urn frobbed in setup
         assertGt(_ink(wilk, me), 0);
-        vm.expectCall(address(hook), abi.encodePacked(ERC20Hook.bailhook.selector));
+        vm.expectCall(address(tokhook), abi.encodePacked(ERC20Hook.bailhook.selector));
         Vat(bank).bail(wilk, me);
 
         // urn should be bailed, excess ink should be sent back to urn holder
@@ -698,7 +698,7 @@ contract VowJsTest is Test, RicoSetUp {
         feedpush(wrtag, bytes32(0), UINT256_MAX);
 
         // it's unsafe now; can bail
-        vm.expectCall(address(hook), abi.encodePacked(hook.bailhook.selector));
+        vm.expectCall(address(tokhook), abi.encodePacked(tokhook.bailhook.selector));
         Vat(bank).bail(wilk, me);
 
         // was just bailed, so now it's safe
@@ -732,7 +732,7 @@ contract VowJsTest is Test, RicoSetUp {
 
         // weth:ref price crash to 0.5
         feedpush(wrtag, bytes32(RAY / 2), UINT256_MAX);
-        vm.expectCall(address(hook), abi.encodePacked(hook.bailhook.selector));
+        vm.expectCall(address(tokhook), abi.encodePacked(tokhook.bailhook.selector));
         Vat(bank).bail(wilk, me);
 
         // borrow some rico to fill the flip for cat's urn
@@ -784,7 +784,7 @@ contract VowJsTest is Test, RicoSetUp {
         // confirm bail trades the weth for rico
         feedpush(wrtag, bytes32(RAY / 10), UINT256_MAX);
         uint joy0 = Vat(bank).joy();
-        vm.expectCall(address(hook), abi.encodePacked(hook.bailhook.selector));
+        vm.expectCall(address(tokhook), abi.encodePacked(tokhook.bailhook.selector));
         Vat(bank).bail(wilk, me);
         uint joy1 = Vat(bank).joy();
         assertGt(joy1, joy0);

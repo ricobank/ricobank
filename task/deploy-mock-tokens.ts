@@ -5,8 +5,11 @@ import { b32, send } from 'minihat'
 
 task('deploy-mock-tokens', '')
 .addOptionalParam('tokens', 'JSON file with token addresses')
+.addOptionalParam('gfpackcid', 'gemfab pack passed as cid cli string, alternative to gf_pack obj passed from another task')
+.addOptionalParam('unipackcid', 'unipack passed as cid cli string, alternative to uni_pack obj passed from another task')
 .addOptionalParam('outfile', 'output JSON file')
 .addOptionalParam('gasLimit', 'per-tx gas limit')
+.addOptionalParam('netname', 'network to read in tokens file')
 .setAction(async (args, hre) => {
   debug('deploy tokens')
 
@@ -22,7 +25,7 @@ task('deploy-mock-tokens', '')
     if (pooladdr == hre.ethers.constants.AddressZero) {
       await send(factory.createPool, token0, token1, fee, {gasLimit: args.gasLimit})
       pooladdr = await factory.getPool(token0, token1, fee)
-      const uni_dapp = await dpack.load(args.uni_pack, hre.ethers, signer)
+      const uni_dapp = await dpack.load(args.uni_pack ?? args.unipackcid, hre.ethers, signer)
       const pool_artifact = await dpack.getIpfsJson(uni_dapp._types.UniswapV3Pool.artifact['/'])
       const pool = await hre.ethers.getContractAt(pool_artifact.abi, pooladdr, signer)
       await send(pool.initialize, sqrtPriceX96 ? sqrtPriceX96 : '0x1' + '0'.repeat(96/4), {gasLimit: args.gasLimit});
@@ -38,7 +41,7 @@ task('deploy-mock-tokens', '')
   }
 
   debug('deploy rico')
-  const gf_dapp = await dpack.load(args.gf_pack, hre.ethers, signer)
+  const gf_dapp = await dpack.load(args.gf_pack ?? args.gfpackcid, hre.ethers, signer)
   let rico_addr
   if (tokens.rico && tokens.rico.gem) {
     rico_addr = tokens.rico.gem
@@ -60,7 +63,7 @@ task('deploy-mock-tokens', '')
     await send(gf_dapp.gemfab.build, b32("Rico Riskshare"), b32("RISK"), {gasLimit: args.gasLimit})
   }
 
-  const uni_dapp = await dpack.load(args.uni_pack, hre.ethers, signer)
+  const uni_dapp = await dpack.load(args.uni_pack ?? args.unipackcid, hre.ethers, signer)
   let t0; let t1;
   ;[t0, t1] = [rico_addr, risk_addr]
   const ricorisk_addr = await createAndInitializePoolIfNecessary(uni_dapp.uniswapV3Factory, t0, t1, 3000)

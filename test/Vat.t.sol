@@ -70,7 +70,7 @@ contract VatTest is Test, RicoSetUp {
     function test_ilk_reset() public {
         // can't set an ilk twice
         vm.expectRevert(Vat.ErrMultiIlk.selector);
-        Vat(bank).init(gilk, address(hook));
+        Vat(bank).init(gilk, address(tokhook));
     }
 
     ///////////////////////////////////////////////
@@ -530,8 +530,8 @@ contract VatTest is Test, RicoSetUp {
 
         uint flash_gold1 = gold.balanceOf(achap);
         uint flash_rico1 = rico.balanceOf(achap);
-        uint hook_gold1  = gold.balanceOf(address(hook));
-        uint hook_rico1  = rico.balanceOf(address(hook));
+        uint hook_gold1  = gold.balanceOf(address(tokhook));
+        uint hook_rico1  = rico.balanceOf(address(tokhook));
 
         // flash, swap, borrow, repay
         bytes memory data = abi.encodeWithSelector(
@@ -551,8 +551,8 @@ contract VatTest is Test, RicoSetUp {
 
         assertEq(flash_gold1, gold.balanceOf(achap));
         assertEq(flash_rico1, rico.balanceOf(achap) + 1);
-        assertEq(hook_gold1,  gold.balanceOf(address(hook)));
-        assertEq(hook_rico1,  rico.balanceOf(address(hook)));
+        assertEq(hook_gold1,  gold.balanceOf(address(tokhook)));
+        assertEq(hook_rico1,  rico.balanceOf(address(tokhook)));
     }
 
     function test_init_conditions() public {

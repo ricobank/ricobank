@@ -13,9 +13,8 @@ import {Diamond, IDiamondCuttable} from "../lib/solidstate-solidity/contracts/pr
 import {Block} from "../lib/feedbase/src/mixin/Read.sol";
 import {ChainlinkAdapter} from "../lib/feedbase/src/adapters/ChainlinkAdapter.sol";
 import {Divider} from "../lib/feedbase/src/combinators/Divider.sol";
-import {Feedbase} from "../lib/feedbase/src/Feedbase.sol";
 import {Multiplier} from "../lib/feedbase/src/combinators/Multiplier.sol";
-import {UniswapV3Adapter, IUniWrapper} from "../lib/feedbase/src/adapters/UniswapV3Adapter.sol";
+import {UniswapV3Adapter} from "../lib/feedbase/src/adapters/UniswapV3Adapter.sol";
 import {Ward} from "../lib/feedbase/src/mixin/ward.sol";
 
 import {Vat} from "./vat.sol";
@@ -23,8 +22,6 @@ import {Vow} from "./vow.sol";
 import {Vox} from "./vox.sol";
 import {File} from "./file.sol";
 import {Math} from "./mixin/math.sol";
-import {ERC20Hook} from "./hook/erc20/ERC20Hook.sol";
-import {UniNFTHook} from "./hook/nfpm/UniV3NFTHook.sol";
 
 contract Ball is Math, Ward {
     bytes32 internal constant RICO_DAI_TAG  = "rico:dai";
@@ -38,20 +35,6 @@ contract Ball is Math, Ward {
     bytes32 internal constant CAP = bytes32(uint256(1000000021970000000000000000));
     bytes32[] internal empty = new bytes32[](0);
     IDiamondCuttable.FacetCutAction internal constant ADD = IDiamondCuttable.FacetCutAction.ADD;
-
-    Vat public vat;
-    Vow public vow;
-    Vox public vox;
-    ERC20Hook public hook;
-    UniNFTHook public nfthook;
-    address public feedbase;
-
-    UniswapV3Adapter public uniadapt;
-    Divider public divider;
-    Multiplier public multiplier;
-    ChainlinkAdapter public cladapt;
-    address payable public bank;
-    File public file;
 
     struct IlkParams {
         bytes32 ilk;
@@ -80,12 +63,16 @@ contract Ball is Math, Ward {
     struct BallArgs {
         address payable bank; // diamond
         address feedbase;
+        address uniadapt;
+        address divider;
+        address multiplier;
+        address cladapt;
+        address tokhook;
+        address unihook;
         address rico;
         address risk;
         address ricodai;
         address ricorisk;
-        address uniwrapper;
-        address nfpm;
         address dai;
         address dai_usd_agg;
         address xau_usd_agg;
@@ -105,45 +92,38 @@ contract Ball is Math, Ward {
     address public rico;
     address public risk;
 
+    Vat public vat;
+    Vow public vow;
+    Vox public vox;
+
+    address public tokhook;
+    address public unihook;
+
+    address public feedbase;
+    Divider public divider;
+    Multiplier public multiplier;
+    UniswapV3Adapter public uniadapt;
+    ChainlinkAdapter public cladapt;
+
+    address payable public bank;
+    File public file;
+
     constructor(BallArgs memory args) {
         vat  = new Vat();
         vow  = new Vow();
         vox  = new Vox();
         file = new File();
-        hook = new ERC20Hook();
-        nfthook = new UniNFTHook(args.nfpm);
-
-        uniadapt = new UniswapV3Adapter(IUniWrapper(args.uniwrapper));
-        cladapt = new ChainlinkAdapter();
-        divider = new Divider(args.feedbase);
-        multiplier = new Multiplier(args.feedbase);
 
         bank = args.bank;
         rico = args.rico;
         risk = args.risk;
-        feedbase = args.feedbase;
-
-        // rico/usd, rico/ref
-        cladapt.setConfig(XAU_USD_TAG, ChainlinkAdapter.Config(args.xau_usd_agg, args.xauusdttl));
-        cladapt.setConfig(DAI_USD_TAG, ChainlinkAdapter.Config(args.dai_usd_agg, args.daiusdttl));
-        // rico/dai, dai/rico (== 1 / (rico/dai))
-        uniadapt.setConfig(
-            RICO_DAI_TAG,
-            UniswapV3Adapter.Config(args.ricodai, args.adaptrange, args.adaptttl, args.dai < args.rico)
-        );
-
-        _configureBlock(multiplier, RICO_USD_TAG,
-                       address(cladapt),  DAI_USD_TAG,
-                       address(uniadapt), RICO_DAI_TAG);
-        _configureBlock(divider, RICO_REF_TAG,
-                       address(multiplier), RICO_USD_TAG,
-                       address(cladapt),    XAU_USD_TAG);
-
-        // risk:rico
-        uniadapt.setConfig(
-            RISK_RICO_TAG,
-            UniswapV3Adapter.Config(args.ricorisk, args.adaptrange, args.adaptttl, args.risk < args.rico)
-        );
+        feedbase   = args.feedbase;
+        uniadapt   = UniswapV3Adapter(args.uniadapt);
+        divider    = Divider(args.divider);
+        multiplier = Multiplier(args.multiplier);
+        cladapt    = ChainlinkAdapter(args.cladapt);
+        tokhook = args.tokhook;
+        unihook = args.unihook;
     }
 
     function setup(BallArgs calldata args) external _ward_ {
@@ -227,12 +207,35 @@ contract Ball is Math, Ward {
         fbank.file("cap", CAP);
         fbank.file("tau", bytes32(block.timestamp));
         fbank.file("way", bytes32(RAY));
+
+        // set feedbase component configs
+        // rico/usd, rico/ref
+        cladapt.setConfig(XAU_USD_TAG, ChainlinkAdapter.Config(args.xau_usd_agg, args.xauusdttl));
+        cladapt.setConfig(DAI_USD_TAG, ChainlinkAdapter.Config(args.dai_usd_agg, args.daiusdttl));
+        // rico/dai, dai/rico (== 1 / (rico/dai))
+        uniadapt.setConfig(
+            RICO_DAI_TAG,
+            UniswapV3Adapter.Config(args.ricodai, args.adaptrange, args.adaptttl, args.dai < args.rico)
+        );
+
+        _configureBlock(multiplier, RICO_USD_TAG,
+                       address(cladapt),  DAI_USD_TAG,
+                       address(uniadapt), RICO_DAI_TAG);
+        _configureBlock(divider, RICO_REF_TAG,
+                       address(multiplier), RICO_USD_TAG,
+                       address(cladapt),    XAU_USD_TAG);
+
+        // risk:rico
+        uniadapt.setConfig(
+            RISK_RICO_TAG,
+            UniswapV3Adapter.Config(args.ricorisk, args.adaptrange, args.adaptttl, args.risk < args.rico)
+        );
     }
 
     function makeilk(IlkParams calldata ilkparams) external _ward_ {
         bytes32 ilk = ilkparams.ilk;
         bytes32 gemreftag = concat(ilk, ":ref");
-        Vat(bank).init(ilk, address(hook));
+        Vat(bank).init(ilk, tokhook);
         Vat(bank).filk(ilk, "chop", bytes32(ilkparams.chop));
         Vat(bank).filk(ilk, "dust", bytes32(ilkparams.dust));
         Vat(bank).filk(ilk, "fee",  bytes32(ilkparams.fee));
@@ -268,7 +271,7 @@ contract Ball is Math, Ward {
     }
 
     function makeuni(UniParams calldata ups) external _ward_ {
-        Vat(bank).init(ups.ilk, address(nfthook));
+        Vat(bank).init(ups.ilk, unihook);
         Vat(bank).filh(ups.ilk, "room", empty, bytes32(ups.room));
         Vat(bank).filh(ups.ilk, "wrap", empty, bytes32(bytes20(address(ups.uniwrapper))));
 

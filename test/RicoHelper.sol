@@ -5,15 +5,19 @@ import 'forge-std/Test.sol';
 
 import '../src/mixin/math.sol';
 import { Block } from '../lib/feedbase/src/mixin/Read.sol';
+import { IUniWrapper } from '../lib/feedbase/src/adapters/UniswapV3Adapter.sol';
+import { Feedbase } from '../lib/feedbase/src/Feedbase.sol';
 import { Gem, GemFab } from '../lib/gemfab/src/gem.sol';
 import { Bank } from '../src/bank.sol';
 import { BaseHelper, BankDiamond, WethLike } from './BaseHelper.sol';
 import { 
-    Ball, File, Vat, Vow, Vox, ERC20Hook, Multiplier, Divider, Feedbase
+    Ball, File, Vat, Vow, Vox, Multiplier, Divider, ChainlinkAdapter, UniswapV3Adapter
 } from '../src/ball.sol';
+
 import { Hook } from '../src/hook/hook.sol';
 
-import { UniNFTHook } from '../src/hook/nfpm/UniV3NFTHook.sol';
+import { ERC20Hook  } from '../src/hook/erc20/ERC20Hook.sol';
+import { UniNFTHook} from '../src/hook/nfpm/UniV3NFTHook.sol';
 
 contract Guy {
     address payable bank;
@@ -90,11 +94,13 @@ abstract contract RicoSetUp is BaseHelper {
     uint256 constant public FEE_1_5X_ANN = uint(1000000012848414058163994624);
     address constant public fsrc = 0xF33df33dF33dF33df33df33df33dF33DF33Df33D;
 
-    ERC20Hook  public hook;
-    UniNFTHook public nfthook;
+    ERC20Hook  public tokhook;
+    UniNFTHook public unihook;
     Ball       public ball;
     Divider    public divider;
     Multiplier public multiplier;
+    UniswapV3Adapter public uniadapter;
+    ChainlinkAdapter public cladapter;
     Feedbase   public feed;
     Gem        public dai;
     Gem        public gold;
@@ -193,6 +199,14 @@ abstract contract RicoSetUp is BaseHelper {
         uniwrapper = make_uniwrapper();
         bank       = make_diamond();
 
+        uniadapter = new UniswapV3Adapter(IUniWrapper(uniwrapper));
+        divider    = new Divider(address(feed));
+        multiplier = new Multiplier(address(feed));
+        cladapter  = new ChainlinkAdapter();
+
+        tokhook = new ERC20Hook();
+        unihook = new UniNFTHook(NFPM);
+
         // deploy bank with one ERC20 ilk and one NFPM ilk
         Ball.IlkParams[] memory ips = new Ball.IlkParams[](1);
         ips[0] = Ball.IlkParams(
@@ -220,12 +234,16 @@ abstract contract RicoSetUp is BaseHelper {
         Ball.BallArgs memory bargs = Ball.BallArgs(
             bank,
             address(feed),
+            address(uniadapter),
+            address(divider),
+            address(multiplier),
+            address(cladapter),
+            address(tokhook),
+            address(unihook),
             arico,
             arisk,
             ricodai,
             ricorisk,
-            uniwrapper,
-            NFPM,
             DAI,
             DAI_USD_AGG,
             XAU_USD_AGG,
@@ -243,7 +261,12 @@ abstract contract RicoSetUp is BaseHelper {
         );
 
         ball = new Ball(bargs);
+
         BankDiamond(bank).transferOwnership(address(ball));
+        uniadapter.ward(address(ball), true);
+        divider.ward(address(ball), true);
+        multiplier.ward(address(ball), true);
+        cladapter.ward(address(ball), true);
 
         ball.setup(bargs);
         ball.makeilk(ips[0]);
@@ -256,10 +279,7 @@ abstract contract RicoSetUp is BaseHelper {
         Gem(risk).ward(bank, true);
         //////////
 
-        hook    = ball.hook();
-        nfthook = ball.nfthook();
-        divider = ball.divider();
-        ahook   = payable(address(hook));
+        ahook   = payable(address(tokhook));
 
         File(bank).file('rudd.src', bytes32(bytes20(fsrc)));
         File(bank).file('tip.src', bytes32(bytes20(fsrc)));
@@ -271,14 +291,14 @@ abstract contract RicoSetUp is BaseHelper {
 
     function init_erc20_ilk(bytes32 ilk, address gem, bytes32 tag) public {
         Gem(gem).approve(bank, type(uint256).max);
-        Vat(bank).init(ilk, address(hook));
+        Vat(bank).init(ilk, address(tokhook));
         Vat(bank).filh(ilk, 'gem', empty, bytes32(bytes20(gem)));
         Vat(bank).filh(ilk, 'src', empty, bytes32(bytes20(fsrc)));
         Vat(bank).filh(ilk, 'tag', empty, tag);
         Vat(bank).filh(ilk, 'liqr', empty, bytes32(RAY));
         Vat(bank).filh(ilk, 'pep', empty, bytes32(uint(2)));
         Vat(bank).filh(ilk, 'pop', empty, bytes32(RAY));
-        Vat(bank).filk(ilk, 'hook', bytes32(uint(bytes32(bytes20(address(hook))))));
+        Vat(bank).filk(ilk, 'hook', bytes32(uint(bytes32(bytes20(address(tokhook))))));
         Vat(bank).filk(ilk, 'chop', bytes32(RAY));
         Vat(bank).filk(ilk, 'line', bytes32(init_mint * 10 * RAD));
         Vat(bank).filk(ilk, 'fee', bytes32(uint(1000000001546067052200000000)));  // 5%
