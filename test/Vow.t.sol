@@ -336,6 +336,7 @@ contract VowTest is Test, RicoSetUp {
     {
         // set protocol fee == 1/3 of every flop
         File(bank).file('loot', bytes32(RAY * 2 / 3));
+        assertEq(Vow(bank).loot(), RAY * 2 / 3);
 
         // risk:rico price 0.1
         risk.mint(address(guy), 1000000 * WAD);
