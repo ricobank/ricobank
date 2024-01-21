@@ -60,12 +60,13 @@ task('deploy-ricobank', '')
 
 
     } else {
-        const aggpack = require(`../lib/chainlink/pack/chainlink_${args.netname}.dpack.json`)
+        let aggpack = require(`../lib/chainlink/pack/chainlink_${args.netname}.dpack.json`)
+        aggpack.network = hre.network.name
         await pb.merge(aggpack)
 
         aggdapp    = await dpack.load(aggpack, ethers, ali)
-        agg_daiusd = aggdapp.dai_usd
-        agg_xauusd = aggdapp.xau_usd
+        agg_daiusd = aggdapp.agg_dai_usd
+        agg_xauusd = aggdapp.agg_xau_usd
     }
 
 
@@ -120,12 +121,10 @@ task('deploy-ricobank', '')
         xau_usd_agg: agg_xauusd.address,
         par: ray(1),
         ceil: wad(100000),
-        adaptrange: 1,
-        adaptttl:   BANKYEAR / 4,
-        daiusdttl:  BANKYEAR,
-        xauusdttl:  BANKYEAR,
-        twaprange:  500,
-        twapttl:    BANKYEAR,
+        uniadaptrange: 1,
+        uniadaptttl:   BANKYEAR * 2,
+        daiusdttl:  BANKYEAR * 2,
+        xauusdttl:  BANKYEAR * 2,
         platpep:    2,
         platpop:    ray(1),
         plotpep:    2,
