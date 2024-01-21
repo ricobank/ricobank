@@ -13,9 +13,6 @@ const { hexZeroPad } = ethers.utils
 import { b32, revert_pop, revert_name, revert_clear, snapshot_name } from './helpers'
 const dpack = require('@etherpacks/dpack')
 
-const bn2b32 = (bn) => hexZeroPad(bn.toHexString(), 32)
-const TAG = Buffer.from('feed'.repeat(16), 'hex')
-
 describe('Launch', () => {
   let ali, ALI, fb, bank, weth, pack, dapp
 
