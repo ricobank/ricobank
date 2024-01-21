@@ -17,7 +17,7 @@ describe('Launch', () => {
   let ali, ALI, fb, bank, weth, pack, dapp
 
   before(async () => {
-    ali = await ethers.getSigner()
+    ;[ali] = await ethers.getSigners()
     ALI = ali.address
 
     pack = await hh.run('deploy-ricobank', {netname: 'ethereum', tokens: './tokens.json', writepack: 'true'})
