@@ -58,6 +58,10 @@ contract Ball is Math, Ward {
         uint256 line;
         uint256 room;
         address uniwrapper;
+        address[] gems;
+        address[] srcs;
+        bytes32[] tags;
+        uint256[] liqrs;
     }
 
     struct BallArgs {
@@ -283,6 +287,15 @@ contract Ball is Math, Ward {
 
         Vat(bank).filh(ups.ilk, "pep",  empty, bytes32(uint(2)));
         Vat(bank).filh(ups.ilk, "pop",  empty, bytes32(RAY));
+
+        for (uint i = 0; i < ups.gems.length; i++) {
+            address gem = ups.gems[i];
+            bytes32[] memory idxs = new bytes32[](1);
+            idxs[0] = bytes32(bytes20(gem));
+            Vat(bank).filh(ups.ilk, 'src', idxs, bytes32(bytes20(ups.srcs[i])));
+            Vat(bank).filh(ups.ilk, 'tag', idxs, ups.tags[i]);
+            Vat(bank).filh(ups.ilk, 'liqr', idxs, bytes32(ups.liqrs[i]));
+        }
     }
 
     function approve(address usr) external _ward_ {

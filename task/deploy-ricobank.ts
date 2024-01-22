@@ -105,7 +105,11 @@ task('deploy-ricobank', '')
         dust: rad(0.1),
         line: rad(10000),
         room: 8,
-        uniwrapper: deps.uniwrapper.address
+        uniwrapper: deps.uniwrapper.address,
+        gems: [],
+        srcs: [],
+        tags: [],
+        liqrs: []
     }
 
     const ballargs = {
@@ -142,9 +146,12 @@ task('deploy-ricobank', '')
         },
     }
 
-    let ilks   = []
+    let ilks = []
     for (let token in tokens) {
+
         const params = tokens[token];  
+        if (params.hook != "erc20") continue;
+
         let ilk = {
             ilk: b32(params.ilk),
             gem: deps[token].address,
@@ -158,7 +165,6 @@ task('deploy-ricobank', '')
             ttl: params.ttl,
             range: params.range
         }
-
 
         if (args.mock) {
             // create mock chainlink feed with price of 2000
@@ -199,17 +205,39 @@ task('deploy-ricobank', '')
         debug("making ilk: ", ilk)
         await send(ball.makeilk, ilk)
     }
+
     debug(`done making ilks...making uni hook`)
+
+    // copy (gem, src, tag, liqr) from the erc20 ilks
+    const vatabi = [ "function geth(bytes32,bytes32,bytes32[]) view returns (bytes32)" ]
+    const vat    = new ethers.Contract(diamond.address, vatabi, ali)
+    for (let i of tokens[':uninft'].erc20ilks) {
+        const gem  = (await vat.geth(b32(i), b32('gem'), [])).slice(0, 42)
+        const src  = (await vat.geth(b32(i), b32('src'), [])).slice(0, 42)
+        const tag  = await vat.geth(b32(i), b32('tag'), [])
+        const liqr = await vat.geth(b32(i), b32('liqr'), [])
+
+        ups.gems.push(gem)
+        ups.srcs.push(src)
+        ups.tags.push(tag)
+        ups.liqrs.push(liqr)
+    }
+
+    // make the uni ilk
     await send(ball.makeuni, ups);
+
+    // take diamond back
     await send(ball.approve, ali.address);
     debug('done making uni hook')
+
     debug('ward rico and risk')
     await send(deps.rico.ward, diamond.address, 1)
     await send(deps.risk.ward, diamond.address, 1)
+
     debug('accept ownership')
     await send(diamond.acceptOwnership)
-    debug('creating pack')
 
+    debug('creating pack')
     const getartifact = async (ty) => {
         debug(`getting artifact for ${ty}`)
         return dpack.getIpfsJson(deps.types[ty].artifact['/']);

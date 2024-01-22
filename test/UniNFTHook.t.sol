@@ -49,11 +49,6 @@ contract NFTHookTest is Test, RicoSetUp {
         IERC721(UNI_NFT_ADDR).approve(bank, goldwethtokid);
         IERC721(UNI_NFT_ADDR).approve(bank, golddaitokid);
 
-        // uni ilk needs feeds and liqrs for all three erc20 tokens - weth dai gold
-        Vat(bank).filh(uilk, 'src', single(bytes32(bytes20(WETH))), bytes32(bytes20(fsrc)));
-        Vat(bank).filh(uilk, 'tag', single(bytes32(bytes20(WETH))), wrtag);
-        Vat(bank).filh(uilk, 'liqr', single(bytes32(bytes20(WETH))), bytes32(RAY));
-
         feedpush(wrtag, bytes32(1000 * RAY), type(uint).max);
 
         Vat(bank).filh(uilk, 'src', single(bytes32(bytes20(agold))), bytes32(bytes20(fsrc)));
@@ -62,9 +57,6 @@ contract NFTHookTest is Test, RicoSetUp {
  
         feedpush(grtag, bytes32(1900 * RAY), type(uint).max);
 
-        Vat(bank).filh(uilk, 'src', single(bytes32(bytes20(DAI))), bytes32(bytes20(fsrc)));
-        Vat(bank).filh(uilk, 'tag', single(bytes32(bytes20(DAI))), drtag);
-        Vat(bank).filh(uilk, 'liqr', single(bytes32(bytes20(DAI))), bytes32(RAY));
         feedpush(drtag, bytes32(RAY), type(uint).max);
 
         guy = new Guy(bank);

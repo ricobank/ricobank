@@ -5,6 +5,7 @@ const dpack = require('@etherpacks/dpack')
 
 task('deploy-mock-dependencies', '')
 .addOptionalParam('gasLimit', 'per-tx gas limit')
+.addOptionalParam('mock', 'mock mode')
 .setAction(async (args, hre) => {
   let weth_addr  // todo never set
   debug('deploying dependencies...')
@@ -23,6 +24,7 @@ task('deploy-mock-dependencies', '')
           tokens: args.tokens,
           weth: weth_addr, 
           netname: args.netname,
+          mock: args.mock,
           gasLimit: args.gasLimit
       }
   )
