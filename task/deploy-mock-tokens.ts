@@ -8,12 +8,13 @@ task('deploy-mock-tokens', '')
 .addOptionalParam('gfpackcid', 'gemfab pack passed as cid cli string, alternative to gf_pack obj passed from another task')
 .addOptionalParam('unipackcid', 'unipack passed as cid cli string, alternative to uni_pack obj passed from another task')
 .addOptionalParam('outfile', 'output JSON file')
+.addOptionalParam('mock', 'mock mode')
 .addOptionalParam('gasLimit', 'per-tx gas limit')
 .addOptionalParam('netname', 'network to read in tokens file')
 .setAction(async (args, hre) => {
   debug('deploy tokens')
 
-  const [ signer ]  = await hre.ethers.getSigners()
+  const [ ali ]  = await hre.ethers.getSigners()
   const createAndInitializePoolIfNecessary = async (
     factory, token0, token1, fee, sqrtPriceX96?
   ) => {
@@ -21,6 +22,10 @@ task('deploy-mock-tokens', '')
       let t1 = token1
       token1 = token0
       token0 = t1
+      if (sqrtPriceX96) {
+        // invert the price
+        sqrtPriceX96 = hre.ethers.BigNumber.from(2).pow(96).pow(2).div(sqrtPriceX96)
+      }
     }
     let pooladdr = await factory.getPool(token0, token1, fee)
 
@@ -28,12 +33,12 @@ task('deploy-mock-tokens', '')
       await send(factory.createPool, token0, token1, fee, {gasLimit: args.gasLimit})
       pooladdr = await factory.getPool(token0, token1, fee)
       const uni_dapp = await dpack.load(
-        args.uni_pack ?? args.unipackcid, hre.ethers, signer
+        args.uni_pack ?? args.unipackcid, hre.ethers, ali
       )
       const pool_artifact = await dpack.getIpfsJson(
         uni_dapp._types.UniswapV3Pool.artifact['/']
       )
-      const pool = await hre.ethers.getContractAt(pool_artifact.abi, pooladdr, signer)
+      const pool = await hre.ethers.getContractAt(pool_artifact.abi, pooladdr, ali)
       await send(
         pool.initialize, sqrtPriceX96 ? sqrtPriceX96 : '0x1' + '0'.repeat(96/4),
         {gasLimit: args.gasLimit}
@@ -50,7 +55,7 @@ task('deploy-mock-tokens', '')
   }
 
   debug('deploy rico')
-  const gf_dapp = await dpack.load(args.gf_pack ?? args.gfpackcid, hre.ethers, signer)
+  const gf_dapp = await dpack.load(args.gf_pack ?? args.gfpackcid, hre.ethers, ali)
   let rico_addr
   if (tokens.rico && tokens.rico.gem) {
     rico_addr = tokens.rico.gem
@@ -72,26 +77,35 @@ task('deploy-mock-tokens', '')
     await send(gf_dapp.gemfab.build, b32("Rico Riskshare"), b32("RISK"), {gasLimit: args.gasLimit})
   }
 
-  const uni_dapp = await dpack.load(args.uni_pack ?? args.unipackcid, hre.ethers, signer)
+  debug('create rico-risk pool')
+  const uni_dapp = await dpack.load(args.uni_pack ?? args.unipackcid, hre.ethers, ali)
   let t0; let t1;
   ;[t0, t1] = [rico_addr, risk_addr]
   const ricorisk_addr = await createAndInitializePoolIfNecessary(uni_dapp.uniswapV3Factory, t0, t1, 3000)
 
-  let dai_addr
-  if (tokens.dai && tokens.dai.gem) {
-    dai_addr = tokens.dai.gem
-  } else {
+  let dai_addr = tokens.dai ? tokens.dai.gem : undefined
+  if (!dai_addr) {
+    if (!args.mock) {
+      throw new Error("No Dai address supplied, but not in mock mode")
+    }
+
+    // build a fake Dai
     dai_addr = await gf_dapp.gemfab.callStatic.build(
       b32("Dai Stablecoin"), b32("DAI")
     )
-    await send(gf_dapp.gemfab.build, b32("Dai Stablecoin"), b32("DAI"), {gasLimit: args.gasLimit})
+    await send(
+      gf_dapp.gemfab.build, b32("Dai Stablecoin"), b32("DAI"),
+      {gasLimit: args.gasLimit}
+    )
   }
+
   ;[t0, t1] = [rico_addr, dai_addr]
   // rico:dai ~2k
   const ricodai_addr = await createAndInitializePoolIfNecessary(
     uni_dapp.uniswapV3Factory, t0, t1, 500, '0x2D000000000000000000000000'
   )
 
+  // pack the system-required pools and tokens
   const pb = new dpack.PackBuilder(hre.network.name)
   const gem_artifact = await dpack.getIpfsJson(gf_dapp._types.Gem.artifact['/'])
   const pool_artifact = await dpack.getIpfsJson(uni_dapp._types.UniswapV3Pool.artifact['/'])
@@ -126,21 +140,32 @@ task('deploy-mock-tokens', '')
     address: ricodai_addr
   }, false)
 
+  // in case a previous task built a new weth
   let tokensPlusWeth = JSON.parse(JSON.stringify(tokens))
   if (args.weth) tokensPlusWeth.weth.gem = args.weth
+
   for (let tokenname in tokensPlusWeth) {
-    if ('dai' == tokenname) continue;
-    let token = tokensPlusWeth[tokenname]
+
+    // get or build the token unless it's dai
+    let token      = tokensPlusWeth[tokenname]
+    if ('dai' == tokenname || token.hook != 'erc20') continue;
+
     let token_addr = token.gem
     if (!token_addr) {
-        token_addr = await gf_dapp.gemfab.callStatic.build(
-            b32(tokenname), b32(tokenname.toUpperCase())
-        )
-        await send(gf_dapp.gemfab.build,
-            b32(tokenname), b32(tokenname.toUpperCase())
-        )
+      if (!args.mock) {
+        throw new Error(`No ${tokenname} address supplied, but not in mock mode`)
+      }
+
+      // build a fake token
+      token_addr = await gf_dapp.gemfab.callStatic.build(
+        b32(tokenname), b32(tokenname.toUpperCase())
+      )
+      await send(gf_dapp.gemfab.build,
+        b32(tokenname), b32(tokenname.toUpperCase())
+      )
     }
 
+    // pack it
     await pb.packObject({
       objectname: tokenname,
       typename: 'Gem',

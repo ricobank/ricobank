@@ -120,6 +120,15 @@ contract BallTest is BaseHelper {
             1 // range
         );
 
+        address[] memory unigems = new address[](2);
+        (unigems[0], unigems[1]) = (WETH, DAI);
+        address[] memory unisrcs = new address[](2);
+        (unisrcs[0], unisrcs[1]) = (fsrc, fsrc);
+        bytes32[] memory unitags = new bytes32[](2);
+        (unitags[0], unitags[1]) = (WETH_REF_TAG, DAI_REF_TAG);
+        uint256[] memory uniliqrs = new uint[](2);
+        (uniliqrs[0], uniliqrs[1]) = (RAY, RAY);
+
         Ball.UniParams memory ups = Ball.UniParams(
             ':uninft',                     // ilk
             1000000001546067052200000000,  // fee
@@ -127,7 +136,11 @@ contract BallTest is BaseHelper {
             init_dust,                     // dust
             100000 * RAD,                  // line
             8,                             // room
-            uniwrapper
+            uniwrapper,
+            unigems,
+            unisrcs,
+            unitags,
+            uniliqrs
         );
 
         Ball.BallArgs memory bargs = Ball.BallArgs(
