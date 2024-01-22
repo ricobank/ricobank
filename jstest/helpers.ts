@@ -98,5 +98,49 @@ export async function RICO_mint(vat, dock, RICO, usr, amt : number) {
   await send(dock.connect(usr).exit_rico, vat.address, RICO.address, usr.address, wad(amt))
 }
 
+export const gettime = async () => {
+    const blocknum = await ethers.provider.getBlockNumber()
+    return (await ethers.provider.getBlock(blocknum)).timestamp
+}
 
+export const join_pool = async (args) => {
+    let nfpm = args.nfpm
+    let ethers = args.ethers
+    let ali = args.ali
+    debug('join_pool')
+    if (ethers.BigNumber.from(args.a1.token).gt(ethers.BigNumber.from(args.a2.token))) {
+      let a = args.a1;
+      args.a1 = args.a2;
+      args.a2 = a;
+    }
 
+    let spacing = args.tickSpacing;
+    let tickmax = 887220
+    // full range liquidity
+    let tickLower = -tickmax;
+    let tickUpper = tickmax;
+    let token1 = await ethers.getContractAt('Gem', args.a1.token)
+    let token2 = await ethers.getContractAt('Gem', args.a2.token)
+    debug('approve tokens ', args.a1.token, args.a2.token)
+    await send(token1.approve, nfpm.address, ethers.constants.MaxUint256);
+    await send(token2.approve, nfpm.address, ethers.constants.MaxUint256);
+    let timestamp = await gettime()
+    debug('nfpm mint', nfpm.address)
+    let [tokenId, liquidity, amount0, amount1] = await nfpm.callStatic.mint([
+          args.a1.token, args.a2.token,
+          args.fee,
+          tickLower, tickUpper,
+          args.a1.amountIn, args.a2.amountIn,
+          0, 0, ali.address, timestamp + 1000
+    ]);
+
+    await send(nfpm.mint, [
+          args.a1.token, args.a2.token,
+          args.fee,
+          tickLower, tickUpper,
+          args.a1.amountIn, args.a2.amountIn,
+          0, 0, ali.address, timestamp + 1000
+    ]);
+
+    return {tokenId, liquidity, amount0, amount1}
+}

@@ -22,6 +22,10 @@ task('deploy-mock-tokens', '')
       let t1 = token1
       token1 = token0
       token0 = t1
+      if (sqrtPriceX96) {
+        // invert the price
+        sqrtPriceX96 = hre.ethers.BigNumber.from(2).pow(96).pow(2).div(sqrtPriceX96)
+      }
     }
     let pooladdr = await factory.getPool(token0, token1, fee)
 

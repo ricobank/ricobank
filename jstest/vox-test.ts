@@ -10,59 +10,11 @@ import { constants } from 'ethers'
 import { send, fail, wad, ray, rad, BANKYEAR, warp, mine } from 'minihat'
 const { hexZeroPad } = ethers.utils
 
-import { b32, revert_pop, revert_name, revert_clear, snapshot_name } from './helpers'
+import { b32, revert_pop, revert_name, revert_clear, snapshot_name, join_pool, gettime } from './helpers'
 const dpack = require('@etherpacks/dpack')
 
 const bn2b32 = (bn) => hexZeroPad(bn.toHexString(), 32)
 const TAG = Buffer.from('feed'.repeat(16), 'hex')
-
-const gettime = async () => {
-    const blocknum = await ethers.provider.getBlockNumber()
-    return (await ethers.provider.getBlock(blocknum)).timestamp
-}
-
-const join_pool = async (args) => {
-    let nfpm = args.nfpm
-    let ethers = args.ethers
-    let ali = args.ali
-    debug('join_pool')
-    if (ethers.BigNumber.from(args.a1.token).gt(ethers.BigNumber.from(args.a2.token))) {
-      let a = args.a1;
-      args.a1 = args.a2;
-      args.a2 = a;
-    }
-
-    let spacing = args.tickSpacing;
-    let tickmax = 887220
-    // full range liquidity
-    let tickLower = -tickmax;
-    let tickUpper = tickmax;
-    let token1 = await ethers.getContractAt('Gem', args.a1.token)
-    let token2 = await ethers.getContractAt('Gem', args.a2.token)
-    debug('approve tokens ', args.a1.token, args.a2.token)
-    await send(token1.approve, nfpm.address, ethers.constants.MaxUint256);
-    await send(token2.approve, nfpm.address, ethers.constants.MaxUint256);
-    let timestamp = await gettime()
-    debug('nfpm mint', nfpm.address)
-    let [tokenId, liquidity, amount0, amount1] = await nfpm.callStatic.mint([
-          args.a1.token, args.a2.token,
-          args.fee,
-          tickLower, tickUpper,
-          args.a1.amountIn, args.a2.amountIn,
-          0, 0, ali.address, timestamp + 1000
-    ]);
-
-    await send(nfpm.mint, [
-          args.a1.token, args.a2.token,
-          args.fee,
-          tickLower, tickUpper,
-          args.a1.amountIn, args.a2.amountIn,
-          0, 0, ali.address, timestamp + 1000
-    ]);
-
-    return {tokenId, liquidity, amount0, amount1}
-}
-
 
 describe('Vox', () => {
   let ali, bob, cat
@@ -205,7 +157,7 @@ describe('Vox', () => {
     })
 
     it('deploy gas', async () => {
-      await check(ethers.BigNumber.from(deploygas), 39267625)
+      await check(ethers.BigNumber.from(deploygas), 39267613)
     })
 
     it('frob cold gas', async () => {
@@ -278,7 +230,7 @@ describe('Vox', () => {
       let mar_tag = b32('rico:ref')
       let divider = await ball.divider()
       let mar_gas = await fb.estimateGas.pull(divider, mar_tag)
-      await check(mar_gas, 135287)
+      await check(mar_gas, 135126)
     })
 
     it('drip gas', async () => {
@@ -346,7 +298,7 @@ describe('Vox', () => {
         )
         let gas = await bank.estimateGas.frob(b32(':uninft'), ALI, dink, wad(-0.0009))
  
-        await check(gas, 468399)
+        await check(gas, 451362)
       })
 
       it('uni nft deposit+borrow gas', async () => {
@@ -359,7 +311,7 @@ describe('Vox', () => {
         )
         let gas = await bank.estimateGas.frob(b32(':uninft'), ALI, dink, wad(-0.0009))
 
-        await check(gas, 380996)
+        await check(gas, 380436)
       })
 
       it('uni nft bail gas', async () => {
@@ -371,7 +323,7 @@ describe('Vox', () => {
         await send(fb.push, b32('rico:ref'), bn2b32(constants.Zero), constants.MaxUint256)
 
         let gas = await bank.estimateGas.bail(b32(':uninft'), ALI)
-        await check(gas, 641163)
+        await check(gas, 623291)
       })
     })
   })
