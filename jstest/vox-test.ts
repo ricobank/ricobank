@@ -205,7 +205,7 @@ describe('Vox', () => {
     })
 
     it('deploy gas', async () => {
-      await check(ethers.BigNumber.from(deploygas), 38707633)
+      await check(ethers.BigNumber.from(deploygas), 38707417)
     })
 
     it('frob cold gas', async () => {
@@ -278,7 +278,7 @@ describe('Vox', () => {
       let mar_tag = b32('rico:ref')
       let divider = await ball.divider()
       let mar_gas = await fb.estimateGas.pull(divider, mar_tag)
-      await check(mar_gas, 135126)
+      await check(mar_gas, 135287)
     })
 
     it('drip gas', async () => {
@@ -346,7 +346,7 @@ describe('Vox', () => {
         )
         let gas = await bank.estimateGas.frob(b32(':uninft'), ALI, dink, wad(-0.0009))
  
-        await check(gas, 468496)
+        await check(gas, 468399)
       })
 
       it('uni nft deposit+borrow gas', async () => {

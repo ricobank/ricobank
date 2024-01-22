@@ -23,11 +23,16 @@ task('deploy-ricobank', '')
 
     let deps_pack
     if (args.dependencies) {
-        deps_pack = require(args.dependencies)
+        try {
+            deps_pack = JSON.parse(args.dependencies);
+        } catch (e) {
+            // allow deps to be passed as ipfs CID
+            deps_pack = await dpack.getIpfsJson(args.dependencies);
+        }
     } else {
         deps_pack = await hre.run(
           'deploy-mock-dependencies',
-          { 
+          {
               tokens:  args.tokens,
               netname: args.netname,
               mock:    args.mock

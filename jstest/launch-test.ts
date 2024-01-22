@@ -14,7 +14,7 @@ import { b32, revert_pop, revert_name, revert_clear, snapshot_name } from './hel
 const dpack = require('@etherpacks/dpack')
 
 describe('Launch', () => {
-  let ali, ALI, fb, bank, weth, pack, dapp
+  let ali, ALI, fb, bank, weth, pack, dapp, cla
 
   before(async () => {
     ;[ali] = await ethers.getSigners()
@@ -26,13 +26,16 @@ describe('Launch', () => {
     fb   = dapp.feedbase
     bank = dapp.bank
     weth = dapp.weth
+    cla  = dapp.chainlinkadapter
 
     await ali.sendTransaction({
       data: ethers.utils.id('deposit()').slice(0, 10), to: weth.address, value: wad(100)
     })
 
     await send(weth.approve, bank.address, constants.MaxUint256)
- 
+
+    const config = await cla.getConfig(b32('weth:usd'))
+    await cla.setConfig(b32('weth:usd'), [config.agg, '3000000000000000000000000'])
 
     await snapshot_name(hh);
   })
