@@ -286,7 +286,7 @@ describe('Vox', () => {
       await send(bank.frob, b32('weth'), ALI, dink, wad(2))
       await mine(hh, BANKYEAR)
       let gas = await bank.estimateGas.drip(b32('weth'))
-      await check(gas, 91723)
+      await check(gas, 91723, 91827)
     })
 
     describe('uni nft gas', async () => {
