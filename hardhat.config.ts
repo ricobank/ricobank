@@ -379,8 +379,18 @@ export default {
       },
       sepolia: {
           url: process.env["SEPOLIA_RPC_URL"],
-          accounts: [process.env["ARB_SEPOLIA_KEY"]],
+          accounts: {
+            mnemonic: process.env["ARB_SEPOLIA_MNEMONIC"],
+          },
           chainId: 11155111
-        }
-  }
+      },
+      arbitrum: {
+        url: process.env["ARB_RPC_URL"],
+        accounts: {
+          mnemonic: process.env["ARB_MNEMONIC"]
+        },
+        chainId: 42161
+      }
+  },
+
 }

@@ -5,11 +5,12 @@
   "scripts": {
     "initialize": "npm i && npm run download-submodules && npm run install-submodules && npm run build:all",
     "download-submodules": "git submodule update --init --recursive && cd lib/solidstate-solidity && git checkout e23bd67e28a8435ea9f2cca2cfa2c87cd7febd18 && cd -",
-    "install-submodules": "npm run init:feedbase && npm run init:gemfab && npm run init:weth && npm run init:uniswapv3",
+    "install-submodules": "npm run init:feedbase && npm run init:gemfab && npm run init:weth && npm run init:uniswapv3 && npm run init:chainlink",
     "init:feedbase": "cd lib/feedbase && npm i && npx hardhat compile",
     "init:gemfab": "cd lib/gemfab && npm i",
     "init:weth": "cd lib/weth && npm i && node build.js",
     "init:uniswapv3": "cd lib/uniswapv3 && npm i && node build.js",
+    "init:chainlink": "cd lib/chainlink && npm i && node build.js",
     "build:all": "npm run build:ts && npm run build:sol && npm run build:feedbase && npm run build:gemfab",
     "build:sol": "npx hardhat compile",
     "build:ts": "npx tsc -b",

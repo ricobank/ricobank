@@ -14,7 +14,9 @@ task('deploy-mock-tokens', '')
   debug('deploy tokens')
 
   const [ signer ]  = await hre.ethers.getSigners()
-  const createAndInitializePoolIfNecessary = async (factory, token0, token1, fee, sqrtPriceX96?) => {
+  const createAndInitializePoolIfNecessary = async (
+    factory, token0, token1, fee, sqrtPriceX96?
+  ) => {
     if (token1 < token0) {
       let t1 = token1
       token1 = token0
@@ -25,10 +27,17 @@ task('deploy-mock-tokens', '')
     if (pooladdr == hre.ethers.constants.AddressZero) {
       await send(factory.createPool, token0, token1, fee, {gasLimit: args.gasLimit})
       pooladdr = await factory.getPool(token0, token1, fee)
-      const uni_dapp = await dpack.load(args.uni_pack ?? args.unipackcid, hre.ethers, signer)
-      const pool_artifact = await dpack.getIpfsJson(uni_dapp._types.UniswapV3Pool.artifact['/'])
+      const uni_dapp = await dpack.load(
+        args.uni_pack ?? args.unipackcid, hre.ethers, signer
+      )
+      const pool_artifact = await dpack.getIpfsJson(
+        uni_dapp._types.UniswapV3Pool.artifact['/']
+      )
       const pool = await hre.ethers.getContractAt(pool_artifact.abi, pooladdr, signer)
-      await send(pool.initialize, sqrtPriceX96 ? sqrtPriceX96 : '0x1' + '0'.repeat(96/4), {gasLimit: args.gasLimit});
+      await send(
+        pool.initialize, sqrtPriceX96 ? sqrtPriceX96 : '0x1' + '0'.repeat(96/4),
+        {gasLimit: args.gasLimit}
+      );
     }
 
     return pooladdr
@@ -78,7 +87,10 @@ task('deploy-mock-tokens', '')
     await send(gf_dapp.gemfab.build, b32("Dai Stablecoin"), b32("DAI"), {gasLimit: args.gasLimit})
   }
   ;[t0, t1] = [rico_addr, dai_addr]
-  const ricodai_addr = await createAndInitializePoolIfNecessary(uni_dapp.uniswapV3Factory, t0, t1, 500)
+  // rico:dai ~2k
+  const ricodai_addr = await createAndInitializePoolIfNecessary(
+    uni_dapp.uniswapV3Factory, t0, t1, 500, '0x2D000000000000000000000000'
+  )
 
   const pb = new dpack.PackBuilder(hre.network.name)
   const gem_artifact = await dpack.getIpfsJson(gf_dapp._types.Gem.artifact['/'])
@@ -136,7 +148,6 @@ task('deploy-mock-tokens', '')
       address: token_addr
     }, false)
   }
-
 
   const pack = await pb.build()
   const str = JSON.stringify(pack, null, 2)

@@ -78,8 +78,8 @@ contract Ball is Math, Ward {
         address xau_usd_agg;
         uint256 par;
         uint256 ceil;
-        uint256 adaptrange;
-        uint256 adaptttl;
+        uint256 uniadaptrange;
+        uint256 uniadaptttl;
         uint256 daiusdttl;
         uint256 xauusdttl;
         uint256 platpep;
@@ -216,7 +216,7 @@ contract Ball is Math, Ward {
         // rico/dai, dai/rico (== 1 / (rico/dai))
         uniadapt.setConfig(
             RICO_DAI_TAG,
-            UniswapV3Adapter.Config(args.ricodai, args.dai < args.rico, args.adaptrange, args.adaptttl)
+            UniswapV3Adapter.Config(args.ricodai, args.dai < args.rico, args.uniadaptrange, args.uniadaptttl)
         );
 
         _configureBlock(multiplier, RICO_USD_TAG,
@@ -229,7 +229,7 @@ contract Ball is Math, Ward {
         // risk:rico
         uniadapt.setConfig(
             RISK_RICO_TAG,
-            UniswapV3Adapter.Config(args.ricorisk, args.risk < args.rico, args.adaptrange, args.adaptttl)
+            UniswapV3Adapter.Config(args.ricorisk, args.risk < args.rico, args.uniadaptrange, args.uniadaptttl)
         );
     }
 
