@@ -55,9 +55,7 @@ describe('Vox', () => {
     await send(bank.file, b32('rudd.tag'), b32('risk:rico'))
     await send(fb.push, b32('risk:rico'), bn2b32(ray(1)), constants.MaxUint256)
 
-    await ali.sendTransaction({
-      data: ethers.utils.id('deposit()').slice(0, 10), to: weth.address, value: wad(100)
-    })
+    await send(weth.mint, ALI, wad(100))
     await send(weth.approve, bank.address, constants.MaxUint256)
     await send(risk.mint, ALI, wad(100000));
 
@@ -157,13 +155,13 @@ describe('Vox', () => {
     })
 
     it('deploy gas', async () => {
-      await check(ethers.BigNumber.from(deploygas), 39267613)
+      await check(ethers.BigNumber.from(deploygas), 42108304)
     })
 
     it('frob cold gas', async () => {
       let dink = ethers.utils.solidityPack(['int'], [wad(5)])
       let gas = await bank.estimateGas.frob(b32('weth'), ALI, dink, wad(2))
-      await check(gas, 345268, 345312)
+      await check(gas, 345138, 345242)
     })
 
     it('frob hot gas', async () => {
@@ -174,7 +172,7 @@ describe('Vox', () => {
       let gas = await bank.estimateGas.frob(
         b32('weth'), ALI, ethers.utils.solidityPack(['int'], [wad(5)]), wad(2)
       )
-      await check(gas, 191028)
+      await check(gas, 190861)
     })
 
     it('bail gas', async () => {
@@ -184,7 +182,7 @@ describe('Vox', () => {
       await send(fb.push, b32('weth:ref'), bn2b32(ray(0.1)), constants.MaxUint256)
       debug('bail', await bank.safe(b32('weth'), ALI))
       let gas = await bank.estimateGas.bail(b32('weth'), ALI)
-      await check(gas, 236961)
+      await check(gas, 236465)
     })
 
     it('keep surplus gas', async () => {
@@ -263,10 +261,7 @@ describe('Vox', () => {
         let dink = ethers.utils.defaultAbiCoder.encode(['uint'], [wad(50)])
         await send(bank.frob, b32('weth'), ALI, dink, amt.mul(3))
 
-        const whale = await ethers.getImpersonatedSigner(
-            '0x075e72a5eDf65F0A5f44699c7654C1a76941Ddc8'
-        );
-        await send(dai.connect(whale).transfer, ALI, amt.mul(3))
+        await send(dai.mint, ALI, amt.mul(3))
 
         for (let i = 0; i < 3; i++) {
             let joinres = await join_pool({

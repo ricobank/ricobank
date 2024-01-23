@@ -51,7 +51,7 @@ task('deploy-mock-tokens', '')
   let tokens : any = {}
   if (args.tokens) {
       const fromjson = require(args.tokens)[args.netname]
-      if (fromjson) tokens = fromjson
+      if (fromjson) tokens = fromjson.erc20 ?? tokens
   }
 
   debug('deploy rico')
@@ -83,12 +83,8 @@ task('deploy-mock-tokens', '')
   ;[t0, t1] = [rico_addr, risk_addr]
   const ricorisk_addr = await createAndInitializePoolIfNecessary(uni_dapp.uniswapV3Factory, t0, t1, 3000)
 
-  let dai_addr = tokens.dai ? tokens.dai.gem : undefined
-  if (!dai_addr) {
-    if (!args.mock) {
-      throw new Error("No Dai address supplied, but not in mock mode")
-    }
-
+  let dai_addr
+  if (args.mock) {
     // build a fake Dai
     dai_addr = await gf_dapp.gemfab.callStatic.build(
       b32("Dai Stablecoin"), b32("DAI")
@@ -97,6 +93,8 @@ task('deploy-mock-tokens', '')
       gf_dapp.gemfab.build, b32("Dai Stablecoin"), b32("DAI"),
       {gasLimit: args.gasLimit}
     )
+  } else {
+    dai_addr = tokens.dai.gem
   }
 
   ;[t0, t1] = [rico_addr, dai_addr]
@@ -140,22 +138,14 @@ task('deploy-mock-tokens', '')
     address: ricodai_addr
   }, false)
 
-  // in case a previous task built a new weth
-  let tokensPlusWeth = JSON.parse(JSON.stringify(tokens))
-  if (args.weth) tokensPlusWeth.weth.gem = args.weth
-
-  for (let tokenname in tokensPlusWeth) {
+  for (let tokenname in tokens) {
 
     // get or build the token unless it's dai
-    let token      = tokensPlusWeth[tokenname]
-    if ('dai' == tokenname || token.hook != 'erc20') continue;
+    let token      = tokens[tokenname]
+    if ('dai' == tokenname) continue;
 
-    let token_addr = token.gem
-    if (!token_addr) {
-      if (!args.mock) {
-        throw new Error(`No ${tokenname} address supplied, but not in mock mode`)
-      }
-
+    let token_addr
+    if (args.mock) {
       // build a fake token
       token_addr = await gf_dapp.gemfab.callStatic.build(
         b32(tokenname), b32(tokenname.toUpperCase())
@@ -163,6 +153,8 @@ task('deploy-mock-tokens', '')
       await send(gf_dapp.gemfab.build,
         b32(tokenname), b32(tokenname.toUpperCase())
       )
+    } else {
+      token_addr = token.gem
     }
 
     // pack it
