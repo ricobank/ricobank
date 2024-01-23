@@ -147,14 +147,13 @@ task('deploy-ricobank', '')
     }
 
     let ilks = []
-    for (let token in tokens) {
+    for (let i in tokens.erc20) {
 
-        const params = tokens[token];  
-        if (params.hook != "erc20") continue;
+        const params = tokens.erc20[i]
 
         let ilk = {
-            ilk: b32(params.ilk),
-            gem: deps[token].address,
+            ilk: b32(i),
+            gem: deps[params.gemname].address,
             gemusdagg: constants.AddressZero,
             gemethagg: constants.AddressZero,
             chop: ray(params.chop),
@@ -169,18 +168,18 @@ task('deploy-ricobank', '')
         if (args.mock) {
             // create mock chainlink feed with price of 2000
             const val = bn2b32(BN.from('200000000000'))
-            await send(fb.push, b32(token + ':usd'), val, constants.MaxUint256);
+            await send(fb.push, b32(params.gemname + ':usd'), val, constants.MaxUint256);
 
-            debug('deploying mock aggregator for token', token)
+            debug('deploying mock aggregator for token', params.gemname)
             const agg_tokenusd = await agg_type.deploy(
-                fb.address, ali.address, b32(token + ':usd'), 8,
+                fb.address, ali.address, b32(params.gemname + ':usd'), 8,
                 {gasLimit: args.gasLimit}
             )
 
             ilk.gemusdagg = agg_tokenusd.address;
         } else {
-            const gemethagg = aggdapp[`agg_${token}_eth`]
-            const gemusdagg = aggdapp[`agg_${token}_usd`]
+            const gemethagg = aggdapp[`agg_${params.gemname}_eth`]
+            const gemusdagg = aggdapp[`agg_${params.gemname}_usd`]
             ilk.gemusdagg = gemusdagg ? gemusdagg.address : constants.AddressZero
             ilk.gemethagg = gemethagg ? gemethagg.address : constants.AddressZero
         }
@@ -211,16 +210,18 @@ task('deploy-ricobank', '')
     // copy (gem, src, tag, liqr) from the erc20 ilks
     const vatabi = [ "function geth(bytes32,bytes32,bytes32[]) view returns (bytes32)" ]
     const vat    = new ethers.Contract(diamond.address, vatabi, ali)
-    for (let i of tokens[':uninft'].erc20ilks) {
-        const gem  = (await vat.geth(b32(i), b32('gem'), [])).slice(0, 42)
-        const src  = (await vat.geth(b32(i), b32('src'), [])).slice(0, 42)
-        const tag  = await vat.geth(b32(i), b32('tag'), [])
-        const liqr = await vat.geth(b32(i), b32('liqr'), [])
+    if (tokens.univ3) {
+        for (let i of tokens.univ3[':uninft'].erc20ilks) {
+            const gem  = (await vat.geth(b32(i), b32('gem'), [])).slice(0, 42)
+            const src  = (await vat.geth(b32(i), b32('src'), [])).slice(0, 42)
+            const tag  = await vat.geth(b32(i), b32('tag'), [])
+            const liqr = await vat.geth(b32(i), b32('liqr'), [])
 
-        ups.gems.push(gem)
-        ups.srcs.push(src)
-        ups.tags.push(tag)
-        ups.liqrs.push(liqr)
+            ups.gems.push(gem)
+            ups.srcs.push(src)
+            ups.tags.push(tag)
+            ups.liqrs.push(liqr)
+        }
     }
 
     // make the uni ilk

@@ -7,7 +7,6 @@ task('deploy-mock-dependencies', '')
 .addOptionalParam('gasLimit', 'per-tx gas limit')
 .addOptionalParam('mock', 'mock mode')
 .setAction(async (args, hre) => {
-  let weth_addr  // todo never set
   debug('deploying dependencies...')
   const uni_pack = require(`../lib/uniswapv3/pack/uniswapv3_${args.netname}.dpack.json`)
   uni_pack.network = hre.network.name
@@ -22,7 +21,6 @@ task('deploy-mock-dependencies', '')
           gf_pack: gf_pack,
           uni_pack: uni_pack,
           tokens: args.tokens,
-          weth: weth_addr, 
           netname: args.netname,
           mock: args.mock,
           gasLimit: args.gasLimit
