@@ -933,4 +933,14 @@ contract NFTHookTest is Test, RicoSetUp {
         vm.expectRevert(); // index out of bounds
         unihook.frobhook(Hook.FHParams(self, uilk, self, abi.encode(dink), 0));
     }
+
+    function test_gem_uninitialized() public {
+        uint[] memory dink = new uint[](2);
+        (dink[0], dink[1]) = (1, goldwethtokid);
+        unihook.file('src', uilk, single(bytes32(bytes20(WETH))), 0);
+
+        // ilk not found, fb.push should fail
+        vm.expectRevert();
+        unihook.frobhook(Hook.FHParams(self, uilk, self, abi.encode(dink), 0));
+    }
 }
