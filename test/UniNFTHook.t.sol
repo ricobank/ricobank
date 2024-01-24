@@ -939,7 +939,7 @@ contract NFTHookTest is Test, RicoSetUp {
         (dink[0], dink[1]) = (1, goldwethtokid);
         unihook.file('src', uilk, single(bytes32(bytes20(WETH))), 0);
 
-        // gem not found, fb.push should fail
+        // gem not found, fb.pull should fail
         vm.expectRevert();
         unihook.frobhook(Hook.FHParams(self, uilk, self, abi.encode(dink), 0));
     }
