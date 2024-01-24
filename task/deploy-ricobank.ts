@@ -111,6 +111,13 @@ task('deploy-ricobank', '')
         tags: [],
         liqrs: []
     }
+    const uniconfig = tokens.univ3 ? tokens.univ3[':uninft'] : undefined
+    if (uniconfig) {
+        ups.chop = ray(uniconfig.chop);
+        ups.dust = rad(uniconfig.dust);
+        ups.line = rad(uniconfig.line);
+        ups.room = BN.from(uniconfig.room);
+    }
 
     const ballargs = {
         bank: diamond.address,
