@@ -8,7 +8,7 @@ import { Vat }  from "./vat.sol";
 import { Bank, Gem } from "./bank.sol";
 
 // accounting mechanism
-// triggers collateral (flip), surplus (flap), and deficit (flop) auctions
+// triggers surplus (flap), and deficit (flop) auctions
 contract Vow is Bank {
     function RISK() external view returns (Gem) {return getVowStorage().risk;}
     function ramp() external view returns (Ramp memory) {
