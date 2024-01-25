@@ -1,6 +1,6 @@
 /// SPDX-License-Identifier: AGPL-3.0
 
-// Copyright (C) 2021-2023 halys
+// Copyright (C) 2021-2024 halys
 
 // The cannonball is the canonical deployment sequence
 // implemented as one big contract. You can diff more

@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-// Copyright (C) 2021-2023 halys
+// Copyright (C) 2021-2024 halys
 
 pragma solidity ^0.8.19;
 
 import { Vat }  from "./vat.sol";
 import { Bank, Gem } from "./bank.sol";
 
-// accounting mechanism
-// triggers collateral (flip), surplus (flap), and deficit (flop) auctions
+// total system profit/loss balancing mechanism
+// triggers surplus (flap), and deficit (flop) auctions
 contract Vow is Bank {
     function RISK() external view returns (Gem) {return getVowStorage().risk;}
     function ramp() external view returns (Ramp memory) {
