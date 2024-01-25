@@ -2,7 +2,7 @@
 
 /// vat.sol -- Rico CDP database
 
-// Copyright (C) 2021-2023 halys
+// Copyright (C) 2021-2024 halys
 // Copyright (C) 2018 Rain <rainbreak@riseup.net>
 //
 // This program is free software: you can redistribute it and/or modify
