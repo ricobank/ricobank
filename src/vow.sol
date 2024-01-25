@@ -7,7 +7,7 @@ pragma solidity ^0.8.19;
 import { Vat }  from "./vat.sol";
 import { Bank, Gem } from "./bank.sol";
 
-// accounting mechanism
+// total system profit/loss balancing mechanism
 // triggers surplus (flap), and deficit (flop) auctions
 contract Vow is Bank {
     function RISK() external view returns (Gem) {return getVowStorage().risk;}
