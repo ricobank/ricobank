@@ -1,0 +1,38 @@
+{
+    "arbitrum": {
+        "par":  "1",
+        "ceil": "0",
+        "uniadaptrange": "0",
+        "uniadaptttl": "0",
+        "daiusdttl": "0",
+        "xauusdttl": "0",
+        "platpep": "0",
+        "platpop": "0",
+        "plotpep": "0",
+        "plotpop": "0",
+        "mintramp": {
+            "cel": "0",
+            "rel": "0.0",
+            "wel": "0"
+        }
+    },
+    "hardhat": {
+        "par":  "1",
+        "ceil": "100000",
+        "uniadaptrange": "1",
+        "uniadaptttl": "63115200",
+        "_ttl_comment": "2 * BANKYEAR = 63115200",
+        "daiusdttl": "63115200",
+        "xauusdttl": "63115200",
+        "platpep": "2",
+        "platpop": "1",
+        "plotpep": "2",
+        "plotpop": "1",
+        "mintramp": {
+            "cel": "1",
+            "_rel_comment": "used as ray({'rel'}).div(BANKYEAR). E.g. use 0.02 for 2% per year",
+            "rel": "0.02",
+            "wel": "1"
+        }
+    }
+}
