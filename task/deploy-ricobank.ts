@@ -44,8 +44,10 @@ task('deploy-ricobank', '')
 
     const pb = new dpack.PackBuilder(hre.network.name)
 
-    const fb     = deps.feedbase;
-    const tokens = args.tokens ? require(args.tokens)[args.netname] : {}
+    const fb       = deps.feedbase;
+    const tokens   = args.tokens ? require(args.tokens)[args.netname] : {}
+    const settings = require('./settings.json')[hre.network.name]
+
     let agg_daiusd, agg_xauusd, agg_artifact, agg_type
     let aggdapp
     if (args.mock) {
@@ -136,21 +138,21 @@ task('deploy-ricobank', '')
         dai: deps.dai.address,
         dai_usd_agg: agg_daiusd.address,
         xau_usd_agg: agg_xauusd.address,
-        par: ray(1),
-        ceil: wad(100000),
-        uniadaptrange: 1,
-        uniadaptttl:   BANKYEAR * 2,
-        daiusdttl:  BANKYEAR * 2,
-        xauusdttl:  BANKYEAR * 2,
-        platpep:    2,
-        platpop:    ray(1),
-        plotpep:    2,
-        plotpop:    ray(1),
+        par: ray(settings.par),
+        ceil: wad(settings.ceil),
+        uniadaptrange: BN.from(settings.uniadaptrange),
+        uniadaptttl:   BN.from(settings.uniadaptttl),
+        daiusdttl:  BN.from(settings.daiusdttl),
+        xauusdttl:  BN.from(settings.xauusdttl),
+        platpep:    BN.from(settings.platpep),
+        platpop:    ray(settings.platpop),
+        plotpep:    BN.from(settings.plotpep),
+        plotpop:    ray(settings.plotpop),
         mintramp:   {
             bel: (await ethers.provider.getBlock('latest')).timestamp,
-            cel: 1,
-            rel: ray(0.02).div(BANKYEAR),
-            wel: ray(1) 
+            cel: BN.from(settings.mintramp.cel),
+            rel: ray(settings.mintramp.rel).div(BANKYEAR),
+            wel: ray(settings.mintramp.wel)
         },
     }
 
