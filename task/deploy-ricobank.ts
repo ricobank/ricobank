@@ -46,8 +46,10 @@ task('deploy-ricobank', '')
 
     const pb = new dpack.PackBuilder(hre.network.name)
 
-    const fb     = deps.feedbase;
-    const tokens = args.tokens ? require(args.tokens)[args.netname] : {}
+    const fb       = deps.feedbase;
+    const tokens   = args.tokens ? require(args.tokens)[args.netname] : {}
+    const settings = require('./settings.json')[hre.network.name]
+
     let agg_daiusd, agg_xauusd, agg_artifact, agg_type
     let aggdapp
     if (args.mock) {
@@ -101,12 +103,12 @@ task('deploy-ricobank', '')
     )
 
     const ups = {
-        ilk: b32(':uninft'),
-        fee: BN.from("1000000001546067052200000000"),
-        chop: ray(1),
-        dust: rad(0.1),
-        line: rad(10000),
-        room: BN.from(8),
+        ilk:  b32(':uninft'),
+        fee:  undefined,
+        chop: undefined,
+        dust: undefined,
+        line: undefined,
+        room: undefined,
         uniwrapper: deps.uniwrapper.address,
         gems: [],
         srcs: [],
@@ -115,6 +117,7 @@ task('deploy-ricobank', '')
     }
     const uniconfig = tokens.univ3 ? tokens.univ3[':uninft'] : undefined
     if (uniconfig) {
+        ups.fee  = ray(uniconfig.fee);
         ups.chop = ray(uniconfig.chop);
         ups.dust = rad(uniconfig.dust);
         ups.line = rad(uniconfig.line);
@@ -137,21 +140,21 @@ task('deploy-ricobank', '')
         dai: deps.dai.address,
         dai_usd_agg: agg_daiusd.address,
         xau_usd_agg: agg_xauusd.address,
-        par: ray(1),
-        ceil: wad(100000),
-        uniadaptrange: 1,
-        uniadaptttl:   BANKYEAR * 2,
-        daiusdttl:  BANKYEAR * 2,
-        xauusdttl:  BANKYEAR * 2,
-        platpep:    2,
-        platpop:    ray(1),
-        plotpep:    2,
-        plotpop:    ray(1),
+        par: ray(settings.par),
+        ceil: wad(settings.ceil),
+        uniadaptrange: BN.from(settings.uniadaptrange),
+        uniadaptttl:   BN.from(settings.uniadaptttl),
+        daiusdttl:  BN.from(settings.daiusdttl),
+        xauusdttl:  BN.from(settings.xauusdttl),
+        platpep:    BN.from(settings.platpep),
+        platpop:    ray(settings.platpop),
+        plotpep:    BN.from(settings.plotpep),
+        plotpop:    ray(settings.plotpop),
         mintramp:   {
             bel: (await ethers.provider.getBlock('latest')).timestamp,
-            cel: 1,
-            rel: ray(0.02).div(BANKYEAR),
-            wel: ray(1) 
+            cel: BN.from(settings.mintramp.cel),
+            rel: ray(settings.mintramp.rel).div(BANKYEAR),
+            wel: ray(settings.mintramp.wel)
         },
     }
 
@@ -231,14 +234,19 @@ task('deploy-ricobank', '')
             ups.tags.push(tag)
             ups.liqrs.push(liqr)
         }
-    }
 
-    // make the uni ilk
-    await send(ball.makeuni, ups);
+        if (Object.values(ups).every(value => value !== undefined)){
+            // make the uni ilk
+            await send(ball.makeuni, ups);
+            debug('done making uni hook')
+        } else {
+            // back out if under defined. Tokens file must set all originally undefined values
+            debug('ERROR: failed to make uni hook')
+        }
+    }
 
     // take diamond back
     await send(ball.approve, ali.address);
-    debug('done making uni hook')
 
     debug('ward rico and risk')
     await send(deps.rico.ward, diamond.address, 1)
