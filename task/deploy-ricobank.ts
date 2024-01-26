@@ -33,9 +33,11 @@ task('deploy-ricobank', '')
         deps_pack = await hre.run(
           'deploy-mock-dependencies',
           {
+              mock:    args.mock,
               tokens:  args.tokens,
               netname: args.netname,
-              mock:    args.mock
+              gfpackcid: args.gfpackcid,
+              risk: args.risk
           }
         )
     }
@@ -104,7 +106,7 @@ task('deploy-ricobank', '')
         chop: ray(1),
         dust: rad(0.1),
         line: rad(10000),
-        room: 8,
+        room: BN.from(8),
         uniwrapper: deps.uniwrapper.address,
         gems: [],
         srcs: [],

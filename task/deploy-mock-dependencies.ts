@@ -13,12 +13,22 @@ task('deploy-mock-dependencies', '')
   debug('found uni pack')
   const fb_pack = await hre.run('deploy-mock-feedbase', {netname: args.netname})
   debug('deployed fb')
-  const gf_pack = await hre.run('deploy-mock-gemfab', {netname: args.netname, gasLimit: args.gasLimit})
-  debug('deployed gf')
+  let gf_pack
+  if (args.gfpackcid) {
+    gf_pack = await dpack.getIpfsJson(args.gfpackcid)
+  } else {
+    gf_pack = await hre.run(
+      'deploy-mock-gemfab', {netname: args.netname, gasLimit: args.gasLimit}
+    )
+    debug('deployed gf')
+  }
+
   const tokens_pack = await hre.run(
       'deploy-mock-tokens',
       {
           gf_pack: gf_pack,
+          gfpackcid: args.gfpackcid,
+          risk: args.risk,
           uni_pack: uni_pack,
           tokens: args.tokens,
           netname: args.netname,
