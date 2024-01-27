@@ -3,7 +3,7 @@ const debug = require('debug')('ricobank:task')
 const dpack = require('@etherpacks/dpack')
 import { b32, send } from 'minihat'
 
-task('deploy-mock-tokens', '')
+task('deploy-tokens', '')
 .addOptionalParam('tokens', 'JSON file with token addresses')
 .addOptionalParam('gfpackcid', 'gemfab pack passed as cid cli string, alternative to gf_pack obj passed from another task')
 .addOptionalParam('unipackcid', 'unipack passed as cid cli string, alternative to uni_pack obj passed from another task')

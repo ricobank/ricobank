@@ -6,11 +6,9 @@ import './lib/weth/task/deploy-mock-weth'
 import './lib/uniswapv3/task/deploy-uniswapv3'
 
 import './task/combine-packs'
-import './task/deploy-mock-gemfab'
-import './task/deploy-mock-feedbase'
-import './task/deploy-mock-tokens'
+import './task/deploy-tokens'
 
-import './task/deploy-mock-dependencies'
+import './task/deploy-dependencies'
 import './task/deploy-ricobank'
 import 'hardhat-diamond-abi'
 
