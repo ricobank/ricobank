@@ -16,13 +16,19 @@ const dpack = require('@etherpacks/dpack')
 const rpaddr = (a) => a + '00'.repeat(12)
 
 describe('Launch', () => {
-  let ali, ALI, fb, bank, weth, wsteth, pack, dapp, cla, unia, nfpm
+  let ali, ALI, fb, bank, weth, wsteth, pack, dapp, cla, unia, nfpm, riskaddr
 
   before(async () => {
     ;[ali] = await ethers.getSigners()
     ALI = ali.address
 
-    pack = await hh.run('deploy-ricobank', {netname: 'ethereum', tokens: './tokens.json', writepack: 'true'})
+    const gfpack = await hh.run('deploy-gemfab')
+    const gfpackcid = await dpack.putIpfsJson(gfpack)
+    const gf = (await dpack.load(gfpack, ethers, ali)).gemfab
+    riskaddr = await gf.callStatic.build(b32('RISK'), b32('RISK'))
+    await send(gf.build, b32('RISK'), b32('RISK'))
+
+    pack = await hh.run('deploy-ricobank', {netname: 'ethereum', tokens: './tokens.json', writepack: 'true', gfpackcid, risk: riskaddr})
     dapp = await dpack.load(pack, ethers, ali)
 
     fb   = dapp.feedbase
@@ -53,6 +59,8 @@ describe('Launch', () => {
   })
 
   it('weth', async () => {
+    want(riskaddr).eql(dapp.risk.address)
+
     let tip = await bank.tip()
     let mar = await fb.pull(tip.src, tip.tag)
     want(BN.from(mar.val).gt(ray(0.9))).true

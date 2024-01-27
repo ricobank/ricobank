@@ -3,7 +3,7 @@ const debug = require('debug')('ricobank:task')
 import { task } from 'hardhat/config'
 const dpack = require('@etherpacks/dpack')
 
-task('deploy-mock-dependencies', '')
+task('deploy-dependencies', '')
 .addOptionalParam('gasLimit', 'per-tx gas limit')
 .addOptionalParam('mock', 'mock mode')
 .setAction(async (args, hre) => {
@@ -11,14 +11,24 @@ task('deploy-mock-dependencies', '')
   const uni_pack = require(`../lib/uniswapv3/pack/uniswapv3_${args.netname}.dpack.json`)
   uni_pack.network = hre.network.name
   debug('found uni pack')
-  const fb_pack = await hre.run('deploy-mock-feedbase', {netname: args.netname})
+  const fb_pack = await hre.run('deploy-feedbase', {netname: args.netname})
   debug('deployed fb')
-  const gf_pack = await hre.run('deploy-mock-gemfab', {netname: args.netname, gasLimit: args.gasLimit})
-  debug('deployed gf')
+  let gf_pack
+  if (args.gfpackcid) {
+    gf_pack = await dpack.getIpfsJson(args.gfpackcid)
+  } else {
+    gf_pack = await hre.run(
+      'deploy-gemfab', {netname: args.netname, gasLimit: args.gasLimit}
+    )
+    debug('deployed gf')
+  }
+
   const tokens_pack = await hre.run(
-      'deploy-mock-tokens',
+      'deploy-tokens',
       {
           gf_pack: gf_pack,
+          gfpackcid: args.gfpackcid,
+          risk: args.risk,
           uni_pack: uni_pack,
           tokens: args.tokens,
           netname: args.netname,

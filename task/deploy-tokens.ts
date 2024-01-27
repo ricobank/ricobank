@@ -3,7 +3,7 @@ const debug = require('debug')('ricobank:task')
 const dpack = require('@etherpacks/dpack')
 import { b32, send } from 'minihat'
 
-task('deploy-mock-tokens', '')
+task('deploy-tokens', '')
 .addOptionalParam('tokens', 'JSON file with token addresses')
 .addOptionalParam('gfpackcid', 'gemfab pack passed as cid cli string, alternative to gf_pack obj passed from another task')
 .addOptionalParam('unipackcid', 'unipack passed as cid cli string, alternative to uni_pack obj passed from another task')
@@ -56,20 +56,16 @@ task('deploy-mock-tokens', '')
 
   debug('deploy rico')
   const gf_dapp = await dpack.load(args.gf_pack ?? args.gfpackcid, hre.ethers, ali)
-  let rico_addr
-  if (tokens.rico && tokens.rico.gem) {
-    rico_addr = tokens.rico.gem
-  } else {
-    rico_addr = await gf_dapp.gemfab.callStatic.build(
-      b32("Rico"), b32("RICO")
-    );
-    await send(gf_dapp.gemfab.build, b32("Rico"), b32("RICO"), {gasLimit: args.gasLimit})
-  }
+  let rico_addr = await gf_dapp.gemfab.callStatic.build(
+    b32("Rico"), b32("RICO")
+  );
+  await send(gf_dapp.gemfab.build, b32("Rico"), b32("RICO"), {gasLimit: args.gasLimit})
 
   debug('deploy risk')
   let risk_addr
-  if (tokens.risk && tokens.risk.gem) {
-    risk_addr = tokens.risk.gem
+  if (args.risk) {
+    // risk already deployed
+    risk_addr = args.risk
   } else {
     risk_addr = await gf_dapp.gemfab.callStatic.build(
       b32("Rico Riskshare"), b32("RISK")

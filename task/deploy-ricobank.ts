@@ -31,11 +31,13 @@ task('deploy-ricobank', '')
         }
     } else {
         deps_pack = await hre.run(
-          'deploy-mock-dependencies',
+          'deploy-dependencies',
           {
+              mock:    args.mock,
               tokens:  args.tokens,
               netname: args.netname,
-              mock:    args.mock
+              gfpackcid: args.gfpackcid,
+              risk: args.risk
           }
         )
     }
