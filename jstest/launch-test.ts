@@ -48,6 +48,7 @@ describe('Launch', () => {
     const config = await cla.getConfig(b32('weth:usd'))
     await cla.setConfig(b32('weth:usd'), [config.agg, '3000000000000000000000000'])
     await cla.setConfig(b32('wsteth:eth'), [config.agg, '3000000000000000000000000'])
+    await cla.setConfig(b32('usdc:usd'), [config.agg, '3000000000000000000000000'])
 
     await snapshot_name(hh);
   })
@@ -56,6 +57,14 @@ describe('Launch', () => {
   after(async () => {
     revert_pop(hh)
     revert_clear(hh)
+  })
+
+  it('read usdc price', async () => {
+    const src = (await bank.geth(b32('usdc'), b32('src'), [])).slice(0, 42)
+    const tag = await bank.geth(b32('usdc'), b32('tag'), [])
+    const mar = await fb.pull(src, tag)
+    want(BN.from(mar.val).gt(ray(0.95).mul(10 ** 12))).true
+    want(BN.from(mar.val).lt(ray(1.05).mul(10 ** 12))).true
   })
 
   it('weth', async () => {
