@@ -11,6 +11,7 @@ task('deploy-ricobank', '')
   .addOptionalParam('tokens', 'JSON file with token addresses')
   .addOptionalParam('writepack', 'write pack to pack dir')
   .addOptionalParam('gasLimit', 'per-tx gas limit')
+  .addOptionalParam('ipfs', 'add packs to ipfs')
   .addParam('netname', 'network name to load packs from')
   .setAction(async (args, hre) => {
     debug('network name in task:', hre.network.name)
@@ -37,7 +38,8 @@ task('deploy-ricobank', '')
               tokens:  args.tokens,
               netname: args.netname,
               gfpackcid: args.gfpackcid,
-              risk: args.risk
+              risk: args.risk,
+              ipfs: args.ipfs
           }
         )
     }
@@ -51,7 +53,7 @@ task('deploy-ricobank', '')
     const settings = require('./settings.json')[hre.network.name]
 
     let agg_daiusd, agg_xauusd, agg_artifact, agg_type
-    let aggdapp
+    let aggdapp, agg_pack
     if (args.mock) {
         // deploy a fake aggregator that we can easily write to
         agg_artifact = require('../lib/feedbase/artifacts/src/test/MockChainlinkAggregator.sol/MockChainlinkAggregator.json')
@@ -69,11 +71,16 @@ task('deploy-ricobank', '')
 
 
     } else {
-        let aggpack = require(`../lib/chainlink/pack/chainlink_${args.netname}.dpack.json`)
-        aggpack.network = hre.network.name
-        await pb.merge(aggpack)
+        if (args.aggpackcid) {
+          agg_pack = await dpack.getIpfsJson(args.aggpackcid)
+        } else {
+          agg_pack = require(`../lib/chainlink/pack/chainlink_${args.netname}.dpack.json`)
+        }
+        agg_pack.network = hre.network.name
 
-        aggdapp    = await dpack.load(aggpack, ethers, ali)
+        await pb.merge(agg_pack)
+
+        aggdapp    = await dpack.load(agg_pack, ethers, ali)
         agg_daiusd = aggdapp.agg_dai_usd
         agg_xauusd = aggdapp.agg_xau_usd
     }
@@ -300,5 +307,18 @@ task('deploy-ricobank', '')
         const packstr = JSON.stringify(pack, null, 2)
         require('fs').writeFileSync(outfile, packstr)
     }
+
+    if (args.ipfs) {
+      console.log("deploy-ricobank IPFS CIDs:")
+      let cid = await dpack.putIpfsJson(deps_pack, true)
+      console.log(`  Dependencies: ${cid}`)
+      if (!args.mock) {
+        cid = await dpack.putIpfsJson(agg_pack, true)
+        console.log(`  Aggregators: ${cid}`)
+      }
+      cid = await dpack.putIpfsJson(pack, true)
+      console.log(`  Ricobank: ${cid}`)
+    }
+
     return pack
   })
