@@ -63,8 +63,8 @@ describe('Launch', () => {
     const src = (await bank.geth(b32('usdc'), b32('src'), [])).slice(0, 42)
     const tag = await bank.geth(b32('usdc'), b32('tag'), [])
     const mar = await fb.pull(src, tag)
-    want(BN.from(mar.val).gt(ray(0.95).mul(10 ** 12))).true
-    want(BN.from(mar.val).lt(ray(1.05).mul(10 ** 12))).true
+    want(BN.from(mar.val).gt(ray(0.95).div(2000).mul(10 ** 12))).true
+    want(BN.from(mar.val).lt(ray(1.05).div(2000).mul(10 ** 12))).true
   })
 
   it('weth', async () => {

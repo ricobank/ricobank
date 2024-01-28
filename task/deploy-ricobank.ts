@@ -192,8 +192,13 @@ task('deploy-ricobank', '')
         } else {
             const gemethagg = aggdapp[`agg_${params.gemname}_eth`]
             const gemusdagg = aggdapp[`agg_${params.gemname}_usd`]
-            ilk.gemusdagg = gemusdagg ? gemusdagg.address : constants.AddressZero
-            ilk.gemethagg = gemethagg ? gemethagg.address : constants.AddressZero
+            if (gemusdagg) {
+                ilk.gemusdagg = gemusdagg.address
+            } else if (gemethagg) {
+                ilk.gemethagg = gemethagg ? gemethagg.address : constants.AddressZero
+            } else {
+                throw new Error(`no aggregator defined for ilk ${i}`)
+            }
         }
 
         ilks.push(ilk)
