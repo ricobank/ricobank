@@ -16,6 +16,9 @@ import {Divider} from "../lib/feedbase/src/combinators/Divider.sol";
 import {Multiplier} from "../lib/feedbase/src/combinators/Multiplier.sol";
 import {UniswapV3Adapter} from "../lib/feedbase/src/adapters/UniswapV3Adapter.sol";
 import {Ward} from "../lib/feedbase/src/mixin/ward.sol";
+import {Feedbase} from "../lib/feedbase/src/Feedbase.sol";
+
+import {Gem} from "../lib/gemfab/src/gem.sol";
 
 import {Vat} from "./vat.sol";
 import {Vow} from "./vow.sol";
@@ -225,10 +228,10 @@ contract Ball is Math, Ward {
 
         _configureBlock(multiplier, RICO_USD_TAG,
                        address(cladapt),  DAI_USD_TAG,
-                       address(uniadapt), RICO_DAI_TAG);
+                       address(uniadapt), RICO_DAI_TAG, RAY);
         _configureBlock(divider, RICO_REF_TAG,
                        address(multiplier), RICO_USD_TAG,
-                       address(cladapt),    XAU_USD_TAG);
+                       address(cladapt),    XAU_USD_TAG, RAY);
 
         // risk:rico
         uniadapt.setConfig(
@@ -266,13 +269,14 @@ contract Ball is Math, Ward {
             // add a multiplier config which reads gem/usd. Relies on weth ilk existing for weth:usd cladapter
             _configureBlock(multiplier, gemusdtag,
                             address(cladapt), gemethtag,
-                            address(cladapt), WETH_USD_TAG);
+                            address(cladapt), WETH_USD_TAG, RAY);
             gemusdsrc = address(multiplier);
             gemclatag = gemethtag;
         }
         _configureBlock(divider, gemreftag,
                         address(gemusdsrc), gemusdtag,
-                        address(cladapt),   XAU_USD_TAG);
+                        address(cladapt),   XAU_USD_TAG,
+                        10 ** (27 - (18 - Gem(ilkparams.gem).decimals())));
     }
 
     function makeuni(UniParams calldata ups) external _ward_ {
@@ -307,11 +311,23 @@ contract Ball is Math, Ward {
         Diamond(bank).transferOwnership(usr);
     }
 
-    function _configureBlock(Block b, bytes32 tag, address s1, bytes32 t1, address s2, bytes32 t2) internal {
-        address[] memory sources = new address[](2);
-        bytes32[] memory tags    = new bytes32[](2);
+    function _configureBlock(Block b, bytes32 tag, address s1, bytes32 t1, address s2, bytes32 t2, uint C) internal {
+        address[] memory sources;
+        bytes32[] memory tags;
+
+        if (C == RAY) {
+            sources = new address[](2);
+            tags    = new bytes32[](2);
+        } else {
+            sources = new address[](3);
+            tags    = new bytes32[](3);
+            sources[2] = address(this); tags[2] = bytes32(C);
+            Feedbase(feedbase).push(bytes32(C), bytes32(C), type(uint).max);
+        }
+
         sources[0] = s1; tags[0] = t1;
         sources[1] = s2; tags[1] = t2;
+
         b.setConfig(tag, Block.Config(sources, tags));
     }
 }
