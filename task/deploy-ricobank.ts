@@ -294,7 +294,7 @@ task('deploy-ricobank', '')
     await pb.packObject({
         objectname: 'bank',
         address: diamond.address,
-        typename: 'Ricobank',
+        typename: 'BankDiamond',
         artifact: top_artifact
     }, true)
     debug('all packed, merging')
