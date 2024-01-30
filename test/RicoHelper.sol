@@ -219,8 +219,7 @@ abstract contract RicoSetUp is BaseHelper {
             1000000001546067052200000000, // fee
             100000 * RAD, // line
             RAY, // liqr
-            20000, // ttl
-            BANKYEAR / 4 // range
+            20000 // ttl
         );
 
         address[] memory unigems = new address[](2);

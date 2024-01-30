@@ -50,7 +50,6 @@ contract Ball is Math, Ward {
         uint256 line;
         uint256 liqr;
         uint256 ttl;
-        uint256 range;
     }
 
     struct UniParams {

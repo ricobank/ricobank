@@ -181,7 +181,6 @@ task('deploy-ricobank', '')
             line: rad(params.line),
             liqr: ray(params.liqr),
             ttl: params.ttl,
-            range: params.range
         }
 
         if (args.mock) {
