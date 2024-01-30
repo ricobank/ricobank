@@ -16,7 +16,7 @@ const dpack = require('@etherpacks/dpack')
 const rpaddr = (a) => a + '00'.repeat(12)
 
 describe('Launch', () => {
-  let ali, ALI, fb, bank, weth, wsteth, pack, dapp, cla, unia, nfpm, riskaddr
+  let ali, ALI, fb, bank, weth, usdc, pack, dapp, cla, unia, nfpm, riskaddr
 
   before(async () => {
     ;[ali] = await ethers.getSigners()
@@ -28,13 +28,15 @@ describe('Launch', () => {
     riskaddr = await gf.callStatic.build(b32('RISK'), b32('RISK'))
     await send(gf.build, b32('RISK'), b32('RISK'))
 
-    pack = await hh.run('deploy-ricobank', {netname: 'ethereum', tokens: './tokens.json', writepack: 'true', gfpackcid, risk: riskaddr})
+    const aggpackcid = 'bafkreigzd6efb6kfhd4is7zvgiua3hqvdimmqsbs72vjtytgqcd3cdxhiq'
+
+    pack = await hh.run('deploy-ricobank', {netname: 'ethereum', tokens: './tokens-launch.json', writepack: 'true', gfpackcid, risk: riskaddr, aggpackcid})
     dapp = await dpack.load(pack, ethers, ali)
 
     fb   = dapp.feedbase
     bank = dapp.bank
     weth = dapp.weth
-    wsteth = dapp.wsteth
+    usdc = dapp.usdc
     cla  = dapp.chainlinkadapter
     nfpm = dapp.nonfungiblePositionManager
     unia = dapp.uniswapv3adapter
@@ -45,9 +47,11 @@ describe('Launch', () => {
 
     await send(weth.approve, bank.address, constants.MaxUint256)
 
-    const config = await cla.getConfig(b32('weth:usd'))
+    let config = await cla.getConfig(b32('weth:usd'))
     await cla.setConfig(b32('weth:usd'), [config.agg, '3000000000000000000000000'])
-    await cla.setConfig(b32('wsteth:eth'), [config.agg, '3000000000000000000000000'])
+    config = await cla.getConfig(b32('usdc:eth'))
+    await cla.setConfig(b32('usdc:eth'), [config.agg, '3000000000000000000000000'])
+    config = await cla.getConfig(b32('usdc:usd'))
     await cla.setConfig(b32('usdc:usd'), [config.agg, '3000000000000000000000000'])
 
     await snapshot_name(hh);
@@ -91,17 +95,17 @@ describe('Launch', () => {
     await send(bank.frob, b32('weth'), ali.address, dink, wad(25))
   })
 
-  it('uni weth:wsteth pool', async () => {
+  it('uni weth:usdc pool', async () => {
 
-    // impersonate some whale to get some wsteth
-    const WHALE = "0x0F8179A26ae4709EC59048a266E690d49553605A"
+    // impersonate some whale to get some usdc
+    const WHALE = "0xD6153F5af5679a75cC85D8974463545181f48772"
     await hh.network.provider.request({
       method: "hardhat_impersonateAccount",
       params: [WHALE],
     });
     const whale = await ethers.getSigner(WHALE)
     const whaledapp = await dpack.load(pack, ethers, whale)
-    await send(whaledapp.wsteth.transfer, ALI, wad(50))
+    await send(whaledapp.usdc.transfer, ALI, '120000000000')
     await hh.network.provider.request({
       method: "hardhat_stopImpersonatingAccount",
       params: [WHALE],
@@ -110,7 +114,7 @@ describe('Launch', () => {
     const joinres = await join_pool({
       nfpm: nfpm, ethers, ali,
       a1: { token: weth.address, amountIn: wad(50) },
-      a2: { token: wsteth.address,  amountIn: wad(50) },
+      a2: { token: usdc.address,  amountIn: '120000000000' },
       fee: 500,
       tickSpacing: 10
     })
