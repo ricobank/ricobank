@@ -196,8 +196,9 @@ task('deploy-ricobank', '')
 
             ilk.gemusdagg = agg_tokenusd.address;
         } else {
-            const gemethagg = aggdapp[`agg_${params.gemname}_eth`]
-            const gemusdagg = aggdapp[`agg_${params.gemname}_usd`]
+            const aggname = params.aggname ?? params.gemname
+            const gemethagg = aggdapp[`agg_${aggname}_eth`]
+            const gemusdagg = aggdapp[`agg_${aggname}_usd`]
             if (gemusdagg) {
                 ilk.gemusdagg = gemusdagg.address
             } else if (gemethagg) {
