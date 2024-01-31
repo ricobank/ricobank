@@ -125,7 +125,6 @@ describe('Launch', () => {
     testfrob('link', '0xF977814e90dA44bFA03b6295A0616a897441aceC')
   })
 
-
   it('weth', async () => {
     want(riskaddr).eql(dapp.risk.address)
 
