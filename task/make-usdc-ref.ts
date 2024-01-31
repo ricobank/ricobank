@@ -100,7 +100,7 @@ task('make-usdc-ref', '')
     await pb.merge(rbpack)
 
     if (args.ipfs) {
-      const cid = await dpack.putIpfsJson(await pb.build())
+      const cid = await dpack.putIpfsJson(await pb.build(), {pin: true})
       console.log("swapped in usdc ref, pack CID:", cid)
     }
 
