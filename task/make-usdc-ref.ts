@@ -70,7 +70,7 @@ task('make-usdc-ref', '')
     config = await cladapt.getConfig(b32('dai:usd'))
     await send(
       cladapt.setConfig,
-      b32('dai:usd'),
+      b32('usdc:usd'),
       [aggdapp.agg_usdc_usd.address, config.ttl]
     )
 
