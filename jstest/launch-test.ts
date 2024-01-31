@@ -29,8 +29,13 @@ describe('Launch', () => {
     await send(gf.build, b32('RISK'), b32('RISK'))
 
     const aggpackcid = 'bafkreidz647bfb36naoib7mbshpiowmz5rhnh6sjhy4aenzqxkb3rjyvsm'
+    const unipackcid = 'bafkreibwym7egydjctbmmk7xtiq32gvw65kivbjzqwt65qfpofjwtap2fe'
 
-    pack = await hh.run('deploy-ricobank', {netname: 'ethereum', tokens: './tokens-launch.json', writepack: 'true', gfpackcid, risk: riskaddr, aggpackcid})
+    pack = await hh.run('deploy-ricobank', {netname: 'ethereum', tokens: './tokens-launch.json', writepack: 'true', gfpackcid, risk: riskaddr, aggpackcid, unipackcid})
+    const rbpackcid = await dpack.putIpfsJson(pack)
+    const usdcaddr = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'
+    pack = await hh.run('make-usdc-ref',
+                        {rbpackcid, aggpackcid, unipackcid})
     dapp = await dpack.load(pack, ethers, ali)
 
     fb   = dapp.feedbase
@@ -125,7 +130,7 @@ describe('Launch', () => {
     testfrob('link', '0xF977814e90dA44bFA03b6295A0616a897441aceC')
   })
 
-  it('weth', async () => {
+  it('weth frob 1', async () => {
     want(riskaddr).eql(dapp.risk.address)
 
     let tip = await bank.tip()
@@ -137,14 +142,14 @@ describe('Launch', () => {
 
     want(await bank.way()).eql(ray(1))
     await send(bank.poke)
-    want((await bank.way()).lt(ray(1))).true
+    want((await bank.way()).gt(ray(1))).true
 
     let dink = ethers.utils.defaultAbiCoder.encode(['uint'], [wad(50)])
     await send(bank.frob, b32('weth'), ali.address, dink, wad(40))
 
     await warp(hh, timestamp + BANKYEAR)
     await send(bank.poke)
-    want((await bank.way()).lt(ray(1))).true
+    want((await bank.way()).gt(ray(1))).true
 
     await send(bank.frob, b32('weth'), ali.address, dink, wad(25))
   })

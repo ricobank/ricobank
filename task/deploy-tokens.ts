@@ -2,6 +2,7 @@ import { task } from 'hardhat/config'
 const debug = require('debug')('ricobank:task')
 const dpack = require('@etherpacks/dpack')
 import { b32, send } from 'minihat'
+import { createAndInitializePoolIfNecessary } from './createAndInitializePoolIfNecessary'
 
 task('deploy-tokens', '')
 .addOptionalParam('tokens', 'JSON file with token addresses')
@@ -15,38 +16,6 @@ task('deploy-tokens', '')
   debug('deploy tokens')
 
   const [ ali ]  = await hre.ethers.getSigners()
-  const createAndInitializePoolIfNecessary = async (
-    factory, token0, token1, fee, sqrtPriceX96?
-  ) => {
-    if (token1 < token0) {
-      let t1 = token1
-      token1 = token0
-      token0 = t1
-      if (sqrtPriceX96) {
-        // invert the price
-        sqrtPriceX96 = hre.ethers.BigNumber.from(2).pow(96).pow(2).div(sqrtPriceX96)
-      }
-    }
-    let pooladdr = await factory.getPool(token0, token1, fee)
-
-    if (pooladdr == hre.ethers.constants.AddressZero) {
-      await send(factory.createPool, token0, token1, fee, {gasLimit: args.gasLimit})
-      pooladdr = await factory.getPool(token0, token1, fee)
-      const uni_dapp = await dpack.load(
-        args.uni_pack ?? args.unipackcid, hre.ethers, ali
-      )
-      const pool_artifact = await dpack.getIpfsJson(
-        uni_dapp._types.UniswapV3Pool.artifact['/']
-      )
-      const pool = await hre.ethers.getContractAt(pool_artifact.abi, pooladdr, ali)
-      await send(
-        pool.initialize, sqrtPriceX96 ? sqrtPriceX96 : '0x1' + '0'.repeat(96/4),
-        {gasLimit: args.gasLimit}
-      );
-    }
-
-    return pooladdr
-  }
 
   let tokens : any = {}
   if (args.tokens) {
@@ -77,7 +46,12 @@ task('deploy-tokens', '')
   const uni_dapp = await dpack.load(args.uni_pack ?? args.unipackcid, hre.ethers, ali)
   let t0; let t1;
   ;[t0, t1] = [rico_addr, risk_addr]
-  const ricorisk_addr = await createAndInitializePoolIfNecessary(uni_dapp.uniswapV3Factory, t0, t1, 3000)
+  const unipackcid = args.unipackcid
+  const uni_pack = args.uni_pack
+  const ricorisk_addr = await createAndInitializePoolIfNecessary(
+    {ali, ethers: hre.ethers, gasLimit: args.gasLimit, unipackcid, uni_pack },
+    uni_dapp.uniswapV3Factory, t0, t1, 3000
+  )
 
   let dai_addr
   if (args.mock) {
@@ -96,6 +70,7 @@ task('deploy-tokens', '')
   ;[t0, t1] = [rico_addr, dai_addr]
   // rico:dai ~2k
   const ricodai_addr = await createAndInitializePoolIfNecessary(
+    { ali, ethers: hre.ethers, gasLimit: args.gasLimit, unipackcid, uni_pack},
     uni_dapp.uniswapV3Factory, t0, t1, 500, '0x2D000000000000000000000000'
   )
 

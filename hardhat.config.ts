@@ -10,6 +10,7 @@ import './task/deploy-tokens'
 
 import './task/deploy-dependencies'
 import './task/deploy-ricobank'
+import './task/make-usdc-ref'
 import 'hardhat-diamond-abi'
 
 /**
