@@ -2,18 +2,18 @@
     "arbitrum": {
         "par":  "1",
         "ceil": "25",
-        "uniadaptrange": "0",
-        "uniadaptttl": "0",
-        "daiusdttl": "0",
-        "xauusdttl": "0",
-        "platpep": "0",
-        "platpop": "0",
-        "plotpep": "0",
-        "plotpop": "0",
+        "uniadaptrange": "3600",
+        "uniadaptttl": "86400",
+        "daiusdttl": "86400",
+        "xauusdttl": "86400",
+        "platpep": "4",
+        "platpop": "1.1",
+        "plotpep": "4",
+        "plotpop": "1.1",
         "mintramp": {
-            "cel": "0",
-            "rel": "0.0",
-            "wel": "0"
+            "cel": "600",
+            "rel": "0.00000003",
+            "wel": "0.1"
         }
     },
     "hardhat": {
