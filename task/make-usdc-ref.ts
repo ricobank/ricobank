@@ -62,7 +62,8 @@ task('make-usdc-ref', '')
     await send(
       uniadapt.setConfig,
       b32('rico:usdc'),
-      [pooladdr, usdc.address < rico.address, config.range, config.ttl]
+      [pooladdr, usdc.address < rico.address, config.range, config.ttl],
+      { gasLimit: args.gasLimit }
     )
 
     debug('set chainlink adapter config')
@@ -71,7 +72,8 @@ task('make-usdc-ref', '')
     await send(
       cladapt.setConfig,
       b32('usdc:usd'),
-      [aggdapp.agg_usdc_usd.address, config.ttl]
+      [aggdapp.agg_usdc_usd.address, config.ttl],
+      { gasLimit: args.gasLimit }
     )
 
     debug('set multiplier config')
@@ -80,7 +82,8 @@ task('make-usdc-ref', '')
       multiplier.setConfig,
       b32('rico:usd'),
       [[cladapt.address, uniadapt.address],
-      [b32('usdc:usd'), b32('rico:usdc')]]
+      [b32('usdc:usd'), b32('rico:usdc')]],
+      { gasLimit: args.gasLimit }
     )
 
     debug('set divider config')
@@ -89,7 +92,8 @@ task('make-usdc-ref', '')
       divider.setConfig,
       b32('rico:ref'),
       [[multiplier.address, cladapt.address, dapp.ball.address],
-      [b32('rico:usd'), b32('xau:usd'), bn2b32(BN.from(10).pow(27 + 12))]]
+      [b32('rico:usd'), b32('xau:usd'), bn2b32(BN.from(10).pow(27 + 12))]],
+      { gasLimit: args.gasLimit }
     )
 
     if (args.rmdai) {
