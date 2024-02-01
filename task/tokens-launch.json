@@ -75,7 +75,7 @@
             }
         }
     },
-    "arbitrum_one": {
+    "arbitrum": {
         "erc20": {
             "weth": {
                 "gemname": "weth",
