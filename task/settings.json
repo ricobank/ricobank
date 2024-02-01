@@ -6,9 +6,9 @@
         "uniadaptttl": "86400",
         "daiusdttl": "86400",
         "xauusdttl": "86400",
-        "platpep": "4",
+        "platpep": "2",
         "platpop": "1.1",
-        "plotpep": "4",
+        "plotpep": "2",
         "plotpop": "0.99",
         "mintramp": {
             "cel": "600",
