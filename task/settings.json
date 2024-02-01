@@ -12,7 +12,8 @@
         "plotpop": "1.1",
         "mintramp": {
             "cel": "600",
-            "rel": "0.00000001",
+            "_rel_comment": "used as ray({'rel'}).div(BANKYEAR). E.g. use 0.02 for 2% per year",
+            "rel": "1.0",
             "wel": "0.1"
         }
     },
