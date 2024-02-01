@@ -330,7 +330,7 @@ contract Ball is Math, Ward {
         b.setConfig(tag, Block.Config(sources, tags));
     }
 
-    function read(bytes32 tag) external view returns (bytes32, uint) {
+    function read(bytes32 tag) external pure returns (bytes32, uint) {
         return (tag, type(uint).max);
     }
 }
