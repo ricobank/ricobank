@@ -9,7 +9,7 @@
         "platpep": "4",
         "platpop": "1.1",
         "plotpep": "4",
-        "plotpop": "1.1",
+        "plotpop": "0.99",
         "mintramp": {
             "cel": "600",
             "_rel_comment": "used as ray({'rel'}).div(BANKYEAR). E.g. use 0.02 for 2% per year",
