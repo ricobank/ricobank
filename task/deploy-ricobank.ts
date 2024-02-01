@@ -38,6 +38,7 @@ task('deploy-ricobank', '')
               tokens:  args.tokens,
               netname: args.netname,
               gfpackcid: args.gfpackcid,
+              unipackcid: args.unipackcid,
               risk: args.risk,
               ipfs: args.ipfs
           }

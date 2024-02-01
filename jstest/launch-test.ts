@@ -28,9 +28,14 @@ describe('Launch', () => {
     riskaddr = await gf.callStatic.build(b32('RISK'), b32('RISK'))
     await send(gf.build, b32('RISK'), b32('RISK'))
 
-    const aggpackcid = 'bafkreigzd6efb6kfhd4is7zvgiua3hqvdimmqsbs72vjtytgqcd3cdxhiq'
+    const aggpackcid = 'bafkreidz647bfb36naoib7mbshpiowmz5rhnh6sjhy4aenzqxkb3rjyvsm'
+    const unipackcid = 'bafkreibwym7egydjctbmmk7xtiq32gvw65kivbjzqwt65qfpofjwtap2fe'
 
-    pack = await hh.run('deploy-ricobank', {netname: 'ethereum', tokens: './tokens-launch.json', writepack: 'true', gfpackcid, risk: riskaddr, aggpackcid})
+    pack = await hh.run('deploy-ricobank', {netname: 'ethereum', tokens: './tokens-launch.json', writepack: 'true', gfpackcid, risk: riskaddr, aggpackcid, unipackcid})
+    const rbpackcid = await dpack.putIpfsJson(pack)
+    const usdcaddr = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'
+    pack = await hh.run('make-usdc-ref',
+                        {rbpackcid, aggpackcid, unipackcid})
     dapp = await dpack.load(pack, ethers, ali)
 
     fb   = dapp.feedbase
@@ -63,15 +68,69 @@ describe('Launch', () => {
     revert_clear(hh)
   })
 
-  it('read usdc price', async () => {
-    const src = (await bank.geth(b32('usdc'), b32('src'), [])).slice(0, 42)
-    const tag = await bank.geth(b32('usdc'), b32('tag'), [])
-    const mar = await fb.pull(src, tag)
-    want(BN.from(mar.val).gt(ray(0.95).div(2000).mul(10 ** 12))).true
-    want(BN.from(mar.val).lt(ray(1.05).div(2000).mul(10 ** 12))).true
+  describe('read price', () => {
+
+    const testread = (i, lo, hi) => {
+      it(`read ${i} price`, async () => {
+        const src = (await bank.geth(b32(i), b32('src'), [])).slice(0, 42)
+        const tag = await bank.geth(b32(i), b32('tag'), [])
+        const mar = BN.from((await fb.pull(src, tag)).val)
+        if (mar.lt(lo)) {
+          throw new Error(`expected ${mar} >= ${lo}`)
+        }
+        if (mar.gt(hi)) {
+          throw new Error(`expected ${mar} <= ${hi}`)
+        }
+      })
+    }
+
+    testread('reth', ray(1.2), ray(1.5)) // ~1.1 * 2300 / 2000
+    testread('dai', ray(1).div(2100), ray(1).div(1900)) // ~1 / 2000
+    testread('usdc',
+             ray(0.95).div(2000).mul(10 ** 12),
+             ray(1.05).div(2000).mul(10 ** 12)) // ~1 / 2000
+    testread('wbtc',
+             ray(19).mul(10 ** 10),
+             ray(21).mul(10 ** 10)) // ~ 40000 / 2000, 8 decimals
+    testread('weth', ray(1.1), ray(1.3)) // ~ 2300 / 2000
+    testread('link', ray(0.007), ray(0.008)) // ~ 14 / 2000
   })
 
-  it('weth', async () => {
+  describe('basic frob', () => {
+    const testfrob = (i, whale) => {
+      it(`transfer ok on frob ${i}`, async () => {
+        if (whale != ALI) {
+          await hh.network.provider.request({
+            method: "hardhat_impersonateAccount",
+            params: [whale],
+          });
+
+          const wallet = await ethers.getSigner(whale)
+          const whaledapp = await dpack.load(pack, ethers, wallet)
+          await send(whaledapp[i].transfer, ALI, 1)
+          await hh.network.provider.request({
+            method: "hardhat_stopImpersonatingAccount",
+            params: [whale],
+          });
+        }
+
+        await send(dapp[i].approve, bank.address, 1)
+        let dink = ethers.utils.defaultAbiCoder.encode(['int'], [1])
+        await send(bank.frob, b32(i), ALI, dink, 0)
+        dink = ethers.utils.defaultAbiCoder.encode(['int'], [constants.Zero.sub(1)])
+        await send(bank.frob, b32(i), ALI, dink, 0)
+      })
+    }
+
+    testfrob('reth', '0x714301eB35fE043FAa547976ce15BcE57BD53144')
+    testfrob('dai', '0x075e72a5eDf65F0A5f44699c7654C1a76941Ddc8')
+    testfrob('usdc', '0xD6153F5af5679a75cC85D8974463545181f48772')
+    testfrob('wbtc', '0x6daB3bCbFb336b29d06B9C793AEF7eaA57888922')
+    testfrob('weth', '0x8EB8a3b98659Cce290402893d0123abb75E3ab28')
+    testfrob('link', '0xF977814e90dA44bFA03b6295A0616a897441aceC')
+  })
+
+  it('weth frob 1', async () => {
     want(riskaddr).eql(dapp.risk.address)
 
     let tip = await bank.tip()
@@ -83,14 +142,14 @@ describe('Launch', () => {
 
     want(await bank.way()).eql(ray(1))
     await send(bank.poke)
-    want((await bank.way()).lt(ray(1))).true
+    want((await bank.way()).gt(ray(1))).true
 
     let dink = ethers.utils.defaultAbiCoder.encode(['uint'], [wad(50)])
     await send(bank.frob, b32('weth'), ali.address, dink, wad(40))
 
     await warp(hh, timestamp + BANKYEAR)
     await send(bank.poke)
-    want((await bank.way()).lt(ray(1))).true
+    want((await bank.way()).gt(ray(1))).true
 
     await send(bank.frob, b32('weth'), ali.address, dink, wad(25))
   })
