@@ -30,6 +30,7 @@
   },
   "devDependencies": {
     "@etherpacks/dpack": "^0.0.31",
+    "@nomicfoundation/hardhat-verify": "^2.0.4",
     "@nomiclabs/hardhat-ethers": "^2.2.2",
     "@types/chai": "^4.3.4",
     "@types/mocha": "^10.0.1",

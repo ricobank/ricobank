@@ -12,6 +12,7 @@ import './task/deploy-dependencies'
 import './task/deploy-ricobank'
 import './task/make-usdc-ref'
 import 'hardhat-diamond-abi'
+import '@nomicfoundation/hardhat-verify'
 
 /**
  * @type import('hardhat/config').HardhatUserConfig
@@ -391,5 +392,9 @@ export default {
         chainId: 42161
       }
   },
-
+  etherscan: {
+    apiKey: {
+      arbitrumOne: process.env.ARBISCAN_API_KEY
+    }
+  }
 }
