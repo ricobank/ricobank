@@ -1,19 +1,20 @@
 {
     "arbitrum": {
         "par":  "1",
-        "ceil": "0",
-        "uniadaptrange": "0",
-        "uniadaptttl": "0",
-        "daiusdttl": "0",
-        "xauusdttl": "0",
-        "platpep": "0",
-        "platpop": "0",
-        "plotpep": "0",
-        "plotpop": "0",
+        "ceil": "25",
+        "uniadaptrange": "1",
+        "uniadaptttl": "86400",
+        "daiusdttl": "86400",
+        "xauusdttl": "86400",
+        "platpep": "4",
+        "platpop": "1.1",
+        "plotpep": "4",
+        "plotpop": "1.1",
         "mintramp": {
-            "cel": "0",
-            "rel": "0.0",
-            "wel": "0"
+            "cel": "600",
+            "_rel_comment": "used as ray({'rel'}).div(BANKYEAR). E.g. use 0.02 for 2% per year",
+            "rel": "1.0",
+            "wel": "0.1"
         }
     },
     "hardhat": {
