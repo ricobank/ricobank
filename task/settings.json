@@ -2,7 +2,7 @@
     "arbitrum": {
         "par":  "1",
         "ceil": "25",
-        "uniadaptrange": "3600",
+        "uniadaptrange": "1",
         "uniadaptttl": "86400",
         "daiusdttl": "86400",
         "xauusdttl": "86400",
