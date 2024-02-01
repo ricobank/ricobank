@@ -1,0 +1,84 @@
+{
+    "ethereum": {
+        "erc20": {
+            "weth": {
+                "gemname": "weth",
+                "aggname": "eth",
+                "gem": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+                "chop": "1",
+                "dust": "0.01",
+                "fee": "1.00000000015804557662590923428",
+                "line": "100000",
+                "liqr": "1",
+                "range": "1",
+                "ttl": "20000"
+            },
+            "dai": {
+                "gemname": "dai",
+                "gem": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+                "chop": "1",
+                "dust": "0.01",
+                "fee": "1.00000000015804557662590923428",
+                "line": "100000",
+                "liqr": "1",
+                "range": "1",
+                "ttl": "20000"
+            },
+            "usdc": {
+                "gemname": "usdc",
+                "gem": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+                "chop": "1",
+                "dust": "0.01",
+                "fee": "1.00000000015804557662590923428",
+                "line": "100000",
+                "liqr": "1",
+                "range": "1",
+                "ttl": "20000"
+            },
+            "reth": {
+                "gemname": "reth",
+                "gem": "0xae78736Cd615f374D3085123A210448E74Fc6393",
+                "chop": "1",
+                "dust": "0.01",
+                "fee": "1.00000000015804557662590923428",
+                "line": "100000",
+                "liqr": "1",
+                "range": "1",
+                "ttl": "20000"
+            },
+            "wbtc": {
+                "gemname": "wbtc",
+                "aggname": "btc",
+                "gem": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+                "chop": "1",
+                "dust": "0.01",
+                "fee": "1.00000000015804557662590923428",
+                "line": "100000",
+                "liqr": "1",
+                "range": "1",
+                "ttl": "20000"
+            },
+            "link": {
+                "gemname": "link",
+                "gem": "0x514910771AF9Ca656af840dff83E8264EcF986CA",
+                "chop": "1",
+                "dust": "0.01",
+                "fee": "1.00000000015804557662590923428",
+                "line": "100000",
+                "liqr": "1",
+                "range": "1",
+                "ttl": "20000"
+            }
+        },
+        "univ3": {
+            ":uninft": {
+                "chop": "1",
+                "dust": "0.1",
+                "fee": "1.000000001546067052200000000",
+                "line": "10000",
+                "room": "8",
+                "erc20ilks": ["weth", "dai", "usdc"]
+            }
+        }
+    }
+}
