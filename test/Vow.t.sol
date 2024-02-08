@@ -946,6 +946,4 @@ contract VowJsTest is Test, RicoSetUp {
         assertEq(Vow(bank).chi(), block.timestamp);
     }
 
-
-
 }
