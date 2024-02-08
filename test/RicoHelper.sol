@@ -295,7 +295,6 @@ abstract contract RicoSetUp is BaseHelper {
 
         ahook   = payable(address(tokhook));
 
-        File(bank).file('rudd.src', bytes32(bytes20(fsrc)));
         File(bank).file('tip.src', bytes32(bytes20(fsrc)));
         Vat(bank).filh(WETH_ILK, 'src', empty, bytes32(bytes20(fsrc)));
 

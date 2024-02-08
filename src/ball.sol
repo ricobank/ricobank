@@ -136,7 +136,7 @@ contract Ball is Math, Ward {
         IDiamondCuttable.FacetCut[] memory facetCuts = new IDiamondCuttable.FacetCut[](4);
         bytes4[] memory filesels = new bytes4[](5);
         bytes4[] memory vatsels  = new bytes4[](21);
-        bytes4[] memory vowsels  = new bytes4[](7);
+        bytes4[] memory vowsels  = new bytes4[](10);
         bytes4[] memory voxsels  = new bytes4[](6);
         File fbank = File(bank);
 
@@ -169,10 +169,12 @@ contract Ball is Math, Ward {
         vowsels[0]  = Vow.keep.selector;
         vowsels[1]  = Vow.RISK.selector;
         vowsels[2]  = Vow.ramp.selector;
-        vowsels[3]  = Vow.rudd.selector;
-        vowsels[4]  = Vow.plat.selector;
-        vowsels[5]  = Vow.plot.selector;
-        vowsels[6]  = Vow.loot.selector;
+        vowsels[3]  = Vow.plat.selector;
+        vowsels[4]  = Vow.plot.selector;
+        vowsels[5]  = Vow.loot.selector;
+        vowsels[6]  = Vow.tug.selector;
+        vowsels[7]  = Vow.chi.selector;
+        vowsels[8]  = Vow.tan.selector;
         voxsels[0]  = Vox.poke.selector;
         voxsels[1]  = Vox.way.selector;
         voxsels[2]  = Vox.how.selector;
@@ -196,10 +198,11 @@ contract Ball is Math, Ward {
 
         fbank.file("plat.pep", bytes32(args.platpep));
         fbank.file("plat.pop", bytes32(args.platpop));
-        fbank.file("rudd.tag", RISK_RICO_TAG);
-        fbank.file("rudd.src", bytes32(bytes20(address(uniadapt))));
         fbank.file("plot.pep", bytes32(args.plotpep));
         fbank.file("plot.pop", bytes32(args.plotpop));
+        fbank.file("tug", bytes32(RAY));
+        fbank.file("tan", bytes32(uint(1)));
+        fbank.file("chi", bytes32(block.timestamp));
 
         fbank.file("bel", bytes32(args.mintramp.bel));
         fbank.file("cel", bytes32(args.mintramp.cel));
