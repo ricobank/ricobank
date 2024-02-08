@@ -51,7 +51,7 @@ contract VowTest is Test, RicoSetUp {
         // risk:rico price 0.1
         // gold:ref price 1k
         uint rico_price_in_risk = 10;
-        feedpush(RISK_RICO_TAG, bytes32(rinv(rico_price_in_risk * RAY)), type(uint).max);
+        File(bank).file('tug', bytes32(rinv(rico_price_in_risk * RAY)));
         feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
         Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(borrow));
 
@@ -105,7 +105,7 @@ contract VowTest is Test, RicoSetUp {
         // risk:rico price 10
         // gold:ref price 10k
         uint risk_price_in_rico = 10 * RAY;
-        feedpush(RISK_RICO_TAG, bytes32(risk_price_in_rico), type(uint).max);
+        File(bank).file('tug', bytes32(risk_price_in_rico));
         feedpush(grtag, bytes32(10000 * RAY), type(uint).max);
         Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(borrow));
 
@@ -341,7 +341,7 @@ contract VowTest is Test, RicoSetUp {
         // risk:rico price 0.1
         risk.mint(address(guy), 1000000 * WAD);
         uint riskrico_price = RAY / 10;
-        feedpush(RISK_RICO_TAG, bytes32(riskrico_price), type(uint).max);
+        File(bank).file('tug', bytes32(riskrico_price));
 
         // frob some rico
         uint amt = 10000 * WAD;
@@ -380,6 +380,7 @@ contract VowTest is Test, RicoSetUp {
 
         // try with loot == 100%...so protocol takes whole flap
         File(bank).file('loot', bytes32(0));
+        File(bank).file('tug', bytes32(riskrico_price));
         vm.startPrank(address(guy));
 
         // wait a few years and keep
@@ -416,7 +417,7 @@ contract VowTest is Test, RicoSetUp {
 
         // risk:rico price 100
         uint riskrico_price = 100 * RAY;
-        feedpush(RISK_RICO_TAG, bytes32(riskrico_price), type(uint).max);
+        File(bank).file('tug', bytes32(riskrico_price));
 
         // force surplus == debt_before_keep / 3
         force_fees(Vat(bank).sin() / RAY + Vat(bank).debt() / 3);
@@ -805,7 +806,7 @@ contract VowJsTest is Test, RicoSetUp {
     {
         // wait 10s to drip a little bit
         skip(10);
-        feedpush(RISK_RICO_TAG, bytes32(RAY), UINT256_MAX);
+        File(bank).file('tug', bytes32(RAY));
         feedpush(wrtag, bytes32(0), UINT256_MAX);
         // cause bank deficit by flipping with zero price
         Vat(bank).bail(wilk, me);
@@ -820,6 +821,7 @@ contract VowJsTest is Test, RicoSetUp {
         uint ts0 = risk.totalSupply();
         uint gr0 = rico.balanceOf(address(guy));
         guy.keep(single(wilk));
+        File(bank).file('tug', bytes32(RAY));
         uint ts1 = risk.totalSupply();
         uint gr1 = rico.balanceOf(address(guy));
         uint price_unclipped = WAD * (gr0 - gr1) / (ts1 - ts0);
@@ -881,5 +883,69 @@ contract VowJsTest is Test, RicoSetUp {
         assertGt(bel, block.timestamp - cel);
         assertLt(bel, block.timestamp);
     }
+
+    function test_chi() public {
+        vm.expectRevert(Bank.ErrBound.selector);
+        File(bank).file('chi', bytes32(block.timestamp + 1));
+        File(bank).file('chi', bytes32(0));
+        File(bank).file('chi', bytes32(block.timestamp));
+
+        vm.expectRevert(Bank.ErrBound.selector);
+        File(bank).file('tug', bytes32(0));
+        File(bank).file('tug', bytes32(uint(1)));
+        File(bank).file('tug', bytes32(type(uint).max));
+        File(bank).file('tug', bytes32(RAY));
+
+        uint tan = 10;
+        vm.expectRevert(Bank.ErrBound.selector);
+        File(bank).file('tan', bytes32(BANKYEAR / 52 + 1));
+        File(bank).file('tan', bytes32(0));
+        File(bank).file('tan', bytes32(BANKYEAR / 52));
+        File(bank).file('tan', bytes32(tan));
+
+        File(bank).file('wel', bytes32(RAY / 2));
+        File(bank).file('plot.pop', bytes32(RAY));
+        File(bank).file('plot.pep', bytes32(uint(1)));
+        assertEq(Vow(bank).tug(), RAY);
+        assertEq(Vow(bank).chi(), block.timestamp);
+        assertEq(Vat(bank).sin(), 0);
+
+        force_fees(WAD * 10);
+
+        // setup
+        Vow(bank).keep(empty);
+        assertEq(Vow(bank).tug(), RAY);
+        assertEq(Vow(bank).chi(), block.timestamp);
+
+        // wait till just before tan
+        uint oldstamp = block.timestamp;
+        skip(tan - 1);
+        Vow(bank).keep(empty);
+        assertEq(Vow(bank).tug(), RAY);
+        assertEq(Vow(bank).chi(), oldstamp);
+
+        // wait till tan
+        skip(1);
+        Vow(bank).keep(empty);
+        assertGt(Vow(bank).tug(), RAY);
+        assertEq(Vow(bank).chi(), block.timestamp);
+
+        // do the same thing with sin
+        force_sin(RAD * 20);
+
+        uint oldtug = Vow(bank).tug();
+        oldstamp    = block.timestamp;
+        skip(tan - 1);
+        Vow(bank).keep(empty);
+        assertEq(Vow(bank).tug(), oldtug);
+        assertEq(Vow(bank).chi(), oldstamp);
+
+        skip(1);
+        Vow(bank).keep(empty);
+        assertLt(Vow(bank).tug(), oldtug);
+        assertEq(Vow(bank).chi(), block.timestamp);
+    }
+
+
 
 }

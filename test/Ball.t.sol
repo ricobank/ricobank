@@ -420,7 +420,6 @@ contract BallTest is BaseHelper {
         skip(wait);
 
         Vat(bank).filh(wilk, 'src', new bytes32[](0), bytes32(bytes20(fsrc)));
-        File(bank).file('rudd.src', bytes32(bytes20(fsrc)));
         vm.prank(fsrc);
         fb.push(WETH_REF_TAG, bytes32(2 * init_par), UINT256_MAX);
 
@@ -428,8 +427,8 @@ contract BallTest is BaseHelper {
         Vat(bank).frob(wilk, self, abi.encodePacked(int(WAD)), int(WAD));
 
         // prank a low but nonzero risk:rico price so no reflop error
+        File(bank).file('tug', bytes32(uint(1)));
         vm.startPrank(fsrc);
-        fb.push(RISK_RICO_TAG, bytes32(uint(1)), UINT256_MAX);
         fb.push(WETH_REF_TAG, bytes32(uint(0)), UINT256_MAX);
         vm.stopPrank();
 

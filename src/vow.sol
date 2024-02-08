@@ -15,9 +15,11 @@ contract Vow is Bank {
         return getVowStorage().ramp;
     }
     function loot() external view returns (uint) { return getVowStorage().loot; }
-    function rudd() external view returns (Rudd memory) { return getVowStorage().rudd; }
     function plat() external view returns (Plx memory) { return getVowStorage().plat; }
     function plot() external view returns (Plx memory) { return getVowStorage().plot; }
+    function tug() external view returns (uint) { return getVowStorage().tug; }
+    function tan() external view returns (uint) { return getVowStorage().tan; }
+    function chi() external view returns (uint) { return getVowStorage().chi; }
 
     error ErrReflop();
     error ErrOutDated();
@@ -48,8 +50,7 @@ contract Vow is Bank {
 
             // mash decreases as surplus increases, i.e. if there's a massive
             // surplus the system deduces that it's overpricing rico
-            uint price = _price();
-            uint mcap  = rmul(price, risk.totalSupply());
+            uint mcap  = rmul(vowS.tug, risk.totalSupply());
             uint mash  = rdiv(mcap, mcap + joy);
             mash       = rmash(mash, vowS.plat.pep, vowS.plat.pop, vowS.plat.pup);
 
@@ -60,12 +61,19 @@ contract Vow is Bank {
             emit NewPalm0("joy", bytes32(joy));
 
             uint sell  = rmul(flap, vowS.loot);
-            uint earn  = rmul(sell, rdiv(mash, price));
+            uint earn  = rmul(sell, rdiv(mash, vowS.tug));
 
             // swap rico for RISK, pay protocol fee
             Gem(risk).burn(msg.sender, earn);
             Gem(rico).mint(msg.sender, sell);
             if (sell < flap) Gem(rico).mint(owner(), flap - sell);
+
+            // update risk:rico price
+            if (block.timestamp - vowS.chi >= vowS.tan) {
+                // tug is risk:rico; the calculated flop price was rico:risk
+                vowS.tug = rinv(rdiv(mash, vowS.tug)) + 1;
+                vowS.chi = block.timestamp;
+            }
 
         } else if (sin > joy) {
 
@@ -81,8 +89,7 @@ contract Vow is Bank {
             // mash decreases as system becomes undercollateralized
             // i.e. if it's very undercollateralized then bank deduces
             // that it's overpricing RISK
-            uint price = _price();
-            uint mcap  = rmul(price, risk.totalSupply());
+            uint mcap  = rmul(vowS.tug, risk.totalSupply());
             uint mash  = rdiv(mcap, mcap + under);
             mash       = rmash(mash, vowS.plot.pep, vowS.plot.pop, vowS.plot.pup);
 
@@ -92,7 +99,7 @@ contract Vow is Bank {
             if (0 == flop) revert ErrReflop();
 
             // swap RISK for rico to cover sin
-            uint earn = rmul(flop, rmul(price, mash));
+            uint earn = rmul(flop, rmul(vowS.tug, mash));
             uint bel  = block.timestamp;
             if (earn > under) {
                 // always advances >= 1s from max(vowS.bel, timestamp - cel)
@@ -113,6 +120,11 @@ contract Vow is Bank {
             vatS.joy = joy;
             emit NewPalm0("joy", bytes32(joy));
 
+            // update risk:rico price
+            if (block.timestamp - vowS.chi >= vowS.tan) {
+                vowS.tug = rmul(vowS.tug, mash) + 1;
+                vowS.chi = block.timestamp;
+            }
         }
     }
 
@@ -127,14 +139,6 @@ contract Vow is Bank {
 
         vs.debt = vs.debt - wad;
         emit NewPalm0("debt", bytes32(vs.debt));
-    }
-
-    function _price() internal view returns (uint) {
-        BankStorage storage bankS = getBankStorage();
-        VowStorage  storage vowS  = getVowStorage();
-        (bytes32 _val, uint ttl)  = bankS.fb.pull(vowS.rudd.src, vowS.rudd.tag);
-        if (ttl < block.timestamp) revert ErrOutDated();
-        return uint(_val);
     }
 
 }
