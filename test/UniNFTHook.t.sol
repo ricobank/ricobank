@@ -943,4 +943,55 @@ contract NFTHookTest is Test, RicoSetUp {
         vm.expectRevert();
         unihook.frobhook(Hook.FHParams(self, uilk, self, abi.encode(dink), 0));
     }
+
+
+    function test_rico_nft_frob() public {
+        // initialize rico for use in uni hook. No need to set tag
+        // liqr can be very close to 1, combined result should always come from other token
+        Vat(bank).filh(uilk, 'src',  single(bytes32(bytes20(arico))), bytes32(bytes20(address(paradapter))));
+        Vat(bank).filh(uilk, 'liqr', single(bytes32(bytes20(arico))), bytes32(RAY * 1001 / 1000));
+
+        feedpush(grtag, bytes32(1 * RAY), type(uint).max);
+        Vat(bank).filh(uilk, 'liqr', single(bytes32(bytes20(agold))), bytes32(11 * RAY / 10));
+        rico_mint(200 * WAD, true);
+
+        uint goldricotokid;
+
+        PoolArgs memory args = PoolArgs(
+            Asset(agold, 100 * WAD), Asset(arico, 100 * WAD),
+            500, X96, X96 * 3 / 4, X96 * 4 / 3, 10, self
+        );
+        (goldricotokid,,,) = create_and_join_pool(args);
+        assertEq(nfpm.ownerOf(goldricotokid), self);
+        IERC721(UNI_NFT_ADDR).approve(bank, goldricotokid);
+
+        uint[] memory dink = new uint[](2);
+        (dink[0], dink[1]) = (1, goldricotokid);
+
+        assertEq(Vat(bank).par(), RAY);
+
+        // test par feed for rico works as expected
+        // Position is made of 100 rico and 100 gold
+        // liqr for pair is 11 / 10
+        // add small offset around limit for ticks and rounding etc
+        uint borrow_limit = WAD * 200 * 10 / 11;
+        uint offset = borrow_limit / 1_000_000;
+
+        vm.expectRevert(Vat.ErrNotSafe.selector);
+        Vat(bank).frob(uilk, self, abi.encode(dink), int(borrow_limit + offset));
+        Vat(bank).frob(uilk, self, abi.encode(dink), int(borrow_limit - offset));
+        // reset debt to none
+        Vat(bank).frob(uilk, self, "",              -int(borrow_limit - offset));
+
+        // when par is increased both the collateral requirements increase and also the rico side of the NFT becomes
+        // more valuable. Pretend 1% is a small amount of LP range and so now have about 99.5% of borrowing capacity
+        File(bank).file('par', bytes32(RAY * 101 / 100));
+        borrow_limit = borrow_limit * 199 / 200;
+
+        // adding offset will still fail
+        vm.expectRevert(Vat.ErrNotSafe.selector);
+        Vat(bank).frob(uilk, self, "", int(borrow_limit + offset));
+        // subtracting offset will be safe
+        Vat(bank).frob(uilk, self, "", int(borrow_limit - (offset)));
+    }
 }

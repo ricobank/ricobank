@@ -75,7 +75,7 @@
             }
         }
     },
-    "arbitrum_one": {
+    "arbitrum": {
         "erc20": {
             "weth": {
                 "gemname": "weth",
@@ -109,7 +109,7 @@
                 "ttl": "86400"
             },
             "usdc.e": {
-                "gemname": "usdc_e",
+                "gemname": "usdc.e",
                 "aggname": "usdc",
                 "gem": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
                 "chop": "1.05",
@@ -130,9 +130,9 @@
                 "ttl": "86400"
             },
             "wbtc": {
-                "gemname": "0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f",
+                "gemname": "wbtc",
                 "aggname": "btc",
-                "gem": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+                "gem": "0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f",
                 "chop": "1.05",
                 "dust": "0.01",
                 "fee": "1.000000000158045653387",

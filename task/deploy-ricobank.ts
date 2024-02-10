@@ -170,6 +170,7 @@ task('deploy-ricobank', '')
     for (let i in tokens.erc20) {
 
         const params = tokens.erc20[i]
+        debug(`setting ilk ${i} with gemname ${params.gemname}`)
 
         let ilk = {
             ilk: b32(i),
