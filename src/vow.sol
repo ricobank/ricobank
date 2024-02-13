@@ -15,11 +15,9 @@ contract Vow is Bank {
         return getVowStorage().ramp;
     }
     function loot() external view returns (uint) { return getVowStorage().loot; }
-    function plat() external view returns (Plx memory) { return getVowStorage().plat; }
-    function plot() external view returns (Plx memory) { return getVowStorage().plot; }
-    function tug() external view returns (uint) { return getVowStorage().tug; }
-    function tan() external view returns (uint) { return getVowStorage().tan; }
-    function chi() external view returns (uint) { return getVowStorage().chi; }
+    function wog() external view returns (Wog memory) { return getVowStorage().wog; }
+    uint constant public TUG_MIN = RAY / WAD;
+    uint constant public TUG_MAX = RAY * WAD;
 
     error ErrReflop();
     error ErrOutDated();
@@ -48,11 +46,10 @@ contract Vow is Bank {
                 joy = _heal(sin - 1);
             }
 
-            // mash decreases as surplus increases, i.e. if there's a massive
-            // surplus the system deduces that it's overpricing rico
-            uint mcap  = rmul(vowS.tug, risk.totalSupply());
-            uint mash  = rdiv(mcap, mcap + joy);
-            mash       = rmash(mash, vowS.plat.pep, vowS.plat.pop, vowS.plat.pup);
+            // price increases (pop), but then decreases with time (dam, chi)
+            uint price = rmul(vowS.wog.pop, grow(
+                rinv(vowS.wog.tug), vowS.wog.dam, block.timestamp - vowS.wog.chi
+            ));
 
             // buy-and-burn risk with remaining (`flap`) rico
             uint flap  = rmul(joy - 1, vowS.ramp.wel);
@@ -61,7 +58,7 @@ contract Vow is Bank {
             emit NewPalm0("joy", bytes32(joy));
 
             uint sell  = rmul(flap, vowS.loot);
-            uint earn  = rmul(sell, rdiv(mash, vowS.tug));
+            uint earn  = rmul(sell, price);
 
             // swap rico for RISK, pay protocol fee
             Gem(risk).burn(msg.sender, earn);
@@ -69,11 +66,9 @@ contract Vow is Bank {
             if (sell < flap) Gem(rico).mint(owner(), flap - sell);
 
             // update risk:rico price
-            if (block.timestamp - vowS.chi >= vowS.tan) {
-                // tug is risk:rico; the calculated flop price was rico:risk
-                vowS.tug = rinv(rdiv(mash, vowS.tug)) + 1;
-                vowS.chi = block.timestamp;
-            }
+            // tug is risk:rico; the calculated flop price was rico:risk
+            vowS.wog.tug = min(TUG_MAX, max(TUG_MIN, rinv(price)));
+            vowS.wog.chi = block.timestamp;
 
         } else if (sin > joy) {
 
@@ -86,12 +81,10 @@ contract Vow is Bank {
                 joy = _heal(joy - 1);
             }
 
-            // mash decreases as system becomes undercollateralized
-            // i.e. if it's very undercollateralized then bank deduces
-            // that it's overpricing RISK
-            uint mcap  = rmul(vowS.tug, risk.totalSupply());
-            uint mash  = rdiv(mcap, mcap + under);
-            mash       = rmash(mash, vowS.plot.pep, vowS.plot.pop, vowS.plot.pup);
+            // price increases (pop), then decreases with time (dam, chi)
+            uint price = rmul(vowS.wog.pop, grow(
+                vowS.wog.tug, vowS.wog.dam, block.timestamp - vowS.wog.chi
+            ));
 
             // rate-limit flop
             uint elapsed = min(block.timestamp - vowS.ramp.bel, vowS.ramp.cel);
@@ -99,7 +92,7 @@ contract Vow is Bank {
             if (0 == flop) revert ErrReflop();
 
             // swap RISK for rico to cover sin
-            uint earn = rmul(flop, rmul(vowS.tug, mash));
+            uint earn = rmul(flop, price);
             uint bel  = block.timestamp;
             if (earn > under) {
                 // always advances >= 1s from max(vowS.bel, timestamp - cel)
@@ -121,10 +114,8 @@ contract Vow is Bank {
             emit NewPalm0("joy", bytes32(joy));
 
             // update risk:rico price
-            if (block.timestamp - vowS.chi >= vowS.tan) {
-                vowS.tug = rmul(vowS.tug, mash) + 1;
-                vowS.chi = block.timestamp;
-            }
+            vowS.wog.tug = min(TUG_MAX, max(TUG_MIN, price));
+            vowS.wog.chi = block.timestamp;
         }
     }
 
