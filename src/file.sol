@@ -37,25 +37,8 @@ contract File is Bank {
         } else if (key == "loot") {
             must(_val, 0, RAY);
             vowS.loot = _val;
-        } else if (key == "plot.pep") { vowS.plot.pep = _val;
-        } else if (key == "plat.pep") { vowS.plat.pep = _val;
-        } else if (key == "plot.pop") {
-            must(_val, RAY / 10, 10 * RAY);
-            vowS.plot.pop = _val;
-        } else if (key == "plat.pop") {
-            must(_val, RAY / 10, 10 * RAY);
-            vowS.plat.pop = _val;
-        } else if (key == "tug") {
-            must(_val, 1, type(uint).max);
-            vowS.tug = _val;
-        } else if (key == "tan") {
-            must(_val, 0, BANKYEAR / 52);
-            vowS.tan = _val;
-        } else if (key == "chi") {
-            must(_val, 0, block.timestamp);
-            vowS.chi = _val;
-        } else if (key == "plot.pup") { vowS.plot.pup = int(_val);
-        } else if (key == "plat.pup") { vowS.plat.pup = int(_val);
+        } else if (key == "dam") {
+            vowS.dam = _val;
         } else if (key == "risk") { vowS.risk = Gem(address(bytes20(val)));
         } else if (key == "tip.src") { voxS.tip.src = address(bytes20(val));
         } else if (key == "tip.tag") { voxS.tip.tag = val;

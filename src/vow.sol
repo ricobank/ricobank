@@ -15,8 +15,7 @@ contract Vow is Bank {
         return getVowStorage().ramp;
     }
     function loot() external view returns (uint) { return getVowStorage().loot; }
-    function wog() external view returns (Wog memory) { return getVowStorage().wog; }
-    uint constant public TUG_MIN = RAY / WAD;
+    function dam() external view returns (uint) { return getVowStorage().dam; }
     uint constant public TUG_MAX = RAY * WAD;
 
     error ErrReflop();
@@ -34,10 +33,11 @@ contract Vow is Bank {
 
         Gem rico = bankS.rico;
         Gem risk = vowS.risk;
-        uint joy = vatS.joy;
 
         // use equal scales for sin and joy
+        uint joy = vatS.joy;
         uint sin = vatS.sin / RAY;
+
         if (joy > sin) {
 
             // pay down sin, then auction off surplus RICO for RISK
@@ -46,10 +46,10 @@ contract Vow is Bank {
                 joy = _heal(sin - 1);
             }
 
-            // price increases (pop), but then decreases with time (dam, chi)
-            uint price = rmul(vowS.wog.pop, grow(
-                rinv(vowS.wog.tug), vowS.wog.dam, block.timestamp - vowS.wog.chi
-            ));
+            // price decreases with time
+            uint price = grow(
+                TUG_MAX, vowS.dam, block.timestamp - vowS.ramp.bel
+            );
 
             // buy-and-burn risk with remaining (`flap`) rico
             uint flap  = rmul(joy - 1, vowS.ramp.wel);
@@ -65,10 +65,8 @@ contract Vow is Bank {
             Gem(rico).mint(msg.sender, sell);
             if (sell < flap) Gem(rico).mint(owner(), flap - sell);
 
-            // update risk:rico price
-            // tug is risk:rico; the calculated flop price was rico:risk
-            vowS.wog.tug = min(TUG_MAX, max(TUG_MIN, rinv(price)));
-            vowS.wog.chi = block.timestamp;
+            vowS.ramp.bel = block.timestamp;
+            emit NewPalm0("bel", bytes32(block.timestamp));
 
         } else if (sin > joy) {
 
@@ -81,19 +79,18 @@ contract Vow is Bank {
                 joy = _heal(joy - 1);
             }
 
-            // price increases (pop), then decreases with time (dam, chi)
-            uint price = rmul(vowS.wog.pop, grow(
-                vowS.wog.tug, vowS.wog.dam, block.timestamp - vowS.wog.chi
-            ));
+            // price decreases with time
+            uint bel   = vowS.ramp.bel;
+            uint price = grow(TUG_MAX, vowS.dam, block.timestamp - bel);
 
             // rate-limit flop
-            uint elapsed = min(block.timestamp - vowS.ramp.bel, vowS.ramp.cel);
+            uint elapsed = min(block.timestamp - bel, vowS.ramp.cel);
             uint flop    = elapsed * rmul(vowS.ramp.rel, risk.totalSupply());
             if (0 == flop) revert ErrReflop();
 
             // swap RISK for rico to cover sin
             uint earn = rmul(flop, price);
-            uint bel  = block.timestamp;
+            bel       = block.timestamp;
             if (earn > under) {
                 // always advances >= 1s from max(vowS.bel, timestamp - cel)
                 bel  -= wmul(elapsed, WAD - wdiv(under, earn));
@@ -113,10 +110,8 @@ contract Vow is Bank {
             vatS.joy = joy;
             emit NewPalm0("joy", bytes32(joy));
 
-            // update risk:rico price
-            vowS.wog.tug = min(TUG_MAX, max(TUG_MIN, price));
-            vowS.wog.chi = block.timestamp;
         }
+
     }
 
     function _heal(uint wad) internal returns (uint joy) {
