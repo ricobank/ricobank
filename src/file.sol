@@ -38,7 +38,11 @@ contract File is Bank {
             must(_val, 0, RAY);
             vowS.loot = _val;
         } else if (key == "dam") {
+            must(_val, 0, RAY);
             vowS.dam = _val;
+        } else if (key == "dom") {
+            must(_val, 0, RAY);
+            vowS.dom= _val;
         } else if (key == "risk") { vowS.risk = Gem(address(bytes20(val)));
         } else if (key == "tip.src") { voxS.tip.src = address(bytes20(val));
         } else if (key == "tip.tag") { voxS.tip.tag = val;

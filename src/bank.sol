@@ -73,7 +73,8 @@ abstract contract Bank is Math, Flog, Palm, OwnableInternal {
         Gem     risk;
         Ramp    ramp;
         uint256 loot; // [ray] portion of flap taken by user (vs protocol)
-        uint256 dam;  // [ray] per-second discount
+        uint256 dam;  // [ray] per-second flap discount
+        uint256 dom;  // [ray] per-second flop discount
     }
 
     struct VoxStorage {
