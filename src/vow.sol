@@ -16,7 +16,6 @@ contract Vow is Bank {
     }
     function loot() external view returns (uint) { return getVowStorage().loot; }
     function dam() external view returns (uint) { return getVowStorage().dam; }
-    function dom() external view returns (uint) { return getVowStorage().dom; }
     uint constant public TUG_MAX = RAY * WAD;
 
     error ErrReflop();
@@ -82,7 +81,7 @@ contract Vow is Bank {
 
             // price decreases with time
             uint bel   = vowS.ramp.bel;
-            uint price = grow(TUG_MAX, vowS.dom, block.timestamp - bel);
+            uint price = grow(TUG_MAX, vowS.dam, block.timestamp - bel);
 
             // rate-limit flop
             uint elapsed = min(block.timestamp - bel, vowS.ramp.cel);
