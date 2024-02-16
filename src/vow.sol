@@ -17,7 +17,8 @@ contract Vow is Bank {
     function loot() external view returns (uint) { return getVowStorage().loot; }
     function dam() external view returns (uint) { return getVowStorage().dam; }
     function dom() external view returns (uint) { return getVowStorage().dom; }
-    uint constant public TUG_MAX = RAY * WAD;
+    function TUG_MAX() external pure returns (uint) { return _TUG_MAX; }
+    uint constant public _TUG_MAX = RAY * WAD;
 
     error ErrReflop();
     error ErrOutDated();
@@ -49,7 +50,7 @@ contract Vow is Bank {
 
             // price decreases with time
             uint price = grow(
-                TUG_MAX, vowS.dam, block.timestamp - vowS.ramp.bel
+                _TUG_MAX, vowS.dam, block.timestamp - vowS.ramp.bel
             );
 
             // buy-and-burn risk with remaining (`flap`) rico
@@ -82,7 +83,7 @@ contract Vow is Bank {
 
             // price decreases with time
             uint bel   = vowS.ramp.bel;
-            uint price = grow(TUG_MAX, vowS.dom, block.timestamp - bel);
+            uint price = grow(_TUG_MAX, vowS.dom, block.timestamp - bel);
 
             // rate-limit flop
             uint elapsed = min(block.timestamp - bel, vowS.ramp.cel);
