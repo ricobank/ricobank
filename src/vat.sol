@@ -223,6 +223,11 @@ contract Vat is Bank {
         ilk.tart -= art;
         emit NewPalm1("tart", i, bytes32(ilk.tart));
 
+        if (vs.sin / RAY <= vs.joy && (vs.sin + dtab) / RAY > vs.joy ) {
+            getVowStorage().ramp.bel = block.timestamp;
+            emit NewPalm0("bel", bytes32(block.timestamp));
+        }
+
         // record the bad debt for vow to heal
         vs.sin += dtab;
         emit NewPalm0("sin", bytes32(vs.sin));
