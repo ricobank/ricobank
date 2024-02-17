@@ -230,8 +230,12 @@ contract VowTest is Test, RicoSetUp {
         rico_mint(amt, false);
 
         // djoy after 1y will be just over amt
-        skip(BANKYEAR + 1);
-        feedpush(RISK_RICO_TAG, bytes32(RAY), type(uint).max);
+        skip(BANKYEAR);
+
+        // set dam and bel so it just takes one second to reach target price
+        File(bank).file('dam', bytes32(rinv(Vow(bank).TUG_MAX())));
+        File(bank).file('bel', bytes32(block.timestamp));
+        skip(1);
 
         assertEq(Vat(bank).joy(), 0);
         uint self_risk_1 = risk.balanceOf(self);
@@ -250,10 +254,17 @@ contract VowTest is Test, RicoSetUp {
         uint amt = Vat(bank).sin() / RAY - 1;
         rico_mint(amt, false);
 
+        Vat(bank).drip(gilk);
+
+        // set dom and bel so it just takes one second to reach target price
+        File(bank).file('dom', bytes32(rinv(Vow(bank).TUG_MAX())));
+        File(bank).file('bel', bytes32(block.timestamp));
+        skip(1);
+
         assertEq(Vat(bank).joy(), 0);
         uint risk_ts1 = risk.totalSupply();
         force_fees(amt);
-        Vow(bank).keep(single(gilk));
+        Vow(bank).keep(empty);
         uint risk_ts2 = risk.totalSupply();
 
         // sin == RAY * (joy + 1)
@@ -273,7 +284,12 @@ contract VowTest is Test, RicoSetUp {
         // risk:rico price 0.1
         risk.mint(address(guy), 1000000 * WAD);
         uint riskrico_price = RAY / 10;
-        File(bank).file('tug', bytes32(riskrico_price));
+
+        // set dam and bel so it just takes one second to reach target price
+        uint dam = rmul(rinv(riskrico_price), rinv(Vow(bank).TUG_MAX()));
+        File(bank).file('dam', bytes32(dam));
+        File(bank).file('bel', bytes32(block.timestamp));
+        skip(1);
 
         // frob some rico
         uint amt = 10000 * WAD;
@@ -292,10 +308,11 @@ contract VowTest is Test, RicoSetUp {
         // calculate mash after drip, so it's same as flap's mash
         Vat(bank).drip(gilk);
 
-        uint mcap  = rmul(riskrico_price, risk.totalSupply());
-        uint flap  = Vat(bank).joy() - Vat(bank).sin() / RAY;
-        uint mash  = rpow(rinv(rdiv(mcap + flap, mcap)), 2); // pep == 2
-        uint price = rmul(10 * RAY, mash);
+        vm.stopPrank();
+        File(bank).file('bel', bytes32(block.timestamp - 1));
+        vm.startPrank(address(guy));
+
+        uint price = rinv(riskrico_price);
 
         Vow(bank).keep(single(gilk));
 
@@ -312,7 +329,10 @@ contract VowTest is Test, RicoSetUp {
 
         // try with loot == 100%...so protocol takes whole flap
         File(bank).file('loot', bytes32(0));
-        File(bank).file('tug', bytes32(riskrico_price));
+
+        // skip 1 to dam the price back down
+        skip(1);
+
         vm.startPrank(address(guy));
 
         // wait a few years and keep
@@ -337,37 +357,6 @@ contract VowTest is Test, RicoSetUp {
         File(bank).file('loot', bytes32(RAY));
         vm.expectRevert(Bank.ErrBound.selector);
         File(bank).file('loot', bytes32(RAY + 1));
-    }
-
-    function test_pep_pop() public
-    {
-        // some awk numbers for pep and pop
-        uint pep = 13;
-        uint pop = RAY * 3;
-        File(bank).file('plat.pep', bytes32(pep));
-        File(bank).file('plat.pop', bytes32(pop));
-
-        // risk:rico price 100
-        uint riskrico_price = 100 * RAY;
-        File(bank).file('tug', bytes32(riskrico_price));
-
-        // force surplus == debt_before_keep / 3
-        force_fees(Vat(bank).sin() / RAY + Vat(bank).debt() / 3);
-
-        uint mcap = rmul(riskrico_price, risk.totalSupply());
-        uint deal = rdiv(mcap, mcap + Vat(bank).joy() - Vat(bank).sin() / RAY);
-        uint mash = rmul(pop, rpow(deal, pep));
-
-        // check vow's ask price
-        uint selfrisk = risk.balanceOf(self);
-        uint selfrico = rico.balanceOf(self);
-        Vow(bank).keep(empty);
-
-        assertClose(
-            100 * rdiv(selfrisk - risk.balanceOf(self), rico.balanceOf(self) - selfrico),
-            mash,
-            100000
-        );
     }
 
     function test_zero_flap() public
@@ -397,9 +386,6 @@ contract VowTest is Test, RicoSetUp {
 
     function test_wel() public _check_integrity_after_
     {
-        // risk:rico price 1
-        feedpush(RISK_RICO_TAG, bytes32(RAY), type(uint).max);
-
         // can't flap more rico than surplus
         vm.expectRevert(Bank.ErrBound.selector);
         File(bank).file('wel', bytes32(RAY + 1));
@@ -418,11 +404,9 @@ contract VowTest is Test, RicoSetUp {
         uint pre_rico = rico.balanceOf(self);
         uint pre_risk = risk.balanceOf(self);
 
-        // make sure it offers the right price
-        // feed price == 1 and pop == 1, so rico:risk == mash
-        uint debt     = Vat(bank).debt() - Vat(bank).sin() / RAY;
-        uint exp_mash = rpow(rdiv(debt, debt + joy), 2);
-
+        // set dam and bel so it just takes one second to reach target price
+        File(bank).file('dam', bytes32(rinv(Vow(bank).TUG_MAX())));
+        File(bank).file('bel', bytes32(block.timestamp - 1));
         Vow(bank).keep(empty);
 
         uint aft_rico = rico.balanceOf(self);
@@ -431,7 +415,7 @@ contract VowTest is Test, RicoSetUp {
         assertClose(aft_rico - pre_rico, rmul(joy, wel), 100000000000);
 
         uint act_price = rdiv(pre_risk - aft_risk, aft_rico - pre_rico);
-        assertClose(act_price, exp_mash, 1000000);
+        assertClose(act_price, RAY, 1000000);
     }
 
     function test_time_elapsed_but_zero_flop() public {
