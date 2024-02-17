@@ -6,6 +6,7 @@ pragma solidity ^0.8.19;
 
 import { Vat }  from "./vat.sol";
 import { Bank, Gem } from "./bank.sol";
+import 'forge-std/Test.sol';
 
 // total system profit/loss balancing mechanism
 // triggers surplus (flap), and deficit (flop) auctions

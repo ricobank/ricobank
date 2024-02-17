@@ -512,13 +512,18 @@ contract VowJsTest is Test, RicoSetUp {
         assertEq(uint(safe1), uint(Vat.Spot.Safe));
     }
 
+    function set_dxm(bytes32 key, uint price) internal {
+        File(bank).file(key, bytes32(rdiv(price, Vow(bank).TUG_MAX())));
+        File(bank).file('bel', bytes32(block.timestamp - 1));
+    }
+
     function test_bail_urns_1yr_unsafe() public
     {
         // wait a year, flap the surplus
         skip(BANKYEAR);
 
         // risk:rico price 1
-        feedpush(RISK_RICO_TAG, bytes32(RAY), UINT256_MAX);
+        set_dxm('dam', RAY);
         Vow(bank).keep(single(wilk));
 
         (Vat.Spot spot,,) = Vat(bank).safe(wilk, me);
@@ -631,11 +636,11 @@ contract VowJsTest is Test, RicoSetUp {
         Vat(bank).filh(wilk, 'pep', empty, bytes32(uint(3)));
         uint risk_initial_supply = risk.totalSupply();
         skip(BANKYEAR);
-        feedpush(RISK_RICO_TAG, bytes32(RAY / 2), UINT256_MAX);
 
         risk.mint(address(guy), 1000 * WAD);
         File(bank).file('rel', bytes32(File(bank).REL_MAX()));
 
+        set_dxm('dam', RAY / 2);
         guy.keep(single(wilk));
 
         uint risk_post_flap_supply = risk.totalSupply();
@@ -650,36 +655,37 @@ contract VowJsTest is Test, RicoSetUp {
         assertGt(joy1, joy0);
 
         // bail price was too low to cover, now have deficit
-        uint pre_flop_joy = Vat(bank).joy();
-        feedpush(RISK_RICO_TAG, bytes32(10 * RAY), UINT256_MAX);
+        set_dxm('dom', RAY / 10);
+        uint pre_flop_deficit = Vat(bank).sin() / RAY - Vat(bank).joy();
         prepguyrico(2000 * WAD, false);
         guy.keep(single(wilk));
 
         // after flop bank should have more joy
-        uint post_flop_joy = Vat(bank).joy();
-        assertGt(post_flop_joy, pre_flop_joy);
+        uint post_flop_deficit = Vat(bank).sin() / RAY - Vat(bank).joy();
+        assertLt(post_flop_deficit, pre_flop_deficit);
     }
 
     function test_flop_clipping() public
     {
         // wait 10s to drip a little bit
         skip(10);
-        File(bank).file('tug', bytes32(RAY));
         feedpush(wrtag, bytes32(0), UINT256_MAX);
         // cause bank deficit by flipping with zero price
         Vat(bank).bail(wilk, me);
 
         // set rel small so first flop will not cover deficit
-        File(bank).file('rel', bytes32(File(bank).REL_MAX()));
+        File(bank).file('rel', bytes32(RAY / WAD));
         File(bank).file('cel', bytes32(uint(5)));
+
+        set_dxm('dom', RAY);
         Bank.Ramp memory ramp = Vow(bank).ramp();
-        uint flop = rmul(ramp.rel, risk.totalSupply()) * min(block.timestamp - ramp.bel, ramp.cel);
+        uint flop = rmul(ramp.rel, risk.totalSupply());
+        flop     *= min(block.timestamp - ramp.bel, ramp.cel);
 
         prepguyrico(2000 * WAD, false);
         uint ts0 = risk.totalSupply();
         uint gr0 = rico.balanceOf(address(guy));
         guy.keep(single(wilk));
-        File(bank).file('tug', bytes32(RAY));
         uint ts1 = risk.totalSupply();
         uint gr1 = rico.balanceOf(address(guy));
         uint price_unclipped = WAD * (gr0 - gr1) / (ts1 - ts0);
@@ -696,7 +702,9 @@ contract VowJsTest is Test, RicoSetUp {
         uint under = Vat(bank).sin() / RAY - Vat(bank).joy();
         uint ts2   = risk.totalSupply();
         uint gr2   = rico.balanceOf(address(guy));
-        guy.keep(single(wilk));
+        // price risk high, should clip
+        set_dxm('dom', RAY * WAD);
+        guy.keep(empty);
         uint ts3   = risk.totalSupply();
         uint gr3   = rico.balanceOf(address(guy));
         // with large rel flop size should have been clipped
@@ -707,12 +715,12 @@ contract VowJsTest is Test, RicoSetUp {
         uint sin = Vat(bank).sin() / RAY;
         assertEq(joy, sin);
 
-        // the first flop was small, price should be about the same
+        // the first flop was small, prices should be proportional to their tugs
         uint price_clipped = WAD * (gr2 - gr3) / (ts3 - ts2);
-        assertClose(price_clipped, price_unclipped, 1_000);
+        assertClose(price_clipped, price_unclipped * WAD, 99);
 
         // should only advance bel < 1% of cell bc deficit was tiny
-        assertLt(Vow(bank).ramp().bel, block.timestamp - BANKYEAR * 99 / 100);
+        assertLt(Vow(bank).ramp().bel, block.timestamp);
     }
 
     function test_sparse_flop_bel() public
