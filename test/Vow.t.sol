@@ -578,7 +578,7 @@ contract VowJsTest is Test, RicoSetUp {
         skip(BANKYEAR);
 
         // risk:rico price 1
-        feedpush(RISK_RICO_TAG, bytes32(RAY), UINT256_MAX);
+        set_dxm('dam', RAY);
 
         // should flap
         Vow(bank).keep(single(wilk));
@@ -605,7 +605,7 @@ contract VowJsTest is Test, RicoSetUp {
         Vat(bank).bail(wilk, address(cat));
 
         // more sin than rico, should flop
-        feedpush(RISK_RICO_TAG, bytes32(RAY), UINT256_MAX);
+        set_dxm('dom', RAY);
         uint pre_risk = risk.balanceOf(self);
         Vow(bank).keep(single(wilk));
         assertGt(risk.balanceOf(self), pre_risk);
@@ -617,16 +617,17 @@ contract VowJsTest is Test, RicoSetUp {
         File(bank).file('ceil', bytes32(uint(100000 * RAD)));
         Vat(bank).filk(wilk, 'line', bytes32(uint(100000 * RAD)));
 
+        set_dxm('dom', RAY);
         // 1s passed since bel
         File(bank).file('rel', bytes32(RAY / BANKYEAR));
-        File(bank).file('bel', bytes32(uint(block.timestamp - BANKYEAR)));
         File(bank).file('cel', bytes32(uint(BANKYEAR)));
 
         // keep should flop totalSupply risk, since rel will give 100% after a year
         uint risksupply = risk.totalSupply();
         prepguyrico(10000 * WAD, true);
+        File(bank).file('bel', bytes32(uint(block.timestamp - 2)));
         guy.keep(single(wilk));
-        assertClose(risk.totalSupply(), risksupply + risksupply, 1_000_000);
+        assertClose(risk.totalSupply(), risksupply + risksupply * 2 / BANKYEAR, 1_000_000);
     }
 
     function test_e2e_all_actions() public
@@ -677,7 +678,7 @@ contract VowJsTest is Test, RicoSetUp {
         File(bank).file('rel', bytes32(RAY / WAD));
         File(bank).file('cel', bytes32(uint(5)));
 
-        set_dxm('dom', RAY);
+        set_dxm('dom', RAY * WAD / 10); skip(17);
         Bank.Ramp memory ramp = Vow(bank).ramp();
         uint flop = rmul(ramp.rel, risk.totalSupply());
         flop     *= min(block.timestamp - ramp.bel, ramp.cel);
@@ -688,7 +689,7 @@ contract VowJsTest is Test, RicoSetUp {
         guy.keep(single(wilk));
         uint ts1 = risk.totalSupply();
         uint gr1 = rico.balanceOf(address(guy));
-        uint price_unclipped = WAD * (gr0 - gr1) / (ts1 - ts0);
+        uint price_unclipped = wdiv(gr0 - gr1, ts1 - ts0);
 
         // with small rel, flop size should not have been clipped
         assertEq(flop, ts1 - ts0);
@@ -703,7 +704,7 @@ contract VowJsTest is Test, RicoSetUp {
         uint ts2   = risk.totalSupply();
         uint gr2   = rico.balanceOf(address(guy));
         // price risk high, should clip
-        set_dxm('dom', RAY * WAD);
+        set_dxm('dom', RAY * WAD); skip(2);
         guy.keep(empty);
         uint ts3   = risk.totalSupply();
         uint gr3   = rico.balanceOf(address(guy));
@@ -716,7 +717,7 @@ contract VowJsTest is Test, RicoSetUp {
         assertEq(joy, sin);
 
         // the first flop was small, prices should be proportional to their tugs
-        uint price_clipped = WAD * (gr2 - gr3) / (ts3 - ts2);
+        uint price_clipped = wdiv(gr2 - gr3, ts3 - ts2);
         assertClose(price_clipped, price_unclipped * WAD, 99);
 
         // should only advance bel < 1% of cell bc deficit was tiny
@@ -727,8 +728,9 @@ contract VowJsTest is Test, RicoSetUp {
     {
         // test bel when elapsed time is >> cel
         uint cel = 1000;
+        uint dom = RAY * 999982 / 1000000;
         File(bank).file('cel', bytes32(cel));
-        feedpush(RISK_RICO_TAG, bytes32(RAY), UINT256_MAX);
+        File(bank).file('dom', bytes32(dom));
 
         // cause bank deficit by flipping with lower price
         feedpush(wrtag, bytes32(RAY * 10 / 11), UINT256_MAX);
