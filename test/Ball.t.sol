@@ -243,6 +243,7 @@ contract BallTest is BaseHelper {
 
     modifier _flop_after_ {
         _;
+        set_dxm('dom', RAY);
         vm.expectCall(risk, abi.encodePacked(Gem(risk).mint.selector));
         Vow(bank).keep(ilks);
     }
@@ -308,6 +309,7 @@ contract BallTest is BaseHelper {
 
         // keep accumulates fees and flaps
         look_poke();
+        set_dxm('dam', RAY);
         vm.expectCall(rico, abi.encodePacked(Gem.mint.selector));
         Vow(bank).keep(single(wilk));
 
@@ -329,6 +331,8 @@ contract BallTest is BaseHelper {
         uint ink_pre = _ink(wilk, self);
 
         assertEq(Vow(bank).ramp().wel, RAY);
+
+        set_dxm('dam', RAY);
         vm.expectCall(rico, abi.encodePacked(Gem.mint.selector));
         Vow(bank).keep(ilks); // drips
 
@@ -412,8 +416,7 @@ contract BallTest is BaseHelper {
         File(bank).file('rel', bytes32(rel_max));
 
         File(bank).file('cel', bytes32(UINT256_MAX));
-        uint wait = BANKYEAR - (block.timestamp - Vow(bank).ramp().bel);
-        skip(wait);
+        set_dxm('dom', 1);
 
         Vat(bank).filh(wilk, 'src', new bytes32[](0), bytes32(bytes20(fsrc)));
         vm.prank(fsrc);
@@ -423,13 +426,15 @@ contract BallTest is BaseHelper {
         Vat(bank).frob(wilk, self, abi.encodePacked(int(WAD)), int(WAD));
 
         // prank a low but nonzero risk:rico price so no reflop error
-        File(bank).file('tug', bytes32(uint(1)));
         vm.startPrank(fsrc);
         fb.push(WETH_REF_TAG, bytes32(uint(0)), UINT256_MAX);
         vm.stopPrank();
 
         // create some sin
         Vat(bank).bail(wilk, self);
+
+        uint wait = BANKYEAR - (block.timestamp - Vow(bank).ramp().bel);
+        skip(wait);
 
         uint supply_pre = Gem(risk).totalSupply();
         Vow(bank).keep(empty);
@@ -480,19 +485,15 @@ contract BallTest is BaseHelper {
         Vox(bank).poke();
         assertClose(Vat(bank).par(), 10 * init_par, 10000000000);
 
-        File(bank).file('plot.pop', bytes32(RAY / 10));
-        File(bank).file('plat.pop', bytes32(RAY / 10));
-        File(bank).file('plot.pop', bytes32(RAY * 10));
-        File(bank).file('plat.pop', bytes32(RAY * 10));
+        File(bank).file('dam', 0);
+        File(bank).file('dom', 0);
+        File(bank).file('dam', bytes32(RAY));
+        File(bank).file('dom', bytes32(RAY));
 
         vm.expectRevert(Bank.ErrBound.selector);
-        File(bank).file('plot.pop', bytes32(RAY / 10 - 1));
+        File(bank).file('dam', bytes32(RAY + 1));
         vm.expectRevert(Bank.ErrBound.selector);
-        File(bank).file('plat.pop', bytes32(RAY / 10 - 1));
-        vm.expectRevert(Bank.ErrBound.selector);
-        File(bank).file('plot.pop', bytes32(RAY * 10 + 1));
-        vm.expectRevert(Bank.ErrBound.selector);
-        File(bank).file('plat.pop', bytes32(RAY * 10 + 1));
+        File(bank).file('dom', bytes32(RAY + 1));
     }
 
 }

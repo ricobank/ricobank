@@ -512,11 +512,6 @@ contract VowJsTest is Test, RicoSetUp {
         assertEq(uint(safe1), uint(Vat.Spot.Safe));
     }
 
-    function set_dxm(bytes32 key, uint price) internal {
-        File(bank).file(key, bytes32(rdiv(price, Vow(bank).TUG_MAX())));
-        File(bank).file('bel', bytes32(block.timestamp - 1));
-    }
-
     function test_bail_urns_1yr_unsafe() public
     {
         // wait a year, flap the surplus
