@@ -107,7 +107,7 @@ abstract contract BaseHelper is Math, Test, UniSetUp {
         res[0] = x;
     }
 
-    function set_dxm(bytes32 key, uint price) internal {
+    function set_dxm(bytes32 key, uint price) public {
         File(bank).file(key, bytes32(rdiv(price, Vow(bank).TUG_MAX())));
         File(bank).file('bel', bytes32(block.timestamp - 1));
     }
