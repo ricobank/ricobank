@@ -88,10 +88,6 @@ contract Ball is Math, Ward {
         uint256 uniadaptttl;
         uint256 daiusdttl;
         uint256 xauusdttl;
-        uint256 platpep;
-        uint256 platpop;
-        uint256 plotpep;
-        uint256 plotpop;
         Vow.Ramp mintramp;
     }
 
@@ -169,10 +165,10 @@ contract Ball is Math, Ward {
         vowsels[0]  = Vow.keep.selector;
         vowsels[1]  = Vow.RISK.selector;
         vowsels[2]  = Vow.ramp.selector;
-        vowsels[3]  = Vow.rudd.selector;
-        vowsels[4]  = Vow.plat.selector;
-        vowsels[5]  = Vow.plot.selector;
-        vowsels[6]  = Vow.loot.selector;
+        vowsels[3]  = Vow.loot.selector;
+        vowsels[4]  = Vow.dam.selector;
+        vowsels[5]  = Vow.dom.selector;
+        vowsels[6]  = Vow.TUG_MAX.selector;
         voxsels[0]  = Vox.poke.selector;
         voxsels[1]  = Vox.way.selector;
         voxsels[2]  = Vox.how.selector;
@@ -194,12 +190,8 @@ contract Ball is Math, Ward {
         fbank.file("par",  bytes32(args.par));
         fbank.file("ceil", bytes32(args.ceil));
 
-        fbank.file("plat.pep", bytes32(args.platpep));
-        fbank.file("plat.pop", bytes32(args.platpop));
-        fbank.file("rudd.tag", RISK_RICO_TAG);
-        fbank.file("rudd.src", bytes32(bytes20(address(uniadapt))));
-        fbank.file("plot.pep", bytes32(args.plotpep));
-        fbank.file("plot.pop", bytes32(args.plotpop));
+        fbank.file("dam", bytes32(RAY));
+        fbank.file("dom", bytes32(RAY));
 
         fbank.file("bel", bytes32(args.mintramp.bel));
         fbank.file("cel", bytes32(args.mintramp.cel));
