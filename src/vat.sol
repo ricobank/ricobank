@@ -223,6 +223,7 @@ contract Vat is Bank {
         ilk.tart -= art;
         emit NewPalm1("tart", i, bytes32(ilk.tart));
 
+        // when switching from surplus to potential deficit, reset vow auction
         if (vs.sin / RAY <= vs.joy && (vs.sin + dtab) / RAY > vs.joy ) {
             getVowStorage().ramp.bel = block.timestamp;
             emit NewPalm0("bel", bytes32(block.timestamp));

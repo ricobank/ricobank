@@ -104,7 +104,6 @@ abstract contract RicoSetUp is BaseHelper {
     Gem        public risk;
     GemFab     public gemfab;
     address    public ricodai;
-    address    public ricorisk;
     address    public arico;
     address    public arisk;
     address    public agold;
@@ -253,7 +252,6 @@ abstract contract RicoSetUp is BaseHelper {
             arico,
             arisk,
             ricodai,
-            ricorisk,
             DAI,
             DAI_USD_AGG,
             XAU_USD_AGG,

@@ -82,20 +82,20 @@ contract Vow is Bank {
             }
 
             // price decreases with time
-            uint bel   = vowS.ramp.bel;
-            uint price = grow(_TUG_MAX, vowS.dom, block.timestamp - bel);
+            uint elapsed = block.timestamp - vowS.ramp.bel;
+            uint price   = grow(_TUG_MAX, vowS.dom, elapsed);
 
             // rate-limit flop
-            uint elapsed = min(block.timestamp - bel, vowS.ramp.cel);
-            uint flop    = elapsed * rmul(vowS.ramp.rel, risk.totalSupply());
+            uint charge = min(elapsed, vowS.ramp.cel);
+            uint flop = charge * rmul(vowS.ramp.rel, risk.totalSupply());
             if (0 == flop) revert ErrReflop();
 
             // swap RISK for rico to cover sin
             uint earn = rmul(flop, price);
-            bel       = block.timestamp;
+            uint bel  = block.timestamp;
             if (earn > under) {
                 // always advances >= 1s from max(vowS.bel, timestamp - cel)
-                bel  -= wmul(elapsed, WAD - wdiv(under, earn));
+                bel  -= wmul(charge, WAD - wdiv(under, earn));
                 flop  = (flop * under) / earn;
                 earn  = under;
             }

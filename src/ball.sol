@@ -32,7 +32,6 @@ contract Ball is Math, Ward {
     bytes32 internal constant XAU_USD_TAG   = "xau:usd";
     bytes32 internal constant DAI_USD_TAG   = "dai:usd";
     bytes32 internal constant RICO_REF_TAG  = "rico:ref";
-    bytes32 internal constant RISK_RICO_TAG = "risk:rico";
     bytes32 internal constant WETH_USD_TAG  = "weth:usd";
     bytes32 internal constant HOW = bytes32(uint256(1000000000000003652500000000));
     bytes32 internal constant CAP = bytes32(uint256(1000000021970000000000000000));
@@ -78,7 +77,6 @@ contract Ball is Math, Ward {
         address rico;
         address risk;
         address ricodai;
-        address ricorisk;
         address dai;
         address dai_usd_agg;
         address xau_usd_agg;
@@ -223,12 +221,6 @@ contract Ball is Math, Ward {
         _configureBlock(divider, RICO_REF_TAG,
                        address(multiplier), RICO_USD_TAG,
                        address(cladapt),    XAU_USD_TAG, RAY);
-
-        // risk:rico
-        uniadapt.setConfig(
-            RISK_RICO_TAG,
-            UniswapV3Adapter.Config(args.ricorisk, args.risk < args.rico, args.uniadaptrange, args.uniadaptttl)
-        );
     }
 
     function makeilk(IlkParams calldata ilkparams) external _ward_ {

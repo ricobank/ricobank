@@ -144,7 +144,6 @@ task('deploy-ricobank', '')
         rico: deps.rico.address,
         risk: deps.risk.address,
         ricodai: deps.ricodai.address,
-        ricorisk: deps.ricorisk.address,
         dai: deps.dai.address,
         dai_usd_agg: agg_daiusd.address,
         xau_usd_agg: agg_xauusd.address,
