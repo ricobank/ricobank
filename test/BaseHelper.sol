@@ -108,7 +108,7 @@ abstract contract BaseHelper is Math, Test, UniSetUp {
     }
 
     function set_dxm(bytes32 key, uint price) public {
-        File(bank).file(key, bytes32(rdiv(price, Vow(bank).PEX())));
+        File(bank).file(key, bytes32(rdiv(price, Vow(bank).pex())));
         File(bank).file('bel', bytes32(block.timestamp - 1));
     }
 

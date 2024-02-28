@@ -17,8 +17,8 @@ contract Vow is Bank {
     function loot() external view returns (uint) { return getVowStorage().loot; }
     function dam() external view returns (uint) { return getVowStorage().dam; }
     function dom() external view returns (uint) { return getVowStorage().dom; }
-    function PEX() external pure returns (uint) { return _PEX; }
-    uint constant public _PEX = RAY * WAD;
+    function pex() external pure returns (uint) { return _pex; }
+    uint constant public _pex = RAY * WAD;
 
     error ErrReflop();
 
@@ -49,7 +49,7 @@ contract Vow is Bank {
 
             // price decreases with time
             uint price = grow(
-                _PEX, vowS.dam, block.timestamp - vowS.ramp.bel
+                _pex, vowS.dam, block.timestamp - vowS.ramp.bel
             );
 
             // buy-and-burn risk with remaining (`flap`) rico
@@ -82,7 +82,7 @@ contract Vow is Bank {
 
             // price decreases with time
             uint elapsed = block.timestamp - vowS.ramp.bel;
-            uint price   = grow(_PEX, vowS.dom, elapsed);
+            uint price   = grow(_pex, vowS.dom, elapsed);
 
             // rate-limit flop
             uint charge = min(elapsed, vowS.ramp.cel);
