@@ -21,7 +21,6 @@ contract Vow is Bank {
     uint constant public _TUG_MAX = RAY * WAD;
 
     error ErrReflop();
-    error ErrOutDated();
 
     function keep(bytes32[] calldata ilks) external payable _flog_ {
         VowStorage storage  vowS  = getVowStorage();
