@@ -6,6 +6,7 @@ import 'forge-std/Test.sol';
 import '../src/mixin/math.sol';
 import { Block } from '../lib/feedbase/src/mixin/Read.sol';
 import { IUniWrapper } from '../lib/feedbase/src/adapters/UniswapV3Adapter.sol';
+import { ParAdapter } from "../lib/feedbase/src/adapters/ParAdapter.sol";
 import { Feedbase } from '../lib/feedbase/src/Feedbase.sol';
 import { Gem, GemFab } from '../lib/gemfab/src/gem.sol';
 import { Bank } from '../src/bank.sol';
@@ -97,6 +98,7 @@ abstract contract RicoSetUp is BaseHelper {
     Multiplier public multiplier;
     UniswapV3Adapter public uniadapter;
     ChainlinkAdapter public cladapter;
+    ParAdapter public paradapter;
     Feedbase   public feed;
     Gem        public dai;
     Gem        public gold;
@@ -198,6 +200,7 @@ abstract contract RicoSetUp is BaseHelper {
         divider    = new Divider(address(feed));
         multiplier = new Multiplier(address(feed));
         cladapter  = new ChainlinkAdapter();
+        paradapter = new ParAdapter(bank);
 
         tokhook = new ERC20Hook();
         unihook = new UniNFTHook(NFPM);
