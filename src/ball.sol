@@ -166,7 +166,7 @@ contract Ball is Math, Ward {
         vowsels[3]  = Vow.loot.selector;
         vowsels[4]  = Vow.dam.selector;
         vowsels[5]  = Vow.dom.selector;
-        vowsels[6]  = Vow.TUG_MAX.selector;
+        vowsels[6]  = Vow.PEX.selector;
         voxsels[0]  = Vox.poke.selector;
         voxsels[1]  = Vox.way.selector;
         voxsels[2]  = Vox.how.selector;

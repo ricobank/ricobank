@@ -195,7 +195,7 @@ describe('Vox', () => {
       await send(bank.file, b32('dam'), bn2b32(ray(1).div(wad(1))))
       await send(bank.file, b32('bel'), bn2b32(ethers.BigNumber.from(timestamp)))
       let gas = await bank.estimateGas.keep([])
-      await check(gas, 101921)
+      await check(gas, 101943)
     })
 
     it('keep deficit gas', async() => {
@@ -205,7 +205,7 @@ describe('Vox', () => {
       await send(bank.bail, b32('weth'), ALI)
 
       let gas = await bank.estimateGas.keep([])
-      await check(gas, 109716)
+      await check(gas, 109741)
     })
 
     it('poke up gas', async () => {
