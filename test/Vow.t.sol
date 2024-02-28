@@ -89,7 +89,7 @@ contract VowTest is Test, RicoSetUp {
         uint rico_gain = rico.balanceOf(self) - self_rico_1;
         uint risk_cost = self_risk_1 - risk.balanceOf(self);
 
-        // earn should depend on price and mash
+        // earn should depend on price
         assertClose(expected_risk_cost, risk_cost, 10_000);
         assertEq(rico_gain, surplus);
     }
@@ -116,7 +116,7 @@ contract VowTest is Test, RicoSetUp {
         uint rico_cost = self_rico_1 - rico.balanceOf(self);
         uint risk_gain = risk.balanceOf(self) - self_risk_1;
 
-        // rico system takes on deficit auction should be proportional to mash
+        // rico system takes on deficit auction should be proportional to elapsed
         assertClose(rdiv(rico_cost, risk_gain), risk_price_in_rico, 1000000000);
     }
 
@@ -304,9 +304,6 @@ contract VowTest is Test, RicoSetUp {
         uint guys   = rico.balanceOf(address(guy));
         uint selfs  = rico.balanceOf(self);
         uint burned = risk.balanceOf(address(guy));
-
-        // calculate mash after drip, so it's same as flap's mash
-        Vat(bank).drip(gilk);
 
         vm.stopPrank();
         File(bank).file('bel', bytes32(block.timestamp - 1));
