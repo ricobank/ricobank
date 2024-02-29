@@ -37,7 +37,6 @@ contract BallTest is BaseHelper {
     address rico;
     address risk;
     address ricodai;
-    address ricorisk;
     int256  safedart;
 
     bytes32[] ilks;
@@ -75,7 +74,6 @@ contract BallTest is BaseHelper {
         address uniwrapper     = make_uniwrapper();
         uint160 sqrt_ratio_x96 = get_rico_sqrtx96(init_par);
         ricodai                = create_pool(rico, DAI, 500, sqrt_ratio_x96);
-        ricorisk               = create_pool(rico, risk, RISK_FEE, risk_price);
 
         uniadapt   = new UniswapV3Adapter(IUniWrapper(uniwrapper));
         divider    = new Divider(address(fb));
@@ -153,7 +151,6 @@ contract BallTest is BaseHelper {
             rico,
             risk,
             ricodai,
-            ricorisk,
             DAI,
             DAI_USD_AGG,
             XAU_USD_AGG,

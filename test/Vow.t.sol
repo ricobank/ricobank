@@ -44,7 +44,7 @@ contract VowTest is Test, RicoSetUp {
         guy = new Guy(bank);
 
         // risk:rico price 1
-        File(bank).file('dom', bytes32(rinv(Vow(bank).TUG_MAX())));
+        File(bank).file('dom', bytes32(rinv(Vow(bank).pex())));
     }
 
     function test_flap_price() public
@@ -79,7 +79,7 @@ contract VowTest is Test, RicoSetUp {
         uint self_risk_1 = risk.balanceOf(self);
 
         // set dam and bel so it just takes one second to reach target price
-        uint dam = rmul(rinv(Vow(bank).TUG_MAX()), rico_price_in_risk * RAY);
+        uint dam = rmul(rinv(Vow(bank).pex()), rico_price_in_risk * RAY);
         File(bank).file('dam', bytes32(dam));
         File(bank).file('bel', bytes32(block.timestamp));
         skip(1);
@@ -89,7 +89,7 @@ contract VowTest is Test, RicoSetUp {
         uint rico_gain = rico.balanceOf(self) - self_rico_1;
         uint risk_cost = self_risk_1 - risk.balanceOf(self);
 
-        // earn should depend on price and mash
+        // earn should depend on price
         assertClose(expected_risk_cost, risk_cost, 10_000);
         assertEq(rico_gain, surplus);
     }
@@ -104,7 +104,7 @@ contract VowTest is Test, RicoSetUp {
 
         // risk:rico price 10
         uint risk_price_in_rico = 10 * RAY;
-        uint dom = rmul(rinv(Vow(bank).TUG_MAX()), risk_price_in_rico);
+        uint dom = rmul(rinv(Vow(bank).pex()), risk_price_in_rico);
         File(bank).file('dom', bytes32(dom));
         skip(1);
 
@@ -116,7 +116,7 @@ contract VowTest is Test, RicoSetUp {
         uint rico_cost = self_rico_1 - rico.balanceOf(self);
         uint risk_gain = risk.balanceOf(self) - self_risk_1;
 
-        // rico system takes on deficit auction should be proportional to mash
+        // rico system takes on deficit auction should be proportional to elapsed
         assertClose(rdiv(rico_cost, risk_gain), risk_price_in_rico, 1000000000);
     }
 
@@ -233,7 +233,7 @@ contract VowTest is Test, RicoSetUp {
         skip(BANKYEAR);
 
         // set dam and bel so it just takes one second to reach target price
-        File(bank).file('dam', bytes32(rinv(Vow(bank).TUG_MAX())));
+        File(bank).file('dam', bytes32(rinv(Vow(bank).pex())));
         File(bank).file('bel', bytes32(block.timestamp));
         skip(1);
 
@@ -257,7 +257,7 @@ contract VowTest is Test, RicoSetUp {
         Vat(bank).drip(gilk);
 
         // set dom and bel so it just takes one second to reach target price
-        File(bank).file('dom', bytes32(rinv(Vow(bank).TUG_MAX())));
+        File(bank).file('dom', bytes32(rinv(Vow(bank).pex())));
         File(bank).file('bel', bytes32(block.timestamp));
         skip(1);
 
@@ -286,7 +286,7 @@ contract VowTest is Test, RicoSetUp {
         uint riskrico_price = RAY / 10;
 
         // set dam and bel so it just takes one second to reach target price
-        uint dam = rmul(rinv(riskrico_price), rinv(Vow(bank).TUG_MAX()));
+        uint dam = rmul(rinv(riskrico_price), rinv(Vow(bank).pex()));
         File(bank).file('dam', bytes32(dam));
         File(bank).file('bel', bytes32(block.timestamp));
         skip(1);
@@ -304,9 +304,6 @@ contract VowTest is Test, RicoSetUp {
         uint guys   = rico.balanceOf(address(guy));
         uint selfs  = rico.balanceOf(self);
         uint burned = risk.balanceOf(address(guy));
-
-        // calculate mash after drip, so it's same as flap's mash
-        Vat(bank).drip(gilk);
 
         vm.stopPrank();
         File(bank).file('bel', bytes32(block.timestamp - 1));
@@ -405,7 +402,7 @@ contract VowTest is Test, RicoSetUp {
         uint pre_risk = risk.balanceOf(self);
 
         // set dam and bel so it just takes one second to reach target price
-        File(bank).file('dam', bytes32(rinv(Vow(bank).TUG_MAX())));
+        File(bank).file('dam', bytes32(rinv(Vow(bank).pex())));
         File(bank).file('bel', bytes32(block.timestamp - 1));
         Vow(bank).keep(empty);
 

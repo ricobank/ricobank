@@ -17,11 +17,10 @@ contract Vow is Bank {
     function loot() external view returns (uint) { return getVowStorage().loot; }
     function dam() external view returns (uint) { return getVowStorage().dam; }
     function dom() external view returns (uint) { return getVowStorage().dom; }
-    function TUG_MAX() external pure returns (uint) { return _TUG_MAX; }
-    uint constant public _TUG_MAX = RAY * WAD;
+    function pex() external pure returns (uint) { return _pex; }
+    uint constant public _pex = RAY * WAD;
 
     error ErrReflop();
-    error ErrOutDated();
 
     function keep(bytes32[] calldata ilks) external payable _flog_ {
         VowStorage storage  vowS  = getVowStorage();
@@ -50,7 +49,7 @@ contract Vow is Bank {
 
             // price decreases with time
             uint price = grow(
-                _TUG_MAX, vowS.dam, block.timestamp - vowS.ramp.bel
+                _pex, vowS.dam, block.timestamp - vowS.ramp.bel
             );
 
             // buy-and-burn risk with remaining (`flap`) rico
@@ -83,11 +82,11 @@ contract Vow is Bank {
 
             // price decreases with time
             uint elapsed = block.timestamp - vowS.ramp.bel;
-            uint price   = grow(_TUG_MAX, vowS.dom, elapsed);
+            uint price   = grow(_pex, vowS.dom, elapsed);
 
             // rate-limit flop
             uint charge = min(elapsed, vowS.ramp.cel);
-            uint flop = charge * rmul(vowS.ramp.rel, risk.totalSupply());
+            uint flop   = charge * rmul(vowS.ramp.rel, risk.totalSupply());
             if (0 == flop) revert ErrReflop();
 
             // swap RISK for rico to cover sin
