@@ -506,7 +506,6 @@ contract VowTest is Test, RicoSetUp {
         assertEq(rdiv(prerico - aftrico, aftrisk - prerisk), 0);
     }
 
-
 }
 
 contract Usr is Guy {
