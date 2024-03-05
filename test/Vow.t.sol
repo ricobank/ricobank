@@ -427,6 +427,85 @@ contract VowTest is Test, RicoSetUp {
         Vow(bank).keep(empty);
     }
 
+    function test_dam() public {
+        risk.mint(self, UINT256_MAX - risk.totalSupply());
+        File(bank).file('bel', bytes32(block.timestamp));
+        File(bank).file('wel', bytes32(RAY));
+        File(bank).file('dam', bytes32(RAY / 10));
+
+        // no time elapsed, price == pex
+        force_fees(Vat(bank).sin() / RAY + WAD);
+        uint prerisk = risk.balanceOf(self);
+        Vow(bank).keep(empty);
+
+        assertClose(prerisk - risk.balanceOf(self), rmul(WAD, Vow(bank).pex()), BLN);
+
+        // 1s elapsed, price == pex / 10
+        skip(1);
+        force_fees(Vat(bank).sin() / RAY + WAD);
+        prerisk = risk.balanceOf(self);
+        Vow(bank).keep(empty);
+
+        assertClose(prerisk - risk.balanceOf(self), rmul(WAD, Vow(bank).pex()) / 10, BLN);
+
+        // 4s elapsed, price == pex / 10000
+        skip(4);
+        force_fees(Vat(bank).sin() / RAY + WAD);
+        prerisk = risk.balanceOf(self);
+        Vow(bank).keep(empty);
+
+        assertClose(
+            prerisk - risk.balanceOf(self), rmul(WAD, Vow(bank).pex()) / 10000, BLN
+        );
+
+        // lots of time elapsed, dam lowers price to 0
+        skip(BANKYEAR);
+        force_fees(Vat(bank).sin() / RAY + WAD);
+        prerisk = risk.balanceOf(self);
+        Vow(bank).keep(empty);
+        assertEq(prerisk - risk.balanceOf(self), 0);
+    }
+
+    function test_dom() public {
+        File(bank).file('bel', bytes32(block.timestamp));
+        File(bank).file('dom', bytes32(RAY / 10));
+
+        rico_mint(WAD * 1000, false);
+        force_sin((Vat(bank).joy() + WAD) * RAY);
+
+        // 1s elapsed, price == pex / 10
+        skip(1);
+        uint prerico = rico.balanceOf(self);
+        uint prerisk = risk.balanceOf(self);
+        Vow(bank).keep(empty);
+        uint aftrico = rico.balanceOf(self);
+        uint aftrisk = risk.balanceOf(self);
+
+        assertEq(rdiv(prerico - aftrico, aftrisk - prerisk), Vow(bank).pex() / 10);
+
+        // 4s elapsed, price == pex / 10000
+        skip(4);
+        force_sin((Vat(bank).joy() + WAD) * RAY);
+        prerico = rico.balanceOf(self);
+        prerisk = risk.balanceOf(self);
+        Vow(bank).keep(empty);
+        aftrico = rico.balanceOf(self);
+        aftrisk = risk.balanceOf(self);
+
+        assertEq(rdiv(prerico - aftrico, aftrisk - prerisk), Vow(bank).pex() / 10000);
+
+        // lots of time elapsed, dom lowers price to 0
+        skip(BANKYEAR);
+        force_sin((Vat(bank).joy() + WAD) * RAY);
+        prerico = rico.balanceOf(self);
+        prerisk = risk.balanceOf(self);
+        Vow(bank).keep(empty);
+        aftrico = rico.balanceOf(self);
+        aftrisk = risk.balanceOf(self);
+
+        assertEq(rdiv(prerico - aftrico, aftrisk - prerisk), 0);
+    }
+
 }
 
 contract Usr is Guy {
