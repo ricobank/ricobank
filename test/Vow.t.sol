@@ -506,6 +506,39 @@ contract VowTest is Test, RicoSetUp {
         assertEq(rdiv(prerico - aftrico, aftrisk - prerisk), 0);
     }
 
+    function test_bel_new_deficit() public {
+        uint gain = WAD * 10;
+        Vat(bank).filk(gilk, 'fee', bytes32(RAY));
+        assertEq(Vow(bank).ramp().bel, block.timestamp);
+
+        // not enough new sin to update bel
+        skip(BANKYEAR);
+        force_fees(gain);
+        force_sin(Vat(bank).joy() * RAY - RAD);
+        rico_mint(WAD, true);
+        assertEq(Vow(bank).ramp().bel, block.timestamp - BANKYEAR);
+
+        // just enough new sin to update bel
+        force_fees(gain);
+        force_sin(Vat(bank).joy() * RAY - RAD + RAY);
+        rico_mint(WAD, true);
+        assertEq(Vow(bank).ramp().bel, block.timestamp);
+
+        // enough old sin to update bel
+        skip(BANKYEAR);
+        force_fees(gain);
+        force_sin(Vat(bank).joy() * RAY + RAY - 1);
+        rico_mint(WAD, true);
+        assertEq(Vow(bank).ramp().bel, block.timestamp);
+
+        // not enough old sin to update bel
+        skip(BANKYEAR);
+        force_fees(gain);
+        force_sin(Vat(bank).joy() * RAY + RAY);
+        rico_mint(WAD, true);
+        assertEq(Vow(bank).ramp().bel, block.timestamp - BANKYEAR);
+    }
+
 }
 
 contract Usr is Guy {
