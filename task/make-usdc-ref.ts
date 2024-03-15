@@ -3,7 +3,7 @@ import { task } from 'hardhat/config'
 const debug = require('debug')('ricobank:task')
 const dpack = require('@etherpacks/dpack')
 import { b32, ray, rad, send, wad, BANKYEAR } from 'minihat'
-import { createAndInitializePoolIfNecessary } from './createAndInitializePoolIfNecessary'
+import { createAndInitializePoolIfNecessary } from './helpers'
 
 
 

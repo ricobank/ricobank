@@ -1,0 +1,164 @@
+const debug = require('debug')('rico:test')
+import { expect as want } from 'chai'
+
+import * as hh from 'hardhat'
+// @ts-ignore
+import { ethers } from 'hardhat'
+import { constants } from 'ethers'
+
+import { send, fail, wad, ray, rad } from 'minihat'
+const { hexZeroPad } = ethers.utils
+
+import { getDiamondArtifact } from '../../task/helpers'
+
+import { b32, revert_pop, revert_name, revert_clear, snapshot_name } from '../helpers'
+const dpack = require('@etherpacks/dpack')
+
+const bn2b32 = (bn) => hexZeroPad(bn.toHexString(), 32)
+
+describe('Vox', () => {
+  let ali, bob, cat
+  let ALI, BOB, CAT
+  let bank
+  let dapp
+  let msig
+
+  before(async () => {
+    [ali, bob, cat] = await ethers.getSigners();
+    [ALI, BOB, CAT] = [ali, bob, cat].map(signer => signer.address)
+
+    const cid = 'bafkreibgmj3srxcccdbgvo3sdsfrcm36hv7pmw7nofcwfghjvqfe5zuffa'
+    dapp = await dpack.load(cid, ethers, ali)
+
+    const MSIG = '0x85808ff766a80aB61Aafe354e7edDacc94230046'
+    await ali.sendTransaction({to: MSIG, value: wad(1)})
+    await hh.network.provider.request({
+      method: "hardhat_impersonateAccount",
+      params: [MSIG],
+    });
+
+    msig = await ethers.getSigner(MSIG)
+
+    bank = dapp.bank.connect(msig)
+
+    await snapshot_name(hh);
+  })
+
+  afterEach(async () => revert_name(hh))
+  after(async () => {
+      revert_pop(hh)
+      revert_clear(hh)
+  })
+
+  const getSel = x => ethers.utils.id(x).slice(0, 10)
+
+  // replace (rudd, plat, plot) with (dam, dom, pex)
+  // same as cutStandard otherwise
+  const cutVow = async () => {
+    const rmsels = ['keep(bytes32[])', 'RISK()', 'ramp()', 'loot()', 'rudd()', 'plat()', 'plot()']
+      .map(getSel)
+
+    const addsels = ['keep(bytes32[])', 'RISK()', 'ramp()', 'loot()', 'dam()', 'dom()', 'pex()']
+      .map(getSel)
+
+    const VOW   = '0x254834c73e3070a674ea8059Be3c813694070f06'
+    const AZERO = constants.AddressZero
+
+    const cuts = [[constants.AddressZero, 2, rmsels], [VOW, 0, addsels]]
+
+    const data = bank.interface.encodeFunctionData(
+      'diamondCut', [cuts, constants.AddressZero, '0x']
+    )
+
+    await msig.sendTransaction({to: bank.address, data})
+    console.log(data)
+
+    const sels = [
+      'keep(bytes32[])', 'RISK()', 'ramp()', 'loot()', 'rudd()', 'plat()',
+      'plot()', 'dam()', 'dom()', 'pex()'
+    ].map(getSel)
+    let facets = []
+    for (let sel of sels) {
+      facets.push(await bank.facetAddress(sel))
+    }
+
+    want(facets).eql([VOW, VOW, VOW, VOW, AZERO, AZERO, AZERO, VOW, VOW, VOW])
+
+  }
+
+  // point all of prev's selectors to next
+  const cutStandard = async (PREV, NEXT) => {
+    const sels = await bank.facetFunctionSelectors(PREV)
+
+    const AZERO = constants.AddressZero
+
+    const cuts = [[NEXT, 1, sels]]
+
+    const data = bank.interface.encodeFunctionData(
+      'diamondCut', [cuts, constants.AddressZero, '0x']
+    )
+
+    await msig.sendTransaction({to: bank.address, data})
+    console.log(data)
+
+    let facets = []
+    for (let sel of sels) {
+      const facet = await bank.facetAddress(sel)
+      want(facet).eql(NEXT)
+    }
+
+  }
+
+  const cutVat = async () => {
+    const VAT   = '0xc6D7b37FE18A3Dd007F9b1C3b339B8c6043b3ccf'
+    const oldVAT = await bank.facetAddress(getSel('debt()'))
+    await cutStandard(oldVAT, VAT)
+  }
+
+  const cutFile = async () => {
+    const FILE = '0x8dFb233ef877dd5a260a52EcED01A0f7e160B7b2'
+    const oldFILE = await bank.facetAddress(getSel('file(bytes32,bytes32)'))
+    await cutStandard(oldFILE, FILE)
+  }
+
+  it('cut 0.1', async () => {
+
+    console.log('cut vow:')
+    await cutVow()
+    console.log('cut vat:')
+    await cutVat()
+    console.log('cut file:')
+    await cutFile()
+
+    const bank_artifact = getDiamondArtifact()
+    const bank_type = ethers.ContractFactory.fromSolidity(bank_artifact, msig)
+    bank = bank_type.attach(bank.address)
+
+    console.log('file dam:')
+    let data = bank.interface.encodeFunctionData('file', [b32('dam'), bn2b32(ray(1))])
+    console.log(data)
+    await msig.sendTransaction({to: bank.address, data})
+
+    console.log('file dom:')
+    data = bank.interface.encodeFunctionData('file', [b32('dom'), bn2b32(ray(1))])
+    console.log(data)
+    await msig.sendTransaction({to: bank.address, data})
+
+    want(await bank.dam()).eql(ray(1))
+    want(await bank.dom()).eql(ray(1))
+    want(await bank.pex()).eql(ray(1).mul(wad(1)))
+
+    const pb = new dpack.PackBuilder(hh.network.name)
+    await pb.packObject({
+        objectname: 'bank',
+        address: bank.address,
+        typename: 'BankDiamond',
+        artifact: bank_artifact
+    }, true)
+
+    const cid = await dpack.putIpfsJson(pb.build(), true)
+    console.log(`pinned new bank pack at ${cid}`)
+
+  })
+
+})

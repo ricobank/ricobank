@@ -1,4 +1,5 @@
 import '@nomiclabs/hardhat-ethers'
+import '@nomicfoundation/hardhat-verify'
 
 import './lib/gemfab/task/deploy-gemfab'
 import './lib/feedbase/task/deploy-feedbase'
@@ -353,10 +354,10 @@ export default {
   },
   networks: {
       hardhat: {
-          forking: {
-              url: process.env["RPC_URL"],
-              blockNumber: 19060431,
-              chainId: 1,
+          forking: process.env["FORK_ARB"] ? {
+            url: process.env["ARB_RPC_URL"], blockNumber: 189507060, chainId: 42161
+          } : {
+            url: process.env["RPC_URL"], blockNumber: 19060431, chainId: 1
           },
           accounts: {
               accountsBalance: '1000000000000000000000000000000'
@@ -391,5 +392,10 @@ export default {
         chainId: 42161
       }
   },
+  etherscan: {
+    apiKey: {
+      arbitrumOne: process.env.ARBISCAN_API_KEY
+    }
+  }
 
 }
