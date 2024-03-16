@@ -2,7 +2,7 @@ import { task } from 'hardhat/config'
 const debug = require('debug')('ricobank:task')
 const dpack = require('@etherpacks/dpack')
 import { b32, send } from 'minihat'
-import { createAndInitializePoolIfNecessary } from './createAndInitializePoolIfNecessary'
+import { createAndInitializePoolIfNecessary } from './helpers'
 
 task('deploy-tokens', '')
 .addOptionalParam('tokens', 'JSON file with token addresses')

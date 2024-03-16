@@ -6,6 +6,8 @@ import 'forge-std/Test.sol';
 import { AggregatorInterface } from "../lib/feedbase/src/adapters/ChainlinkAdapter.sol";
 import '../src/mixin/math.sol';
 import { Vat } from '../src/vat.sol';
+import { Vow } from '../src/vow.sol';
+import { File } from '../src/file.sol';
 import { UniSetUp } from "./UniHelper.sol";
 import { BankDiamond } from '../src/diamond.sol';
 
@@ -104,4 +106,10 @@ abstract contract BaseHelper is Math, Test, UniSetUp {
         res = new bytes32[](1);
         res[0] = x;
     }
+
+    function set_dxm(bytes32 key, uint price) public {
+        File(bank).file(key, bytes32(rdiv(price, Vow(bank).pex())));
+        File(bank).file('bel', bytes32(block.timestamp - 1));
+    }
+
 }

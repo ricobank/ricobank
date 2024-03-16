@@ -51,10 +51,6 @@ describe('Vox', () => {
     await send(bank.filh, b32('weth'), b32('tag'), [], b32('weth:ref'))
     await send(fb.push, b32('weth:ref'), bn2b32(ray(0.8)), constants.MaxUint256);
 
-    await send(bank.file, b32('rudd.src'), ALI + '00'.repeat(12))
-    await send(bank.file, b32('rudd.tag'), b32('risk:rico'))
-    await send(fb.push, b32('risk:rico'), bn2b32(ray(1)), constants.MaxUint256)
-
     await send(weth.mint, ALI, wad(100))
     await send(weth.approve, bank.address, constants.MaxUint256)
     await send(risk.mint, ALI, wad(100000));
@@ -155,7 +151,7 @@ describe('Vox', () => {
     })
 
     it('deploy gas', async () => {
-      await check(ethers.BigNumber.from(deploygas), 44215757)
+      await check(ethers.BigNumber.from(deploygas), 43626537)
     })
 
     it('frob cold gas', async () => {
@@ -181,7 +177,7 @@ describe('Vox', () => {
 
       await send(fb.push, b32('weth:ref'), bn2b32(ray(0.1)), constants.MaxUint256)
       let gas = await bank.estimateGas.bail(b32('weth'), ALI)
-      await check(gas, 236465)
+      await check(gas, 243907)
     })
 
     it('keep surplus gas', async () => {
@@ -195,8 +191,11 @@ describe('Vox', () => {
       await mine(hh, BANKYEAR * 100)
       await send(bank.drip, b32('weth'))
 
+      let timestamp = (await ali.provider.getBlock('latest')).timestamp
+      await send(bank.file, b32('dam'), bn2b32(ray(1).div(wad(1))))
+      await send(bank.file, b32('bel'), bn2b32(ethers.BigNumber.from(timestamp)))
       let gas = await bank.estimateGas.keep([])
-      await check(gas, 121518)
+      await check(gas, 101943)
     })
 
     it('keep deficit gas', async() => {
@@ -206,7 +205,7 @@ describe('Vox', () => {
       await send(bank.bail, b32('weth'), ALI)
 
       let gas = await bank.estimateGas.keep([])
-      await check(gas, 129884)
+      await check(gas, 109741)
     })
 
     it('poke up gas', async () => {
@@ -317,7 +316,7 @@ describe('Vox', () => {
         await send(fb.push, b32('rico:ref'), bn2b32(constants.Zero), constants.MaxUint256)
 
         let gas = await bank.estimateGas.bail(b32(':uninft'), ALI)
-        await check(gas, 623291)
+        await check(gas, 630559, 631100)
       })
     })
   })
