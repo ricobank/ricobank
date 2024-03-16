@@ -370,6 +370,7 @@ contract DssBiteTest is DssVatTest {
         skip(1);
         prepguyrico(550 * WAD, true);
         int surp_0 = _surp();
+        set_dxm('dom', RAY);
         guy.keep(single(gilk));
         assertGt(_surp(), surp_0);
     }
@@ -445,20 +446,16 @@ contract DssBiteTest is DssVatTest {
         assertEq(vow_Awe() / RAY, 0);
 
         // risk:rico price 1
-        feedpush(RISK_RICO_TAG, bytes32(RAY), UINT256_MAX);
+        set_dxm('dam', RAY);
 
         // should flap
         Vow(bank).keep(single(gilk));
         assertEq(rico.balanceOf(bank), 0);
         assertEq(vow_Awe() / RAY, 0);
 
-        // deal = risk.totalSupply() / (joy + risk.totalSupply()) == 1/2
-        // pop == 1 and pep == 2
-        // => mash will be pop * deal ^ pep == 1/4
-        // feeds are at equal prices so rico will be sold for 1/4 price
-        assertClose(risk.balanceOf(self), amt - amt / 4, 1000);
+        assertEq(risk.balanceOf(self), 1);
 
-        skip(1);
+        set_dxm('dam', RAY);
 
         Vow(bank).keep(single(gilk));
 
@@ -690,6 +687,7 @@ contract DssVowTest is DssJsTest {
         Vat(bank).bail(gilk, self); // lots of debt
 
         // keep, should be a flop
+        set_dxm('dom', RAY);
         uint rs1 = risk.totalSupply();
         vm.expectCall(address(rico), abi.encodePacked(Gem.burn.selector));
         Vow(bank).keep(single(gilk));
@@ -708,7 +706,7 @@ contract DssVowTest is DssJsTest {
         skip(BANKYEAR);
 
         // get ready to call keep
-        feedpush(RISK_RICO_TAG, bytes32(10 * RAY), UINT256_MAX);
+        set_dxm('dam', RAY / 10);
         risk.mint(self, 10000 * WAD);
 
         // should be a flap this time
@@ -718,7 +716,7 @@ contract DssVowTest is DssJsTest {
         assertGt(sr2, sr1); // flap, not flop
     }
 
-    function test_flap() public _vow_ {
+    function test_flap_1() public _vow_ {
         risk.mint(self, 10000 * WAD);
         Vat(bank).drip(gilk);
         Vat(bank).filk(gilk, bytes32('chop'), bytes32(RAY * 11 / 10));
@@ -729,6 +727,7 @@ contract DssVowTest is DssJsTest {
         // wait for some fees, then surplus auction
         skip(10);
 
+        set_dxm('dam', RAY);
         uint sr1 = rico.balanceOf(self);
         Vow(bank).keep(single(gilk));
         uint sr2 = rico.balanceOf(self);
