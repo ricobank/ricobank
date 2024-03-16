@@ -135,17 +135,27 @@ describe('Vox', () => {
     bank = bank_type.attach(bank.address)
 
     console.log('file dam:')
-    let data = bank.interface.encodeFunctionData('file', [b32('dam'), bn2b32(ray(1))])
+    const dam = ray('0.9997601761484850197727571946546604626161728980790525034258572721')
+    let data = bank.interface.encodeFunctionData('file', [b32('dam'), bn2b32(dam)])
     console.log(data)
     await msig.sendTransaction({to: bank.address, data})
 
     console.log('file dom:')
-    data = bank.interface.encodeFunctionData('file', [b32('dom'), bn2b32(ray(1))])
+    const dom = dam
+    data = bank.interface.encodeFunctionData('file', [b32('dom'), bn2b32(dom)])
     console.log(data)
     await msig.sendTransaction({to: bank.address, data})
 
-    want(await bank.dam()).eql(ray(1))
-    want(await bank.dom()).eql(ray(1))
+    console.log('file cel:')
+    const dom = dam
+    const cel = ethers.BigNumber.from(172800) // 2 days
+    data = bank.interface.encodeFunctionData('file', [b32('cel'), bn2b32(cel)])
+    console.log(data)
+    await msig.sendTransaction({to: bank.address, data})
+
+    want(await bank.dam()).eql(dam)
+    want(await bank.dom()).eql(dom)
+    want((await bank.ramp()).cel).eql(cel)
     want(await bank.pex()).eql(ray(1).mul(wad(1)))
 
     const pb = new dpack.PackBuilder(hh.network.name)
