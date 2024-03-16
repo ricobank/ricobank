@@ -33,3 +33,17 @@ export const createAndInitializePoolIfNecessary = async (
 
   return pooladdr
 }
+
+export const getDiamondArtifact = () => {
+    const diamond_artifact = require('../artifacts/src/diamond.sol/BankDiamond.json')
+    let top_artifact = require('../artifacts/hardhat-diamond-abi/HardhatDiamondABI.sol/BankDiamond.json')
+    top_artifact.deployedBytecode = diamond_artifact.deployedBytecode
+    top_artifact.bytecode = diamond_artifact.bytecode
+    top_artifact.linkReferences = diamond_artifact.linkReferences
+    top_artifact.deployedLinkReferences = diamond_artifact.deployedLinkReferences
+    top_artifact.abi = top_artifact.abi.filter((item, idx) => {
+        return top_artifact.abi.findIndex(a => item.name == a.name) == idx
+    })
+
+    return top_artifact
+}

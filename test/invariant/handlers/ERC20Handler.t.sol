@@ -86,6 +86,7 @@ contract ERC20HandlerTest is Test, BaseHelper {
         handler.wait(200);
 
         uint r1 = risk.totalSupply();
+        handler.set_dxm('dam', RAY);
         handler.keep(0);
         uint r2 = risk.totalSupply();
 

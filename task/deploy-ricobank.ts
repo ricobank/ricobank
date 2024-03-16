@@ -3,6 +3,7 @@ import { task } from 'hardhat/config'
 const debug = require('debug')('ricobank:task')
 const dpack = require('@etherpacks/dpack')
 import { b32, ray, rad, send, wad, BANKYEAR } from 'minihat'
+import { getDiamondArtifact } from './helpers'
 
 task('deploy-ricobank', '')
   .addOptionalParam('mock', 'Ignore dependency args and deploy new mock dependencies')
@@ -144,7 +145,6 @@ task('deploy-ricobank', '')
         rico: deps.rico.address,
         risk: deps.risk.address,
         ricodai: deps.ricodai.address,
-        ricorisk: deps.ricorisk.address,
         dai: deps.dai.address,
         dai_usd_agg: agg_daiusd.address,
         xau_usd_agg: agg_xauusd.address,
@@ -284,20 +284,12 @@ task('deploy-ricobank', '')
     })
 
     debug('packing Ricobank diamond')
-    let top_artifact = require('../artifacts/hardhat-diamond-abi/HardhatDiamondABI.sol/BankDiamond.json')
-    top_artifact.deployedBytecode = diamond_artifact.deployedBytecode
-    top_artifact.bytecode = diamond_artifact.bytecode
-    top_artifact.linkReferences = diamond_artifact.linkReferences
-    top_artifact.deployedLinkReferences = diamond_artifact.deployedLinkReferences
-    top_artifact.abi = top_artifact.abi.filter((item, idx) => {
-        return top_artifact.abi.findIndex(a => item.name == a.name) == idx
-    })
 
     await pb.packObject({
         objectname: 'bank',
         address: diamond.address,
         typename: 'BankDiamond',
-        artifact: top_artifact
+        artifact: getDiamondArtifact()
     }, true)
     debug('all packed, merging')
 

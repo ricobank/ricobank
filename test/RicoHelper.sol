@@ -86,10 +86,6 @@ abstract contract RicoSetUp is BaseHelper {
     uint160 constant public risk_price = X96;
     uint256 constant public INIT_PAR   = RAY;
     uint256 constant public init_mint  = 10000;
-    uint256 constant public platpep    = 2;
-    uint256 constant public platpop    = RAY;
-    uint256 constant public plotpep    = 2;
-    uint256 constant public plotpop    = RAY;
     uint256 constant public FEED_LOOKAHEAD = 1000;
     uint256 constant public FEE_2X_ANN = uint(1000000021964508944519921664);
     uint256 constant public FEE_1_5X_ANN = uint(1000000012848414058163994624);
@@ -110,7 +106,6 @@ abstract contract RicoSetUp is BaseHelper {
     Gem        public risk;
     GemFab     public gemfab;
     address    public ricodai;
-    address    public ricorisk;
     address    public arico;
     address    public arisk;
     address    public agold;
@@ -260,7 +255,6 @@ abstract contract RicoSetUp is BaseHelper {
             arico,
             arisk,
             ricodai,
-            ricorisk,
             DAI,
             DAI_USD_AGG,
             XAU_USD_AGG,
@@ -270,10 +264,6 @@ abstract contract RicoSetUp is BaseHelper {
             BANKYEAR / 4,
             BANKYEAR, // daiusd
             BANKYEAR, // xauusd
-            platpep,
-            platpop,
-            plotpep,
-            plotpop,
             Bank.Ramp(block.timestamp, 1, RAY / BLN, RAY)
         );
 
@@ -298,7 +288,6 @@ abstract contract RicoSetUp is BaseHelper {
 
         ahook   = payable(address(tokhook));
 
-        File(bank).file('rudd.src', bytes32(bytes20(fsrc)));
         File(bank).file('tip.src', bytes32(bytes20(fsrc)));
         Vat(bank).filh(WETH_ILK, 'src', empty, bytes32(bytes20(fsrc)));
 

@@ -32,7 +32,6 @@ contract Ball is Math, Ward {
     bytes32 internal constant XAU_USD_TAG   = "xau:usd";
     bytes32 internal constant DAI_USD_TAG   = "dai:usd";
     bytes32 internal constant RICO_REF_TAG  = "rico:ref";
-    bytes32 internal constant RISK_RICO_TAG = "risk:rico";
     bytes32 internal constant WETH_USD_TAG  = "weth:usd";
     bytes32 internal constant HOW = bytes32(uint256(1000000000000003652500000000));
     bytes32 internal constant CAP = bytes32(uint256(1000000021970000000000000000));
@@ -78,7 +77,6 @@ contract Ball is Math, Ward {
         address rico;
         address risk;
         address ricodai;
-        address ricorisk;
         address dai;
         address dai_usd_agg;
         address xau_usd_agg;
@@ -88,10 +86,6 @@ contract Ball is Math, Ward {
         uint256 uniadaptttl;
         uint256 daiusdttl;
         uint256 xauusdttl;
-        uint256 platpep;
-        uint256 platpop;
-        uint256 plotpep;
-        uint256 plotpop;
         Vow.Ramp mintramp;
     }
 
@@ -169,10 +163,10 @@ contract Ball is Math, Ward {
         vowsels[0]  = Vow.keep.selector;
         vowsels[1]  = Vow.RISK.selector;
         vowsels[2]  = Vow.ramp.selector;
-        vowsels[3]  = Vow.rudd.selector;
-        vowsels[4]  = Vow.plat.selector;
-        vowsels[5]  = Vow.plot.selector;
-        vowsels[6]  = Vow.loot.selector;
+        vowsels[3]  = Vow.loot.selector;
+        vowsels[4]  = Vow.dam.selector;
+        vowsels[5]  = Vow.dom.selector;
+        vowsels[6]  = Vow.pex.selector;
         voxsels[0]  = Vox.poke.selector;
         voxsels[1]  = Vox.way.selector;
         voxsels[2]  = Vox.how.selector;
@@ -194,12 +188,8 @@ contract Ball is Math, Ward {
         fbank.file("par",  bytes32(args.par));
         fbank.file("ceil", bytes32(args.ceil));
 
-        fbank.file("plat.pep", bytes32(args.platpep));
-        fbank.file("plat.pop", bytes32(args.platpop));
-        fbank.file("rudd.tag", RISK_RICO_TAG);
-        fbank.file("rudd.src", bytes32(bytes20(address(uniadapt))));
-        fbank.file("plot.pep", bytes32(args.plotpep));
-        fbank.file("plot.pop", bytes32(args.plotpop));
+        fbank.file("dam", bytes32(RAY));
+        fbank.file("dom", bytes32(RAY));
 
         fbank.file("bel", bytes32(args.mintramp.bel));
         fbank.file("cel", bytes32(args.mintramp.cel));
@@ -231,12 +221,6 @@ contract Ball is Math, Ward {
         _configureBlock(divider, RICO_REF_TAG,
                        address(multiplier), RICO_USD_TAG,
                        address(cladapt),    XAU_USD_TAG, RAY);
-
-        // risk:rico
-        uniadapt.setConfig(
-            RISK_RICO_TAG,
-            UniswapV3Adapter.Config(args.ricorisk, args.risk < args.rico, args.uniadaptrange, args.uniadaptttl)
-        );
     }
 
     function makeilk(IlkParams calldata ilkparams) external _ward_ {

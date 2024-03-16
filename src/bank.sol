@@ -52,7 +52,7 @@ abstract contract Bank is Math, Flog, Palm, OwnableInternal {
 
     // RISK mint rate. Used in struct, never extend in upgrade
     struct Ramp {
-        uint256 bel; // [sec] last flop timestamp
+        uint256 bel; // [sec] last flxp timestamp
         uint256 cel; // [sec] max seconds flop can ramp up
         uint256 rel; // [ray] fraction of RISK supply/s
         uint256 wel; // [ray] fraction of joy/flap
@@ -72,10 +72,9 @@ abstract contract Bank is Math, Flog, Palm, OwnableInternal {
     struct VowStorage {
         Gem     risk;
         Ramp    ramp;
-        uint256 loot;
-        Plx     plat; // flap plot
-        Plx     plot; // flop plot
-        Rudd    rudd; // risk:rico feed
+        uint256 loot; // [ray] portion of flap taken by user (vs protocol)
+        uint256 dam;  // [ray] per-second flap discount
+        uint256 dom;  // [ray] per-second flop discount
     }
 
     struct VoxStorage {
