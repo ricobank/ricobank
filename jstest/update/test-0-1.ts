@@ -6,7 +6,7 @@ import * as hh from 'hardhat'
 import { ethers } from 'hardhat'
 import { constants } from 'ethers'
 
-import { send, fail, wad, ray, rad } from 'minihat'
+import { wad, ray } from 'minihat'
 const { hexZeroPad } = ethers.utils
 
 import { getDiamondArtifact } from '../../task/helpers'
@@ -16,12 +16,14 @@ const dpack = require('@etherpacks/dpack')
 
 const bn2b32 = (bn) => hexZeroPad(bn.toHexString(), 32)
 
-describe('Vox', () => {
+describe('Test diamond cut modifications', () => {
   let ali, bob, cat
   let ALI, BOB, CAT
   let bank
   let dapp
   let msig
+
+const FCA = {ADD: 0, REPLACE: 1, REMOVE: 2};
 
   before(async () => {
     [ali, bob, cat] = await ethers.getSigners();
@@ -64,7 +66,7 @@ describe('Vox', () => {
     const VOW   = '0x254834c73e3070a674ea8059Be3c813694070f06'
     const AZERO = constants.AddressZero
 
-    const cuts = [[constants.AddressZero, 2, rmsels], [VOW, 0, addsels]]
+    const cuts = [[constants.AddressZero, FCA.REMOVE, rmsels], [VOW, FCA.ADD, addsels]]
 
     const data = bank.interface.encodeFunctionData(
       'diamondCut', [cuts, constants.AddressZero, '0x']
@@ -90,9 +92,7 @@ describe('Vox', () => {
   const cutStandard = async (PREV, NEXT) => {
     const sels = await bank.facetFunctionSelectors(PREV)
 
-    const AZERO = constants.AddressZero
-
-    const cuts = [[NEXT, 1, sels]]
+    const cuts = [[NEXT, FCA.REPLACE, sels]]
 
     const data = bank.interface.encodeFunctionData(
       'diamondCut', [cuts, constants.AddressZero, '0x']
@@ -101,7 +101,6 @@ describe('Vox', () => {
     await msig.sendTransaction({to: bank.address, data})
     console.log(data)
 
-    let facets = []
     for (let sel of sels) {
       const facet = await bank.facetAddress(sel)
       want(facet).eql(NEXT)
@@ -147,7 +146,6 @@ describe('Vox', () => {
     await msig.sendTransaction({to: bank.address, data})
 
     console.log('file cel:')
-    const dom = dam
     const cel = ethers.BigNumber.from(172800) // 2 days
     data = bank.interface.encodeFunctionData('file', [b32('cel'), bn2b32(cel)])
     console.log(data)
