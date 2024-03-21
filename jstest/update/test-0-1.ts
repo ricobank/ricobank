@@ -15,6 +15,7 @@ import { b32, revert_pop, revert_name, revert_clear, snapshot_name } from '../he
 const dpack = require('@etherpacks/dpack')
 
 const bn2b32 = (bn) => hexZeroPad(bn.toHexString(), 32)
+const BN = ethers.BigNumber.from
 
 describe('Test diamond cut modifications', () => {
   let ali, bob, cat
@@ -134,7 +135,7 @@ const FCA = {ADD: 0, REPLACE: 1, REMOVE: 2};
     bank = bank_type.attach(bank.address)
 
     console.log('file dam:')
-    const dam = ray('0.9997601761484850197727571946546604626161728980790525034258572721')
+    const dam = BN('999760176148485019772757194')
     let data = bank.interface.encodeFunctionData('file', [b32('dam'), bn2b32(dam)])
     console.log(data)
     await msig.sendTransaction({to: bank.address, data})
@@ -146,7 +147,7 @@ const FCA = {ADD: 0, REPLACE: 1, REMOVE: 2};
     await msig.sendTransaction({to: bank.address, data})
 
     console.log('file cel:')
-    const cel = ethers.BigNumber.from(172800) // 2 days
+    const cel = BN(172800) // 2 days
     data = bank.interface.encodeFunctionData('file', [b32('cel'), bn2b32(cel)])
     console.log(data)
     await msig.sendTransaction({to: bank.address, data})
