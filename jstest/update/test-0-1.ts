@@ -157,17 +157,22 @@ const FCA = {ADD: 0, REPLACE: 1, REMOVE: 2};
     want((await bank.ramp()).cel).eql(cel)
     want(await bank.pex()).eql(ray(1).mul(wad(1)))
 
-    const pb = new dpack.PackBuilder(hh.network.name)
+    const rcscid = 'bafkreibgmj3srxcccdbgvo3sdsfrcm36hv7pmw7nofcwfghjvqfe5zuffa'
+    let rcspack = await dpack.getIpfsJson(rcscid)
+    delete rcspack.types.BankDiamond
+    delete rcspack.objects.bank
+    delete rcspack.objects.ricorisk
+    const pb = new dpack.PackBuilder('arbitrum')
     await pb.packObject({
         objectname: 'bank',
         address: bank.address,
         typename: 'BankDiamond',
         artifact: bank_artifact
     }, true)
+    rcspack = await pb.merge(rcspack)
 
     const cid = await dpack.putIpfsJson(pb.build(), true)
-    console.log(`pinned new bank pack at ${cid}`)
-
+    console.log(`pinned new rcs pack at ${cid}`)
   })
 
 })
