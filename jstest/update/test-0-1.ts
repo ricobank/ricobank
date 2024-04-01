@@ -15,6 +15,7 @@ import { b32, revert_pop, revert_name, revert_clear, snapshot_name } from '../he
 const dpack = require('@etherpacks/dpack')
 
 const bn2b32 = (bn) => hexZeroPad(bn.toHexString(), 32)
+const BN = ethers.BigNumber.from
 
 describe('Test diamond cut modifications', () => {
   let ali, bob, cat
@@ -134,7 +135,7 @@ const FCA = {ADD: 0, REPLACE: 1, REMOVE: 2};
     bank = bank_type.attach(bank.address)
 
     console.log('file dam:')
-    const dam = ray('0.9997601761484850197727571946546604626161728980790525034258572721')
+    const dam = BN('999760176148485019772757194')
     let data = bank.interface.encodeFunctionData('file', [b32('dam'), bn2b32(dam)])
     console.log(data)
     await msig.sendTransaction({to: bank.address, data})
@@ -146,7 +147,7 @@ const FCA = {ADD: 0, REPLACE: 1, REMOVE: 2};
     await msig.sendTransaction({to: bank.address, data})
 
     console.log('file cel:')
-    const cel = ethers.BigNumber.from(172800) // 2 days
+    const cel = BN(172800) // 2 days
     data = bank.interface.encodeFunctionData('file', [b32('cel'), bn2b32(cel)])
     console.log(data)
     await msig.sendTransaction({to: bank.address, data})
@@ -156,17 +157,22 @@ const FCA = {ADD: 0, REPLACE: 1, REMOVE: 2};
     want((await bank.ramp()).cel).eql(cel)
     want(await bank.pex()).eql(ray(1).mul(wad(1)))
 
-    const pb = new dpack.PackBuilder(hh.network.name)
+    const rcscid = 'bafkreibgmj3srxcccdbgvo3sdsfrcm36hv7pmw7nofcwfghjvqfe5zuffa'
+    let rcspack = await dpack.getIpfsJson(rcscid)
+    delete rcspack.types.BankDiamond
+    delete rcspack.objects.bank
+    delete rcspack.objects.ricorisk
+    const pb = new dpack.PackBuilder('arbitrum')
     await pb.packObject({
         objectname: 'bank',
         address: bank.address,
         typename: 'BankDiamond',
         artifact: bank_artifact
     }, true)
+    rcspack = await pb.merge(rcspack)
 
     const cid = await dpack.putIpfsJson(pb.build(), true)
-    console.log(`pinned new bank pack at ${cid}`)
-
+    console.log(`pinned new rcs pack at ${cid}`)
   })
 
 })

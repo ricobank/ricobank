@@ -40,7 +40,7 @@ task('make-usdc-ref', '')
     const pooladdr = await createAndInitializePoolIfNecessary(
       { ali, ethers, gasLimit: args.gasLimit, unipackcid: args.unipackcid },
       dapp.uniswapV3Factory, rico.address, usdc.address,
-      500, '0x2AA64CF000000000000000000000000'
+      500, '0x2EE4CC63F92FE59860000'
     )
 
     if (pooladdr === constants.AddressZero) {
@@ -92,7 +92,7 @@ task('make-usdc-ref', '')
       divider.setConfig,
       b32('rico:ref'),
       [[multiplier.address, cladapt.address, dapp.ball.address],
-      [b32('rico:usd'), b32('xau:usd'), bn2b32(BN.from(10).pow(27 + 12))]],
+      [b32('rico:usd'), b32('xau:usd'), bn2b32(BN.from(10).pow(27 - 12))]],
       { gasLimit: args.gasLimit }
     )
 
