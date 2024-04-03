@@ -16,6 +16,7 @@ const dpack = require('@etherpacks/dpack')
 
 const bn2b32 = (bn) => hexZeroPad(bn.toHexString(), 32)
 const BN = ethers.BigNumber.from
+const FCA = {ADD: 0, REPLACE: 1, REMOVE: 2};
 
 describe('Test diamond cut modifications', () => {
   let ali, bob, cat
@@ -23,8 +24,6 @@ describe('Test diamond cut modifications', () => {
   let bank
   let dapp
   let msig
-
-const FCA = {ADD: 0, REPLACE: 1, REMOVE: 2};
 
   before(async () => {
     [ali, bob, cat] = await ethers.getSigners();
