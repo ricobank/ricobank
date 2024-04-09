@@ -109,6 +109,7 @@ abstract contract Bank is Math, Flog, Palm, OwnableInternal {
     error ErrWrongKey();
     error ErrWrongUrn();
     error ErrBound();
+    error ErrLock();
 
     // bubble up error code from a reverted call
     function bubble(bytes memory data) internal pure {
@@ -125,4 +126,16 @@ abstract contract Bank is Math, Flog, Palm, OwnableInternal {
     function must(uint actual, uint lo, uint hi) internal pure {
         if (actual < lo || actual > hi) revert ErrBound();
     }
+
+    // lock for CDP manipulation functions
+    // not necessary for drip, because frob and bail drip
+    // uses VatStorage from previous iteration.  move to BS in future
+    modifier _lock_ {
+        VatStorage storage vs = getVatStorage();
+        if (vs.lock == LOCKED) revert ErrLock();
+        vs.lock = LOCKED;
+        _;
+        vs.lock = UNLOCKED;
+    }
+
 }

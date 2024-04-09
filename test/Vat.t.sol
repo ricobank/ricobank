@@ -481,7 +481,7 @@ contract VatTest is Test, RicoSetUp {
         bytes memory data = abi.encodeWithSelector(
             chap.reenter.selector, arico, flash_size * WAD
         );
-        vm.expectRevert(Vat.ErrLock.selector);
+        vm.expectRevert(Bank.ErrLock.selector);
         Vat(bank).flash(achap, data);
     }
 
@@ -762,7 +762,7 @@ contract VatTest is Test, RicoSetUp {
         Vat(bank).filk(gilk, 'hook', bytes32(bytes20(ahook)));
 
         // should fail on reentrancy check
-        vm.expectRevert(Vat.ErrLock.selector);
+        vm.expectRevert(Bank.ErrLock.selector);
         Vat(bank).frob(gilk, self, abi.encodePacked(int(0)), int(WAD));
     }
 
@@ -775,7 +775,7 @@ contract VatTest is Test, RicoSetUp {
         Vat(bank).filk(gilk, 'hook', bytes32(bytes20(ahook)));
 
         // should fail on reentrancy check
-        vm.expectRevert(Vat.ErrLock.selector);
+        vm.expectRevert(Bank.ErrLock.selector);
         Vat(bank).bail(gilk, self);
     }
 
@@ -1500,6 +1500,37 @@ contract VatTest is Test, RicoSetUp {
         Vat(bank).hookcallext(gilk, indata);
     }
 
+    function test_bel_when_bail_recoups_losses() public {
+        Vat(bank).filk(gilk, 'fee', bytes32(RAY));
+        File(bank).file('bel', bytes32(block.timestamp));
+
+        skip(1);
+
+        assertEq(Vat(bank).joy(), Vat(bank).sin() / RAY);
+
+        // little bit of joy, so pre-bailhook deficit and post-bailhook surplus
+        // WAD / 10 joy, 0 sin -> call bail -> WAD / 10 joy, RAD sin
+        // -> call bailhook -> WAD / 10 + WAD * (99 / 100) ** 2 joy, RAD sin
+        //
+        // ensures that bel update comes after bailhook
+        force_fees(WAD / 10);
+        rico_mint(WAD, false);
+        feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
+        Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(WAD));
+
+        feedpush(grtag, bytes32(RAY * 99 / 100), type(uint).max);
+        Vat(bank).bail(gilk, self);
+
+        assertEq(Vow(bank).ramp().bel, block.timestamp - 1);
+    }
+
+    function test_keep_reentrancy() public {
+        KeepReentrancyHook krh = new KeepReentrancyHook();
+        Vat(bank).filk(gilk, 'hook', bytes32(bytes20(address(krh))));
+        vm.expectRevert(Bank.ErrLock.selector);
+        Vat(bank).frob(gilk, self, '', 0);
+    }
+
 }
 
 contract BadDataHook {
@@ -1578,6 +1609,22 @@ contract BailFrobReentrancyHook is Bank, Hook {
     function bailhook(BHParams calldata p) external payable returns (bytes memory) {
         getBankStorage().rico.mint(address(this), WAD * 1000);
         Vat(address(this)).frob(p.i, p.u, '', int(WAD));
+        return abi.encodePacked('');
+    }
+    function safehook(
+        bytes32, address
+    ) pure external returns (uint, uint, uint){return(0, 0, type(uint256).max);}
+    function ink(bytes32, address) external pure returns (bytes memory) {
+        return abi.encode(uint(0));
+    }
+}
+
+contract KeepReentrancyHook is Bank, Hook {
+    function frobhook(FHParams calldata) external payable returns (bool) {
+        Vow(address(this)).keep(new bytes32[](0));
+        return true;
+    }
+    function bailhook(BHParams calldata) external payable returns (bytes memory) {
         return abi.encodePacked('');
     }
     function safehook(
