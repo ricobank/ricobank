@@ -355,7 +355,7 @@ export default {
   networks: {
       hardhat: {
           forking: process.env["FORK_ARB"] ? {
-            url: process.env["ARB_RPC_URL"], blockNumber: 189507060, chainId: 42161
+            url: process.env["ARB_RPC_URL"], blockNumber: 199401287, chainId: 42161
           } : {
             url: process.env["RPC_URL"], blockNumber: 19060431, chainId: 1
           },
