@@ -19,7 +19,7 @@
     "prejs-test": "npm run build:sol",
     "js-test": "ts-mocha --timeout 100000 jstest/*",
     "js-build-test": "npm run build:sol && npm run js-test",
-    "js-update-test": "FORK_ARB=1 ts-mocha --timeout 100000 jstest/update/gem-ward.ts",
+    "js-update-test": "FORK_ARB=1 ts-mocha --timeout 100000 jstest/update/modify-lines.ts",
     "test": "forge test --fork-block-number 16445606 --no-match-test invariant -vv -f $RPC_URL",
     "inv-test": "python3 test/invariant/run_inv_tests.py ALL",
     "testlite": "FOUNDRY_PROFILE=lite npm test",

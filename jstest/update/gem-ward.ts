@@ -20,13 +20,14 @@ const PRE_CID = 'bafkreieglufuj5bnde3id5yizytsncsskfuyizmvf2bhf5fa6skt74rf6m'
 const FCA = {ADD: 0, REPLACE: 1, REMOVE: 2};  // Facet Cut Actions
 
 describe('Test diamond cut function to add wards to gems', () => {
+  const FILE = '0x97fCCCA769f98e048f8D44e5D5d494e9A21A7cd0'
+  const MSIG = '0x85808ff766a80aB61Aafe354e7edDacc94230046'
+
   let ali, bob, cat
   let ALI, BOB, CAT
   let bank
   let dapp
   let msig
-
-  let newFile
 
   before(async () => {
     [ali, bob, cat] = await ethers.getSigners();
@@ -34,7 +35,6 @@ describe('Test diamond cut function to add wards to gems', () => {
 
     dapp = await dpack.load(PRE_CID, ethers, ali)
 
-    const MSIG = '0x85808ff766a80aB61Aafe354e7edDacc94230046'
     await ali.sendTransaction({to: MSIG, value: wad(1)})
     await hh.network.provider.request({
       method: "hardhat_impersonateAccount",
@@ -44,11 +44,6 @@ describe('Test diamond cut function to add wards to gems', () => {
     msig = await ethers.getSigner(MSIG)
 
     bank = dapp.bank.connect(msig)
-
-    debug('deploying new File')  // New File has not yet been deployed on arbitrum one
-    const newFile_artifact = require('../../artifacts/src/file.sol/File.json')
-    const newFile_type = ethers.ContractFactory.fromSolidity(newFile_artifact, ali)
-    newFile = await newFile_type.deploy()
 
     await snapshot_name(hh);
   })
@@ -64,7 +59,7 @@ describe('Test diamond cut function to add wards to gems', () => {
   const cutFile = async () => {
     const enlistSel = getSel('enlist(address,address,bool)')
 
-    const cuts = [[newFile.address, FCA.ADD, [enlistSel]]]
+    const cuts = [[FILE, FCA.ADD, [enlistSel]]]
     const data = bank.interface.encodeFunctionData(
       'diamondCut', [cuts, constants.AddressZero, '0x']
     )
@@ -73,7 +68,7 @@ describe('Test diamond cut function to add wards to gems', () => {
     console.log(data)
 
     const facet = await bank.facetAddress(enlistSel)
-    want(facet).eql(newFile.address)
+    want(facet).eql(FILE)
   }
 
   it('cut adding gem wards', async () => {
