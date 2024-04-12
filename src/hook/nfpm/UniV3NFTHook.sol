@@ -187,7 +187,6 @@ contract UniNFTHook is HookMix {
                 if (ttl < minttl) minttl = ttl;
             }
 
-
             // estimate pool's price based on quotient of tokens' prices vs ref
             uint160 sqrtRatioX96 = type(uint160).max;
             if(p1 != 0) {

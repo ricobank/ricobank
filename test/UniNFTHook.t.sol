@@ -67,7 +67,7 @@ contract NFTHookTest is Test, RicoSetUp {
         assertEq(nfpm.ownerOf(goldwethtokid), self);
 
         uint[] memory dink = new uint[](2);
-        (dink[0], dink[1]) = (1, goldwethtokid);
+        (dink[0], dink[1]) = (LOCK, goldwethtokid);
         uint ricobefore = rico.balanceOf(self);
         Vat(bank).frob(uilk, self, abi.encode(dink), int(WAD));
 
@@ -553,7 +553,7 @@ contract NFTHookTest is Test, RicoSetUp {
         Vat(bank).filh(uilk, 'src', single(bytes32(bytes20(agold))), bytes32(bytes20(fsrc)));
 
         uint[] memory dink = new uint[](2);
-        (dink[0], dink[1]) = (1, goldwethtokid);
+        (dink[0], dink[1]) = (LOCK, goldwethtokid);
         vm.expectRevert();
         Vat(bank).frob(uilk, self, abi.encode(dink), int(WAD));
 
@@ -566,6 +566,23 @@ contract NFTHookTest is Test, RicoSetUp {
         // both feeds non-null...frob should pass
         Vat(bank).filh(uilk, 'src', single(bytes32(bytes20(agold))), bytes32(bytes20(fsrc)));
         Vat(bank).frob(uilk, self, abi.encode(dink), int(WAD));
+    }
+
+    // when src is removed should still be able to withdraw
+    function test_feed_removed() public {
+        uint[] memory dink = new uint[](2);
+        (dink[0], dink[1]) = (LOCK, goldwethtokid);
+        Vat(bank).frob(uilk, self, abi.encode(dink), int(WAD));
+        assertEq(rico.balanceOf(self), WAD);
+        assertEq(nfpm.ownerOf(goldwethtokid), bank);
+
+        Vat(bank).filh(uilk, 'src', single(bytes32(bytes20(WETH))),  bytes32(uint(0)));
+        Vat(bank).filh(uilk, 'src', single(bytes32(bytes20(agold))), bytes32(uint(0)));
+
+        (dink[0], dink[1]) = (FREE, goldwethtokid);
+        rico_mint(WAD, false);
+        Vat(bank).frob(uilk, self, abi.encode(dink), -int(WAD));
+        assertEq(nfpm.ownerOf(goldwethtokid), self);
     }
 
     // make sure pep and pop work in uni hook

@@ -89,6 +89,8 @@ abstract contract RicoSetUp is BaseHelper {
     uint256 constant public FEED_LOOKAHEAD = 1000;
     uint256 constant public FEE_2X_ANN = uint(1000000021964508944519921664);
     uint256 constant public FEE_1_5X_ANN = uint(1000000012848414058163994624);
+    uint256 constant public LOCK = 1;
+    uint256 constant public FREE = uint(-int(1));
     address constant public fsrc = 0xF33df33dF33dF33df33df33df33dF33DF33Df33D;
 
     ERC20Hook  public tokhook;

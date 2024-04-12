@@ -19,8 +19,6 @@ contract UniV3Handler is Test, Local, RicoSetUp {
     uint256   public constant LP_AMOUNT = 100 * WAD;
     uint8     public constant NUM_ACTORS = 2;
     uint256   public constant SELF_MINT = LP_AMOUNT * NUM_ACTORS * 100;
-    uint256 internal constant LOCK = 1;
-    uint256 internal constant FREE = uint(-int(1));
 
     address   public currentActor;
     uint256   public rico_ref_val;

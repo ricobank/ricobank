@@ -12,6 +12,7 @@ import { getDiamondArtifact } from '../../task/helpers'
 import { b32, revert_pop, revert_name, revert_clear, snapshot_name } from '../helpers'
 const dpack = require('@etherpacks/dpack')
 
+const apad = (addr) => addr + '00'.repeat(12)
 const bn2b32 = (bn) => hexZeroPad(bn.toHexString(), 32)
 const BN = ethers.BigNumber.from
 const PRE_CID = 'bafkreieglufuj5bnde3id5yizytsncsskfuyizmvf2bhf5fa6skt74rf6m'
@@ -50,26 +51,41 @@ describe('set all lines but weth to zero and print data', () => {
       revert_clear(hh)
   })
 
-  it('set all lines but weth to zero and print data', async () => {
+  it('set all lines but weth and uni to zero and print data', async () => {
     const bank_artifact = getDiamondArtifact()
     const bank_type = ethers.ContractFactory.fromSolidity(bank_artifact, msig)
     bank = bank_type.attach(bank.address)
 
-    const names = ["dai", "usdc", "usdc.e", "reth", "wbtc", "link", "wsteth", "arb", ":uninft"]
+    const ilkNames = ["dai", "usdc", "usdc.e", "reth", "wbtc", "link", "wsteth", "arb"]
 
-    for (let name of names) {
-      let ilk = b32(name);
-      let startLine = (await dapp.bank.ilks(ilk)).line;
+    // modify base ilks so only "weth" and ":uninft" have any debt allowance
+    for (let name of ilkNames) {
+      const ilk       = b32(name);
+      const startLine = (await dapp.bank.ilks(ilk)).line;
       want(startLine).not.eql(BN(0))
 
       console.log(`setting line for ${name} to zero`)
       let data = bank.interface.encodeFunctionData('filk', [ilk, b32('line'), bn2b32(rad(0))])
-      console.log(data, "\n")
+      console.log(data)
       await msig.sendTransaction({to: bank.address, data})
 
       let finishLine = (await dapp.bank.ilks(ilk)).line;
       want(finishLine).eql(BN(0))
+
+      // in uniilk set the feed source to zero for all tokens but weth and rico
+      const gem = (await dapp.bank.geth(ilk, b32('gem'), [])).slice(0, 42)
+      const src = (await dapp.bank.geth(b32(':uninft'), b32('src'), [apad(gem)])).slice(0, 42)
+
+      want(src).eql(dapp.divider.address.toLowerCase())
+
+      console.log(`setting src for ${name} in uni hook to zero`)
+      data = bank.interface.encodeFunctionData('filh', [b32(':uninft'), b32('src'), [apad(gem)], apad(ethers.constants.AddressZero)])
+      console.log(data)
+      await msig.sendTransaction({to: bank.address, data})
+      const endSrc = (await dapp.bank.geth(b32(':uninft'), b32('src'), [apad(gem)])).slice(0, 42)
+      want(endSrc).eql(ethers.constants.AddressZero)
     }
+
   })
 
 })
