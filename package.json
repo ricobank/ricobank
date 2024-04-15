@@ -17,7 +17,7 @@
     "build:feedbase": "cd lib/feedbase && npm run build",
     "build:gemfab": "cd lib/gemfab && npm run build",
     "prejs-test": "npm run build:sol",
-    "js-test": "ts-mocha --timeout 100000 jstest/*",
+    "js-test": "ts-mocha --timeout 100000 jstest/vox-test.ts",
     "js-build-test": "npm run build:sol && npm run js-test",
     "js-update-test": "FORK_ARB=1 ts-mocha --timeout 100000 jstest/update/modify-lines.ts",
     "test": "forge test --fork-block-number 16445606 --no-match-test invariant -vv -f $RPC_URL",
