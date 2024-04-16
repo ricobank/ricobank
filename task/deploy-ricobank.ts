@@ -154,10 +154,6 @@ task('deploy-ricobank', '')
         uniadaptttl:   BN.from(settings.uniadaptttl),
         daiusdttl:  BN.from(settings.daiusdttl),
         xauusdttl:  BN.from(settings.xauusdttl),
-        platpep:    BN.from(settings.platpep),
-        platpop:    ray(settings.platpop),
-        plotpep:    BN.from(settings.plotpep),
-        plotpop:    ray(settings.plotpop),
         mintramp:   {
             bel: (await ethers.provider.getBlock('latest')).timestamp,
             cel: BN.from(settings.mintramp.cel),

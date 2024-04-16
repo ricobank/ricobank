@@ -6,10 +6,6 @@
         "uniadaptttl": "86400",
         "daiusdttl": "86400",
         "xauusdttl": "86400",
-        "platpep": "2",
-        "platpop": "1.1",
-        "plotpep": "2",
-        "plotpop": "0.99",
         "mintramp": {
             "cel": "600",
             "_rel_comment": "used as ray({'rel'}).div(BANKYEAR). E.g. use 0.02 for 2% per year",
@@ -25,10 +21,6 @@
         "_ttl_comment": "2 * BANKYEAR = 63115200",
         "daiusdttl": "63115200",
         "xauusdttl": "63115200",
-        "platpep": "2",
-        "platpop": "1",
-        "plotpep": "2",
-        "plotpop": "1",
         "mintramp": {
             "cel": "1",
             "_rel_comment": "used as ray({'rel'}).div(BANKYEAR). E.g. use 0.02 for 2% per year",
