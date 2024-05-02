@@ -274,24 +274,6 @@ contract Vat is Bank {
         emit NewPalm0("joy", bytes32(vs.joy));
     }
 
-    // flash borrow
-    // locked with itself to avoid flashing more than MINT
-    function flash(address code, bytes calldata data)
-      external payable returns (bytes memory result) {
-        // lock->mint->call->burn->unlock
-        VatStorage storage vs = getVatStorage();
-        if (vs.flock == LOCKED) revert ErrLock();
-        vs.flock = LOCKED;
-
-        getBankStorage().rico.mint(code, _MINT);
-        bool ok;
-        (ok, result) = code.call(data);
-        if (!ok) bubble(result);
-        getBankStorage().rico.burn(code, _MINT);
-
-        vs.flock = UNLOCKED;
-    }
-
     function filk(bytes32 ilk, bytes32 key, bytes32 val)
       external payable onlyOwner _flog_
     {

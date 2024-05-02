@@ -85,7 +85,7 @@ abstract contract BaseHelper is Math, Test, UniSetUp {
         }
     }
 
-    function assertClose(uint v1, uint v2, uint rel) internal {
+    function assertClose(uint v1, uint v2, uint rel) internal pure {
         uint abs = v1 / rel;
         assertGt(v1 + abs, v2);
         assertLt(v1 - abs, v2);

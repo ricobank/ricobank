@@ -74,8 +74,6 @@ contract ERC20Handler is Test, Local, RicoSetUp {
         }
     }
 
-    function flash(uint256 actorSeed) public _larp_(actorSeed) {}
-
     // test must first set handler as tip, then this will push new values for mar
     function mark(bool up) public _self_ {
         rico_ref_val = up ? rico_ref_val * 101 / 100 : rico_ref_val * 100 / 101;
@@ -202,8 +200,6 @@ contract ERC20Handler is Test, Local, RicoSetUp {
             ink_offset[urn]          += ink;
         }
     }
-
-    function norev_flash(uint256 actorSeed) public _larp_(actorSeed) {}
 
     // test must first set handler as tip, then this will push new values for mar
     function norev_mark(bool up) public _self_ {

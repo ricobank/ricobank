@@ -3,7 +3,6 @@ pragma solidity ^0.8.19;
 
 import "forge-std/Test.sol";
 
-import { Flasher } from "./Flasher.sol";
 import {
     RicoSetUp, Guy, WethLike, Ball, Gem, Vat, Vow, File, Bank, Hook
 } from "./RicoHelper.sol";
@@ -18,12 +17,9 @@ contract NFTHookTest is Test, RicoSetUp {
     bytes32[] ilks;
     address[] gems;
     uint256[] wads;
-    Flasher   chap;
-    address   achap;
     uint      goldwethtokid;
     uint      golddaitokid;
 
-    uint    constant flash_size = 100;
     address constant UNI_NFT_ADDR = 0xC36442b4a4522E871399CD717aBDD847Ab11FE88;
 
     function setUp() public {

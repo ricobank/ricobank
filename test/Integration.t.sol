@@ -3,7 +3,6 @@ pragma solidity ^0.8.19;
 
 import "forge-std/Test.sol";
 
-import { Flasher } from "./Flasher.sol";
 import {
     RicoSetUp, Guy, BankDiamond, Bank, File, Vat, Vow, Hook, Gem, Ball
 } from "./RicoHelper.sol";

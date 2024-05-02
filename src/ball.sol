@@ -129,7 +129,7 @@ contract Ball is Math, Ward {
     function setup(BallArgs calldata args) external _ward_ {
         IDiamondCuttable.FacetCut[] memory facetCuts = new IDiamondCuttable.FacetCut[](4);
         bytes4[] memory filesels = new bytes4[](5);
-        bytes4[] memory vatsels  = new bytes4[](21);
+        bytes4[] memory vatsels  = new bytes4[](20);
         bytes4[] memory vowsels  = new bytes4[](7);
         bytes4[] memory voxsels  = new bytes4[](6);
         File fbank = File(bank);
@@ -157,9 +157,8 @@ contract Ball is Math, Ward {
         vatsels[15] = Vat.MINT.selector;
         vatsels[16] = Vat.FEE_MAX.selector;
         vatsels[17] = Vat.ink.selector;
-        vatsels[18] = Vat.flash.selector;
-        vatsels[19] = Vat.geth.selector;
-        vatsels[20] = Vat.hookcallext.selector;
+        vatsels[18] = Vat.geth.selector;
+        vatsels[19] = Vat.hookcallext.selector;
         vowsels[0]  = Vow.keep.selector;
         vowsels[1]  = Vow.RISK.selector;
         vowsels[2]  = Vow.ramp.selector;

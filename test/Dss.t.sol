@@ -638,7 +638,6 @@ contract DssClipTest is DssJsTest {
 
 
     // testFail_not_enough_dai
-    // test_flashsale
     // testFail_reentrancy_take
     // testFail_reentrancy_redo
     // testFail_reentrancy_kick

@@ -4,7 +4,6 @@ pragma solidity ^0.8.19;
 import "forge-std/Test.sol";
 
 import { Vat, Vow, File, Ball } from '../src/ball.sol';
-import { Flasher } from "./Flasher.sol";
 import { RicoSetUp, Guy, FrobHook, ZeroHook } from "./RicoHelper.sol";
 import { BankDiamond } from '../src/diamond.sol';
 import { Bank, Math, Gem } from '../src/bank.sol';
@@ -13,40 +12,18 @@ import { ERC20Hook } from '../src/hook/erc20/ERC20Hook.sol';
 
 contract VatTest is Test, RicoSetUp {
     uint constant init_join = 1000;
-    uint constant flash_size = 100;
     uint constant stack      = WAD * 10;
 
     address[] gems;
     uint256[] wads;
-    Flasher   chap;
-    address   achap;
 
     function setUp() public {
         make_bank();
         init_gold();
         gold.mint(bank, init_join * WAD);
 
-        //// for flash loan tests//////////////
-        chap  = new Flasher(bank, arico, gilk);
-        achap = address(chap);
-
-        gold.mint(achap, 500 * WAD);
-        gold.approve(achap, type(uint256).max);
-
-        rico.approve(achap, type(uint256).max);
-
-        gold.ward(achap, true);
-        rico.ward(achap, true);
-        //////////////////////////////////////
-
         // non-self user
         guy = new Guy(bank);
-    }
-
-    modifier _chap_ {
-        rico_mint(1, true); // needs an extra for rounding
-        rico.transfer(achap, 1);
-        _;
     }
 
     function test_frob_basic() public {
@@ -424,14 +401,10 @@ contract VatTest is Test, RicoSetUp {
 
 
     //////////////////////////////////////////////////
-    // join/exit/flash tests
+    // join/exit tests
     //////////////////////////////////////////////////
 
-    function test_rico_join_exit() public _chap_ {
-        // give vat extra rico and gold to make sure it won't get withdrawn
-        rico.mint(bank, 10000 * WAD);
-        gold.mint(bank, 10000 * WAD);
-
+    function test_rico_join_exit() public {
         uint self_gold_bal0 = gold.balanceOf(self);
         uint self_rico_bal0 = rico.balanceOf(self);
 
@@ -455,104 +428,12 @@ contract VatTest is Test, RicoSetUp {
         assertEq(self_rico_bal1, self_rico_bal0 + stack / 2);
 
         // close, even without drip need 1 extra rico as rounding is in systems favour
-        rico.mint(self, 1);
+        rico_mint(1, false);
         Vat(bank).frob(gilk, self, abi.encodePacked(-int(stack)), -int(stack / 2));
         uint self_gold_bal2 = gold.balanceOf(self);
         uint self_rico_bal2 = rico.balanceOf(self);
         assertEq(self_gold_bal0, self_gold_bal2);
         assertEq(self_rico_bal0, self_rico_bal2);
-    }
-
-    function test_simple_rico_flash_mint() public _chap_ {
-        uint initial_rico_supply = rico.totalSupply();
-
-        // flash then do nothing
-        bytes memory data = abi.encodeWithSelector(chap.nop.selector);
-        Vat(bank).flash(achap, data);
-
-        // balances shouldn't change
-        assertEq(rico.totalSupply(), initial_rico_supply);
-        assertEq(rico.balanceOf(self), 0);
-        assertEq(rico.balanceOf(bank), 0);
-    }
-
-    function test_rico_reentry() public _chap_ {
-        // flash reentrancy lock
-        bytes memory data = abi.encodeWithSelector(
-            chap.reenter.selector, arico, flash_size * WAD
-        );
-        vm.expectRevert(Bank.ErrLock.selector);
-        Vat(bank).flash(achap, data);
-    }
-
-    function test_rico_flash_over_max_supply_reverts() public _chap_ {
-        // mint rico until totalSupply is near max
-        rico.mint(self, type(uint256).max - stack - rico.totalSupply());
-
-        // flash amount is constant - shouldn't have enough space left
-        bytes memory data = abi.encodeWithSelector(chap.nop.selector);
-        vm.expectRevert(Gem.ErrOverflow.selector);
-        Vat(bank).flash(achap, data);
-    }
-
-    function test_repayment_failure() public _chap_ {
-        // remove any initial balance from chap
-        uint chap_gold = gold.balanceOf(achap);
-        uint chap_rico = rico.balanceOf(achap);
-        chap.approve_sender(agold, chap_gold);
-        chap.approve_sender(arico, chap_rico);
-        gold.transferFrom(achap, self, chap_gold);
-        rico.transferFrom(achap, self, chap_rico);
-
-        wads.push(init_join * WAD);
-        gems.push(arico);
-
-        // threw out 1 rico - should fail to pay back the flash
-        bytes memory data0 = abi.encodeWithSelector(chap.welch.selector, gems, wads, 0);
-        vm.expectRevert(Gem.ErrUnderflow.selector);
-        Vat(bank).flash(achap, data0);
-
-        // threw out nothing - should succeed
-        bytes memory data1 = abi.encodeWithSelector(chap.welch.selector, gems, wads, 1);
-        Vat(bank).flash(achap, data1);
-    }
-
-    function test_rico_handler_error() public _chap_ {
-        // handler errors should bubble up
-        bytes memory data = abi.encodeWithSelector(chap.failure.selector);
-        vm.expectRevert(Flasher.ErrBroken.selector);
-        Vat(bank).flash(achap, data);
-    }
-
-    function test_rico_wind_up_and_release() public _chap_ {
-        uint lock = 300 * WAD;
-        uint draw = 200 * WAD;
-
-        uint flash_gold1 = gold.balanceOf(achap);
-        uint flash_rico1 = rico.balanceOf(achap);
-        uint hook_gold1  = gold.balanceOf(address(tokhook));
-        uint hook_rico1  = rico.balanceOf(address(tokhook));
-
-        // flash, swap, borrow, repay
-        bytes memory data = abi.encodeWithSelector(
-            chap.rico_lever.selector, agold, lock, draw
-        );
-        Vat(bank).flash(achap, data);
-
-        // chap didn't pay down the urn...should still be open
-        uint ink = _ink(gilk, achap);
-        uint art = _art(gilk, achap);
-        assertEq(ink, lock);
-        assertEq(art, draw);
-
-        // flash, pay down urn, sell the collateral for rico to repay the flash
-        data = abi.encodeWithSelector(chap.rico_release.selector, agold, lock, draw);
-        Vat(bank).flash(achap, data);
-
-        assertEq(flash_gold1, gold.balanceOf(achap));
-        assertEq(flash_rico1, rico.balanceOf(achap) + 1);
-        assertEq(hook_gold1,  gold.balanceOf(address(tokhook)));
-        assertEq(hook_rico1,  rico.balanceOf(address(tokhook)));
     }
 
     function test_init_conditions() public {
