@@ -331,7 +331,7 @@ abstract contract RicoSetUp is BaseHelper {
         rico.transfer(address(guy), amt);
     }
 
-    function check_integrity() internal {
+    function check_integrity() internal view {
         uint sup  = rico.totalSupply();
         uint joy  = Vat(bank).joy();
         uint sin  = Vat(bank).sin();

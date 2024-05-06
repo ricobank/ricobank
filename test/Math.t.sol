@@ -54,14 +54,14 @@ contract MathTest is Test, Math {
         assertEq(mul(uint(type(int).max - 1), -1), type(int).min);
     }
 
-    function test_wmul() public {
+    function test_wmul() public pure {
         assertEq(wmul(WAD, 1), 1);
         assertEq(wmul(WAD, WAD), WAD);
         assertEq(wmul(WAD, 0), 0);
         assertEq(wmul(WAD, 2 * WAD), 2 * WAD);
     }
 
-    function test_rmul() public {
+    function test_rmul() public pure {
         assertEq(rmul(RAY, 1), 1);
         assertEq(rmul(RAY, RAY), RAY);
         assertEq(rmul(RAY, 0), 0);
@@ -86,13 +86,13 @@ contract MathTest is Test, Math {
         foo = rinv(0);
     }
 
-    function test_rpow() public {
+    function test_rpow() public pure {
         assertEq(rpow(RAY, 1), RAY);
         assertEq(rpow(RAY, 0), RAY);
         assertEq(rpow(RAY * 2, 2), RAY * 4);
     }
 
-    function test_grow() public {
+    function test_grow() public pure {
         assertEq(grow(WAD, RAY, 1), WAD);
         assertEq(grow(WAD, RAY, 0), WAD);
         assertEq(grow(WAD * 2, RAY * 2, 1), WAD * 4);
@@ -100,14 +100,14 @@ contract MathTest is Test, Math {
         assertEq(grow(RAY / BLN, RAY, 5), RAY / BLN);
     }
 
-    function test_concat() public {
+    function test_concat() public pure {
         assertEq(concat('hello ', 'world'), 'hello world');
         assertEq(concat('hello', ''), 'hello');
         assertEq(concat('', 'world'), 'world');
         assertEq(concat('', ''), '');
     }
 
-    function test_concat_big_first() public {
+    function test_concat_big_first() public pure {
         // test for off-by-one errors at the start
         bytes32 big_s = '1234567890123456789012345678901';
         assertEq(bytes31(concat(big_s, 'i')), bytes31(big_s));
@@ -136,7 +136,7 @@ contract MathTest is Test, Math {
         assertEq(bigger_s_yes, bigger_s);
     }
 
-    function test_concat_big_second() public {
+    function test_concat_big_second() public pure {
         // test for off-by-one errors at the end
         bytes32 big_s = '1234567890123456789012345678901';
         assertEq(big_s, concat('', big_s));
@@ -152,7 +152,7 @@ contract MathTest is Test, Math {
         );
     }
 
-    function test_rmash() public {
+    function test_rmash() public pure {
         assertEq(rmash(RAY, 0, RAY, 0), RAY);
         assertEq(rmash(RAY, 1, RAY, 0), RAY);
         assertEq(rmash(RAY / 2, 0, RAY, 0), RAY);

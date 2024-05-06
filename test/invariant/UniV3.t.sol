@@ -46,7 +46,7 @@ contract InvariantUniHook is Test, BaseHelper {
     }
 
     // all invariant tests combined for efficiency
-    function invariant_uni_core() external {
+    function invariant_uni_core() external view {
         uint sup  = rico.totalSupply();
         uint joy  = vat.joy();
         uint debt = vat.debt();

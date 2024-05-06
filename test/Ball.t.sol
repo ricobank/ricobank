@@ -260,7 +260,7 @@ contract BallTest is BaseHelper {
         assertEq(me_rico_1, me_rico_2);
     }
 
-    function test_basic_feeds() public {
+    function test_basic_feeds() public view {
         // at block 16445606 ethusd about 1554, xau  about 1925
         // initial par is 4, so ricousd should be 1925*4
         (bytes32 val,) = fb.pull(address(divider), RICO_REF_TAG);

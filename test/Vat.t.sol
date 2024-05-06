@@ -436,7 +436,7 @@ contract VatTest is Test, RicoSetUp {
         assertEq(self_rico_bal0, self_rico_bal2);
     }
 
-    function test_init_conditions() public {
+    function test_init_conditions() public view {
         assertEq(BankDiamond(bank).owner(), self);
     }
 

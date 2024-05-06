@@ -613,7 +613,7 @@ contract VowJsTest is Test, RicoSetUp {
         guy = new Guy(bank);
     }
 
-    function test_init_conditions() public
+    function test_init_conditions() public view
     {
         // frobbed the rico and no time has passed, so should be safe
         assertEq(rico.balanceOf(me), 99 * WAD);
