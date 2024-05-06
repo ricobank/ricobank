@@ -78,7 +78,7 @@ abstract contract BaseHelper is Math, Test, UniSetUp {
     function make_uniwrapper() internal returns (address deployed) {
         bytes memory args = abi.encode('');
         bytes memory bytecode = abi.encodePacked(vm.getCode(
-            "../lib/feedbase/artifacts/src/adapters/UniWrapper.sol:UniWrapper"
+            "lib/feedbase/artifacts/src/adapters/UniWrapper.sol:UniWrapper"
         ), args);
         assembly {
             deployed := create(0, add(bytecode, 0x20), mload(bytecode))
