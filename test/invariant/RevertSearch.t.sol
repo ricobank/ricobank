@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.25;
 
 import "forge-std/Test.sol";
 
@@ -57,7 +57,7 @@ contract InvariantRevertSearch is Test, BaseHelper {
         uint tart = vat.ilks(WETH_ILK).tart;
         uint rack = vat.ilks(WETH_ILK).rack;
         uint line = vat.ilks(WETH_ILK).line;
-        uint liqr = uint(vat.geth(WETH_ILK, 'liqr', empty));
+        uint liqr = uint(vat.get(WETH_ILK, 'liqr'));
         uint way  = vox.way();
         uint weth_val = handler.localWeth() * handler.weth_ref_max() / handler.minPar();
 

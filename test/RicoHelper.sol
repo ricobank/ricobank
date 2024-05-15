@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.25;
 import 'forge-std/Test.sol';
 
 import '../src/mixin/math.sol';
@@ -15,11 +15,6 @@ import {
     Ball, File, Vat, Vow, Vox, Multiplier, Divider, ChainlinkAdapter, UniswapV3Adapter
 } from '../src/ball.sol';
 
-import { Hook } from '../src/hook/hook.sol';
-
-import { ERC20Hook  } from '../src/hook/erc20/ERC20Hook.sol';
-import { UniNFTHook} from '../src/hook/nfpm/UniV3NFTHook.sol';
-
 contract Guy {
     address payable bank;
 
@@ -29,49 +24,17 @@ contract Guy {
     function approve(address gem, address dst, uint amt) public {
         Gem(gem).approve(dst, amt);
     }
-    function frob(bytes32 ilk, address usr, bytes calldata dink, int dart) public {
+    function frob(bytes32 ilk, address usr, int dink, int dart) public {
         Vat(bank).frob(ilk, usr, dink, dart);
     }
     function transfer(address gem, address dst, uint amt) public {
         Gem(gem).transfer(dst, amt);
     }
-    function bail(bytes32 i, address u) public returns (bytes memory) {
+    function bail(bytes32 i, address u) public returns (uint) {
         return Vat(bank).bail(i, u);
     }
     function keep(bytes32[] calldata ilks) public {
         Vow(bank).keep(ilks);
-    }
-}
-
-// pretty normal single-uint frobhook
-contract FrobHook is Hook {
-    function frobhook(FHParams calldata p) external payable returns (bool) {
-        // safer when dink >= 0 and dart <= 0
-        return int(uint(bytes32(p.dink[:32]))) >= 0 && p.dart <= 0;
-    }
-    function bailhook(BHParams calldata) external payable returns (bytes memory) {}
-    function safehook(
-        bytes32, address
-    ) pure external returns (uint, uint, uint) {
-        // (1, 1, uint_max)
-        return(10 ** 45, 10 ** 45, type(uint256).max);
-    }
-    function ink(bytes32, address) external pure returns (bytes memory) {
-        return abi.encode(uint(0));
-    }
-}
-
-// doesn't really do anything, always returns 0 or false
-contract ZeroHook is Hook {
-    function frobhook(FHParams calldata) external payable returns (bool) {}
-    function bailhook(BHParams calldata) external payable returns (bytes memory) {}
-    function safehook(
-        bytes32, address
-    ) pure external returns (uint, uint, uint){
-        return(0, 0, type(uint256).max); // (almost) always unsafe
-    }
-    function ink(bytes32, address) external pure returns (bytes memory) {
-        return abi.encode(uint(0));
     }
 }
 
@@ -91,8 +54,6 @@ abstract contract RicoSetUp is BaseHelper {
     uint256 constant public FEE_1_5X_ANN = uint(1000000012848414058163994624);
     address constant public fsrc = 0xF33df33dF33dF33df33df33df33dF33DF33Df33D;
 
-    ERC20Hook  public tokhook;
-    UniNFTHook public unihook;
     Ball       public ball;
     Divider    public divider;
     Multiplier public multiplier;
@@ -109,7 +70,6 @@ abstract contract RicoSetUp is BaseHelper {
     address    public arico;
     address    public arisk;
     address    public agold;
-    address    payable public ahook;
     address    public uniwrapper;
 
 
@@ -130,7 +90,7 @@ abstract contract RicoSetUp is BaseHelper {
         feedpush(grtag, bytes32(RAY * 10000), type(uint).max);
 
         // bob borrows the rico and sends back to self
-        _bob.frob(gilk, address(_bob), abi.encodePacked(amt), int(amt));
+        _bob.frob(gilk, address(_bob), int(amt), int(amt));
         _bob.transfer(arico, self, amt);
 
         if (bail) {
@@ -171,10 +131,6 @@ abstract contract RicoSetUp is BaseHelper {
         vm.store(bank, sin_pos, bytes32(val));
     }
 
-    function _art(bytes32 ilk, address usr) internal view returns (uint art) {
-        art = Vat(bank).urns(ilk, usr);
-    }
-
     // helpers for feeds, so we don't have to deal with feed's structure
     function feedpull(bytes32 tag) internal view returns (bytes32, uint) {
         return feed.pull(fsrc, tag);
@@ -202,9 +158,6 @@ abstract contract RicoSetUp is BaseHelper {
         cladapter  = new ChainlinkAdapter();
         paradapter = new ParAdapter(bank);
 
-        tokhook = new ERC20Hook();
-        unihook = new UniNFTHook(NFPM);
-
         // deploy bank with one ERC20 ilk and one NFPM ilk
         Ball.IlkParams[] memory ips = new Ball.IlkParams[](1);
         ips[0] = Ball.IlkParams(
@@ -229,20 +182,6 @@ abstract contract RicoSetUp is BaseHelper {
         uint256[] memory uniliqrs = new uint[](2);
         (uniliqrs[0], uniliqrs[1]) = (RAY, RAY);
 
-
-        Ball.UniParams memory ups = Ball.UniParams(
-            uilk,                          // ilk
-            1000000001546067052200000000,  // fee
-            RAY,                           // chop
-            RAD / 10,                      // dust
-            100000 * RAD,                  // line
-            HOOK_ROOM,                     // room
-            uniwrapper,
-            unigems,
-            unisrcs,
-            unitags,
-            uniliqrs
-        );
         Ball.BallArgs memory bargs = Ball.BallArgs(
             bank,
             address(feed),
@@ -250,8 +189,6 @@ abstract contract RicoSetUp is BaseHelper {
             address(divider),
             address(multiplier),
             address(cladapter),
-            address(tokhook),
-            address(unihook),
             arico,
             arisk,
             ricodai,
@@ -277,7 +214,6 @@ abstract contract RicoSetUp is BaseHelper {
 
         ball.setup(bargs);
         ball.makeilk(ips[0]);
-        ball.makeuni(ups);
         ball.approve(self);
         BankDiamond(bank).acceptOwnership();
 
@@ -286,10 +222,8 @@ abstract contract RicoSetUp is BaseHelper {
         Gem(risk).ward(bank, true);
         //////////
 
-        ahook   = payable(address(tokhook));
-
         File(bank).file('tip.src', bytes32(bytes20(fsrc)));
-        Vat(bank).filh(WETH_ILK, 'src', empty, bytes32(bytes20(fsrc)));
+        Vat(bank).filk(WETH_ILK, 'src', bytes32(bytes20(fsrc)));
 
         feedpush(RISK_RICO_TAG, bytes32(RAY), block.timestamp + FEED_LOOKAHEAD);
         feedpush(RICO_RISK_TAG, bytes32(RAY), block.timestamp + FEED_LOOKAHEAD);
@@ -297,17 +231,15 @@ abstract contract RicoSetUp is BaseHelper {
 
     function init_erc20_ilk(bytes32 ilk, address gem, bytes32 tag) public {
         Gem(gem).approve(bank, type(uint256).max);
-        Vat(bank).init(ilk, address(tokhook));
-        Vat(bank).filh(ilk, 'gem', empty, bytes32(bytes20(gem)));
-        Vat(bank).filh(ilk, 'src', empty, bytes32(bytes20(fsrc)));
-        Vat(bank).filh(ilk, 'tag', empty, tag);
-        Vat(bank).filh(ilk, 'liqr', empty, bytes32(RAY));
-        Vat(bank).filh(ilk, 'pep', empty, bytes32(uint(2)));
-        Vat(bank).filh(ilk, 'pop', empty, bytes32(RAY));
-        Vat(bank).filk(ilk, 'hook', bytes32(uint(bytes32(bytes20(address(tokhook))))));
+        Vat(bank).init(ilk, gem);
+        Vat(bank).filk(ilk, 'src',  bytes32(bytes20(fsrc)));
+        Vat(bank).filk(ilk, 'tag',  tag);
+        Vat(bank).filk(ilk, 'liqr', bytes32(RAY));
+        Vat(bank).filk(ilk, 'pep',  bytes32(uint(2)));
+        Vat(bank).filk(ilk, 'pop',  bytes32(RAY));
         Vat(bank).filk(ilk, 'chop', bytes32(RAY));
         Vat(bank).filk(ilk, 'line', bytes32(init_mint * 10 * RAD));
-        Vat(bank).filk(ilk, 'fee', bytes32(uint(1000000001546067052200000000)));  // 5%
+        Vat(bank).filk(ilk, 'fee',  bytes32(uint(1000000001546067052200000000)));  // 5%
         feedpush(tag, bytes32(RAY), block.timestamp + FEED_LOOKAHEAD);
     }
 

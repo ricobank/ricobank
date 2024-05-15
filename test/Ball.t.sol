@@ -1,4 +1,4 @@
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.25;
 
 import { UniSetUp, PoolArgs, Asset } from "../test/UniHelper.sol";
 import { INonfungiblePositionManager as INFPM } from './Univ3Interface.sol';
@@ -6,8 +6,8 @@ import { UniswapV3Adapter } from "../lib/feedbase/src/adapters/UniswapV3Adapter.
 import { ChainlinkAdapter } from "../lib/feedbase/src/adapters/ChainlinkAdapter.sol";
 import { IUniWrapper } from '../lib/feedbase/src/adapters/UniswapV3Adapter.sol';
 import {
-    File, Bank, Vat, Vow, Vox, ERC20Hook, BaseHelper, BankDiamond, WethLike,
-    Divider, Multiplier, Feedbase, Gem, GemFab, Ball, UniNFTHook
+    File, Bank, Vat, Vow, Vox, BaseHelper, BankDiamond, WethLike,
+    Divider, Multiplier, Feedbase, Gem, GemFab, Ball
 } from './RicoHelper.sol';
 import 'forge-std/Test.sol';
 
@@ -21,8 +21,6 @@ contract BallTest is BaseHelper {
     uint256 constant init_par   = RAY * 4;
     uint256 constant wethamt    = WAD;
 
-    ERC20Hook        tokhook;
-    UniNFTHook       unihook;
     ChainlinkAdapter cladapt;
     UniswapV3Adapter uniadapt;
     Divider          divider;
@@ -80,9 +78,6 @@ contract BallTest is BaseHelper {
         multiplier = new Multiplier(address(fb));
         cladapt    = new ChainlinkAdapter();
 
-        tokhook = new ERC20Hook();
-        unihook = new UniNFTHook(NFPM);
-
         Ball.IlkParams[] memory ips = new Ball.IlkParams[](2);
 
         // bank with ilks for weth and rai
@@ -125,20 +120,6 @@ contract BallTest is BaseHelper {
         uint256[] memory uniliqrs = new uint[](2);
         (uniliqrs[0], uniliqrs[1]) = (RAY, RAY);
 
-        Ball.UniParams memory ups = Ball.UniParams(
-            ':uninft',                     // ilk
-            1000000001546067052200000000,  // fee
-            RAY,                           // chop
-            init_dust,                     // dust
-            100000 * RAD,                  // line
-            8,                             // room
-            uniwrapper,
-            unigems,
-            unisrcs,
-            unitags,
-            uniliqrs
-        );
-
         Ball.BallArgs memory bargs = Ball.BallArgs(
             bank,
             address(fb),
@@ -146,8 +127,6 @@ contract BallTest is BaseHelper {
             address(divider),
             address(multiplier),
             address(cladapt),
-            address(tokhook),
-            address(unihook),
             rico,
             risk,
             ricodai,
@@ -175,7 +154,6 @@ contract BallTest is BaseHelper {
         ball.setup(bargs);
         ball.makeilk(ips[0]);
         ball.makeilk(ips[1]);
-        ball.makeuni(ups);
 
         // transfer root access to self
         ball.approve(self);
@@ -284,14 +262,14 @@ contract BallTest is BaseHelper {
 
     function test_ball_1() public {
         // simple bail with weth ilk
-        Vat(bank).frob(wilk, self, abi.encodePacked(wethamt), safedart);
+        Vat(bank).frob(wilk, self, int(wethamt), safedart);
         vm.expectRevert(Vat.ErrNotSafe.selector);
-        Vat(bank).frob(wilk, self, abi.encodePacked(int(0)), safedart);
+        Vat(bank).frob(wilk, self, int(0), safedart);
     }
 
     function test_fee_bail_flop() public _flop_after_ {
         // make the urn unsafe by accumulating
-        Vat(bank).frob(wilk, self, abi.encodePacked(wethamt), safedart);
+        Vat(bank).frob(wilk, self, int(wethamt), safedart);
 
         // can't bail, not enough fees accumulated
         vm.expectRevert(Vat.ErrSafeBail.selector);
@@ -320,12 +298,12 @@ contract BallTest is BaseHelper {
 
     // frob, then flap (with wel == 100%), and check balanced
     function test_ball_pay_flap_success() public  _balanced_after_ {
-        Vat(bank).frob(wilk, self, abi.encodePacked(wethamt), safedart);
+        Vat(bank).frob(wilk, self, int(wethamt), safedart);
 
         skip(BANKYEAR * 100); look_poke();
 
-        uint art_pre = Vat(bank).urns(wilk, self);
         uint ink_pre = _ink(wilk, self);
+        uint art_pre = _art(wilk, self);
 
         assertEq(Vow(bank).ramp().wel, RAY);
 
@@ -337,10 +315,10 @@ contract BallTest is BaseHelper {
         uint dust = Vat(bank).ilks(wilk).dust;
         int  dart = -int((art_pre * rack - dust) / rack);
 
-        Vat(bank).frob(wilk, self, abi.encodePacked(int(0)), dart);
+        Vat(bank).frob(wilk, self, int(0), dart);
 
-        uint art_aft = Vat(bank).urns(wilk, self);
         uint ink_aft = _ink(wilk, self);
+        uint art_aft = _art(wilk, self);
         assertEq(ink_aft, ink_pre);
         assertGt(art_aft, dust / rack * 999 / 1000);
         assertLt(art_aft, dust / rack * 1000 / 999);
@@ -378,7 +356,7 @@ contract BallTest is BaseHelper {
 
     function test_bounds_fee() public {
         bytes32 gilk = 'gold';
-        Vat(bank).init(gilk, address(0));
+        Vat(bank).init(gilk, DAI);
 
         // shouldn't be able to go under min
         vm.expectRevert(Bank.ErrBound.selector);
@@ -415,12 +393,11 @@ contract BallTest is BaseHelper {
         File(bank).file('cel', bytes32(UINT256_MAX));
         set_dxm('dom', 1);
 
-        Vat(bank).filh(wilk, 'src', new bytes32[](0), bytes32(bytes20(fsrc)));
+        Vat(bank).filk(wilk, 'src', bytes32(bytes20(fsrc)));
         vm.prank(fsrc);
         fb.push(WETH_REF_TAG, bytes32(2 * init_par), UINT256_MAX);
 
-
-        Vat(bank).frob(wilk, self, abi.encodePacked(int(WAD)), int(WAD));
+        Vat(bank).frob(wilk, self, int(WAD), int(WAD));
 
         // prank a low but nonzero risk:rico price so no reflop error
         vm.startPrank(fsrc);

@@ -99,18 +99,6 @@ task('deploy-ricobank', '')
     const ball_artifact = require('../artifacts/src/ball.sol/Ball.json')
     const ball_type = ethers.ContractFactory.fromSolidity(ball_artifact, ali)
 
-    debug('deploying erc20 hook')
-    const tokhook_artifact = require('../artifacts/src/hook/erc20/ERC20Hook.sol/ERC20Hook.json')
-    const tokhook_type = ethers.ContractFactory.fromSolidity(tokhook_artifact, ali)
-    const tokhook = await tokhook_type.deploy({gasLimit: args.gasLimit})
-
-    debug('deploying uni hook')
-    const unihook_artifact = require('../artifacts/src/hook/nfpm/UniV3NFTHook.sol/UniNFTHook.json')
-    const unihook_type = ethers.ContractFactory.fromSolidity(unihook_artifact, ali)
-    const unihook = await unihook_type.deploy(
-      deps.nonfungiblePositionManager.address, {gasLimit: args.gasLimit}
-    )
-
     const ups = {
         ilk:  b32(':uninft'),
         fee:  undefined,
@@ -140,8 +128,6 @@ task('deploy-ricobank', '')
         divider: deps.divider.address,
         multiplier: deps.multiplier.address,
         cladapt: deps.chainlinkadapter.address,
-        tokhook: tokhook.address,
-        unihook: unihook.address,
         rico: deps.rico.address,
         risk: deps.risk.address,
         ricodai: deps.ricodai.address,
@@ -225,34 +211,6 @@ task('deploy-ricobank', '')
     for (let ilk of ilks) {
         debug("making ilk: ", ilk)
         await send(ball.makeilk, ilk)
-    }
-
-    debug(`done making ilks...making uni hook`)
-
-    // copy (gem, src, tag, liqr) from the erc20 ilks
-    const vatabi = [ "function geth(bytes32,bytes32,bytes32[]) view returns (bytes32)" ]
-    const vat    = new ethers.Contract(diamond.address, vatabi, ali)
-    if (tokens.univ3) {
-        for (let i of tokens.univ3[':uninft'].erc20ilks) {
-            const gem  = (await vat.geth(b32(i), b32('gem'), [])).slice(0, 42)
-            const src  = (await vat.geth(b32(i), b32('src'), [])).slice(0, 42)
-            const tag  = await vat.geth(b32(i), b32('tag'), [])
-            const liqr = await vat.geth(b32(i), b32('liqr'), [])
-
-            ups.gems.push(gem)
-            ups.srcs.push(src)
-            ups.tags.push(tag)
-            ups.liqrs.push(liqr)
-        }
-
-        if (Object.values(ups).every(value => value !== undefined)){
-            // make the uni ilk
-            await send(ball.makeuni, ups);
-            debug('done making uni hook')
-        } else {
-            // back out if under defined. Tokens file must set all originally undefined values
-            debug('ERROR: failed to make uni hook')
-        }
     }
 
     // take diamond back

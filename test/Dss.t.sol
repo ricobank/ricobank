@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.25;
 
 import "forge-std/Test.sol";
 
 import {
-    RicoSetUp, Guy, ERC20Hook, Vat, Vow, Gem, Ball, File, Bank
+    RicoSetUp, Guy, Vat, Vow, Gem, Ball, File, Bank
 } from "./RicoHelper.sol";
 import { Asset, PoolArgs } from "./UniHelper.sol";
 
@@ -24,9 +24,9 @@ contract Usr is Guy {
         }
     }
 
-    function can_frob(bytes32 ilk, address u, bytes calldata dink, int dart)
+    function can_frob(bytes32 ilk, address u, int dink, int dart)
       public returns (bool) {
-        string memory sig = "frob(bytes32,address,bytes,int256)";
+        string memory sig = "frob(bytes32,address,int256,int256)";
         bytes memory data = abi.encodeWithSignature(sig, ilk, u, dink, dart);
 
         string memory callsig  = "try_call(address,bytes)";
@@ -107,12 +107,12 @@ contract DssFrobTest is DssVatTest {
         assertEq(_ink(gilk, self), 0);
 
         // lock some ink without borrowing
-        Vat(bank).frob(gilk, self, abi.encodePacked(6 * WAD), 0);
+        Vat(bank).frob(gilk, self, int(6 * WAD), 0);
         assertEq(_ink(gilk, self), 6 * WAD);
         assertEq(gold.balanceOf(self), 994 * WAD);
 
         // remove the ink
-        Vat(bank).frob(gilk, self, abi.encodePacked(-int(6 * WAD)), 0);
+        Vat(bank).frob(gilk, self, -int(6 * WAD), 0);
         assertEq(_ink(gilk, self), 0);
         assertEq(gold.balanceOf(self), 1000 * WAD);
     }
@@ -122,16 +122,16 @@ contract DssFrobTest is DssVatTest {
         // it's ok to increase debt as long as you remain calm
         Vat(bank).filk(gilk, 'line', bytes32(10 * RAD));
         feedpush(grtag, bytes32(RAY * 2), UINT256_MAX);
-        Vat(bank).frob(gilk, self, abi.encodePacked(10 * WAD), int(9 * WAD));
+        Vat(bank).frob(gilk, self, int(10 * WAD), int(9 * WAD));
 
         // only if under debt ceiling
         vm.expectRevert(Vat.ErrDebtCeil.selector);
-        Vat(bank).frob(gilk, self, abi.encodePacked(int(0)), int(2 * WAD));
+        Vat(bank).frob(gilk, self, int(0), int(2 * WAD));
 
         // but safe check comes first
         feedpush(grtag, bytes32(0), UINT256_MAX);
         vm.expectRevert(Vat.ErrNotSafe.selector);
-        Vat(bank).frob(gilk, self, abi.encodePacked(int(0)), int(2 * WAD));
+        Vat(bank).frob(gilk, self, int(0), int(2 * WAD));
 
         // calm line
         feedpush(grtag, bytes32(RAY * 2), UINT256_MAX);
@@ -140,67 +140,67 @@ contract DssFrobTest is DssVatTest {
         // but not ceil
         File(bank).file('ceil', bytes32(10 * WAD));
         vm.expectRevert(Vat.ErrDebtCeil.selector);
-        Vat(bank).frob(gilk, self, abi.encodePacked(int(0)), int(2 * WAD));
+        Vat(bank).frob(gilk, self, int(0), int(2 * WAD));
 
         // ok calm down
         File(bank).file('ceil', bytes32(20 * WAD));
-        Vat(bank).frob(gilk, self, abi.encodePacked(int(0)), int(2 * WAD));
+        Vat(bank).frob(gilk, self, int(0), int(2 * WAD));
     }
 
     function test_cool() public _frob_ {
         // cool means that the debt has decreased
         // it's ok to be over the debt ceiling as long as you're cool
         Vat(bank).filk(gilk, 'line', bytes32(10 * RAD));
-        Vat(bank).frob(gilk, self, abi.encodePacked(10 * WAD), int(8 * WAD));
+        Vat(bank).frob(gilk, self, int(10 * WAD), int(8 * WAD));
         Vat(bank).filk(gilk, 'line', bytes32(5 * RAD));
 
         // can decrease debt when over ceiling
-        Vat(bank).frob(gilk, self, abi.encodePacked(int(0)), -int(WAD));
+        Vat(bank).frob(gilk, self, int(0), -int(WAD));
     }
 
     function test_safe() public _frob_ {
         // safe means that the cdp is not risky
         // you can't frob a cdp into unsafe
-        Vat(bank).frob(gilk, self, abi.encodePacked(10 * WAD), int(5 * WAD));
+        Vat(bank).frob(gilk, self, int(10 * WAD), int(5 * WAD));
         vm.expectRevert(Vat.ErrNotSafe.selector);
-        Vat(bank).frob(gilk, self, abi.encodePacked(int(0)), int(6 * WAD));
+        Vat(bank).frob(gilk, self, int(0), int(6 * WAD));
     }
 
     function test_nice() public _frob_ {
         // nice means that the collateral has increased or the debt has
         // decreased. remaining unsafe is ok as long as you're nice
-        Vat(bank).frob(gilk, self, abi.encodePacked(10 * WAD), int(10 * WAD));
+        Vat(bank).frob(gilk, self, int(10 * WAD), int(10 * WAD));
         feedpush(grtag, bytes32(RAY / 2), block.timestamp + 1000);
 
         // debt can't increase if unsafe
         vm.expectRevert(Vat.ErrNotSafe.selector);
-        Vat(bank).frob(gilk, self, '', int(WAD));
+        Vat(bank).frob(gilk, self, int(0), int(WAD));
 
         // debt can decrease
-        Vat(bank).frob(gilk, self, '', -int(WAD));
+        Vat(bank).frob(gilk, self, int(0), -int(WAD));
 
         // ink can't decrease
         vm.expectRevert(Vat.ErrNotSafe.selector);
-        Vat(bank).frob(gilk, self, abi.encodePacked(-int(WAD)), 0);
+        Vat(bank).frob(gilk, self, -int(WAD), 0);
 
         // ink can increase
-        Vat(bank).frob(gilk, self, abi.encodePacked(WAD), 0);
+        Vat(bank).frob(gilk, self, int(WAD), 0);
 
         // cdp is still unsafe
         // ink can't decrease, even if debt decreases more
         vm.expectRevert(Vat.ErrNotSafe.selector);
-        Vat(bank).frob(gilk, self, abi.encodePacked(-int(2 * WAD)), -int(4 * WAD));
+        Vat(bank).frob(gilk, self, -int(2 * WAD), -int(4 * WAD));
 
         // debt can't increase, even if ink increases more
         vm.expectRevert(Vat.ErrNotSafe.selector);
-        Vat(bank).frob(gilk, self, abi.encodePacked(5 * WAD), int(WAD));
+        Vat(bank).frob(gilk, self, int(5 * WAD), int(WAD));
 
         // ink can decrease if end state is safe
-        Vat(bank).frob(gilk, self, abi.encodePacked(-int(WAD)), -int(4 * WAD));
+        Vat(bank).frob(gilk, self, -int(WAD), -int(4 * WAD));
         feedpush(grtag, bytes32(RAY * 2 / 5), block.timestamp + 1000);
 
         // debt can increase if end state is safe
-        Vat(bank).frob(gilk, self, abi.encodePacked(5 * WAD), int(WAD));
+        Vat(bank).frob(gilk, self, int(5 * WAD), int(WAD));
     }
 
     function test_alt_callers() public _frob_ {
@@ -209,30 +209,30 @@ contract DssFrobTest is DssVatTest {
         gold.mint(c, 20 * WAD);
 
         // ali opens an urn to see what bob and cat can do with it
-        ali.frob(gilk, a, abi.encodePacked(10 * WAD), int(5 * WAD));
+        ali.frob(gilk, a, int(10 * WAD), int(5 * WAD));
 
         // anyone can lock
-        assertTrue(ali.can_frob(gilk, a, abi.encodePacked(WAD), 0));
-        assertTrue(bob.can_frob(gilk, b, abi.encodePacked(WAD), 0));
-        assertTrue(cat.can_frob(gilk, c, abi.encodePacked(WAD), 0));
+        assertTrue(ali.can_frob(gilk, a, int(WAD), 0));
+        assertTrue(bob.can_frob(gilk, b, int(WAD), 0));
+        assertTrue(cat.can_frob(gilk, c, int(WAD), 0));
 
         // but only with own gems - ***N/A no v or w***
 
         // only the lad can free
-        assertTrue(ali.can_frob(gilk, a, abi.encodePacked(-int(WAD)), 0));
+        assertTrue(ali.can_frob(gilk, a, -int(WAD), 0));
         vm.expectRevert(Bank.ErrWrongUrn.selector);
-        bob.frob(gilk, a, abi.encodePacked(-int(WAD)), 0);
+        bob.frob(gilk, a, -int(WAD), 0);
         vm.expectRevert(Bank.ErrWrongUrn.selector);
-        cat.frob(gilk, a, abi.encodePacked(-int(WAD)), 0);
+        cat.frob(gilk, a, -int(WAD), 0);
 
         // the lad can free to anywhere - ***N/A no v or w***
 
         // only the lad can draw
-        assertTrue(ali.can_frob(gilk, a, abi.encodePacked(int(0)), int(WAD)));
+        assertTrue(ali.can_frob(gilk, a, int(0), int(WAD)));
         vm.expectRevert(Bank.ErrWrongUrn.selector);
-        bob.frob(gilk, a, '', int(WAD));
+        bob.frob(gilk, a, int(0), int(WAD));
         vm.expectRevert(Bank.ErrWrongUrn.selector);
-        cat.frob(gilk, a, '', int(WAD));
+        cat.frob(gilk, a, int(0), int(WAD));
 
         // lad can draw to anywhere - ***N/A no v or w***
 
@@ -240,9 +240,9 @@ contract DssFrobTest is DssVatTest {
         rico.mint(c, WAD + 1);
 
         // anyone can wipe
-        assertTrue(ali.can_frob(gilk, a, '', -int(WAD)));
-        assertTrue(bob.can_frob(gilk, a, '', -int(WAD)));
-        assertTrue(cat.can_frob(gilk, a, '', -int(WAD)));
+        assertTrue(ali.can_frob(gilk, a, int(0), -int(WAD)));
+        assertTrue(bob.can_frob(gilk, a, int(0), -int(WAD)));
+        assertTrue(cat.can_frob(gilk, a, int(0), -int(WAD)));
 
         // but only with their own dai - ***N/A no v or w***
     }
@@ -253,14 +253,14 @@ contract DssFrobTest is DssVatTest {
         gold.mint(c, 20 * WAD);
 
         // ali opens an urn to test what bob and cat can do with it
-        ali.frob(gilk, a, abi.encodePacked(10 * WAD), int(5 * WAD));
+        ali.frob(gilk, a, int(10 * WAD), int(5 * WAD));
 
         // only owner (ali) can do risky actions
-        assertTrue(ali.can_frob(gilk, a, abi.encodePacked(int(0)), int(WAD)));
+        assertTrue(ali.can_frob(gilk, a, int(0), int(WAD)));
         vm.expectRevert(Bank.ErrWrongUrn.selector);
-        bob.frob(gilk, a, abi.encodePacked(int(0)), int(WAD));
+        bob.frob(gilk, a, int(0), int(WAD));
         vm.expectRevert(Bank.ErrWrongUrn.selector);
-        cat.frob(gilk, a, abi.encodePacked(int(0)), int(WAD));
+        cat.frob(gilk, a, int(0), int(WAD));
 
         // unless they hope another user - ***N/A no hope***
     }
@@ -269,18 +269,18 @@ contract DssFrobTest is DssVatTest {
         rico_mint(1, true); // +1 for rounding in system's favour
 
         // frob a normal amount, but then set dust above urn's debt
-        Vat(bank).frob(gilk, self, abi.encodePacked(9 * WAD), int(WAD));
+        Vat(bank).frob(gilk, self, int(9 * WAD), int(WAD));
         Vat(bank).filk(gilk, 'dust', bytes32(5 * RAD));
 
         // draw to dusty amount
         vm.expectRevert(Vat.ErrUrnDust.selector);
-        Vat(bank).frob(gilk, self, abi.encodePacked(5 * WAD), int(2 * WAD));
-        Vat(bank).frob(gilk, self, abi.encodePacked(int(0)), int(5 * WAD));
+        Vat(bank).frob(gilk, self, int(5 * WAD), int(2 * WAD));
+        Vat(bank).frob(gilk, self, int(0), int(5 * WAD));
 
         // wipe to dusty amount
         vm.expectRevert(Vat.ErrUrnDust.selector);
-        Vat(bank).frob(gilk, self, abi.encodePacked(int(0)), -int(5 * WAD));
-        Vat(bank).frob(gilk, self, abi.encodePacked(int(0)), -int(6 * WAD));
+        Vat(bank).frob(gilk, self, int(0), -int(5 * WAD));
+        Vat(bank).frob(gilk, self, int(0), -int(6 * WAD));
     }
 }
 
@@ -340,13 +340,13 @@ contract DssBiteTest is DssVatTest {
         // rico: mark = feed.val = 2.5
         // create urn (push, frob)
         feedpush(grtag, bytes32(RAY * 5 / 2), block.timestamp + 1000);
-        Vat(bank).frob(gilk, self, abi.encodePacked(40 * WAD), int(100 * WAD));
+        Vat(bank).frob(gilk, self, int(40 * WAD), int(100 * WAD));
 
         // tag=4, mat=2
         // make urn unsafe, set liquidation penalty
         feedpush(grtag, bytes32(RAY * 49 / 10), block.timestamp + 1000);
-        Vat(bank).filh(gilk, 'liqr', empty, bytes32(RAY * 2));
-        Vat(bank).filh(gilk, 'pop', empty, bytes32(RAY * 2));
+        Vat(bank).filk(gilk, 'liqr', bytes32(RAY * 2));
+        Vat(bank).filk(gilk, 'pop',  bytes32(RAY * 2));
         Vat(bank).filk(gilk, 'chop', bytes32(RAY * 11 / 10));
 
         assertEq(_ink(gilk, self), 40 * WAD);
@@ -404,7 +404,7 @@ contract DssBiteTest is DssVatTest {
 
     function testFail_vault_is_safe() public _bite_ {
         feedpush(grtag, bytes32(RAY * 5 / 2), block.timestamp + 1000);
-        Vat(bank).frob(gilk, self, abi.encodePacked(100 * WAD), int(150 * WAD));
+        Vat(bank).frob(gilk, self, int(100 * WAD), int(150 * WAD));
 
         assertEq(_ink(gilk, self), 100 * WAD);
         assertEq(_art(gilk, self), 150 * WAD);
@@ -419,7 +419,7 @@ contract DssBiteTest is DssVatTest {
     function test_floppy_bite() public _bite_ {
         feedpush(grtag, bytes32(RAY * 5 / 2), block.timestamp + 1000);
         uint ricoamt = 100 * WAD;
-        Vat(bank).frob(gilk, self, abi.encodePacked(40 * WAD), int(ricoamt));
+        Vat(bank).frob(gilk, self, int(40 * WAD), int(ricoamt));
         feedpush(grtag, bytes32(2 * RAY), block.timestamp + 1000);
 
         // dunk N/A bail always liquidates whole urn
@@ -480,7 +480,7 @@ contract DssFoldTest is DssVatTest {
     function draw(bytes32 ilk, uint amt) internal {
         gold.mint(self, amt);
         Vat(bank).drip(gilk);
-        Vat(bank).frob(ilk, self, abi.encodePacked(WAD), int(amt));
+        Vat(bank).frob(ilk, self, int(WAD), int(amt));
     }
 
     function tab(bytes32 ilk, address _urn) internal view returns (uint) {
@@ -538,8 +538,7 @@ contract DssClipTest is DssJsTest {
         feedpush(grtag, bytes32(goldprice), block.timestamp + 1000);
         gold.mint(self, 1000 * WAD);
 
-        Vat(bank).filh(gilk, 'liqr', empty, bytes32(2 * RAY)); // dss mat
-
+        Vat(bank).filk(gilk, 'liqr', bytes32(2 * RAY)); // dss mat
         Vat(bank).filk(gilk, 'dust', bytes32(20 * RAD));
         Vat(bank).filk(gilk, 'line', bytes32(10000 * RAD));
 
@@ -552,7 +551,7 @@ contract DssClipTest is DssJsTest {
         // dss clipper N/A, no standing auction mechanism
 
         // frob some rico, then make the urn unsafe
-        Vat(bank).frob(gilk, self, abi.encodePacked(40 * WAD), int(100 * WAD));
+        Vat(bank).frob(gilk, self, int(40 * WAD), int(100 * WAD));
         feedpush(grtag, bytes32(4 * RAY), block.timestamp + 1000); // now unsafe
 
         // dss me/ali/bob hope clip N/A, rico vat wards vow
@@ -586,7 +585,7 @@ contract DssClipTest is DssJsTest {
         // difference from dss: no standing auction mechanism
 
         // wipe the urn so it's empty
-        Vat(bank).frob(gilk, self, '', -int(Vat(bank).urns(gilk, self)));
+        Vat(bank).frob(gilk, self, int(0), -int(_art(gilk, self)));
 
         // can't bail empty urn
         vm.expectRevert(Vat.ErrSafeBail.selector);
@@ -681,7 +680,7 @@ contract DssVowTest is DssJsTest {
         skip(1);
 
         // frob some, bail but don't glug
-        Vat(bank).frob(gilk, self, abi.encodePacked(amt), int(amt));
+        Vat(bank).frob(gilk, self, int(amt), int(amt));
         feedpush(grtag, bytes32(0), UINT256_MAX);
         Vat(bank).bail(gilk, self); // lots of debt
 
@@ -721,7 +720,7 @@ contract DssVowTest is DssJsTest {
         Vat(bank).filk(gilk, bytes32('chop'), bytes32(RAY * 11 / 10));
         Vat(bank).filk(gilk, 'fee', bytes32(Vat(bank).FEE_MAX()));
 
-        Vat(bank).frob(gilk, self, abi.encodePacked(200 * WAD), int(100 * WAD));
+        Vat(bank).frob(gilk, self, int(200 * WAD), int(100 * WAD));
 
         // wait for some fees, then surplus auction
         skip(10);
@@ -750,7 +749,7 @@ contract DssVowTest is DssJsTest {
         File(bank).file('cel', bytes32(uint(1)));
 
         Vat(bank).filk(gilk, 'fee', bytes32(Vat(bank).FEE_MAX()));
-        Vat(bank).frob(gilk, self, abi.encodePacked(int(WAD)), int(WAD));
+        Vat(bank).frob(gilk, self, int(WAD), int(WAD));
         feedpush(grtag, bytes32(0), UINT256_MAX); // now unsafe
         
         // accrue some interest so vat has some joy
@@ -800,7 +799,7 @@ contract DssDogTest is DssJsTest {
     function setUrn(uint ink, uint art) internal {
         (bytes32 price, uint ttl) = feedpull(grtag);
         feedpush(grtag, bytes32(2 * RAY * art / ink), UINT256_MAX);
-        Vat(bank).frob(gilk, self, abi.encodePacked(ink), int(art));
+        Vat(bank).frob(gilk, self, int(ink), int(art));
         feedpush(grtag, price, ttl);
     }
 
@@ -835,7 +834,7 @@ contract DssDogTest is DssJsTest {
         Vat(bank).filk(gilk, 'dust', bytes32(dust * RAD));
 
         vm.expectRevert(Vat.ErrUrnDust.selector);
-        Vat(bank).frob(gilk, self, abi.encodePacked(200000 * WAD), int(199 * WAD));
+        Vat(bank).frob(gilk, self, int(200000 * WAD), int(199 * WAD));
     }
 
     // test_bark_partial_liquidation_dirt_exceeds_hole_to_avoid_dusty_remnant

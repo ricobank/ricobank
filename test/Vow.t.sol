@@ -1,15 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.25;
 
 import "forge-std/Test.sol";
 
 import { Ward } from '../lib/feedbase/src/mixin/ward.sol';
 import { Vat, Vow, File, Bank, RicoSetUp, WethLike } from "./RicoHelper.sol";
-import { Guy, FrobHook, ZeroHook } from "./RicoHelper.sol";
-import { Ball, ERC20Hook, Gem } from "./RicoHelper.sol";
+import { Guy } from "./RicoHelper.sol";
+import { Ball, Gem } from "./RicoHelper.sol";
 import { Asset, PoolArgs } from "./UniHelper.sol";
 import { Math } from '../src/mixin/math.sol';
-import { Hook } from '../src/hook/hook.sol';
 
 // integrated vow/flow tests
 contract VowTest is Test, RicoSetUp {
@@ -56,7 +55,7 @@ contract VowTest is Test, RicoSetUp {
         uint rico_price_in_risk = 10;
 
         feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
-        Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(borrow));
+        Vat(bank).frob(gilk, self, int(WAD), int(borrow));
 
         // accumulate a bunch of fees
         skip(BANKYEAR);
@@ -100,7 +99,7 @@ contract VowTest is Test, RicoSetUp {
         uint borrow = WAD * 10000;
         // gold:ref price 10k
         feedpush(grtag, bytes32(10000 * RAY), type(uint).max);
-        Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(borrow));
+        Vat(bank).frob(gilk, self, int(WAD), int(borrow));
 
         // risk:rico price 10
         uint risk_price_in_rico = 10 * RAY;
@@ -125,7 +124,7 @@ contract VowTest is Test, RicoSetUp {
     {
         // gold:ref price 1k
         feedpush(grtag, bytes32(1000 * RAY), block.timestamp + 1000);
-        Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(WAD));
+        Vat(bank).frob(gilk, self, int(WAD), int(WAD));
 
         // big crash, gold:ref price 0.  bail creates some sin
         feedpush(grtag, bytes32(RAY * 0), block.timestamp + 1000);
@@ -148,7 +147,7 @@ contract VowTest is Test, RicoSetUp {
 
         // gold:ref price 10k
         feedpush(grtag, bytes32(10000 * RAY), block.timestamp + 1000);
-        Vat(bank).frob(gilk, self, abi.encodePacked(WAD), int(3000 * WAD));
+        Vat(bank).frob(gilk, self, int(WAD), int(3000 * WAD));
 
         skip(1);
 
@@ -163,7 +162,7 @@ contract VowTest is Test, RicoSetUp {
         // goldusd, par, and liqr all = 1 after setup
         // art == 10 * ink
         feedpush(grtag, bytes32(RAY * 1000), block.timestamp + 1000);
-        Vat(bank).frob(gilk, address(this), abi.encodePacked(1000 * WAD), int(10000 * WAD));
+        Vat(bank).frob(gilk, address(this), int(1000 * WAD), int(10000 * WAD));
 
         // set mint ramp higher to use risk ramp
         uint supply = risk.totalSupply();
@@ -194,20 +193,20 @@ contract VowTest is Test, RicoSetUp {
         // set high fee, gold:ref price 1k
         Vat(bank).filk(gilk, 'fee', bytes32(FEE_2X_ANN));
         feedpush(grtag, bytes32(RAY * 1000), type(uint).max);
-        Vat(bank).frob(gilk, address(this), abi.encodePacked(WAD), int(WAD));
+        Vat(bank).frob(gilk, address(this), int(WAD), int(WAD));
 
         // wipe previous frob
         uint firstrico = rico.balanceOf(self);
         rico_mint(1, false); // vat burns 1 extra to round in system's favor
-        Vat(bank).frob(gilk, address(this), abi.encodePacked(-int(WAD)), -int(WAD));
+        Vat(bank).frob(gilk, address(this), -int(WAD), -int(WAD));
 
         skip(BANKYEAR);
 
         // test rack, frob auto drips so should be able to draw double after a year at 2X fee
-        Vat(bank).frob(gilk, address(this), abi.encodePacked(WAD), int(WAD * 1));
+        Vat(bank).frob(gilk, address(this), int(WAD), int(WAD * 1));
         assertClose(rico.balanceOf(self), firstrico * 2, 1_000_000);
         rico_mint(1, false); // rounding
-        Vat(bank).frob(gilk, address(this), abi.encodePacked(-int(WAD)), -int(WAD));
+        Vat(bank).frob(gilk, address(this), -int(WAD), -int(WAD));
     }
 
     function test_keep_balanced() public
@@ -389,7 +388,7 @@ contract VowTest is Test, RicoSetUp {
 
         uint wel = RAY / 7;
         File(bank).file('wel', bytes32(wel));
-        Vat(bank).frob(gilk, self, abi.encodePacked(int(WAD)), int(WAD));
+        Vat(bank).frob(gilk, self, int(WAD), int(WAD));
 
         // drip a bunch of joy
         Vat(bank).filk(gilk, 'fee', bytes32(Vat(bank).FEE_MAX()));
@@ -591,13 +590,13 @@ contract VowJsTest is Test, RicoSetUp {
         // fee == 5%/yr == ray(1.05 ** (1/BANKYEAR))
         uint fee = 1000000001546067052200000000;
         Vat(bank).filk(wilk, 'fee', bytes32(fee));
-        Vat(bank).frob(wilk, me, abi.encodePacked(100 * WAD), 0);
-        Vat(bank).frob(wilk, me, abi.encodePacked(int(0)), int(99 * WAD));
+        Vat(bank).frob(wilk, me, int(100 * WAD), 0);
+        Vat(bank).frob(wilk, me, int(0), int(99 * WAD));
 
         // cat frobs some rico and transfers to me
         cat.deposit{value: 7000 * WAD}();
         cat.approve(address(weth), bank, UINT256_MAX);
-        cat.frob(wilk, c, abi.encodePacked(4001 * WAD), int(4000 * WAD));
+        cat.frob(wilk, c, int(4001 * WAD), int(4000 * WAD));
         cat.transfer(arico, me, 4000 * WAD);
 
         // used to setup uni pools here, no more though
@@ -639,7 +638,6 @@ contract VowJsTest is Test, RicoSetUp {
 
         // bail the urn frobbed in setup
         assertGt(_ink(wilk, me), 0);
-        vm.expectCall(address(tokhook), abi.encodePacked(ERC20Hook.bailhook.selector));
         Vat(bank).bail(wilk, me);
 
         // urn should be bailed, excess ink should be sent back to urn holder
@@ -667,7 +665,6 @@ contract VowJsTest is Test, RicoSetUp {
         feedpush(wrtag, bytes32(0), UINT256_MAX);
 
         // it's unsafe now; can bail
-        vm.expectCall(address(tokhook), abi.encodePacked(tokhook.bailhook.selector));
         Vat(bank).bail(wilk, me);
 
         // was just bailed, so now it's safe
@@ -701,7 +698,6 @@ contract VowJsTest is Test, RicoSetUp {
 
         // weth:ref price crash to 0.5
         feedpush(wrtag, bytes32(RAY / 2), UINT256_MAX);
-        vm.expectCall(address(tokhook), abi.encodePacked(tokhook.bailhook.selector));
         Vat(bank).bail(wilk, me);
 
         // borrow some rico to fill the flip for cat's urn
@@ -738,7 +734,7 @@ contract VowJsTest is Test, RicoSetUp {
     {
         // run a flap and ensure risk is burnt
         // pep a little bit more to account for chop >1 now that liqr is in hook
-        Vat(bank).filh(wilk, 'pep', empty, bytes32(uint(3)));
+        Vat(bank).filk(wilk, 'pep', bytes32(uint(3)));
         uint risk_initial_supply = risk.totalSupply();
         skip(BANKYEAR);
 
@@ -754,7 +750,6 @@ contract VowJsTest is Test, RicoSetUp {
         // confirm bail trades the weth for rico
         feedpush(wrtag, bytes32(RAY / 10), UINT256_MAX);
         uint joy0 = Vat(bank).joy();
-        vm.expectCall(address(tokhook), abi.encodePacked(tokhook.bailhook.selector));
         Vat(bank).bail(wilk, me);
         uint joy1 = Vat(bank).joy();
         assertGt(joy1, joy0);

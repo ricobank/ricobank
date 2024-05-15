@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.25;
 
 import "forge-std/Test.sol";
 
 import {
-    RicoSetUp, Guy, BankDiamond, Bank, File, Vat, Vow, Hook, Gem, Ball
+    RicoSetUp, Guy, BankDiamond, Bank, File, Vat, Vow, Gem, Ball
 } from "./RicoHelper.sol";
 import '../src/mixin/math.sol';
 
@@ -18,7 +18,7 @@ contract IntegrationTest is Test, RicoSetUp {
     
     function test_joy_accounting() public {
         // accumulate some fees
-        Vat(bank).frob(gilk, self, abi.encodePacked(10 * WAD), int(5 * WAD));
+        Vat(bank).frob(gilk, self, int(10 * WAD), int(5 * WAD));
         skip(100);
         Vat(bank).drip(gilk);
         check_integrity();
@@ -42,7 +42,7 @@ contract IntegrationTest is Test, RicoSetUp {
 
     function test_bail_joy_direction() public _check_integrity_after_ {
         // open an urn to bail
-        Vat(bank).frob(gilk, self, abi.encodePacked(10 * WAD), int(5 * WAD));
+        Vat(bank).frob(gilk, self, int(10 * WAD), int(5 * WAD));
 
         // mint some rico to fill the bail
         rico_mint(6 * WAD, false);
@@ -62,7 +62,7 @@ contract IntegrationTest is Test, RicoSetUp {
 
     function test_flap_joy_direction() public _check_integrity_after_ {
         // open an urn to accumulate fees, mint some risk to fill the flop
-        Vat(bank).frob(gilk, self, abi.encodePacked(10 * WAD), int(5 * WAD));
+        Vat(bank).frob(gilk, self, int(10 * WAD), int(5 * WAD));
         skip(100);
         Vat(bank).drip(gilk);
         risk.mint(self, 10_000 * WAD);

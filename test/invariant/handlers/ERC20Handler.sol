@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.25;
 
 import "forge-std/Test.sol";
 import { VmSafe } from "lib/forge-std/src/Vm.sol";
@@ -65,7 +65,7 @@ contract ERC20Handler is Test, Local, RicoSetUp {
         ink = bound(ink, -int(ACTOR_WETH), int(ACTOR_WETH));
         art = bound(art, -artCap, artCap);
         address urn = actors[bound(urnSeed, 0, actors.length - 1)];
-        Vat(bank).frob(WETH_ILK, urn, abi.encodePacked(ink), art);
+        Vat(bank).frob(WETH_ILK, urn, ink, art);
 
         // ink integrity tracking
         if (urn != currentActor) {
@@ -142,7 +142,8 @@ contract ERC20Handler is Test, Local, RicoSetUp {
             if (art > 0 || ink < 0) return;
         }
         // avoid ink underflows
-        uint pre_ink = abi.decode(Vat(bank).ink(WETH_ILK, urn), (uint));
+        uint pre_ink = _ink(WETH_ILK, urn);
+        uint pre_art = _art(WETH_ILK, urn);
         uint aft_ink = pre_ink;
         if (ink < 0) {
             if (uint(-ink) > pre_ink) return;
@@ -152,18 +153,17 @@ contract ERC20Handler is Test, Local, RicoSetUp {
             aft_ink += uint(ink);
         }
         // avoid unsafe and dust
-        uint256 pre_art = Vat(bank).urns(WETH_ILK, urn);
         uint256 dust = Vat(bank).ilks(WETH_ILK).dust;
         uint256 rack = Vat(bank).ilks(WETH_ILK).rack;
         uint256 price;
         {
-            bytes32 val = Vat(bank).geth(WETH_ILK, 'src', empty);
+            bytes32 val = Vat(bank).get(WETH_ILK, 'src');
             address src = address(bytes20(val));
-            bytes32 tag = Vat(bank).geth(WETH_ILK, 'tag', empty);
+            bytes32 tag = Vat(bank).get(WETH_ILK, 'tag');
             (bytes32 _price,) = feed.pull(src, tag);
             price = uint(_price);
         }
-        uint liqr    = uint(Vat(bank).geth(WETH_ILK, 'liqr', empty));
+        uint liqr    = uint(Vat(bank).get(WETH_ILK, 'liqr'));
 
         if (art < 0) {
             // avoid underflow
@@ -193,7 +193,7 @@ contract ERC20Handler is Test, Local, RicoSetUp {
         }
 
         // did not return so not expecting revert, call frob
-        Vat(bank).frob(WETH_ILK, urn, abi.encodePacked(ink), art);
+        Vat(bank).frob(WETH_ILK, urn, ink, art);
         // ink integrity tracking
         if (urn != currentActor) {
             ink_offset[currentActor] -= ink;
@@ -224,15 +224,15 @@ contract ERC20Handler is Test, Local, RicoSetUp {
         uint256 par  = Vat(bank).par();
         uint price;
         {
-            bytes32 val = Vat(bank).geth(WETH_ILK, 'src', empty);
+            bytes32 val = Vat(bank).get(WETH_ILK, 'src');
             address src = address(bytes20(val));
-            bytes32 tag = Vat(bank).geth(WETH_ILK, 'tag', empty);
+            bytes32 tag = Vat(bank).get(WETH_ILK, 'tag');
             (bytes32 _price,) = feed.pull(src, tag);
             price = uint(_price);
         }
-        uint liqr    = uint(Vat(bank).geth(WETH_ILK, 'liqr', empty));
-        uint art     = Vat(bank).urns(WETH_ILK, urn);
-        uint ink     = abi.decode(Vat(bank).ink(WETH_ILK, urn), (uint));
+        uint liqr = uint(Vat(bank).get(WETH_ILK, 'liqr'));
+        uint ink = _ink(WETH_ILK, urn);
+        uint art = _art(WETH_ILK, urn);
         // return if the urn is safe
         if ((price * rdiv(ink, liqr)) + 1 >= (art * rmul(par, rack))) return;
         // return if actor has insufficient rico

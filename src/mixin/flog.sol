@@ -2,7 +2,7 @@
 
 // Copyright (C) 2021-2024 halys
 
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.25;
 
 abstract contract Flog {
     event NewFlog(

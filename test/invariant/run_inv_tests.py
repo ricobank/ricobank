@@ -12,14 +12,13 @@ import sys
 
 
 timeout = 60
-start_seed = 740
-end_seed = 745
+start_seed = 802
+end_seed = 803
 
 
 class TestMode(Enum):
     INVARIANTS = auto()  # params can be anything, look for any way to get into bad state
     REVERTS = auto()     # limit fuzz to conditions which should not revert, and look for reverts
-    UNI_INV = auto()     # uses uni hook
     ALL = auto()         # run all above serially
 
 
@@ -40,8 +39,6 @@ def run_forge(mode):
         case TestMode.REVERTS:
             command[3] = 'invariant_revert_search'
             env.update({"FOUNDRY_PROFILE": "disallow_reverts"})
-        case TestMode.UNI_INV:
-            command[3] = 'invariant_uni_core'
         case TestMode.ALL:
             script_path = os.path.abspath(__file__)
             # Iterate through all tests serially, single anvil instance

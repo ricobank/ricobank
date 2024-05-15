@@ -47,16 +47,13 @@ describe('Vox', () => {
 
     await send(bank.file, b32('par'), b32(wad(7)))
 
-    await send(bank.filh, b32('weth'), b32('src'), [], ALI + '00'.repeat(12))
-    await send(bank.filh, b32('weth'), b32('tag'), [], b32('weth:ref'))
+    await send(bank.filk, b32('weth'), b32('src'), ALI + '00'.repeat(12))
+    await send(bank.filk, b32('weth'), b32('tag'), b32('weth:ref'))
     await send(fb.push, b32('weth:ref'), bn2b32(ray(0.8)), constants.MaxUint256);
 
     await send(weth.mint, ALI, wad(100))
     await send(weth.approve, bank.address, constants.MaxUint256)
     await send(risk.mint, ALI, wad(100000));
-
-    await send(bank.filk, b32(':uninft'), b32('line'), bn2b32(rad(10000)))
-
 
     await snapshot_name(hh);
   })
@@ -151,13 +148,13 @@ describe('Vox', () => {
     })
 
     it('deploy gas', async () => {
-      await check(ethers.BigNumber.from(deploygas), 43561614)
+      await check(ethers.BigNumber.from(deploygas), 38290721)
     })
 
     it('frob cold gas', async () => {
       let dink = ethers.utils.solidityPack(['int'], [wad(5)])
       let gas = await bank.estimateGas.frob(b32('weth'), ALI, dink, wad(2))
-      await check(gas, 345020, 345242)
+      await check(gas, 325664, 325840)
     })
 
     it('frob hot gas', async () => {
@@ -168,7 +165,7 @@ describe('Vox', () => {
       let gas = await bank.estimateGas.frob(
         b32('weth'), ALI, ethers.utils.solidityPack(['int'], [wad(5)]), wad(2)
       )
-      await check(gas, 190858)
+      await check(gas, 171735)
     })
 
     it('bail gas', async () => {
@@ -177,7 +174,7 @@ describe('Vox', () => {
 
       await send(fb.push, b32('weth:ref'), bn2b32(ray(0.1)), constants.MaxUint256)
       let gas = await bank.estimateGas.bail(b32('weth'), ALI)
-      await check(gas, 243908)
+      await check(gas, 226171)
     })
 
     it('keep surplus gas', async () => {
@@ -234,90 +231,7 @@ describe('Vox', () => {
       await send(bank.frob, b32('weth'), ALI, dink, wad(2))
       await mine(hh, BANKYEAR)
       let gas = await bank.estimateGas.drip(b32('weth'))
-      await check(gas, 91723, 91827)
-    })
-
-    describe('uni nft gas', async () => {
-
-      let ricodaitokids = []
-      before(async () => {
-        const apad = (addr) => {
-          return addr + '00'.repeat(12)
-        }
-        await send(bank.filh, b32(':uninft'), b32('src'), [apad(dai.address)], apad(ALI))
-        await send(bank.filh, b32(':uninft'), b32('tag'), [apad(dai.address)], b32('dai:ref'))
-        await send(bank.filh, b32(':uninft'), b32('liqr'), [apad(dai.address)], bn2b32(ray(1)))
-        await send(fb.push, b32('dai:ref'), bn2b32(ray(1)), constants.MaxUint256)
-
-        await send(bank.filh, b32(':uninft'), b32('src'),[apad(rico.address)], apad(ALI))
-        await send(bank.filh, b32(':uninft'), b32('tag'), [apad(rico.address)], b32('rico:ref'))
-        await send(bank.filh, b32(':uninft'), b32('liqr'), [apad(rico.address)], bn2b32(ray(1)))
-        await send(fb.push, b32('rico:ref'), bn2b32(ray(0.8)), constants.MaxUint256)
-
-        let amt = wad(10)
-        const encode = ethers.utils.defaultAbiCoder.encode
-        let dink = ethers.utils.defaultAbiCoder.encode(['uint'], [wad(50)])
-        await send(bank.frob, b32('weth'), ALI, dink, amt.mul(3))
-
-        await send(dai.mint, ALI, amt.mul(3))
-
-        for (let i = 0; i < 3; i++) {
-            let joinres = await join_pool({
-                nfpm: dapp.nonfungiblePositionManager, ethers, ali,
-                a1: { token: rico.address, amountIn: amt },
-                a2: { token: dai.address,  amountIn: amt },
-                fee: 500,
-                tickSpacing: 10
-            })
-            await send(dapp.nonfungiblePositionManager.approve, bank.address, joinres.tokenId)
-            ricodaitokids.push(joinres.tokenId)
-        }
-
-        await send(bank.filk, b32(':uninft'), b32('dust'), constants.HashZero)
-
-        await snapshot_name(hh)
-      })
-
-      afterEach(async () => { await revert_name(hh) })
-      after(async () => { await revert_pop(hh) })
-
-      it('uni nft withdraw+repay gas', async () => {
-        let dink = ethers.utils.defaultAbiCoder.encode(['uint[]'], [[1].concat(ricodaitokids)]);
-        await send(bank.frob, b32(':uninft'), ALI, dink, wad(0.001))
-
-        // partial wipe so slots are hot and avoids setting art to 0
-        dink = ethers.utils.defaultAbiCoder.encode(
-          ['uint[]'], [[constants.MaxUint256, ricodaitokids[2], ricodaitokids[1]]]
-        )
-        let gas = await bank.estimateGas.frob(b32(':uninft'), ALI, dink, wad(-0.0009))
-
-        await check(gas, 451267, 451364)
-      })
-
-      it('uni nft deposit+borrow gas', async () => {
-        let dink = ethers.utils.defaultAbiCoder.encode(['uint[]'], [[1].concat(ricodaitokids[0])]);
-        await send(bank.frob, b32(':uninft'), ALI, dink, wad(0.001))
-
-        // measure gas for depositing two LP NFTs and increasing art from nonzero
-        dink = ethers.utils.defaultAbiCoder.encode(
-          ['uint[]'], [[1, ricodaitokids[2], ricodaitokids[1]]]
-        )
-        let gas = await bank.estimateGas.frob(b32(':uninft'), ALI, dink, wad(-0.0009))
-
-        await check(gas, 380433)
-      })
-
-      it('uni nft bail gas', async () => {
-        let dink = ethers.utils.defaultAbiCoder.encode(['uint[]'], [[1].concat(ricodaitokids)]);
-        await send(bank.frob, b32(':uninft'), ALI, dink, wad(0.001))
-
-        // make somewhat unsafe (but not 0)
-        await send(fb.push, b32('dai:ref'), bn2b32(constants.Zero), constants.MaxUint256)
-        await send(fb.push, b32('rico:ref'), bn2b32(constants.Zero), constants.MaxUint256)
-
-        let gas = await bank.estimateGas.bail(b32(':uninft'), ALI)
-        await check(gas, 629481, 631100)
-      })
+      await check(gas, 91694, 91694)
     })
   })
 })

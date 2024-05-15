@@ -7,7 +7,7 @@
 // efficient deployment sequences against the result of
 // this one.
 
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.25;
 
 import {Diamond, IDiamondCuttable} from "../lib/solidstate-solidity/contracts/proxy/diamond/Diamond.sol";
 import {Block} from "../lib/feedbase/src/mixin/Read.sol";
@@ -51,20 +51,6 @@ contract Ball is Math, Ward {
         uint256 ttl;
     }
 
-    struct UniParams {
-        bytes32 ilk;
-        uint256 fee;
-        uint256 chop;
-        uint256 dust;
-        uint256 line;
-        uint256 room;
-        address uniwrapper;
-        address[] gems;
-        address[] srcs;
-        bytes32[] tags;
-        uint256[] liqrs;
-    }
-
     struct BallArgs {
         address payable bank; // diamond
         address feedbase;
@@ -72,8 +58,6 @@ contract Ball is Math, Ward {
         address divider;
         address multiplier;
         address cladapt;
-        address tokhook;
-        address unihook;
         address rico;
         address risk;
         address ricodai;
@@ -95,9 +79,6 @@ contract Ball is Math, Ward {
     Vat public vat;
     Vow public vow;
     Vox public vox;
-
-    address public tokhook;
-    address public unihook;
 
     address public feedbase;
     Divider public divider;
@@ -122,14 +103,12 @@ contract Ball is Math, Ward {
         divider    = Divider(args.divider);
         multiplier = Multiplier(args.multiplier);
         cladapt    = ChainlinkAdapter(args.cladapt);
-        tokhook = args.tokhook;
-        unihook = args.unihook;
     }
 
     function setup(BallArgs calldata args) external _ward_ {
         IDiamondCuttable.FacetCut[] memory facetCuts = new IDiamondCuttable.FacetCut[](4);
         bytes4[] memory filesels = new bytes4[](5);
-        bytes4[] memory vatsels  = new bytes4[](20);
+        bytes4[] memory vatsels  = new bytes4[](16);
         bytes4[] memory vowsels  = new bytes4[](7);
         bytes4[] memory voxsels  = new bytes4[](6);
         File fbank = File(bank);
@@ -140,25 +119,21 @@ contract Ball is Math, Ward {
         filesels[3] = File.CAP_MAX.selector;
         filesels[4] = File.REL_MAX.selector;
         vatsels[0]  = Vat.filk.selector;
-        vatsels[1]  = Vat.filh.selector;
-        vatsels[2]  = Vat.init.selector;
-        vatsels[3]  = Vat.frob.selector;
-        vatsels[4]  = Vat.bail.selector;
-        vatsels[5]  = Vat.safe.selector;
-        vatsels[6]  = Vat.joy.selector;
-        vatsels[7] = Vat.sin.selector;
-        vatsels[8] = Vat.ilks.selector;
-        vatsels[9] = Vat.urns.selector;
-        vatsels[10] = Vat.rest.selector;
-        vatsels[11] = Vat.debt.selector;
-        vatsels[12] = Vat.ceil.selector;
-        vatsels[13] = Vat.par.selector;
-        vatsels[14] = Vat.drip.selector;
-        vatsels[15] = Vat.MINT.selector;
-        vatsels[16] = Vat.FEE_MAX.selector;
-        vatsels[17] = Vat.ink.selector;
-        vatsels[18] = Vat.geth.selector;
-        vatsels[19] = Vat.hookcallext.selector;
+        vatsels[1]  = Vat.init.selector;
+        vatsels[2]  = Vat.frob.selector;
+        vatsels[3]  = Vat.bail.selector;
+        vatsels[4]  = Vat.safe.selector;
+        vatsels[5]  = Vat.joy.selector;
+        vatsels[6] = Vat.sin.selector;
+        vatsels[7] = Vat.ilks.selector;
+        vatsels[8] = Vat.urns.selector;
+        vatsels[9] = Vat.rest.selector;
+        vatsels[10] = Vat.debt.selector;
+        vatsels[11] = Vat.ceil.selector;
+        vatsels[12] = Vat.par.selector;
+        vatsels[13] = Vat.drip.selector;
+        vatsels[14] = Vat.FEE_MAX.selector;
+        vatsels[15] = Vat.get.selector;
         vowsels[0]  = Vow.keep.selector;
         vowsels[1]  = Vow.RISK.selector;
         vowsels[2]  = Vow.ramp.selector;
@@ -225,17 +200,16 @@ contract Ball is Math, Ward {
     function makeilk(IlkParams calldata ilkparams) external _ward_ {
         bytes32 ilk = ilkparams.ilk;
         bytes32 gemreftag = concat(ilk, ":ref");
-        Vat(bank).init(ilk, tokhook);
+        Vat(bank).init(ilk, ilkparams.gem);
         Vat(bank).filk(ilk, "chop", bytes32(ilkparams.chop));
         Vat(bank).filk(ilk, "dust", bytes32(ilkparams.dust));
         Vat(bank).filk(ilk, "fee",  bytes32(ilkparams.fee));
         Vat(bank).filk(ilk, "line", bytes32(ilkparams.line));
-        Vat(bank).filh(ilk, "liqr", empty, bytes32(ilkparams.liqr));
-        Vat(bank).filh(ilk, "gem", empty, bytes32(bytes20(ilkparams.gem)));
-        Vat(bank).filh(ilk, "src", empty, bytes32(bytes20(address(divider))));
-        Vat(bank).filh(ilk, "tag", empty, gemreftag);
-        Vat(bank).filh(ilk, "pep", empty, bytes32(uint(2)));
-        Vat(bank).filh(ilk, "pop", empty, bytes32(RAY));
+        Vat(bank).filk(ilk, "liqr", bytes32(ilkparams.liqr));
+        Vat(bank).filk(ilk, "src",  bytes32(bytes20(address(divider))));
+        Vat(bank).filk(ilk, "tag",  gemreftag);
+        Vat(bank).filk(ilk, "pep",  bytes32(uint(2)));
+        Vat(bank).filk(ilk, "pop",  bytes32(RAY));
         bytes32 gemusdtag = concat(ilk, ":usd");
         bytes32 gemclatag;
         address gemusdsrc;
@@ -259,29 +233,6 @@ contract Ball is Math, Ward {
                         address(gemusdsrc), gemusdtag,
                         address(cladapt),   XAU_USD_TAG,
                         10 ** (27 - (18 - Gem(ilkparams.gem).decimals())));
-    }
-
-    function makeuni(UniParams calldata ups) external _ward_ {
-        Vat(bank).init(ups.ilk, unihook);
-        Vat(bank).filh(ups.ilk, "room", empty, bytes32(ups.room));
-        Vat(bank).filh(ups.ilk, "wrap", empty, bytes32(bytes20(address(ups.uniwrapper))));
-
-        Vat(bank).filk(ups.ilk, "fee",  bytes32(ups.fee));
-        Vat(bank).filk(ups.ilk, "chop", bytes32(ups.chop));
-        Vat(bank).filk(ups.ilk, "dust", bytes32(ups.dust));
-        Vat(bank).filk(ups.ilk, "line", bytes32(ups.line));
-
-        Vat(bank).filh(ups.ilk, "pep",  empty, bytes32(uint(2)));
-        Vat(bank).filh(ups.ilk, "pop",  empty, bytes32(RAY));
-
-        for (uint i = 0; i < ups.gems.length; i++) {
-            address gem = ups.gems[i];
-            bytes32[] memory idxs = new bytes32[](1);
-            idxs[0] = bytes32(bytes20(gem));
-            Vat(bank).filh(ups.ilk, 'src', idxs, bytes32(bytes20(ups.srcs[i])));
-            Vat(bank).filh(ups.ilk, 'tag', idxs, ups.tags[i]);
-            Vat(bank).filh(ups.ilk, 'liqr', idxs, bytes32(ups.liqrs[i]));
-        }
     }
 
     function approve(address usr) external _ward_ {

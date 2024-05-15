@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.25;
 import 'forge-std/Test.sol';
 
 import { AggregatorInterface } from "../lib/feedbase/src/adapters/ChainlinkAdapter.sol";
@@ -44,7 +44,6 @@ abstract contract BaseHelper is Math, Test, UniSetUp {
 
     uint24  constant public RICO_FEE   = 500;
     uint24  constant public RISK_FEE   = 3000;
-    uint256 constant public HOOK_ROOM  = 8;
     uint256 constant public CL_DEC     = 8;
     uint256 constant public WETH_REF_VAL = 805830286360171930170219164;
     uint256 constant public GOLD_REF_VAL = 1000000000000000000000000000;
@@ -56,7 +55,13 @@ abstract contract BaseHelper is Math, Test, UniSetUp {
     receive () payable external {}
 
     function _ink(bytes32 ilk, address usr) internal view returns (uint) {
-        return abi.decode(Vat(bank).ink(ilk, usr), (uint));
+        Vat.Urn memory urn = Vat(bank).urns(ilk, usr);
+        return urn.ink;
+    }
+
+    function _art(bytes32 ilk, address usr) internal view returns (uint) {
+        Vat.Urn memory urn = Vat(bank).urns(ilk, usr);
+        return urn.art;
     }
 
     function get_rico_sqrtx96(uint par) internal view returns (uint160 sqrt_ratio_x96) {

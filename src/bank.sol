@@ -2,7 +2,7 @@
 
 // Copyright (C) 2021-2024 halys
 
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.25;
 
 import { OwnableInternal, OwnableStorage } from "../lib/solidstate-solidity/contracts/access/OwnableInternal.sol";
 import { Math } from "./mixin/math.sol";
@@ -25,8 +25,11 @@ abstract contract Bank is Math, Flog, Palm, OwnableInternal {
         uint256  rho;  // [sec] Time of last drip
 
         uint256 chop;  // [ray] Liquidation Penalty
+        uint256 liqr;  // [ray] Liquidation Ratio
 
-        address hook;  // [obj] Frob/grab/safe hook
+        Rudd    rudd;  // [obj] feed src,tag
+        Plx     plot;  // [obj] discount exponent and offset
+        Gem     gem;   // this ilk's gem
     }
 
     struct BankStorage {
@@ -34,9 +37,14 @@ abstract contract Bank is Math, Flog, Palm, OwnableInternal {
         Feedbase fb;
     }
 
+    struct Urn {
+        uint256 ink;   // [wad] Locked Collateral
+        uint256 art;   // [wad] Normalised Debt
+    }
+
     struct VatStorage {
-        mapping (bytes32 => Ilk) ilks;                          // collaterals
-        mapping (bytes32 => mapping (address => uint256)) urns; // CDPs
+        mapping (bytes32 => Ilk) ilks; // collaterals
+        mapping (bytes32 => mapping (address => Urn )) urns; // CDPs
         uint256 joy;   // [wad]
         uint256 sin;   // [rad]
         uint256 rest;  // [rad] Debt remainder

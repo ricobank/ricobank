@@ -18,16 +18,15 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.25;
 
-import { Bank } from "./bank.sol";
-import { Hook } from "./hook/hook.sol";
+import { Bank, Gem } from "./bank.sol";
 
 contract Vat is Bank {
     function ilks(bytes32 i) external view returns (Ilk memory) {
         return getVatStorage().ilks[i];
     }
-    function urns(bytes32 i, address u) external view returns (uint) {
+    function urns(bytes32 i, address u) external view returns (Urn memory) {
         return getVatStorage().urns[i][u];
     }
     function joy()  external view returns (uint) {return getVatStorage().joy;}
@@ -36,50 +35,59 @@ contract Vat is Bank {
     function debt() external view returns (uint) {return getVatStorage().debt;}
     function ceil() external view returns (uint) {return getVatStorage().ceil;}
     function par()  external view returns (uint) {return getVatStorage().par;}
-    function ink(bytes32 i, address u) external view returns (bytes memory) {
-        return abi.decode(_hookview(i, abi.encodeWithSelector(
-            Hook.ink.selector, i, u
-        )), (bytes));
-    }
-    function MINT() external pure returns (uint) {return _MINT;}
     function FEE_MAX() external pure returns (uint) {return _FEE_MAX;}
 
     enum Spot {Sunk, Iffy, Safe}
 
-    uint256 constant _MINT    = 2 ** 128;
     uint256 constant _FEE_MAX = 1000000072964521287979890107; // ~10x/yr
 
-    error ErrIlkInit();
-    error ErrNotSafe();
-    error ErrUrnDust();
     error ErrDebtCeil();
+    error ErrIlkInit();
     error ErrMultiIlk();
-    error ErrHookData();
+    error ErrNotSafe();
     error ErrSafeBail();
-    error ErrHookCallerNotBank();
-    error ErrNoHook();
+    error ErrTransfer();
+    error ErrUrnDust();
 
-    function init(bytes32 ilk, address hook)
+    function init(bytes32 ilk, address gem)
       external payable onlyOwner _flog_
     {
         VatStorage storage vs = getVatStorage();
         if (vs.ilks[ilk].rack != 0) revert ErrMultiIlk();
         vs.ilks[ilk] = Ilk({
-            rack: RAY,
-            fee : RAY,
-            hook: hook,
-            rho : block.timestamp,
             tart: 0,
-            chop: 0, line: 0, dust: 0
+            rack: RAY,
+            line: 0,
+            dust: 0,
+            fee : RAY,
+            rho : block.timestamp,
+            chop: 0,
+            liqr: RAY,
+            rudd: Rudd({
+                src: address(0),
+                tag: bytes32(0)
+            }),
+            plot: Plx({
+                pep: 0,
+                pop: 0,
+                pup: 0
+            }),
+            gem: Gem(gem)
         });
-        emit NewPalm1("rack", ilk, bytes32(RAY));
-        emit NewPalm1("fee",  ilk, bytes32(RAY));
-        emit NewPalm1("hook", ilk, bytes32(bytes20(hook)));
-        emit NewPalm1("rho",  ilk, bytes32(block.timestamp));
         emit NewPalm1("tart", ilk, bytes32(uint(0)));
-        emit NewPalm1("chop", ilk, bytes32(uint(0)));
+        emit NewPalm1("rack", ilk, bytes32(RAY));
         emit NewPalm1("line", ilk, bytes32(uint(0)));
         emit NewPalm1("dust", ilk, bytes32(uint(0)));
+        emit NewPalm1("fee",  ilk, bytes32(RAY));
+        emit NewPalm1("rho",  ilk, bytes32(block.timestamp));
+        emit NewPalm1("chop", ilk, bytes32(uint(0)));
+        emit NewPalm1("liqr", ilk, bytes32(RAY));
+        emit NewPalm1("src",  ilk, bytes32(0));
+        emit NewPalm1("tag",  ilk, bytes32(0));
+        emit NewPalm1("pep",  ilk, bytes32(0));
+        emit NewPalm1("pop",  ilk, bytes32(0));
+        emit NewPalm1("pup",  ilk, bytes32(0));
+        emit NewPalm1("gem",  ilk, bytes32(bytes20(gem)));
     }
 
     function safe(bytes32 i, address u)
@@ -87,13 +95,14 @@ contract Vat is Bank {
     {
         VatStorage storage vs = getVatStorage();
         Ilk storage ilk = vs.ilks[i];
-        bytes memory data = _hookview(i, abi.encodeWithSelector(
-            Hook.safehook.selector, i, u
-        ));
-        if (data.length != 96) revert ErrHookData();
- 
-        (uint tot, uint cut, uint ttl) = abi.decode(data, (uint, uint, uint));
-        uint art = vs.urns[i][u];
+        Urn storage urn = vs.urns[i][u];
+        uint ink = urn.ink;
+        uint art = urn.art;
+
+        (bytes32 val, uint ttl) = getBankStorage().fb.pull(ilk.rudd.src, ilk.rudd.tag);
+        uint tot = uint(val) * ink;
+        uint cut = uint(val) * rdiv(ink, ilk.liqr);
+
         if (art == 0) return (Spot.Safe, RAY, tot);
         if (block.timestamp > ttl) return (Spot.Iffy, 0, tot);
 
@@ -112,21 +121,22 @@ contract Vat is Bank {
     // modify CDP
     // locked with bail to make individual urn manipulations atomic
     // e.g. avoid making the urn safe in the middle of an unsafe borrow
-    function frob(bytes32 i, address u, bytes calldata dink, int dart)
+    function frob(bytes32 i, address u, int dink, int dart)
       external payable _flog_ _lock_
     {
         VatStorage storage vs = getVatStorage();
         Ilk storage ilk = vs.ilks[i];
+        Urn storage urn = vs.urns[i][u];
 
         uint rack = _drip(i);
 
         // modify normalized debt
-        uint256 art   = add(vs.urns[i][u], dart);
-        vs.urns[i][u] = art;
+        uint256 art = add(urn.art, dart);
+        urn.art     = art;
         emit NewPalm2("art", i, bytes32(bytes20(u)), bytes32(art));
 
         // keep track of total so it denorm doesn't exceed line
-        ilk.tart      = add(ilk.tart, dart);
+        ilk.tart    = add(ilk.tart, dart);
         emit NewPalm1("tart", i, bytes32(ilk.tart));
 
         uint _debt;
@@ -161,17 +171,31 @@ contract Vat is Bank {
             }
         }
 
-        // safer if less/same art and more/same ink
-        Hook.FHParams memory p = Hook.FHParams(msg.sender, i, u, dink, dart);
-        bytes memory data      = _hookcall(
-            i, abi.encodeWithSelector(Hook.frobhook.selector, p)
-        );
-        if (data.length != 32) revert ErrHookData();
+        // update balance before transferring tokens
+        uint ink = add(urn.ink, dink);
+        urn.ink = ink;
+        emit NewPalm2("ink", i, bytes32(bytes20(u)), bytes32(ink));
 
-        // urn is safer, or it is safe
-        if (!abi.decode(data, (bool))) {
-            (Spot spot,,) = safe(i, u);
-            if (spot != Spot.Safe) revert ErrNotSafe();
+        if (dink > 0) {
+            // pull tokens from sender
+            if (!ilk.gem.transferFrom(msg.sender, address(this), uint(dink))) {
+                revert ErrTransfer();
+            }
+        } else if (dink < 0) {
+            // return tokens to urn holder
+            if (!ilk.gem.transfer(u, uint(-dink))) {
+                revert ErrTransfer();
+            }
+        }
+
+        {
+            // urn is safer, or it is safe
+            bool safer = dink >= 0 && dart <= 0;
+            if (!safer) {
+                (Spot spot,,) = safe(i, u);
+                if (u != msg.sender)   revert ErrWrongUrn();
+                if (spot != Spot.Safe) revert ErrNotSafe();
+            }
         }
 
         // urn has no debt, or a non-dusty amount
@@ -188,10 +212,10 @@ contract Vat is Bank {
     // locked with frob to make individual urn manipulations atomic
     // e.g. avoid making the urn safe in the middle of a liquidation
     function bail(bytes32 i, address u)
-      external payable _flog_ _lock_ returns (bytes memory)
+      external payable _flog_ _lock_ returns (uint sell)
     {
         uint rack = _drip(i);
-        uint deal; uint tot;
+        uint deal; uint tot; uint dtab;
         {
             Spot spot;
             (spot, deal, tot) = safe(i, u);
@@ -199,16 +223,17 @@ contract Vat is Bank {
         }
         VatStorage storage vs = getVatStorage();
         Ilk storage ilk = vs.ilks[i];
+        Urn storage urn = vs.urns[i][u];
 
-        uint art = vs.urns[i][u];
-        delete vs.urns[i][u];
-        emit NewPalm2("art", i, bytes32(bytes20(u)), bytes32(uint(0)));
+        {
+            uint art = urn.art;
+            urn.art = 0;
+            emit NewPalm2("art", i, bytes32(bytes20(u)), bytes32(uint(0)));
 
-        // bill is the debt hook will attempt to cover when auctioning ink
-        uint dtab = art * rack;
-        uint bill = rmul(ilk.chop, dtab / RAY);
+            dtab = art * rack;
+            ilk.tart -= art;
+        }
 
-        ilk.tart -= art;
         emit NewPalm1("tart", i, bytes32(ilk.tart));
 
         // chill if surplus exceeds deficit
@@ -219,20 +244,56 @@ contract Vat is Bank {
         emit NewPalm0("sin", bytes32(vs.sin));
 
         // ink auction
-        Hook.BHParams memory p = Hook.BHParams(
-            i, u, bill, dtab / RAY, msg.sender, deal, tot
-        );
-        bytes memory res = abi.decode(_hookcall(
-            i, abi.encodeWithSelector(Hook.bailhook.selector, p)
-        ), (bytes));
+        uint mash = rmash(deal, ilk.plot.pep, ilk.plot.pop, ilk.plot.pup);
+        uint earn = rmul(tot / RAY, mash);
+
+        {
+            // bill is the debt to attempt to cover when auctioning ink
+            uint bill = rmul(ilk.chop, dtab / RAY);
+            // clamp `sell` so bank only gets enough to underwrite urn.
+            if (earn > bill) {
+                sell = (urn.ink * bill) / earn;
+                earn = bill;
+            } else {
+                sell = urn.ink;
+            }
+        }
+        vsync(i, earn, dtab / RAY);
+
+        // update collateral balance
+        unchecked {
+            uint _ink = urn.ink -= sell;
+            emit NewPalm2("ink", i, bytes32(bytes20(u)), bytes32(_ink));
+        }
+
+        // trade collateral with keeper for rico
+        getBankStorage().rico.burn(msg.sender, earn);
+        if (!ilk.gem.transfer(msg.sender, sell)) revert ErrTransfer();
 
         // when switching from surplus to potential deficit, reset vow auction
         if (chill && vs.sin / RAY > vs.joy) {
             getVowStorage().ramp.bel = block.timestamp;
             emit NewPalm0("bel", bytes32(block.timestamp));
         }
+    }
 
-        return res;
+    // Update joy and possibly line. Workaround for stack too deep
+    function vsync(bytes32 i, uint earn, uint owed) internal {
+        VatStorage storage vs = getVatStorage();
+
+        if (earn < owed) {
+            // drop line value for this ilk as precaution
+            uint prev = vs.ilks[i].line;
+            uint loss = RAY * (owed - earn);
+            uint next = loss > prev ? 0 : prev - loss;
+            vs.ilks[i].line = next;
+            emit NewPalm1("line", i, bytes32(next));
+        }
+
+        // update joy to help cancel out sin
+        uint mood = vs.joy + earn;
+        vs.joy = mood;
+        emit NewPalm0("joy", bytes32(mood));
     }
 
     function drip(bytes32 i) external payable _flog_ { _drip(i); }
@@ -282,7 +343,15 @@ contract Vat is Bank {
         Ilk storage i = vs.ilks[ilk];
                if (key == "line") { i.line = _val;
         } else if (key == "dust") { i.dust = _val;
-        } else if (key == "hook") { i.hook = address(bytes20(val));
+        } else if (key == "gem")  { i.gem = Gem(address(bytes20(val)));
+        } else if (key == "src")  { i.rudd.src = address(bytes20(val));
+        } else if (key == "tag")  { i.rudd.tag = val;
+        } else if (key == "pep")  { i.plot.pep = _val;
+        } else if (key == "pop")  { i.plot.pop = _val;
+        } else if (key == "pup")  { i.plot.pup = int(_val);
+        } else if (key == "liqr") {
+            must(_val, RAY, type(uint).max);
+            i.liqr = _val;
         } else if (key == "chop") {
             must(_val, RAY, 10 * RAY);
             i.chop = _val;
@@ -294,52 +363,17 @@ contract Vat is Bank {
         emit NewPalm1(key, ilk, bytes32(val));
     }
 
-    // delegatecall the ilk's hook
-    function _hookcall(bytes32 i, bytes memory indata)
-      internal returns (bytes memory outdata) {
-        // call will succeed if nonzero hook has no code (i.e. EOA)
-        address hook = getVatStorage().ilks[i].hook;
-        if (hook == address(0)) revert ErrNoHook();
-
-        bool ok;
-        (ok, outdata) = hook.delegatecall(indata);
-        if (!ok) bubble(outdata);
-    }
-
-    // similar to _hookcall, but uses staticcall to avoid modifying state
-    // can't delegatecall within a view function
-    // so, _hookview calls hookcallext instead, which delegatecalls _hookcall
-    function _hookview(bytes32 i, bytes memory indata)
-      internal view returns (bytes memory outdata) {
-        bool ok;
-        (ok, outdata) = address(this).staticcall(
-            abi.encodeWithSelector(Vat.hookcallext.selector, i, indata)
-        );
-        if (!ok) bubble(outdata);
-        outdata = abi.decode(outdata, (bytes));
-    }
-
-    // helps caller call hook functions without delegatecall
-    function hookcallext(bytes32 i, bytes memory indata)
-      external payable returns (bytes memory) {
-        if (msg.sender != address(this)) revert ErrHookCallerNotBank();
-        return _hookcall(i, indata);
-    }
-
-    function filh(bytes32 ilk, bytes32 key, bytes32[] calldata xs, bytes32 val)
-      external payable onlyOwner _flog_ {
-        _hookcall(ilk, abi.encodeWithSignature(
-            "file(bytes32,bytes32,bytes32[],bytes32)", key, ilk, xs, val
-        ));
-    }
-
-    function geth(bytes32 ilk, bytes32 key, bytes32[] calldata xs)
+    function get(bytes32 ilk, bytes32 key)
       external view returns (bytes32) {
-        return abi.decode(
-            _hookview(ilk, abi.encodeWithSignature(
-                "get(bytes32,bytes32,bytes32[])", key, ilk, xs
-            )), (bytes32)
-        );
+        VatStorage storage vs = getVatStorage();
+        Ilk storage i = vs.ilks[ilk];
+               if (key == "gem")  { return bytes32(bytes20(address(i.gem)));
+        } else if (key == "src")  { return bytes32(bytes20(i.rudd.src));
+        } else if (key == "tag")  { return i.rudd.tag;
+        } else if (key == "liqr") { return bytes32(i.liqr);
+        } else if (key == "pep")  { return bytes32(i.plot.pep);
+        } else if (key == "pop")  { return bytes32(i.plot.pop);
+        } else if (key == "pup")  { return bytes32(uint(i.plot.pup));
+        } else { revert ErrWrongKey(); }
     }
-
 }

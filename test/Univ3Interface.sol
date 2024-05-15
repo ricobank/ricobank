@@ -5,7 +5,7 @@
 //   UniswapV3 periphery https://github.com/Uniswap/v3-periphery
 //   UniswapV3 core https://github.com/Uniswap/v3-core
 
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.25;
 
 import { Ward } from '../lib/feedbase/src/mixin/ward.sol';
 

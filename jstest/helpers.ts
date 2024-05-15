@@ -7,7 +7,6 @@ export { snapshot, revert, send, wad, ray, rad, apy, N, BANKYEAR, WAD, RAY, RAD,
 
 const debug = require('debug')('rico:test')
 const ramp_members = ['bel', 'cel', 'rel', 'wel']
-export const ADDRZERO = '0x' + '00'.repeat(20)
 
 export function b32 (arg: any): Uint8Array {
   if (arg._isBigNumber) {
