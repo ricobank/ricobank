@@ -140,11 +140,9 @@ task('deploy-ricobank', '')
         uniadaptttl:   BN.from(settings.uniadaptttl),
         daiusdttl:  BN.from(settings.daiusdttl),
         xauusdttl:  BN.from(settings.xauusdttl),
-        mintramp:   {
+        ramp:   {
             bel: (await ethers.provider.getBlock('latest')).timestamp,
-            cel: BN.from(settings.mintramp.cel),
-            rel: ray(settings.mintramp.rel).div(BANKYEAR),
-            wel: ray(settings.mintramp.wel)
+            wel: ray(settings.ramp.wel)
         },
     }
 

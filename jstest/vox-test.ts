@@ -148,13 +148,13 @@ describe('Vox', () => {
     })
 
     it('deploy gas', async () => {
-      await check(ethers.BigNumber.from(deploygas), 38290721)
+      await check(ethers.BigNumber.from(deploygas), 37820006)
     })
 
     it('frob cold gas', async () => {
       let dink = ethers.utils.solidityPack(['int'], [wad(5)])
       let gas = await bank.estimateGas.frob(b32('weth'), ALI, dink, wad(2))
-      await check(gas, 325664, 325840)
+      await check(gas, 324836, 325840)
     })
 
     it('frob hot gas', async () => {
@@ -165,7 +165,7 @@ describe('Vox', () => {
       let gas = await bank.estimateGas.frob(
         b32('weth'), ALI, ethers.utils.solidityPack(['int'], [wad(5)]), wad(2)
       )
-      await check(gas, 171735)
+      await check(gas, 170888)
     })
 
     it('bail gas', async () => {
@@ -174,7 +174,7 @@ describe('Vox', () => {
 
       await send(fb.push, b32('weth:ref'), bn2b32(ray(0.1)), constants.MaxUint256)
       let gas = await bank.estimateGas.bail(b32('weth'), ALI)
-      await check(gas, 226171)
+      await check(gas, 217694)
     })
 
     it('keep surplus gas', async () => {
@@ -192,24 +192,14 @@ describe('Vox', () => {
       await send(bank.file, b32('dam'), bn2b32(ray(1).div(wad(1))))
       await send(bank.file, b32('bel'), bn2b32(ethers.BigNumber.from(timestamp)))
       let gas = await bank.estimateGas.keep([])
-      await check(gas, 109339)
-    })
-
-    it('keep deficit gas', async() => {
-      let dink = ethers.utils.solidityPack(['int'], [wad(5)])
-      await send(bank.frob, b32('weth'), ALI, dink, wad(2))
-      await send(fb.push, b32('weth:ref'), bn2b32(ray(0.1)), constants.MaxUint256)
-      await send(bank.bail, b32('weth'), ALI)
-
-      let gas = await bank.estimateGas.keep([])
-      await check(gas, 116501)
+      await check(gas, 109328)
     })
 
     it('poke up gas', async () => {
       await mine(hh, 100)
       await send(fb.push, TAG, bn2b32(ray(0.5)), constants.MaxUint256)
       let gas = await bank.estimateGas.poke()
-      await check(gas, 68616, 69450)
+      await check(gas, 73341)
     })
 
     it('poke down gas', async () => {
