@@ -139,7 +139,7 @@ contract BallTest is BaseHelper {
             BANKYEAR * 100,
             BANKYEAR, // daiusd
             BANKYEAR, // xauusd
-            Bank.Ramp(block.timestamp, 1, RAY / BLN, RAY)
+            Bank.Ramp(block.timestamp, RAY)
         );
 
         Ball ball = new Ball(bargs);
@@ -216,13 +216,6 @@ contract BallTest is BaseHelper {
         assertGt(pre_risk_sup,  aft_risk_sup);
     }
 
-    modifier _flop_after_ {
-        _;
-        set_dxm('dom', RAY);
-        vm.expectCall(risk, abi.encodePacked(Gem(risk).mint.selector));
-        Vow(bank).keep(ilks);
-    }
-
     modifier _balanced_after_ {
         _;
         // should not be any auctions
@@ -265,35 +258,6 @@ contract BallTest is BaseHelper {
         Vat(bank).frob(wilk, self, int(wethamt), safedart);
         vm.expectRevert(Vat.ErrNotSafe.selector);
         Vat(bank).frob(wilk, self, int(0), safedart);
-    }
-
-    function test_fee_bail_flop() public _flop_after_ {
-        // make the urn unsafe by accumulating
-        Vat(bank).frob(wilk, self, int(wethamt), safedart);
-
-        // can't bail, not enough fees accumulated
-        vm.expectRevert(Vat.ErrSafeBail.selector);
-        Vat(bank).bail(wilk, self);
-
-        // make the urn unsafe by accumulating a bunch of fees
-        skip(BANKYEAR * 100);
-
-        // revert bc feed data old
-        vm.expectRevert(Vat.ErrSafeBail.selector);
-        Vat(bank).bail(wilk, self);
-
-        // keep accumulates fees and flaps
-        look_poke();
-        set_dxm('dam', RAY);
-        vm.expectCall(rico, abi.encodePacked(Gem.mint.selector));
-        Vow(bank).keep(single(wilk));
-
-        // shouldn't have enough to cover all the debt
-        // so regardless of previous flap, should leave some deficit
-        uint meweth = WethLike(WETH).balanceOf(self);
-        Gem(rico).mint(self, 1000000 * WAD);
-        Vat(bank).bail(wilk, self);
-        assertGt(WethLike(WETH).balanceOf(self), meweth);
     }
 
     // frob, then flap (with wel == 100%), and check balanced
@@ -382,41 +346,6 @@ contract BallTest is BaseHelper {
         Vat(bank).filk(gilk, 'fee', bytes32(fee_max + 1));
     }
 
-    function test_bounds_rel() public {
-        File(bank).file('rel', bytes32(0));
-
-        uint rel_max = File(bank).REL_MAX();
-        vm.expectRevert(Bank.ErrBound.selector);
-        File(bank).file('rel', bytes32(rel_max + 1));
-        File(bank).file('rel', bytes32(rel_max));
-
-        File(bank).file('cel', bytes32(UINT256_MAX));
-        set_dxm('dom', 1);
-
-        Vat(bank).filk(wilk, 'src', bytes32(bytes20(fsrc)));
-        vm.prank(fsrc);
-        fb.push(WETH_REF_TAG, bytes32(2 * init_par), UINT256_MAX);
-
-        Vat(bank).frob(wilk, self, int(WAD), int(WAD));
-
-        // prank a low but nonzero risk:rico price so no reflop error
-        vm.startPrank(fsrc);
-        fb.push(WETH_REF_TAG, bytes32(uint(0)), UINT256_MAX);
-        vm.stopPrank();
-
-        // create some sin
-        Vat(bank).bail(wilk, self);
-
-        uint wait = BANKYEAR - (block.timestamp - Vow(bank).ramp().bel);
-        skip(wait);
-
-        uint supply_pre = Gem(risk).totalSupply();
-        Vow(bank).keep(empty);
-        // 100 because rel, and 101 because of supply already there
-        assertLt(Gem(risk).totalSupply(), supply_pre * 101);
-        assertGt(Gem(risk).totalSupply(), supply_pre * 100);
-    }
-
     function test_bounds_2() public {
         File(bank).file('way', bytes32(RAY));
         File(bank).file('wel', bytes32(0));
@@ -460,14 +389,10 @@ contract BallTest is BaseHelper {
         assertClose(Vat(bank).par(), 10 * init_par, 10000000000);
 
         File(bank).file('dam', 0);
-        File(bank).file('dom', 0);
         File(bank).file('dam', bytes32(RAY));
-        File(bank).file('dom', bytes32(RAY));
 
         vm.expectRevert(Bank.ErrBound.selector);
         File(bank).file('dam', bytes32(RAY + 1));
-        vm.expectRevert(Bank.ErrBound.selector);
-        File(bank).file('dom', bytes32(RAY + 1));
     }
 
 }

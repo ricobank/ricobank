@@ -7,16 +7,13 @@ pragma solidity ^0.8.25;
 import { Vat }  from "./vat.sol";
 import { Bank, Gem } from "./bank.sol";
 
-// total system profit/loss balancing mechanism
-// triggers surplus (flap), and deficit (flop) auctions
+// total system profit balancing mechanism
+// triggers surplus (flap) auctions
 contract Vow is Bank {
     function RISK() external view returns (Gem) {return getVowStorage().risk;}
-    function ramp() external view returns (Ramp memory) {
-        return getVowStorage().ramp;
-    }
     function loot() external view returns (uint) { return getVowStorage().loot; }
+    function ramp() external view returns (Ramp memory) { return getVowStorage().ramp; }
     function dam() external view returns (uint) { return getVowStorage().dam; }
-    function dom() external view returns (uint) { return getVowStorage().dom; }
     function pex() external pure returns (uint) { return _pex; }
     uint constant public _pex = RAY * WAD;
 
@@ -68,48 +65,6 @@ contract Vow is Bank {
 
             vowS.ramp.bel = block.timestamp;
             emit NewPalm0("bel", bytes32(block.timestamp));
-
-        } else if (sin > joy) {
-
-            // mint-and-sell risk to cover `under`
-            uint under = sin - joy;
-
-            // pay down as much sin as possible
-            if (joy > 1) {
-                // gas - don't zero joy
-                joy = _heal(joy - 1);
-            }
-
-            // price decreases with time
-            uint elapsed = block.timestamp - vowS.ramp.bel;
-            uint price   = grow(_pex, vowS.dom, elapsed);
-
-            // rate-limit flop
-            uint charge = min(elapsed, vowS.ramp.cel);
-            uint flop   = charge * rmul(vowS.ramp.rel, risk.totalSupply());
-            if (0 == flop) revert ErrReflop();
-
-            // swap RISK for rico to cover sin
-            uint earn = rmul(flop, price);
-            uint bel  = block.timestamp;
-            if (earn > under) {
-                // always advances >= 1s from max(vowS.bel, timestamp - cel)
-                bel  -= wmul(charge, WAD - wdiv(under, earn));
-                flop  = (flop * under) / earn;
-                earn  = under;
-            }
-
-            // update last flop stamp
-            vowS.ramp.bel = bel;
-            emit NewPalm0("bel", bytes32(bel));
-
-            Gem(rico).burn(msg.sender, earn);
-            Gem(risk).mint(msg.sender, flop);
-
-            // new joy will heal some sin in next flop
-            joy     += earn;
-            vatS.joy = joy;
-            emit NewPalm0("joy", bytes32(joy));
 
         }
 

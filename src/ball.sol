@@ -70,7 +70,7 @@ contract Ball is Math, Ward {
         uint256 uniadaptttl;
         uint256 daiusdttl;
         uint256 xauusdttl;
-        Vow.Ramp mintramp;
+        Vow.Ramp ramp;
     }
 
     address public rico;
@@ -109,7 +109,7 @@ contract Ball is Math, Ward {
         IDiamondCuttable.FacetCut[] memory facetCuts = new IDiamondCuttable.FacetCut[](4);
         bytes4[] memory filesels = new bytes4[](5);
         bytes4[] memory vatsels  = new bytes4[](16);
-        bytes4[] memory vowsels  = new bytes4[](7);
+        bytes4[] memory vowsels  = new bytes4[](6);
         bytes4[] memory voxsels  = new bytes4[](6);
         File fbank = File(bank);
 
@@ -136,11 +136,10 @@ contract Ball is Math, Ward {
         vatsels[15] = Vat.get.selector;
         vowsels[0]  = Vow.keep.selector;
         vowsels[1]  = Vow.RISK.selector;
-        vowsels[2]  = Vow.ramp.selector;
-        vowsels[3]  = Vow.loot.selector;
-        vowsels[4]  = Vow.dam.selector;
-        vowsels[5]  = Vow.dom.selector;
-        vowsels[6]  = Vow.pex.selector;
+        vowsels[2]  = Vow.loot.selector;
+        vowsels[3]  = Vow.dam.selector;
+        vowsels[4]  = Vow.pex.selector;
+        vowsels[5]  = Vow.ramp.selector;
         voxsels[0]  = Vox.poke.selector;
         voxsels[1]  = Vox.way.selector;
         voxsels[2]  = Vox.how.selector;
@@ -163,12 +162,9 @@ contract Ball is Math, Ward {
         fbank.file("ceil", bytes32(args.ceil));
 
         fbank.file("dam", bytes32(RAY));
-        fbank.file("dom", bytes32(RAY));
 
-        fbank.file("bel", bytes32(args.mintramp.bel));
-        fbank.file("cel", bytes32(args.mintramp.cel));
-        fbank.file("rel", bytes32(args.mintramp.rel));
-        fbank.file("wel", bytes32(args.mintramp.wel));
+        fbank.file("bel", bytes32(block.timestamp));
+        fbank.file("wel", bytes32(args.ramp.wel));
 
         fbank.file("loot", bytes32(RAY));
 

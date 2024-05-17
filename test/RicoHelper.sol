@@ -201,7 +201,7 @@ abstract contract RicoSetUp is BaseHelper {
             BANKYEAR / 4,
             BANKYEAR, // daiusd
             BANKYEAR, // xauusd
-            Bank.Ramp(block.timestamp, 1, RAY / BLN, RAY)
+            Bank.Ramp(block.timestamp, RAY)
         );
 
         ball = new Ball(bargs);

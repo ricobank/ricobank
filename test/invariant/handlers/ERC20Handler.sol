@@ -247,11 +247,6 @@ contract ERC20Handler is Test, Local, RicoSetUp {
     }
 
     function norev_keep(uint256 actorSeed) public _larp_(actorSeed) {
-        Bank.Ramp memory ramp = Vow(bank).ramp();
-        bool will_flop = (Vat(bank).sin() / RAY) > Vat(bank).joy();
-
-        if (will_flop && block.timestamp == ramp.bel) return;
-
         Vow(bank).keep(ilks);
     }
 

@@ -356,4 +356,28 @@ contract VoxTest is Test, RicoSetUp {
         assertClose(incr, RAY * 100 / 101, 100000);
     }
 
+    function test_tick_down_on_deficit() public _orig_ {
+        // mar < par, but deficit
+        force_fees(WAD);
+        force_sin(Vat(bank).joy() * RAY + RAD);
+        feedpush(rutag, 0, UINT256_MAX);
+
+        skip(100);
+        uint way0 = Vox(bank).way();
+        Vox(bank).poke();
+        assertLt(Vox(bank).way(), way0);
+
+        skip(100);
+        force_sin((Vat(bank).joy() + 1) * RAY);
+        way0 = Vox(bank).way();
+        Vox(bank).poke();
+        assertLt(Vox(bank).way(), way0);
+
+        skip(100);
+        force_sin(Vat(bank).joy() * RAY);
+        way0 = Vox(bank).way();
+        Vox(bank).poke();
+        assertGt(Vox(bank).way(), way0);
+    }
+
 }

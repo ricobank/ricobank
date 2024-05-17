@@ -56,13 +56,15 @@ contract Vox is Bank {
         (bytes32 mar, uint ttl) = getBankStorage().fb.pull(voxS.tip.src, voxS.tip.tag);
         if (block.timestamp > ttl) { return; }
 
-        // raise the price rate (way) when mar < par, lower when mar > par
-        // this is how mar tracks par
-        if (uint(mar) < par_) {
-            way_ = min(voxS.cap, grow(way_, voxS.how, dt));
-        } else if (uint(mar) > par_) {
+        // lower the price rate (way) when mar > par or system is in deficit
+        // raise the price rate when mar < par
+        // this is how mar tracks par and rcs pays down deficits
+        if (uint(mar) > par_ || vatS.joy < vatS.sin / RAY) {
             way_ = max(rinv(voxS.cap), grow(way_, rinv(voxS.how), dt));
+        } else if (uint(mar) < par_) {
+            way_ = min(voxS.cap, grow(way_, voxS.how, dt));
         }
+
         voxS.way = way_;
         emit NewPalm0("way", bytes32(way_));
     }

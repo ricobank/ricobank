@@ -80,7 +80,6 @@ contract DssJsTest is Test, RicoSetUp {
 
         // mint ramp has been charging for 1s
         File(bank).file('bel', bytes32(block.timestamp - 1));
-        File(bank).file('cel', bytes32(uint(1)));
     }
 
 }
@@ -367,12 +366,12 @@ contract DssBiteTest is DssVatTest {
         assertGt(_ink(gilk, self), 0);
         assertLt(gold.balanceOf(address(guy)), 40 * WAD);
 
+        // difference from dss: no flops; keep just does nothing on deficit
         skip(1);
         prepguyrico(550 * WAD, true);
         int surp_0 = _surp();
-        set_dxm('dom', RAY);
         guy.keep(single(gilk));
-        assertGt(_surp(), surp_0);
+        assertEq(_surp(), surp_0);
     }
 
     // test_partial_litterbox
@@ -663,56 +662,15 @@ contract DssVowTest is DssJsTest {
     function _vow_setUp() internal {
         gold.mint(self, 10000 * WAD);
         gold.approve(bank, UINT256_MAX);
-        File(bank).file('rel', bytes32(RAY / BLN));
         File(bank).file('bel', bytes32(block.timestamp));
-        File(bank).file('cel', bytes32(uint(1)));
     }
     modifier _vow_ { _vow_setUp(); _; }
 
     // test_flog_wait
     //   N/A no vow.wait in rico
 
-    function test_no_reflop() public _vow_ {
-        uint amt = WAD / 100;
-        File(bank).file('rel', bytes32(RAY / BLN));
-        File(bank).file('bel', bytes32(block.timestamp));
-        File(bank).file('cel', bytes32(uint(1)));
-        skip(1);
-
-        // frob some, bail but don't glug
-        Vat(bank).frob(gilk, self, int(amt), int(amt));
-        feedpush(grtag, bytes32(0), UINT256_MAX);
-        Vat(bank).bail(gilk, self); // lots of debt
-
-        // keep, should be a flop
-        set_dxm('dom', RAY);
-        uint rs1 = risk.totalSupply();
-        vm.expectCall(address(rico), abi.encodePacked(Gem.burn.selector));
-        Vow(bank).keep(single(gilk));
-        uint rs2 = risk.totalSupply();
-        assertGt(rs2, rs1);
-
-        // try to reflop
-        vm.expectRevert(Vow.ErrReflop.selector);
-        Vow(bank).keep(single(gilk));
-
-        // create a surplus
-        Vat(bank).drip(gilk);
-        Vat(bank).filk(gilk, 'fee',  bytes32(Vat(bank).FEE_MAX()));
-        Vat(bank).filk(gilk, 'line', bytes32(10_000 * RAD));
-        rico_mint(1000 * WAD, false);
-        skip(BANKYEAR);
-
-        // get ready to call keep
-        set_dxm('dam', RAY / 10);
-        risk.mint(self, 10000 * WAD);
-
-        // should be a flap this time
-        uint sr1 = rico.balanceOf(self);
-        Vow(bank).keep(single(gilk));
-        uint sr2 = rico.balanceOf(self);
-        assertGt(sr2, sr1); // flap, not flop
-    }
+    // test_no_reflop
+    //   N/A no flop
 
     function test_flap_1() public _vow_ {
         risk.mint(self, 10000 * WAD);
@@ -743,36 +701,8 @@ contract DssVowTest is DssJsTest {
     //   N/A keep can flap while there's a pending flop auction if a surplus is generated
     //   uses ramps to rate limit both
 
-    function test_no_surplus_after_good_flop() public _vow_ {
-        File(bank).file('rel', bytes32(File(bank).REL_MAX()));
-        File(bank).file('bel', bytes32(block.timestamp));
-        File(bank).file('cel', bytes32(uint(1)));
-
-        Vat(bank).filk(gilk, 'fee', bytes32(Vat(bank).FEE_MAX()));
-        Vat(bank).frob(gilk, self, int(WAD), int(WAD));
-        feedpush(grtag, bytes32(0), UINT256_MAX); // now unsafe
-        
-        // accrue some interest so vat has some joy
-        skip(1);
-        Vat(bank).drip(gilk);
-        
-        Vat(bank).bail(gilk, self); // lots of debt
-
-        // keep should mint a bunch of risk, plenty to cover sin
-        skip(1);
-        Vat(bank).drip(gilk); // drip before rico_mint to avoid accumulating fees
-        rico_mint(200 * WAD, false);
-        uint self_rico1 = rico.balanceOf(self);
-        Vow(bank).keep(empty);
-        uint self_rico2 = rico.balanceOf(self);
-
-        // should have lost some rico to risk sale +1 extra for rounding
-        uint banks_expected_rico = self_rico1 - self_rico2 + 1;
-        assertEq(Vat(bank).joy(), banks_expected_rico);
-
-        // should be balanced now, since the sale was clipped
-        assertEq(Vat(bank).joy(), Vat(bank).sin() / RAY);
-    }
+    // test_no_surplus_after_good_flop
+    //   N/A no flop
 
     // test_multiple_flop_dents
     //   N/A no standing auction mechanism, no dent, trades through AMM

@@ -34,8 +34,7 @@ contract IntegrationTest is Test, RicoSetUp {
         Vat(bank).bail(gilk, self);
         check_integrity();
 
-        // system is in deficit, flop
-        set_dxm('dom', RAY);
+        // system is in deficit, do nothing
         Vow(bank).keep(single(gilk));
         check_integrity();
     }
@@ -95,15 +94,14 @@ contract IntegrationTest is Test, RicoSetUp {
         uint risk_sup0 = risk.totalSupply();
         uint joy0 = Vat(bank).joy();
 
-        // joy should increase, because keeper is paying rico for risk
-        set_dxm('dom', RAY);
+        // no change in deficit, keep does nothing
         Vow(bank).keep(single(gilk));
 
         uint rico_sup1 = rico.totalSupply();
         uint risk_sup1 = risk.totalSupply();
         uint joy1 = Vat(bank).joy();
-        assertGt(joy1, joy0);
-        assertGt(risk_sup1, risk_sup0);
-        assertLt(rico_sup1, rico_sup0);
+        assertEq(joy1, joy0);
+        assertEq(risk_sup1, risk_sup0);
+        assertEq(rico_sup1, rico_sup0);
     }
 }

@@ -57,11 +57,9 @@ abstract contract Bank is Math, Flog, Palm, OwnableInternal {
     uint256 internal constant UNLOCKED = 2;
     uint256 internal constant LOCKED = 1;
 
-    // RISK mint rate. Used in struct, never extend in upgrade
+    // flap config
     struct Ramp {
-        uint256 bel; // [sec] last flxp timestamp
-        uint256 cel; // [sec] max seconds flop can ramp up
-        uint256 rel; // [ray] fraction of RISK supply/s
+        uint256 bel; // [sec] last flap timestamp
         uint256 wel; // [ray] fraction of joy/flap
     }
 
@@ -81,7 +79,6 @@ abstract contract Bank is Math, Flog, Palm, OwnableInternal {
         Ramp    ramp;
         uint256 loot; // [ray] portion of flap taken by user (vs protocol)
         uint256 dam;  // [ray] per-second flap discount
-        uint256 dom;  // [ray] per-second flop discount
     }
 
     struct VoxStorage {

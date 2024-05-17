@@ -236,9 +236,6 @@ contract Vat is Bank {
 
         emit NewPalm1("tart", i, bytes32(ilk.tart));
 
-        // chill if surplus exceeds deficit
-        bool chill = vs.sin / RAY <= vs.joy;
-
         // record the bad debt for vow to heal
         vs.sin += dtab;
         emit NewPalm0("sin", bytes32(vs.sin));
@@ -269,12 +266,6 @@ contract Vat is Bank {
         // trade collateral with keeper for rico
         getBankStorage().rico.burn(msg.sender, earn);
         if (!ilk.gem.transfer(msg.sender, sell)) revert ErrTransfer();
-
-        // when switching from surplus to potential deficit, reset vow auction
-        if (chill && vs.sin / RAY > vs.joy) {
-            getVowStorage().ramp.bel = block.timestamp;
-            emit NewPalm0("bel", bytes32(block.timestamp));
-        }
     }
 
     // Update joy and possibly line. Workaround for stack too deep
