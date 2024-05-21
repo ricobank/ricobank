@@ -32,10 +32,14 @@ contract Vox is Bank {
     function cap() external view returns (uint256) {return getVoxStorage().cap;}
     function tip() external view returns (Rudd memory) {return getVoxStorage().tip;}
 
+    error ErrSender();
+
     // poke par and way
-    function poke() external payable _flog_ {
+    function poke(uint mar) external payable _flog_ {
         VatStorage storage vatS = getVatStorage();
         VoxStorage storage voxS = getVoxStorage();
+
+        if (msg.sender != address(this)) revert ErrSender();
 
         // get time diff, update tau
         uint tau_ = voxS.tau;
@@ -51,18 +55,13 @@ contract Vox is Bank {
         vatS.par  = par_;
         emit NewPalm0("par", bytes32(par_));
 
-        // pull mar
-        // forgo way updates if the feed can't be sensed
-        (bytes32 mar, uint ttl) = getBankStorage().fb.pull(voxS.tip.src, voxS.tip.tag);
-        if (block.timestamp > ttl) { return; }
-
         // lower the price rate (way) when mar > par or system is in deficit
         // raise the price rate when mar < par
         // this is how mar tracks par and rcs pays down deficits
-        if (uint(mar) > par_ || vatS.joy < vatS.sin / RAY) {
-            way_ = max(rinv(voxS.cap), grow(way_, rinv(voxS.how), dt));
-        } else if (uint(mar) < par_) {
+        if (mar < par_) {
             way_ = min(voxS.cap, grow(way_, voxS.how, dt));
+        } else if (mar > par_) {
+            way_ = max(rinv(voxS.cap), grow(way_, rinv(voxS.how), dt));
         }
 
         voxS.way = way_;

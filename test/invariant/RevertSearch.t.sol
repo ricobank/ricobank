@@ -28,16 +28,15 @@ contract InvariantRevertSearch is Test, BaseHelper {
         icap    = rinv(cap);
 
         targetContract(address(handler));
-        bytes4[] memory selectors = new bytes4[](9);
+        bytes4[] memory selectors = new bytes4[](8);
         selectors[0] = ERC20Handler.norev_frob.selector;
         selectors[1] = ERC20Handler.norev_frob.selector;  // add frob twice to double probability
         selectors[2] = ERC20Handler.norev_bail.selector;
         selectors[3] = ERC20Handler.norev_keep.selector;
         selectors[4] = ERC20Handler.norev_drip.selector;
-        selectors[5] = ERC20Handler.norev_poke.selector;
-        selectors[6] = ERC20Handler.norev_mark.selector;
-        selectors[7] = ERC20Handler.norev_wait.selector;
-        selectors[8] = ERC20Handler.norev_move.selector;
+        selectors[5] = ERC20Handler.norev_mark.selector;
+        selectors[6] = ERC20Handler.norev_wait.selector;
+        selectors[7] = ERC20Handler.norev_move.selector;
         targetSelector(FuzzSelector({
             addr:      address(handler),
             selectors: selectors

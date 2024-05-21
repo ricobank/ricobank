@@ -111,30 +111,4 @@ contract ERC20HandlerTest is Test, BaseHelper {
 
         assertGt(j2, j1);
     }
-
-    function test_handler_mark_poke() public {
-        uint p1 = Vat(bank).par();
-
-        handler.mark(true);
-        handler.mark(false);
-        handler.wait(10);
-        handler.poke();
-        handler.wait(10);
-        handler.poke();
-
-        uint p2 = Vat(bank).par();
-        assertEq(p2, p1);
-
-        handler.mark(true);
-        handler.wait(10);
-        handler.poke();
-        handler.wait(10);
-        handler.poke();
-
-        uint p3 = Vat(bank).par();
-        assertLt(p3, p2);
-
-        uint minPar = handler.minPar();
-        assertLt(minPar, p1);
-    }
 }

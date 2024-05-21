@@ -373,20 +373,10 @@ contract BallTest is BaseHelper {
         File(bank).file('how', bytes32(RAY * 3 / 2));
         File(bank).file('way', bytes32(RAY));
 
-        Vox(bank).poke();
-
-        File(bank).file('tip.src', bytes32(bytes20(self)));
-        fb.push(RICO_REF_TAG, bytes32(0), UINT256_MAX);
-
         File(bank).file('way', bytes32(cap_max));
         File(bank).file('how', bytes32(uint(1000000000000003652500000000)));
         vm.expectRevert(Bank.ErrBound.selector);
         File(bank).file('way', bytes32(cap_max+1));
-
-        skip(BANKYEAR);
-
-        Vox(bank).poke();
-        assertClose(Vat(bank).par(), 10 * init_par, 10000000000);
 
         File(bank).file('dam', 0);
         File(bank).file('dam', bytes32(RAY));

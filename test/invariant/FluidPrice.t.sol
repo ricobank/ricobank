@@ -28,17 +28,16 @@ contract InvariantFluidPrice is Test, BaseHelper {
         icap    = rinv(cap);
 
         targetContract(address(handler));
-        bytes4[] memory selectors = new bytes4[](10);
+        bytes4[] memory selectors = new bytes4[](9);
         selectors[0] = ERC20Handler.frob.selector;
         selectors[1] = ERC20Handler.frob.selector;  // add frob twice to double probability
         selectors[2] = ERC20Handler.bail.selector;
         selectors[3] = ERC20Handler.keep.selector;
         selectors[4] = ERC20Handler.drip.selector;
-        selectors[5] = ERC20Handler.poke.selector;
-        selectors[6] = ERC20Handler.mark.selector;
-        selectors[7] = ERC20Handler.wait.selector;
-        selectors[8] = ERC20Handler.date.selector;
-        selectors[9] = ERC20Handler.move.selector;
+        selectors[5] = ERC20Handler.mark.selector;
+        selectors[6] = ERC20Handler.wait.selector;
+        selectors[7] = ERC20Handler.date.selector;
+        selectors[8] = ERC20Handler.move.selector;
         targetSelector(FuzzSelector({
             addr:      address(handler),
             selectors: selectors

@@ -5,6 +5,7 @@
 pragma solidity ^0.8.25;
 
 import { Vat }  from "./vat.sol";
+import { Vox }  from "./vox.sol";
 import { Bank, Gem } from "./bank.sol";
 
 // total system profit balancing mechanism
@@ -33,8 +34,10 @@ contract Vow is Bank {
         Gem risk = vowS.risk;
 
         // use equal scales for sin and joy
-        uint joy = vatS.joy;
-        uint sin = vatS.sin / RAY;
+        uint joy   = vatS.joy;
+        uint sin   = vatS.sin / RAY;
+        // in case of deficit max price should always lead to decrease in way
+        uint price = type(uint256).max;
 
         if (joy > sin) {
 
@@ -45,7 +48,7 @@ contract Vow is Bank {
             }
 
             // price decreases with time
-            uint price = grow(
+            price = grow(
                 _pex, vowS.dam, block.timestamp - vowS.ramp.bel
             );
 
@@ -62,12 +65,12 @@ contract Vow is Bank {
             Gem(risk).burn(msg.sender, earn);
             Gem(rico).mint(msg.sender, sell);
             if (sell < flap) Gem(rico).mint(owner(), flap - sell);
-
-            vowS.ramp.bel = block.timestamp;
-            emit NewPalm0("bel", bytes32(block.timestamp));
-
         }
 
+        // TODO right now bel and tau are the same thing. Consider removing bel
+        vowS.ramp.bel = block.timestamp;
+        emit NewPalm0("bel", bytes32(block.timestamp));
+        Vox(address(this)).poke(price);
     }
 
     function _heal(uint wad) internal returns (uint joy) {

@@ -101,15 +101,11 @@ contract ERC20Handler is Test, Local, RicoSetUp {
 
     function keep(uint256 actorSeed) public _larp_(actorSeed) {
         Vow(bank).keep(ilks);
+        minPar = min(minPar, Vat(bank).par());
     }
 
     function drip() public {
         Vat(bank).drip(WETH_ILK);
-    }
-
-    function poke() public {
-        Vox(bank).poke();
-        minPar = min(minPar, Vat(bank).par());
     }
 
     function wait(uint16 s) public {
@@ -248,15 +244,12 @@ contract ERC20Handler is Test, Local, RicoSetUp {
 
     function norev_keep(uint256 actorSeed) public _larp_(actorSeed) {
         Vow(bank).keep(ilks);
+
+        minPar = min(minPar, Vat(bank).par());
     }
 
     function norev_drip() public {
         Vat(bank).drip(WETH_ILK);
-    }
-
-    function norev_poke() public {
-        Vox(bank).poke();
-        minPar = min(minPar, Vat(bank).par());
     }
 
     function norev_wait(uint16 s) public {
