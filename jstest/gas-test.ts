@@ -16,7 +16,7 @@ const dpack = require('@etherpacks/dpack')
 const bn2b32 = (bn) => hexZeroPad(bn.toHexString(), 32)
 const TAG = Buffer.from('feed'.repeat(16), 'hex')
 
-describe('Vox', () => {
+describe('Gas', () => {
   let ali, bob, cat
   let ALI, BOB, CAT
   let fb
@@ -64,76 +64,6 @@ describe('Vox', () => {
       revert_clear(hh)
   })
 
-  it('sway', async () => {
-    let progress = 10 ** 10
-    await send(bank.file, b32('par'), b32(wad(7)))
-
-    await warp(hh, progress)
-    await mine(hh)
-
-    const t0 = await gettime()
-    want(t0).equal(progress)
-
-    await warp(hh, progress += 10)
-    await mine(hh)
-
-    const t1 = await gettime()
-    want(t1).equal(10 ** 10 + 10)
-
-    const par0 = await bank.par() // jammed to 7
-    want(par0.eq(wad(7))).true
-
-    await send(fb.push, TAG, bn2b32(wad(7)), t1 + 1000)
-
-    await send(bank.poke)
-
-    const par1 = await bank.par() // still at 7 because way == RAY
-    want(par1.eq(wad(7))).true
-
-    let cap = await bank.cap()
-    await send(bank.file, b32('way'), bn2b32(cap))
-    await send(bank.poke)
-
-    await warp(hh, progress += BANKYEAR)
-    await mine(hh)
-    await send(bank.poke)
-
-    const par2 = await bank.par()
-    want(par2.gt(wad(13.9))).true
-    want(par2.lt(wad(14.1))).true
-  })
-
-  it('ricolike vox', async () => {
-    const t0 = 10 ** 11
-    await warp(hh, t0)
-    await mine(hh)
-    const t10 = t0 + 10
-    await warp(hh, t10)
-    await mine(hh, )
-    const t10_ = await gettime()
-    want(t10_).equals(t10)
-
-    await send(bank.file, b32('par'), b32(wad(1.24)))
-    await send(bank.file, b32('how'), bn2b32(ray(1 + 1.2e-16)))
-
-    await send(fb.push, TAG, bn2b32(wad(1.25)), 10 ** 12)
-    await send(bank.poke)
-
-    await warp(hh, t0 + 3600)
-    await mine(hh)
-
-    await send(bank.poke)
-    const par2 = await bank.par()
-    debug(par2.toString())
-
-    await warp(hh, t0 + 2 * 3600)
-    await mine(hh)
-
-    await send(bank.poke)
-    const par3 = await bank.par()
-    debug(par3.toString())
-  })
-
   describe('gas', () => {
     async function check(gas, minGas, maxGas?) {
       if (!maxGas) maxGas = minGas
@@ -148,7 +78,7 @@ describe('Vox', () => {
     })
 
     it('deploy gas', async () => {
-      await check(ethers.BigNumber.from(deploygas), 37820006)
+      await check(ethers.BigNumber.from(deploygas), 37606375)
     })
 
     it('frob cold gas', async () => {
@@ -192,21 +122,7 @@ describe('Vox', () => {
       await send(bank.file, b32('dam'), bn2b32(ray(1).div(wad(1))))
       await send(bank.file, b32('bel'), bn2b32(ethers.BigNumber.from(timestamp)))
       let gas = await bank.estimateGas.keep([])
-      await check(gas, 109328)
-    })
-
-    it('poke up gas', async () => {
-      await mine(hh, 100)
-      await send(fb.push, TAG, bn2b32(ray(0.5)), constants.MaxUint256)
-      let gas = await bank.estimateGas.poke()
-      await check(gas, 73341)
-    })
-
-    it('poke down gas', async () => {
-      await mine(hh, 100)
-      await send(fb.push, TAG, bn2b32(ray(2)), constants.MaxUint256)
-      let gas = await bank.estimateGas.poke()
-      await check(gas, 69109, 69943)
+      await check(gas, 135043)
     })
 
     it('read mar gas', async () => {

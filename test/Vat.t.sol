@@ -937,7 +937,7 @@ contract VatTest is Test, RicoSetUp {
         // accumulate pending fees
         skip(1);
         Vat(bank).drip(gilk);
-        // now - tau == 0, so rack should be unchanged
+        // now - bel == 0, so rack should be unchanged
         assertGt(Vat(bank).ilks(gilk).rack, RAY);
 
         Vat(bank).frob(gilk, self, int(RAY), int(RAY * 2 / 3));

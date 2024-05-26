@@ -45,9 +45,6 @@ contract File is Bank {
         } else if (key == "cap") {
             must(_val, RAY, _CAP_MAX);
             voxS.cap = _val;
-        } else if (key == "tau") {
-            must(_val, block.timestamp, type(uint).max);
-            voxS.tau = _val;
         } else if (key == "way") {
             must(_val, rinv(voxS.cap), voxS.cap);
             voxS.way = _val;

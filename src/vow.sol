@@ -38,6 +38,7 @@ contract Vow is Bank {
         uint sin   = vatS.sin / RAY;
         // in case of deficit max price should always lead to decrease in way
         uint price = type(uint256).max;
+        uint dt = block.timestamp - vowS.ramp.bel;
 
         if (joy > sin) {
 
@@ -48,9 +49,7 @@ contract Vow is Bank {
             }
 
             // price decreases with time
-            price = grow(
-                _pex, vowS.dam, block.timestamp - vowS.ramp.bel
-            );
+            price = grow(_pex, vowS.dam, dt);
 
             // buy-and-burn risk with remaining (`flap`) rico
             uint flap  = rmul(joy - 1, vowS.ramp.wel);
@@ -66,11 +65,9 @@ contract Vow is Bank {
             Gem(rico).mint(msg.sender, sell);
             if (sell < flap) Gem(rico).mint(owner(), flap - sell);
         }
-
-        // TODO right now bel and tau are the same thing. Consider removing bel
         vowS.ramp.bel = block.timestamp;
         emit NewPalm0("bel", bytes32(block.timestamp));
-        Vox(address(this)).poke(price);
+        Vox(address(this)).poke(price, dt);
     }
 
     function _heal(uint wad) internal returns (uint joy) {

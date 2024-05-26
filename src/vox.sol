@@ -28,25 +28,19 @@ import { Bank } from "./bank.sol";
 contract Vox is Bank {
     function way() external view returns (uint256) {return getVoxStorage().way;}
     function how() external view returns (uint256) {return getVoxStorage().how;}
-    function tau() external view returns (uint256) {return getVoxStorage().tau;}
     function cap() external view returns (uint256) {return getVoxStorage().cap;}
     function tip() external view returns (Rudd memory) {return getVoxStorage().tip;}
 
     error ErrSender();
 
     // poke par and way
-    function poke(uint mar) external payable _flog_ {
+    function poke(uint mar, uint dt) external payable _flog_ {
         VatStorage storage vatS = getVatStorage();
         VoxStorage storage voxS = getVoxStorage();
 
         if (msg.sender != address(this)) revert ErrSender();
 
-        // get time diff, update tau
-        uint tau_ = voxS.tau;
-        if (tau_ == block.timestamp) return;
-        uint dt   = block.timestamp - tau_;
-        voxS.tau  = block.timestamp;
-        emit NewPalm0("tau", bytes32(block.timestamp));
+        if (dt == 0) return;
 
         // use previous `way` to grow `par` to keep par updates predictable
         uint par_ = vatS.par;

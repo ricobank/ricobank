@@ -59,7 +59,7 @@ abstract contract Bank is Math, Flog, Palm, OwnableInternal {
 
     // flap config
     struct Ramp {
-        uint256 bel; // [sec] last flap timestamp
+        uint256 bel; // [sec] last flap and poke timestamp
         uint256 wel; // [ray] fraction of joy/flap
     }
 
@@ -85,7 +85,6 @@ abstract contract Bank is Math, Flog, Palm, OwnableInternal {
         Rudd    tip; // feedbase src,tag
         uint256 way; // [ray] System Rate (SP growth rate)
         uint256 how; // [ray] sensitivity paramater
-        uint256 tau; // [sec] last poke
         uint256 cap; // [ray] `way` bound
     }
 

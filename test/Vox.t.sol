@@ -24,11 +24,27 @@ contract VoxTest is Test, RicoSetUp {
         _;
     }
 
-    function skip_and_keep(MarLev lev, uint period) public {
-        skip(period);
-        uint flap_delay = lev == MarLev.HIGH ? skip_period_high_mar : skip_period_low_mar;
-        File(bank).file('bel', bytes32(block.timestamp - flap_delay));
+    function skip_and_keep(MarLev lev, uint dt) public {
+        /* Temporarily modify dam to allow both waiting a long time and selecting poke direction.
+        Calculating dam is difficult, just use limits and mint RISK. */
+
+        uint orig_dam  = Vow(bank).dam();
+        uint orig_risk = risk.balanceOf(self);
+
+        if(lev == MarLev.HIGH) {
+            File(bank).file('dam', bytes32(RAY));
+            risk.mint(self, type(uint256).max - risk.totalSupply());
+        } else {
+            File(bank).file('dam', bytes32(0));
+        }
+
+        skip(dt);
         Vow(bank).keep(single(gilk));
+
+        uint256 end_risk = risk.balanceOf(self);
+        (end_risk > orig_risk) ? risk.burn(self, end_risk - orig_risk) : risk.mint(self, orig_risk - end_risk);
+
+        File(bank).file('dam', bytes32(orig_dam));
     }
 
     function setUp() public {
@@ -52,14 +68,13 @@ contract VoxTest is Test, RicoSetUp {
         way0 = Vox(bank).way();
         par0 = Vat(bank).par();
 
-        // reset flap and poke timers
+        // reset flap and poke timer
         File(bank).file('bel', bytes32(block.timestamp));
-        File(bank).file('tau', bytes32(block.timestamp));
     }
 
     function test_poke_sender() public {
         vm.expectRevert(Vox.ErrSender.selector);
-        Vox(bank).poke(RAY);
+        Vox(bank).poke(RAY, 0);
     }
 
     function test_decrease_way() public {
@@ -192,8 +207,6 @@ contract VoxTest is Test, RicoSetUp {
 
     function test_cap_min() public _orig_ {
         // _orig_ set cap back to original value, otw it's too big to quickly reach
-
-        // let a lot of time pass and reset bel but not tau so way can grow to the cap
         // accumulates the skipped mar changes as if mar < par the whole time
         skip_and_keep(MarLev.LOW, 100000000);
 
@@ -204,11 +217,8 @@ contract VoxTest is Test, RicoSetUp {
 
     function test_cap_max() public _orig_ {
         // _orig_ set cap back to original value, otw it's too big to quickly reach
-
-        // let a lot of time pass and reset bel but not tau so way can grow to the cap
         // accumulates the skipped mar changes as if mar < par the whole time
         skip_and_keep(MarLev.HIGH, 100000000);
-
         assertEq(Vox(bank).way(), rinv(Vox(bank).cap()));
     }
 
