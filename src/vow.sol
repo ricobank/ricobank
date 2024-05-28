@@ -12,7 +12,6 @@ import { Bank, Gem } from "./bank.sol";
 // triggers surplus (flap) auctions
 contract Vow is Bank {
     function RISK() external view returns (Gem) {return getVowStorage().risk;}
-    function loot() external view returns (uint) { return getVowStorage().loot; }
     function ramp() external view returns (Ramp memory) { return getVowStorage().ramp; }
     function dam() external view returns (uint) { return getVowStorage().dam; }
     function pex() external pure returns (uint) { return _pex; }
@@ -53,17 +52,14 @@ contract Vow is Bank {
 
             // buy-and-burn risk with remaining (`flap`) rico
             uint flap  = rmul(joy - 1, vowS.ramp.wel);
+            uint earn  = rmul(flap, price);
             joy       -= flap;
             vatS.joy   = joy;
             emit NewPalm0("joy", bytes32(joy));
 
-            uint sell  = rmul(flap, vowS.loot);
-            uint earn  = rmul(sell, price);
-
             // swap rico for RISK, pay protocol fee
             Gem(risk).burn(msg.sender, earn);
-            Gem(rico).mint(msg.sender, sell);
-            if (sell < flap) Gem(rico).mint(owner(), flap - sell);
+            Gem(rico).mint(msg.sender, flap);
         }
         vowS.ramp.bel = block.timestamp;
         emit NewPalm0("bel", bytes32(block.timestamp));

@@ -30,9 +30,6 @@ contract File is Bank {
         } else if (key == "wel") {
             must(_val, 0, RAY);
             vowS.ramp.wel = _val;
-        } else if (key == "loot") {
-            must(_val, 0, RAY);
-            vowS.loot = _val;
         } else if (key == "dam") {
             must(_val, 0, RAY);
             vowS.dam = _val;

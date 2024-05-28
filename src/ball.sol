@@ -109,7 +109,7 @@ contract Ball is Math, Ward {
         IDiamondCuttable.FacetCut[] memory facetCuts = new IDiamondCuttable.FacetCut[](4);
         bytes4[] memory filesels = new bytes4[](5);
         bytes4[] memory vatsels  = new bytes4[](16);
-        bytes4[] memory vowsels  = new bytes4[](6);
+        bytes4[] memory vowsels  = new bytes4[](5);
         bytes4[] memory voxsels  = new bytes4[](4);
         File fbank = File(bank);
 
@@ -136,10 +136,9 @@ contract Ball is Math, Ward {
         vatsels[15] = Vat.get.selector;
         vowsels[0]  = Vow.keep.selector;
         vowsels[1]  = Vow.RISK.selector;
-        vowsels[2]  = Vow.loot.selector;
-        vowsels[3]  = Vow.dam.selector;
-        vowsels[4]  = Vow.pex.selector;
-        vowsels[5]  = Vow.ramp.selector;
+        vowsels[2]  = Vow.dam.selector;
+        vowsels[3]  = Vow.pex.selector;
+        vowsels[4]  = Vow.ramp.selector;
         voxsels[0]  = Vox.poke.selector;
         voxsels[1]  = Vox.way.selector;
         voxsels[2]  = Vox.how.selector;
@@ -163,8 +162,6 @@ contract Ball is Math, Ward {
 
         fbank.file("bel", bytes32(block.timestamp));
         fbank.file("wel", bytes32(args.ramp.wel));
-
-        fbank.file("loot", bytes32(RAY));
 
         fbank.file("tip.src", bytes32(bytes20(address(divider))));
         fbank.file("tip.tag", RICO_REF_TAG);
