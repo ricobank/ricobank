@@ -39,7 +39,6 @@ task('deploy-ricobank', '')
               tokens:  args.tokens,
               netname: args.netname,
               gfpackcid: args.gfpackcid,
-              unipackcid: args.unipackcid,
               risk: args.risk,
               ipfs: args.ipfs
           }
@@ -50,43 +49,8 @@ task('deploy-ricobank', '')
 
     const pb = new dpack.PackBuilder(hre.network.name)
 
-    const fb       = deps.feedbase;
     const tokens   = args.tokens ? require(args.tokens)[args.netname] : {}
     const settings = require('./settings.json')[hre.network.name]
-
-    let agg_daiusd, agg_xauusd, agg_artifact, agg_type
-    let aggdapp, agg_pack
-    if (args.mock) {
-        // deploy a fake aggregator that we can easily write to
-        agg_artifact = require('../lib/feedbase/artifacts/src/test/MockChainlinkAggregator.sol/MockChainlinkAggregator.json')
-        agg_type     = ethers.ContractFactory.fromSolidity(agg_artifact, ali)
-
-        agg_daiusd   = await agg_type.deploy(
-            fb.address, ali.address, b32('dai:usd'), 8, {gasLimit: args.gasLimit}
-        )
-        agg_xauusd   = await agg_type.deploy(
-            fb.address, ali.address, b32('xau:usd'), 8,
-            {gasLimit: args.gasLimit}
-        )
-        await send(fb.push, b32('dai:usd'), bn2b32(BN.from('100000000')), constants.MaxUint256);
-        await send(fb.push, b32('xau:usd'), bn2b32(BN.from('190000000000')), constants.MaxUint256);
-
-
-    } else {
-        if (args.aggpackcid) {
-          agg_pack = await dpack.getIpfsJson(args.aggpackcid)
-        } else {
-          agg_pack = require(`../lib/chainlink/pack/chainlink_${args.netname}.dpack.json`)
-        }
-        agg_pack.network = hre.network.name
-
-        await pb.merge(agg_pack)
-
-        aggdapp    = await dpack.load(agg_pack, ethers, ali)
-        agg_daiusd = aggdapp.agg_dai_usd
-        agg_xauusd = aggdapp.agg_xau_usd
-    }
-
 
     // base diamond contract (address will be bank address)
     const diamond_artifact = require('../artifacts/src/diamond.sol/BankDiamond.json')
@@ -99,47 +63,12 @@ task('deploy-ricobank', '')
     const ball_artifact = require('../artifacts/src/ball.sol/Ball.json')
     const ball_type = ethers.ContractFactory.fromSolidity(ball_artifact, ali)
 
-    const ups = {
-        ilk:  b32(':uninft'),
-        fee:  undefined,
-        chop: undefined,
-        dust: undefined,
-        line: undefined,
-        room: undefined,
-        uniwrapper: deps.uniwrapper.address,
-        gems: [],
-        srcs: [],
-        tags: [],
-        liqrs: []
-    }
-    const uniconfig = tokens.univ3 ? tokens.univ3[':uninft'] : undefined
-    if (uniconfig) {
-        ups.fee  = ray(uniconfig.fee);
-        ups.chop = ray(uniconfig.chop);
-        ups.dust = rad(uniconfig.dust);
-        ups.line = rad(uniconfig.line);
-        ups.room = BN.from(uniconfig.room);
-    }
-
     const ballargs = {
         bank: diamond.address,
-        feedbase: fb.address,
-        uniadapt: deps.uniswapv3adapter.address,
-        divider: deps.divider.address,
-        multiplier: deps.multiplier.address,
-        cladapt: deps.chainlinkadapter.address,
         rico: deps.rico.address,
         risk: deps.risk.address,
-        ricodai: deps.ricodai.address,
-        dai: deps.dai.address,
-        dai_usd_agg: agg_daiusd.address,
-        xau_usd_agg: agg_xauusd.address,
         par: ray(settings.par),
         ceil: wad(settings.ceil),
-        uniadaptrange: BN.from(settings.uniadaptrange),
-        uniadaptttl:   BN.from(settings.uniadaptttl),
-        daiusdttl:  BN.from(settings.daiusdttl),
-        xauusdttl:  BN.from(settings.xauusdttl),
         ramp:   {
             bel: (await ethers.provider.getBlock('latest')).timestamp,
             wel: ray(settings.ramp.wel)
@@ -148,46 +77,16 @@ task('deploy-ricobank', '')
 
     let ilks = []
     for (let i in tokens.erc20) {
-
         const params = tokens.erc20[i]
-        debug(`setting ilk ${i} with gemname ${params.gemname}`)
+        debug(`setting ilk ${i}`)
 
         let ilk = {
             ilk: b32(i),
-            gem: deps[params.gemname].address,
-            gemusdagg: constants.AddressZero,
-            gemethagg: constants.AddressZero,
             chop: ray(params.chop),
             dust: rad(params.dust),
             fee:  ray(params.fee),
             line: rad(params.line),
             liqr: ray(params.liqr),
-            ttl: params.ttl,
-        }
-
-        if (args.mock) {
-            // create mock chainlink feed with price of 2000
-            const val = bn2b32(BN.from('200000000000'))
-            await send(fb.push, b32(params.gemname + ':usd'), val, constants.MaxUint256);
-
-            debug('deploying mock aggregator for token', params.gemname)
-            const agg_tokenusd = await agg_type.deploy(
-                fb.address, ali.address, b32(params.gemname + ':usd'), 8,
-                {gasLimit: args.gasLimit}
-            )
-
-            ilk.gemusdagg = agg_tokenusd.address;
-        } else {
-            const aggname = params.aggname ?? params.gemname
-            const gemethagg = aggdapp[`agg_${aggname}_eth`]
-            const gemusdagg = aggdapp[`agg_${aggname}_usd`]
-            if (gemusdagg) {
-                ilk.gemusdagg = gemusdagg.address
-            } else if (gemethagg) {
-                ilk.gemethagg = gemethagg ? gemethagg.address : constants.AddressZero
-            } else {
-                throw new Error(`no aggregator defined for ilk ${i}`)
-            }
         }
 
         ilks.push(ilk)
@@ -197,11 +96,6 @@ task('deploy-ricobank', '')
     const ball = await ball_type.deploy(ballargs, {gasLimit: args.gasLimit})
     debug('transferring diamond to ball')
     await send(diamond.transferOwnership, ball.address)
-    debug('add ball as ward in fb components')
-    await send(deps.uniswapv3adapter.ward, ball.address, true)
-    await send(deps.divider.ward, ball.address, true)
-    await send(deps.multiplier.ward, ball.address, true)
-    await send(deps.chainlinkadapter.ward, ball.address, true)
 
     debug('running ball setup...')
     await send(ball.setup, ballargs)
@@ -258,10 +152,6 @@ task('deploy-ricobank', '')
       console.log("deploy-ricobank IPFS CIDs:")
       let cid = await dpack.putIpfsJson(deps_pack, true)
       console.log(`  Dependencies: ${cid}`)
-      if (!args.mock) {
-        cid = await dpack.putIpfsJson(agg_pack, true)
-        console.log(`  Aggregators: ${cid}`)
-      }
       cid = await dpack.putIpfsJson(pack, true)
       console.log(`  Ricobank: ${cid}`)
     }

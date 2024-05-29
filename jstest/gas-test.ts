@@ -19,13 +19,14 @@ const TAG = Buffer.from('feed'.repeat(16), 'hex')
 describe('Gas', () => {
   let ali, bob, cat
   let ALI, BOB, CAT
-  let fb
   let bank, ball
-  let weth, rico, risk
+  let risk, rico, risk
   let pack
   let deploygas
   let dapp
   let dai
+
+  const rilk = b32('risk')
 
   before(async () => {
     [ali, bob, cat] = await ethers.getSigners();
@@ -34,25 +35,17 @@ describe('Gas', () => {
     ;[deploygas, pack] = await task_total_gas(hh, 'deploy-ricobank', {mock:'true', netname: 'ethereum', tokens: './tokens.json'})
     dapp = await dpack.load(pack, ethers, ali)
 
-    fb   = dapp.feedbase
     bank = dapp.bank
     ball = dapp.ball
-    weth = dapp.weth
+    risk = dapp.risk
     rico = dapp.rico
     risk = dapp.risk
     dai  = dapp.dai
 
-    await send(bank.file, b32("tip.tag"), TAG)
-    await send(bank.file, b32("tip.src"), ALI + '00'.repeat(12))
-
     await send(bank.file, b32('par'), b32(wad(7)))
 
-    await send(bank.filk, b32('weth'), b32('src'), ALI + '00'.repeat(12))
-    await send(bank.filk, b32('weth'), b32('tag'), b32('weth:ref'))
-    await send(fb.push, b32('weth:ref'), bn2b32(ray(0.8)), constants.MaxUint256);
-
-    await send(weth.mint, ALI, wad(100))
-    await send(weth.approve, bank.address, constants.MaxUint256)
+    await send(risk.mint, ALI, wad(100))
+    await send(risk.approve, bank.address, constants.MaxUint256)
     await send(risk.mint, ALI, wad(100000));
 
     await snapshot_name(hh);
@@ -78,65 +71,65 @@ describe('Gas', () => {
     })
 
     it('deploy gas', async () => {
-      await check(ethers.BigNumber.from(deploygas), 37427649)
+      await check(ethers.BigNumber.from(deploygas), 13664918)
     })
 
     it('frob cold gas', async () => {
       let dink = ethers.utils.solidityPack(['int'], [wad(5)])
-      let gas = await bank.estimateGas.frob(b32('weth'), ALI, dink, wad(2))
-      await check(gas, 324836, 325840)
+      let gas = await bank.estimateGas.frob(rilk, ALI, dink, wad(2))
+      await check(gas, 285750)
     })
 
     it('frob hot gas', async () => {
       let dink = ethers.utils.solidityPack(['int'], [wad(5)])
-      await send(bank.frob, b32('weth'), ALI, dink, wad(2))
+      await send(bank.frob, rilk, ALI, dink, wad(2))
       await mine(hh, 100)
-      await send(bank.drip, b32('weth'))
+      await send(bank.drip, rilk)
       let gas = await bank.estimateGas.frob(
-        b32('weth'), ALI, ethers.utils.solidityPack(['int'], [wad(5)]), wad(2)
+        rilk, ALI, ethers.utils.solidityPack(['int'], [wad(5)]), wad(2)
       )
-      await check(gas, 170888)
+      await check(gas, 148940)
     })
 
     it('bail gas', async () => {
       let dink = ethers.utils.solidityPack(['int'], [wad(5)])
-      await send(bank.frob, b32('weth'), ALI, dink, wad(2))
+      await send(bank.frob, rilk, ALI, dink, wad(2))
 
-      await send(fb.push, b32('weth:ref'), bn2b32(ray(0.1)), constants.MaxUint256)
-      let gas = await bank.estimateGas.bail(b32('weth'), ALI)
-      await check(gas, 217694)
+      await mine(hh, BANKYEAR * 1000)
+
+      let gas = await bank.estimateGas.bail(rilk, ALI)
+      await check(gas, 203287)
     })
 
     it('keep surplus gas', async () => {
-      let dink = ethers.utils.solidityPack(['int'], [wad(5)])
-      await send(bank.frob, b32('weth'), ALI, dink, wad(1))
-      await send(fb.push, b32('weth:ref'), bn2b32(ray(0)), constants.MaxUint256)
-      await send(bank.bail, b32('weth'), ALI)
-      await send(fb.push, b32('weth:ref'), bn2b32(ray(1)), constants.MaxUint256)
-      await send(bank.frob, b32('weth'), ALI, dink, wad(4))
+      const FEE_2X_ANN = bn2b32(ethers.BigNumber.from('1000000021964508944519921664'))
+      await send(bank.filk, rilk, b32('fee'), FEE_2X_ANN)
+      await send(rico.mint, ALI, wad(100000))
 
-      await mine(hh, BANKYEAR * 100)
-      await send(bank.drip, b32('weth'))
+      let dink = ethers.utils.solidityPack(['int'], [wad(5)])
+      await send(bank.frob, rilk, ALI, dink, wad(1))
+
+      await mine(hh, BANKYEAR * 3)
+      await send(bank.bail, rilk, ALI)
+
+      dink = ethers.utils.solidityPack(['int'], [wad(40)])
+      await send(bank.frob, rilk, ALI, dink, wad(4))
+
+      await mine(hh, BANKYEAR)
+      await send(bank.drip, rilk)
 
       let timestamp = (await ali.provider.getBlock('latest')).timestamp
       await send(bank.file, b32('dam'), bn2b32(ray(1).div(wad(1))))
       await send(bank.file, b32('bel'), bn2b32(ethers.BigNumber.from(timestamp)))
       let gas = await bank.estimateGas.keep([])
-      await check(gas, 132548)
-    })
-
-    it('read mar gas', async () => {
-      let mar_tag = b32('rico:ref')
-      let divider = await ball.divider()
-      let mar_gas = await fb.estimateGas.pull(divider, mar_tag)
-      await check(mar_gas, 135127, 135275)
+      await check(gas, 125984)
     })
 
     it('drip gas', async () => {
       let dink = ethers.utils.solidityPack(['int'], [wad(5)])
-      await send(bank.frob, b32('weth'), ALI, dink, wad(2))
+      await send(bank.frob, rilk, ALI, dink, wad(2))
       await mine(hh, BANKYEAR)
-      let gas = await bank.estimateGas.drip(b32('weth'))
+      let gas = await bank.estimateGas.drip(rilk)
       await check(gas, 91694, 91694)
     })
   })

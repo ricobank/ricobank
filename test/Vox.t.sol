@@ -39,7 +39,7 @@ contract VoxTest is Test, RicoSetUp {
         }
 
         skip(dt);
-        Vow(bank).keep(single(gilk));
+        Vow(bank).keep(single(rilk));
 
         uint256 end_risk = risk.balanceOf(self);
         (end_risk > orig_risk) ? risk.burn(self, end_risk - orig_risk) : risk.mint(self, orig_risk - end_risk);
@@ -49,9 +49,9 @@ contract VoxTest is Test, RicoSetUp {
 
     function setUp() public {
         make_bank();
-        init_gold();
-        ilks.push(gilk);
-        gold.approve(bank, type(uint256).max);
+        init_risk();
+        ilks.push(rilk);
+        risk.approve(bank, type(uint256).max);
 
         pre_cap = Vox(bank).cap();
         File(bank).file('cap', bytes32(File(bank).CAP_MAX()));
@@ -59,10 +59,9 @@ contract VoxTest is Test, RicoSetUp {
         File(bank).file('dam', bytes32(RAY / 10));
 
         // accumulate surplus
-        feedpush(grtag, bytes32(1000 * RAY), type(uint).max);
-        Vat(bank).frob(gilk, self, int(1000 * WAD), int(100 * WAD));
+        Vat(bank).frob(rilk, self, int(1000 * WAD), int(100 * WAD));
         skip(BANKYEAR);
-        Vat(bank).drip(gilk);
+        Vat(bank).drip(rilk);
 
         risk.mint(self, WAD * 1_000_000);
         way0 = Vox(bank).way();
@@ -80,7 +79,7 @@ contract VoxTest is Test, RicoSetUp {
     function test_decrease_way() public {
         // dam is set to 0.1 RAY, so waiting for about 18 seconds will cross price vs par
         skip(skip_period_high_mar);
-        Vow(bank).keep(single(gilk));
+        Vow(bank).keep(single(rilk));
         uint way1 = Vox(bank).way();
 
         // par of 7 means 1 RICO should have equal value to 7 RISK
@@ -93,7 +92,7 @@ contract VoxTest is Test, RicoSetUp {
     function test_increase_way() public {
         // dam is set to 0.1 RAY, so waiting for about 18 seconds will cross price vs par
         skip(skip_period_low_mar);
-        Vow(bank).keep(single(gilk));
+        Vow(bank).keep(single(rilk));
         uint way1 = Vox(bank).way();
 
         // par of 7 means 1 RICO should have equal value to 7 RISK
@@ -107,11 +106,10 @@ contract VoxTest is Test, RicoSetUp {
         // mar < par, but deficit
         force_fees(WAD);
         force_sin(Vat(bank).joy() * RAY + RAD);
-        feedpush(rutag, 0, UINT256_MAX);
 
         // dam is set to 0.1 RAY, so after about 18 seconds price will cross par
         skip(skip_period_low_mar);
-        Vow(bank).keep(single(gilk));
+        Vow(bank).keep(single(rilk));
         uint way1 = Vox(bank).way();
 
         // waited for over 18 seconds so mar would have been below par
@@ -123,23 +121,22 @@ contract VoxTest is Test, RicoSetUp {
         force_sin((Vat(bank).joy() + 1) * RAY);
         way0 = Vox(bank).way();
 
-        Vow(bank).keep(single(gilk));
+        Vow(bank).keep(single(rilk));
         assertGt(Vox(bank).way(), way0);
     }
 
     function test_sway() public {
         // hardcoding way; price shouldn't matter
-        feedpush(rutag, bytes32(UINT256_MAX / RAY), block.timestamp + 1000);
 
         // way == 1 -> poke shouldn't change par
         skip(100);
-        Vow(bank).keep(single(gilk));
+        Vow(bank).keep(single(rilk));
         assertEq(Vat(bank).par(), init_par);
 
         // way == 2 -> par should 10X every year
         File(bank).file(bytes32('way'), bytes32(File(bank).CAP_MAX()));
         skip(2 * BANKYEAR);
-        Vow(bank).keep(single(gilk));
+        Vow(bank).keep(single(rilk));
         assertClose(Vat(bank).par(), init_par * 100, 1_000_000_000);
     }
 
@@ -151,14 +148,14 @@ contract VoxTest is Test, RicoSetUp {
 
         // no more time has passed -> par and way unchanged
         risk.mint(self, Vow(bank).pex());
-        Vow(bank).keep(single(gilk));
+        Vow(bank).keep(single(rilk));
         assertEq(Vat(bank).par(), 7 * RAY);
         assertEq(Vox(bank).way(), RAY);
 
         // time has passed, but way changes after par change
         // -> par still unchanged, way *= how
         skip(skip_period_low_mar);
-        Vow(bank).keep(single(gilk));
+        Vow(bank).keep(single(rilk));
         uint expectedpar = init_par;
         assertEq(Vat(bank).par(), expectedpar);
         uint expectedway = grow(way0, how, skip_period_low_mar);
@@ -166,33 +163,33 @@ contract VoxTest is Test, RicoSetUp {
 
         // way > 1 -> par rises
         skip(skip_period_low_mar);
-        Vow(bank).keep(single(gilk));
+        Vow(bank).keep(single(rilk));
         assertEq(Vat(bank).par(), expectedpar = grow(expectedpar, expectedway, skip_period_low_mar));
         assertEq(Vox(bank).way(), expectedway = grow(expectedway, how, skip_period_low_mar));
 
         // way rose again last poke -> par increases more this time
         // mar > par this time -> way decreases
         skip(skip_period_high_mar);
-        Vow(bank).keep(single(gilk));
+        Vow(bank).keep(single(rilk));
         assertEq(Vat(bank).par(), expectedpar = grow(expectedpar, expectedway, skip_period_high_mar));
         assertEq(Vox(bank).way(), expectedway = grow(expectedway, rinv(how), skip_period_high_mar));
 
         // way decreased but still > 1 -> par increases
         // mar > par -> way decreases
         skip(skip_period_high_mar);
-        Vow(bank).keep(single(gilk));
+        Vow(bank).keep(single(rilk));
         assertEq(Vat(bank).par(), expectedpar = grow(expectedpar, expectedway, skip_period_high_mar));
         assertEq(Vox(bank).way(), expectedway = grow(expectedway, rinv(how), skip_period_high_mar));
 
         // repeat to cause way to drop below RAY
         skip(skip_period_high_mar);
-        Vow(bank).keep(single(gilk));
+        Vow(bank).keep(single(rilk));
         assertEq(Vat(bank).par(), expectedpar = grow(expectedpar, expectedway, skip_period_high_mar));
         assertEq(Vox(bank).way(), expectedway = grow(expectedway, rinv(how), skip_period_high_mar));
 
         // way < 1, par should decrease
         skip(skip_period_high_mar);
-        Vow(bank).keep(single(gilk));
+        Vow(bank).keep(single(rilk));
         assertLt(Vat(bank).par(), expectedpar);
         assertEq(Vat(bank).par(), expectedpar = grow(expectedpar, expectedway, skip_period_high_mar));
         assertEq(Vox(bank).way(), expectedway = grow(expectedway, rinv(how), skip_period_high_mar));
@@ -200,7 +197,7 @@ contract VoxTest is Test, RicoSetUp {
         // mar < par -> way should start increasing again
         skip(skip_period_low_mar);
         way0 = Vox(bank).way();
-        Vow(bank).keep(single(gilk));
+        Vow(bank).keep(single(rilk));
         uint way1 = Vox(bank).way();
         assertGe(way1, way0);
     }

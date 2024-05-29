@@ -9,7 +9,6 @@ import { Math } from "./mixin/math.sol";
 import { Flog } from "./mixin/flog.sol";
 import { Palm } from "./mixin/palm.sol";
 import { Gem }  from "../lib/gemfab/src/gem.sol";
-import { Feedbase } from "../lib/feedbase/src/Feedbase.sol";
 
 abstract contract Bank is Math, Flog, Palm, OwnableInternal {
 
@@ -27,14 +26,11 @@ abstract contract Bank is Math, Flog, Palm, OwnableInternal {
         uint256 chop;  // [ray] Liquidation Penalty
         uint256 liqr;  // [ray] Liquidation Ratio
 
-        Rudd    rudd;  // [obj] feed src,tag
         Plx     plot;  // [obj] discount exponent and offset
-        Gem     gem;   // this ilk's gem
     }
 
     struct BankStorage {
         Gem      rico;
-        Feedbase fb;
     }
 
     struct Urn {
@@ -51,11 +47,7 @@ abstract contract Bank is Math, Flog, Palm, OwnableInternal {
         uint256 debt;  // [wad] Total Rico Issued
         uint256 ceil;  // [wad] Total Debt Ceiling
         uint256 par;   // [ray] System Price (rico/ref)
-        uint256 lock;  // lock
     }
-
-    uint256 internal constant UNLOCKED = 2;
-    uint256 internal constant LOCKED = 1;
 
     // flap config
     struct Ramp {
@@ -75,13 +67,12 @@ abstract contract Bank is Math, Flog, Palm, OwnableInternal {
     }
 
     struct VowStorage {
-        Gem     risk;
         Ramp    ramp;
+        Gem     risk;
         uint256 dam;  // [ray] per-second flap discount
     }
 
     struct VoxStorage {
-        Rudd    tip; // feedbase src,tag
         uint256 way; // [ray] System Rate (SP growth rate)
         uint256 how; // [ray] sensitivity paramater
         uint256 cap; // [ray] `way` bound
@@ -127,17 +118,6 @@ abstract contract Bank is Math, Flog, Palm, OwnableInternal {
 
     function must(uint actual, uint lo, uint hi) internal pure {
         if (actual < lo || actual > hi) revert ErrBound();
-    }
-
-    // lock for CDP manipulation functions
-    // not necessary for drip, because frob and bail drip
-    // uses VatStorage from previous iteration.  move to BS in future
-    modifier _lock_ {
-        VatStorage storage vs = getVatStorage();
-        if (vs.lock == LOCKED) revert ErrLock();
-        vs.lock = LOCKED;
-        _;
-        vs.lock = UNLOCKED;
     }
 
 }

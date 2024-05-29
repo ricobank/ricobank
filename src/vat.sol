@@ -49,7 +49,7 @@ contract Vat is Bank {
     error ErrTransfer();
     error ErrUrnDust();
 
-    function init(bytes32 ilk, address gem)
+    function init(bytes32 ilk)
       external payable onlyOwner _flog_
     {
         VatStorage storage vs = getVatStorage();
@@ -63,16 +63,11 @@ contract Vat is Bank {
             rho : block.timestamp,
             chop: 0,
             liqr: RAY,
-            rudd: Rudd({
-                src: address(0),
-                tag: bytes32(0)
-            }),
             plot: Plx({
                 pep: 0,
                 pop: 0,
                 pup: 0
-            }),
-            gem: Gem(gem)
+            })
         });
         emit NewPalm1("tart", ilk, bytes32(uint(0)));
         emit NewPalm1("rack", ilk, bytes32(RAY));
@@ -82,12 +77,9 @@ contract Vat is Bank {
         emit NewPalm1("rho",  ilk, bytes32(block.timestamp));
         emit NewPalm1("chop", ilk, bytes32(uint(0)));
         emit NewPalm1("liqr", ilk, bytes32(RAY));
-        emit NewPalm1("src",  ilk, bytes32(0));
-        emit NewPalm1("tag",  ilk, bytes32(0));
         emit NewPalm1("pep",  ilk, bytes32(0));
         emit NewPalm1("pop",  ilk, bytes32(0));
         emit NewPalm1("pup",  ilk, bytes32(0));
-        emit NewPalm1("gem",  ilk, bytes32(bytes20(gem)));
     }
 
     function safe(bytes32 i, address u)
@@ -99,12 +91,10 @@ contract Vat is Bank {
         uint ink = urn.ink;
         uint art = urn.art;
 
-        (bytes32 val, uint ttl) = getBankStorage().fb.pull(ilk.rudd.src, ilk.rudd.tag);
-        uint tot = uint(val) * ink;
-        uint cut = uint(val) * rdiv(ink, ilk.liqr);
+        uint tot = ink * RAY;
+        uint cut = rdiv(ink, ilk.liqr) * RAY;
 
         if (art == 0) return (Spot.Safe, RAY, tot);
-        if (block.timestamp > ttl) return (Spot.Iffy, 0, tot);
 
         // par acts as a multiplier for collateral requirements
         // par increase has same effect on cut as fee accumulation through rack
@@ -119,10 +109,8 @@ contract Vat is Bank {
     }
 
     // modify CDP
-    // locked with bail to make individual urn manipulations atomic
-    // e.g. avoid making the urn safe in the middle of an unsafe borrow
     function frob(bytes32 i, address u, int dink, int dart)
-      external payable _flog_ _lock_
+      external payable _flog_
     {
         VatStorage storage vs = getVatStorage();
         Ilk storage ilk = vs.ilks[i];
@@ -178,14 +166,10 @@ contract Vat is Bank {
 
         if (dink > 0) {
             // pull tokens from sender
-            if (!ilk.gem.transferFrom(msg.sender, address(this), uint(dink))) {
-                revert ErrTransfer();
-            }
+            getVowStorage().risk.transferFrom(msg.sender, address(this), uint(dink));
         } else if (dink < 0) {
             // return tokens to urn holder
-            if (!ilk.gem.transfer(u, uint(-dink))) {
-                revert ErrTransfer();
-            }
+            getVowStorage().risk.transfer(u, uint(-dink));
         }
 
         {
@@ -209,10 +193,8 @@ contract Vat is Bank {
     }
 
     // liquidate CDP
-    // locked with frob to make individual urn manipulations atomic
-    // e.g. avoid making the urn safe in the middle of a liquidation
     function bail(bytes32 i, address u)
-      external payable _flog_ _lock_ returns (uint sell)
+      external payable _flog_ returns (uint sell)
     {
         uint rack = _drip(i);
         uint deal; uint tot; uint dtab;
@@ -255,6 +237,7 @@ contract Vat is Bank {
                 sell = urn.ink;
             }
         }
+
         vsync(i, earn, dtab / RAY);
 
         // update collateral balance
@@ -265,7 +248,7 @@ contract Vat is Bank {
 
         // trade collateral with keeper for rico
         getBankStorage().rico.burn(msg.sender, earn);
-        if (!ilk.gem.transfer(msg.sender, sell)) revert ErrTransfer();
+        getVowStorage().risk.transfer(msg.sender, sell);
     }
 
     // Update joy and possibly line. Workaround for stack too deep
@@ -334,9 +317,6 @@ contract Vat is Bank {
         Ilk storage i = vs.ilks[ilk];
                if (key == "line") { i.line = _val;
         } else if (key == "dust") { i.dust = _val;
-        } else if (key == "gem")  { i.gem = Gem(address(bytes20(val)));
-        } else if (key == "src")  { i.rudd.src = address(bytes20(val));
-        } else if (key == "tag")  { i.rudd.tag = val;
         } else if (key == "pep")  { i.plot.pep = _val;
         } else if (key == "pop")  { i.plot.pop = _val;
         } else if (key == "pup")  { i.plot.pup = int(_val);
@@ -358,10 +338,7 @@ contract Vat is Bank {
       external view returns (bytes32) {
         VatStorage storage vs = getVatStorage();
         Ilk storage i = vs.ilks[ilk];
-               if (key == "gem")  { return bytes32(bytes20(address(i.gem)));
-        } else if (key == "src")  { return bytes32(bytes20(i.rudd.src));
-        } else if (key == "tag")  { return i.rudd.tag;
-        } else if (key == "liqr") { return bytes32(i.liqr);
+               if (key == "liqr") { return bytes32(i.liqr);
         } else if (key == "pep")  { return bytes32(i.plot.pep);
         } else if (key == "pop")  { return bytes32(i.plot.pop);
         } else if (key == "pup")  { return bytes32(uint(i.plot.pup));

@@ -4,7 +4,6 @@
 
 pragma solidity ^0.8.25;
 import { Gem }  from "../lib/gemfab/src/gem.sol";
-import { Feedbase } from "../lib/feedbase/src/Feedbase.sol";
 import { Bank } from "./bank.sol";
 
 contract File is Bank {
@@ -21,7 +20,6 @@ contract File is Bank {
         uint _val = uint(val);
 
                if (key == "rico") { bankS.rico = Gem(address(bytes20(val)));
-        } else if (key == "fb") { bankS.fb = Feedbase(address(bytes20(val)));
         } else if (key == "ceil") { vatS.ceil = _val;
         } else if (key == "par") { vatS.par = _val;
         } else if (key == "bel") {
@@ -34,8 +32,6 @@ contract File is Bank {
             must(_val, 0, RAY);
             vowS.dam = _val;
         } else if (key == "risk") { vowS.risk = Gem(address(bytes20(val)));
-        } else if (key == "tip.src") { voxS.tip.src = address(bytes20(val));
-        } else if (key == "tip.tag") { voxS.tip.tag = val;
         } else if (key == "how") {
             must(_val, RAY, type(uint).max);
             voxS.how = _val;
@@ -55,5 +51,4 @@ contract File is Bank {
     }
 
     function rico() external view returns (Gem) {return getBankStorage().rico;}
-    function fb() external view returns (Feedbase) {return getBankStorage().fb;}
 }

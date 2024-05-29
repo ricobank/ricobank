@@ -2,10 +2,6 @@
     "arbitrum": {
         "par":  "1",
         "ceil": "25",
-        "uniadaptrange": "1",
-        "uniadaptttl": "86400",
-        "daiusdttl": "86400",
-        "xauusdttl": "86400",
         "ramp": {
             "wel": "0.1"
         }
@@ -13,11 +9,6 @@
     "hardhat": {
         "par":  "1",
         "ceil": "100000",
-        "uniadaptrange": "1",
-        "uniadaptttl": "63115200",
-        "_ttl_comment": "2 * BANKYEAR = 63115200",
-        "daiusdttl": "63115200",
-        "xauusdttl": "63115200",
         "ramp": {
             "wel": "1"
         }

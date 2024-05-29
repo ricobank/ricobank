@@ -29,7 +29,6 @@ contract Vox is Bank {
     function way() external view returns (uint256) {return getVoxStorage().way;}
     function how() external view returns (uint256) {return getVoxStorage().how;}
     function cap() external view returns (uint256) {return getVoxStorage().cap;}
-    function tip() external view returns (Rudd memory) {return getVoxStorage().tip;}
 
     error ErrSender();
 
