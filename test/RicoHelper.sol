@@ -49,11 +49,11 @@ abstract contract RicoSetUp is BaseHelper {
     Guy _bob;
     Guy guy;
 
-    // mint some gold to a fake account to frob some rico
+    // mint some risk to a fake account to frob some rico
     function rico_mint(uint amt, bool bail) internal {
         uint start_risk = risk.balanceOf(self);
 
-        // create fake account and mint some gold to it
+        // create fake account and mint some risk to it
         _bob = new Guy(bank);
         uint risk_amt = amt * 1000;
         risk.mint(address(_bob), risk_amt);

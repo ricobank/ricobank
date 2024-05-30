@@ -20,11 +20,10 @@ describe('Gas', () => {
   let ali, bob, cat
   let ALI, BOB, CAT
   let bank, ball
-  let risk, rico, risk
+  let risk, rico
   let pack
   let deploygas
   let dapp
-  let dai
 
   const rilk = b32('risk')
 
@@ -40,7 +39,6 @@ describe('Gas', () => {
     risk = dapp.risk
     rico = dapp.rico
     risk = dapp.risk
-    dai  = dapp.dai
 
     await send(bank.file, b32('par'), b32(wad(7)))
 
@@ -71,7 +69,7 @@ describe('Gas', () => {
     })
 
     it('deploy gas', async () => {
-      await check(ethers.BigNumber.from(deploygas), 13664918)
+      await check(ethers.BigNumber.from(deploygas), 13664930)
     })
 
     it('frob cold gas', async () => {

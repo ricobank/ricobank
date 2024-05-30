@@ -61,11 +61,6 @@ abstract contract Bank is Math, Flog, Palm, OwnableInternal {
         int256  pup; // [ray] relative discount y-axis shift
     }
 
-    struct Rudd {
-        address src;
-        bytes32 tag;
-    }
-
     struct VowStorage {
         Ramp    ramp;
         Gem     risk;
@@ -102,7 +97,6 @@ abstract contract Bank is Math, Flog, Palm, OwnableInternal {
     error ErrWrongKey();
     error ErrWrongUrn();
     error ErrBound();
-    error ErrLock();
 
     // bubble up error code from a reverted call
     function bubble(bytes memory data) internal pure {
