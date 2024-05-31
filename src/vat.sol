@@ -37,16 +37,14 @@ contract Vat is Bank {
     function par()  external view returns (uint) {return getVatStorage().par;}
     function FEE_MAX() external pure returns (uint) {return _FEE_MAX;}
 
-    enum Spot {Sunk, Iffy, Safe}
-
-    uint256 constant _FEE_MAX = 1000000072964521287979890107; // ~10x/yr
+    uint256 constant _FEE_MAX  = 1000000072964521287979890107; // ~10x/yr
+    uint256 constant SAFE = RAY;
 
     error ErrDebtCeil();
     error ErrIlkInit();
     error ErrMultiIlk();
     error ErrNotSafe();
     error ErrSafeBail();
-    error ErrTransfer();
     error ErrUrnDust();
 
     function init(bytes32 ilk)
@@ -83,29 +81,22 @@ contract Vat is Bank {
     }
 
     function safe(bytes32 i, address u)
-      public view returns (Spot, uint, uint)
+      public view returns (uint deal, uint tot)
     {
         VatStorage storage vs = getVatStorage();
         Ilk storage ilk = vs.ilks[i];
         Urn storage urn = vs.urns[i][u];
         uint ink = urn.ink;
-        uint art = urn.art;
-
-        uint tot = ink * RAY;
-        uint cut = rdiv(ink, ilk.liqr) * RAY;
-
-        if (art == 0) return (Spot.Safe, RAY, tot);
 
         // par acts as a multiplier for collateral requirements
         // par increase has same effect on cut as fee accumulation through rack
         // par decrease acts like a negative fee
-        uint256 tab = art * rmul(vs.par, ilk.rack);
-        if (tab <= cut) {
-            return (Spot.Safe, RAY, tot);
-        } else {
-            uint256 deal = cut / (tab / RAY);
-            return (Spot.Sunk, deal, tot);
-        }
+        uint tab = urn.art * rmul(vs.par, ilk.rack);
+        uint cut = rdiv(ink, ilk.liqr) * RAY;
+
+        // min() used to prevent truncation hiding unsafe
+        deal = tab > cut ? min(cut / (tab / RAY), SAFE - 1) : SAFE;
+        tot  = ink * RAY;
     }
 
     // modify CDP
@@ -176,9 +167,9 @@ contract Vat is Bank {
             // urn is safer, or it is safe
             bool safer = dink >= 0 && dart <= 0;
             if (!safer) {
-                (Spot spot,,) = safe(i, u);
+                (uint deal,) = safe(i, u);
                 if (u != msg.sender)   revert ErrWrongUrn();
-                if (spot != Spot.Safe) revert ErrNotSafe();
+                if (deal < SAFE) revert ErrNotSafe();
             }
         }
 
@@ -199,9 +190,8 @@ contract Vat is Bank {
         uint rack = _drip(i);
         uint deal; uint tot; uint dtab;
         {
-            Spot spot;
-            (spot, deal, tot) = safe(i, u);
-            if (spot != Spot.Sunk) revert ErrSafeBail();
+            (deal, tot) = safe(i, u);
+            if (deal == SAFE) revert ErrSafeBail();
         }
         VatStorage storage vs = getVatStorage();
         Ilk storage ilk = vs.ilks[i];

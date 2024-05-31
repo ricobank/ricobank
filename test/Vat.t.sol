@@ -62,10 +62,10 @@ contract VatTest is Test, RicoSetUp {
     function test_safe_return_vals() public {
         Vat(bank).filk(rilk, 'fee', bytes32(FEE_2X_ANN));
         Vat(bank).frob(rilk, address(this), int(stack), int(stack));
-        (Vat.Spot spot, uint deal, uint tot) = Vat(bank).safe(rilk, self);
+        (uint deal, uint tot) = Vat(bank).safe(rilk, self);
 
         // position should be (barely) safe
-        assertTrue(spot == Vat.Spot.Safe);
+        assertTrue(deal == RAY);
 
         // when safe deal should be 1
         assertEq(deal, RAY);
@@ -77,8 +77,8 @@ contract VatTest is Test, RicoSetUp {
         // accumulate fees to 2x...position should sink underwater
         skip(BANKYEAR);
         Vat(bank).drip(rilk);
-        (spot, deal, tot) = Vat(bank).safe(rilk, self);
-        assertTrue(spot == Vat.Spot.Sunk);
+        (deal, tot) = Vat(bank).safe(rilk, self);
+        assertTrue(deal < RAY);
 
         // tab doubled, so deal halved
         assertClose(deal, RAY / 2, 10000000);
@@ -88,21 +88,21 @@ contract VatTest is Test, RicoSetUp {
         // always safe if debt is zero
         rico_mint(1000 * WAD, true);
         Vat(bank).frob(rilk, address(this), int(0), - int(_art(rilk, self)));
-        (spot, deal, tot) = Vat(bank).safe(rilk, self);
-        assertTrue(spot == Vat.Spot.Safe);
+        (deal, tot) = Vat(bank).safe(rilk, self);
+        assertTrue(deal == RAY);
     }
 
     function test_rack_puts_urn_underwater() public {
         // frob till barely safe
         Vat(bank).frob(rilk, address(this), int(stack), int(stack));
-        (Vat.Spot spot,,) = Vat(bank).safe(rilk, self);
-        assertTrue(spot == Vat.Spot.Safe);
+        (uint deal,) = Vat(bank).safe(rilk, self);
+        assertTrue(deal == RAY);
 
         // accrue some interest to sink
         skip(100);
         Vat(bank).drip(rilk);
-        (spot,,) = Vat(bank).safe(rilk, self);
-        assertTrue(spot == Vat.Spot.Sunk);
+        (deal,) = Vat(bank).safe(rilk, self);
+        assertTrue(deal < RAY);
 
         // can't refloat using fee, because fee must be >=1
         vm.expectRevert(Bank.ErrBound.selector);
@@ -112,13 +112,13 @@ contract VatTest is Test, RicoSetUp {
     function test_liqr_puts_urn_underwater() public {
         // frob till barely safe
         Vat(bank).frob(rilk, address(this), int(stack), int(stack));
-        (Vat.Spot spot,,) = Vat(bank).safe(rilk, self);
-        assertTrue(spot == Vat.Spot.Safe);
+        (uint deal,) = Vat(bank).safe(rilk, self);
+        assertTrue(deal == RAY);
 
         // raise liqr a little bit...should sink the urn
         Vat(bank).filk(rilk, 'liqr', bytes32(RAY + 1000000));
-        (spot,,) = Vat(bank).safe(rilk, self);
-        assertTrue(spot == Vat.Spot.Sunk);
+        (deal,) = Vat(bank).safe(rilk, self);
+        assertTrue(deal < RAY);
 
         // can't have liqr < 1
         vm.expectRevert(Bank.ErrBound.selector);
@@ -126,39 +126,39 @@ contract VatTest is Test, RicoSetUp {
 
         // lower liqr back down...should refloat the urn
         Vat(bank).filk(rilk, 'liqr', bytes32(RAY));
-        (spot,,) = Vat(bank).safe(rilk, self);
-        assertTrue(spot == Vat.Spot.Safe);
+        (deal,) = Vat(bank).safe(rilk, self);
+        assertTrue(deal == RAY);
     }
 
     function test_frob_refloat() public {
         // frob till barely safe
         Vat(bank).frob(rilk, address(this), int(stack), int(stack));
-        (Vat.Spot spot,,) = Vat(bank).safe(rilk, self);
-        assertTrue(spot == Vat.Spot.Safe);
+        (uint deal,) = Vat(bank).safe(rilk, self);
+        assertTrue(deal == RAY);
 
         // sink the urn
         skip(BANKYEAR);
         Vat(bank).drip(rilk);
-        (spot,,) = Vat(bank).safe(rilk, self);
-        assertTrue(spot == Vat.Spot.Sunk);
+        (deal,) = Vat(bank).safe(rilk, self);
+        assertTrue(deal < RAY);
 
         // add ink to refloat
         Vat(bank).frob(rilk, address(this), int(stack), int(0));
-        (spot,,) = Vat(bank).safe(rilk, self);
-        assertTrue(spot == Vat.Spot.Safe);
+        (deal,) = Vat(bank).safe(rilk, self);
+        assertTrue(deal == RAY);
     }
 
     function test_increasing_risk_sunk_urn() public {
         // frob till barely safe
         Vat(bank).frob(rilk, address(this), int(stack), int(stack));
-        (Vat.Spot spot,,) = Vat(bank).safe(rilk, self);
-        assertTrue(spot == Vat.Spot.Safe);
+        (uint deal,) = Vat(bank).safe(rilk, self);
+        assertTrue(deal == RAY);
 
         // sink it
         skip(BANKYEAR);
         Vat(bank).drip(rilk);
-        (spot,,) = Vat(bank).safe(rilk, self);
-        assertTrue(spot == Vat.Spot.Sunk);
+        (deal,) = Vat(bank).safe(rilk, self);
+        assertTrue(deal < RAY);
 
         // should always be able to decrease art or increase ink, even when sunk
         Vat(bank).frob(rilk, address(this), int(0), int(-1));
@@ -174,8 +174,8 @@ contract VatTest is Test, RicoSetUp {
     function test_increasing_risk_safe_urn() public {
         // frob till very safe
         Vat(bank).frob(rilk, address(this), int(stack), int(10));
-        (Vat.Spot spot,,) = Vat(bank).safe(rilk, self);
-        assertTrue(spot == Vat.Spot.Safe);
+        (uint deal,) = Vat(bank).safe(rilk, self);
+        assertTrue(deal == RAY);
 
         // should always be able to decrease art or increase ink
         Vat(bank).frob(rilk, address(this), int(0), int(-1));
@@ -500,14 +500,14 @@ contract VatTest is Test, RicoSetUp {
     function test_par() public {
         assertEq(Vat(bank).par(), RAY);
         Vat(bank).frob(rilk, self, int(100 * WAD), int(50 * WAD));
-        (Vat.Spot spot,,) = Vat(bank).safe(rilk, self);
-        assertEq(uint(spot), uint(Vat.Spot.Safe));
+        (uint deal,) = Vat(bank).safe(rilk, self);
+        assertEq(deal, RAY);
 
         // par increase should increase collateral requirement
         // -> urn sinks
         File(bank).file('par', bytes32(RAY * 3));
-        (Vat.Spot spot2,,) = Vat(bank).safe(rilk, self);
-        assertEq(uint(spot2), uint(Vat.Spot.Sunk));
+        (deal,) = Vat(bank).safe(rilk, self);
+        assertLt(deal, RAY);
     }
 
     function test_frob_err_ordering_1() public {

@@ -341,8 +341,8 @@ contract VowJsTest is Test, RicoSetUp {
     {
         // frobbed the rico and no time has passed, so should be safe
         assertEq(rico.balanceOf(me), 99 * WAD);
-        (Vat.Spot safe1,,) = Vat(bank).safe(rilk, me);
-        assertEq(uint(safe1), uint(Vat.Spot.Safe));
+        (uint deal,) = Vat(bank).safe(rilk, me);
+        assertEq(deal, RAY);
     }
 
     function test_bail_urns_1yr_unsafe() public
@@ -354,8 +354,8 @@ contract VowJsTest is Test, RicoSetUp {
         set_dxm('dam', RAY);
         Vow(bank).keep(single(rilk));
 
-        (Vat.Spot spot,,) = Vat(bank).safe(rilk, me);
-        assertEq(uint(spot), uint(Vat.Spot.Sunk));
+        (uint deal,) = Vat(bank).safe(rilk, me);
+        assertLt(deal, RAY);
 
         // should be balanced (enough)
         assertEq(Vat(bank).sin(), 0);
