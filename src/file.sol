@@ -46,9 +46,5 @@ contract File is Bank {
         emit NewPalm0(key, val);
     }
 
-    function enlist(address gem, address usr, bool authed) external onlyOwner {
-        Gem(gem).ward(usr, authed);
-    }
-
     function rico() external view returns (Gem) {return getBankStorage().rico;}
 }

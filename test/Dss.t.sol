@@ -213,18 +213,18 @@ contract DssFrobTest is DssVatTest {
 
         // only the lad can free
         assertTrue(ali.can_frob(rilk, a, -int(WAD), 0));
-        vm.expectRevert(Bank.ErrWrongUrn.selector);
+        vm.expectRevert(Vat.ErrWrongUrn.selector);
         bob.frob(rilk, a, -int(WAD), 0);
-        vm.expectRevert(Bank.ErrWrongUrn.selector);
+        vm.expectRevert(Vat.ErrWrongUrn.selector);
         cat.frob(rilk, a, -int(WAD), 0);
 
         // the lad can free to anywhere - ***N/A no v or w***
 
         // only the lad can draw
         assertTrue(ali.can_frob(rilk, a, int(0), int(WAD)));
-        vm.expectRevert(Bank.ErrWrongUrn.selector);
+        vm.expectRevert(Vat.ErrWrongUrn.selector);
         bob.frob(rilk, a, int(0), int(WAD));
-        vm.expectRevert(Bank.ErrWrongUrn.selector);
+        vm.expectRevert(Vat.ErrWrongUrn.selector);
         cat.frob(rilk, a, int(0), int(WAD));
 
         // lad can draw to anywhere - ***N/A no v or w***
@@ -250,9 +250,9 @@ contract DssFrobTest is DssVatTest {
 
         // only owner (ali) can do risky actions
         assertTrue(ali.can_frob(rilk, a, int(0), int(WAD)));
-        vm.expectRevert(Bank.ErrWrongUrn.selector);
+        vm.expectRevert(Vat.ErrWrongUrn.selector);
         bob.frob(rilk, a, int(0), int(WAD));
-        vm.expectRevert(Bank.ErrWrongUrn.selector);
+        vm.expectRevert(Vat.ErrWrongUrn.selector);
         cat.frob(rilk, a, int(0), int(WAD));
 
         // unless they hope another user - ***N/A no hope***

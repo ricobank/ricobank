@@ -521,7 +521,7 @@ contract VatTest is Test, RicoSetUp {
         Vat(bank).drip(rilk);
 
         // ceily, not safe, wrong urn, dusty...should be wrong urn
-        vm.expectRevert(Bank.ErrWrongUrn.selector);
+        vm.expectRevert(Vat.ErrWrongUrn.selector);
         Vat(bank).frob(rilk, bank, int(WAD / 2), int(WAD / 2));
 
         // right urn, should be unsafe
@@ -569,7 +569,7 @@ contract VatTest is Test, RicoSetUp {
         Vat(bank).frob(rilk, fakesrc, int(0), -int(1));
 
         // can't hurt because permissions
-        vm.expectRevert(Bank.ErrWrongUrn.selector);
+        vm.expectRevert(Vat.ErrWrongUrn.selector);
         Vat(bank).frob(rilk, fakesrc, int(0), int(1));
 
         // ok now frob my own urn...but it's not safe
@@ -613,7 +613,7 @@ contract VatTest is Test, RicoSetUp {
         File(bank).file('ceil', bytes32(0));
 
         // self removes some ink from fakesrc - should fail because unauthorized
-        vm.expectRevert(Bank.ErrWrongUrn.selector);
+        vm.expectRevert(Vat.ErrWrongUrn.selector);
         Vat(bank).frob(rilk, fakesrc, -int(WAD), int(0));
 
         // fakesrc removes some ink from fakesrc - should fail because not safe
@@ -651,7 +651,7 @@ contract VatTest is Test, RicoSetUp {
         File(bank).file('ceil', bytes32(WAD * 10000));
 
         // can't steal ink from someone else's urn
-        vm.expectRevert(Bank.ErrWrongUrn.selector);
+        vm.expectRevert(Vat.ErrWrongUrn.selector);
         Vat(bank).frob(rilk, fakesrc, -int(WAD), int(1));
 
         // ...can remove ink from your own, but it has to be safe

@@ -22,7 +22,6 @@ import {Math} from "./mixin/math.sol";
 contract Ball is Math {
     bytes32 internal constant HOW = bytes32(uint256(1000000000000003652500000000));
     bytes32 internal constant CAP = bytes32(uint256(1000000021970000000000000000));
-    bytes32[] internal empty = new bytes32[](0);
     IDiamondCuttable.FacetCutAction internal constant ADD = IDiamondCuttable.FacetCutAction.ADD;
 
     struct IlkParams {

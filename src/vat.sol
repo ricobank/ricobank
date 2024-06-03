@@ -46,6 +46,7 @@ contract Vat is Bank {
     error ErrNotSafe();
     error ErrSafeBail();
     error ErrUrnDust();
+    error ErrWrongUrn();
 
     function init(bytes32 ilk)
       external payable onlyOwner _flog_

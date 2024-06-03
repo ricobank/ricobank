@@ -4,7 +4,7 @@
 
 pragma solidity ^0.8.25;
 
-import { OwnableInternal, OwnableStorage } from "../lib/solidstate-solidity/contracts/access/OwnableInternal.sol";
+import { OwnableInternal } from "../lib/solidstate-solidity/contracts/access/OwnableInternal.sol";
 import { Math } from "./mixin/math.sol";
 import { Flog } from "./mixin/flog.sol";
 import { Palm } from "./mixin/palm.sol";
@@ -95,20 +95,7 @@ abstract contract Bank is Math, Flog, Palm, OwnableInternal {
     }
 
     error ErrWrongKey();
-    error ErrWrongUrn();
     error ErrBound();
-
-    // bubble up error code from a reverted call
-    function bubble(bytes memory data) internal pure {
-        assembly {
-            let size := mload(data)
-            revert(add(32, data), size)
-        }
-    }
-
-    function owner() internal view returns (address) {
-        return OwnableStorage.layout().owner;
-    }
 
     function must(uint actual, uint lo, uint hi) internal pure {
         if (actual < lo || actual > hi) revert ErrBound();
