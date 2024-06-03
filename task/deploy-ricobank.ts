@@ -68,7 +68,6 @@ task('deploy-ricobank', '')
         rico: deps.rico.address,
         risk: deps.risk.address,
         par: ray(settings.par),
-        ceil: wad(settings.ceil),
         ramp:   {
             bel: (await ethers.provider.getBlock('latest')).timestamp,
             wel: ray(settings.ramp.wel)

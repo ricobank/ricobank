@@ -511,9 +511,8 @@ contract VatTest is Test, RicoSetUp {
     }
 
     function test_frob_err_ordering_1() public {
-        // high fee, low ceil, medium dust
+        // high fee, medium dust
         Vat(bank).filk(rilk, 'fee', bytes32(FEE_2X_ANN));
-        File(bank).file('ceil', bytes32(WAD - 1));
         Vat(bank).filk(rilk, 'dust', bytes32(RAD));
 
         // accumulate pending fees
@@ -532,18 +531,13 @@ contract VatTest is Test, RicoSetUp {
         vm.expectRevert(Vat.ErrUrnDust.selector);
         Vat(bank).frob(rilk, self, int(2 * WAD), int(WAD / 2 - 1));
 
-        //non-dusty, should be ceily
-        vm.expectRevert(Vat.ErrDebtCeil.selector);
+        //non-dusty, should be good
         Vat(bank).frob(rilk, self, int(2 * WAD), int((WAD + WAD / 1_000) / 2 ));
 
-        // raising ceil should fix ceilyness
-        File(bank).file('ceil', bytes32(WAD + WAD / 1_000));
-        Vat(bank).frob(rilk, self, int(2 * WAD), int((WAD + WAD / 10_000) / 2 ));
     }
 
     function test_frob_err_ordering_darts() public {
-        // low ceil, medium dust
-        File(bank).file('ceil', bytes32(WAD));
+        // medium dust
         Vat(bank).filk(rilk, 'dust', bytes32(RAD));
 
         // check how it works with some fees dripped
@@ -562,8 +556,6 @@ contract VatTest is Test, RicoSetUp {
         vm.stopPrank();
 
         // bypasses most checks when dart <= 0
-        File(bank).file('ceil', bytes32(0));
-
         // can't help because dust
         vm.expectRevert(Vat.ErrUrnDust.selector);
         Vat(bank).frob(rilk, fakesrc, int(0), -int(1));
@@ -580,20 +572,12 @@ contract VatTest is Test, RicoSetUp {
         vm.expectRevert(Vat.ErrUrnDust.selector);
         Vat(bank).frob(rilk, self, int(WAD), int(1));
 
-        // frob a non-dusty amount...but fakesrc already frobbed a bunch
-        // should exceed ceil
-        vm.expectRevert(Vat.ErrDebtCeil.selector);
-        Vat(bank).frob(rilk, self, int(100 * WAD), int(WAD));
-
-        // ceiling checks are last
-        File(bank).file('ceil', bytes32(WAD * 4));
         Vat(bank).frob(rilk, self, int(100 * WAD), int(WAD));
     }
 
     function test_frob_err_ordering_dinks_1() public {
-        // high fee, low ceil, medium dust
+        // high fee, medium dust
         Vat(bank).filk(rilk, 'fee', bytes32(FEE_2X_ANN));
-        File(bank).file('ceil', bytes32(WAD));
         Vat(bank).filk(rilk, 'dust', bytes32(RAD));
 
         // accumulate pending fees
@@ -608,9 +592,6 @@ contract VatTest is Test, RicoSetUp {
         risk.approve(bank, 1000 * WAD);
         Vat(bank).frob(rilk, fakesrc, int(WAD * 2), int(1 + WAD * RAY / FEE_2X_ANN));
         vm.stopPrank();
-
-        // bypasses some checks when dink >= 0 and dart <= 0
-        File(bank).file('ceil', bytes32(0));
 
         // self removes some ink from fakesrc - should fail because unauthorized
         vm.expectRevert(Vat.ErrWrongUrn.selector);
@@ -627,9 +608,8 @@ contract VatTest is Test, RicoSetUp {
     }
 
     function test_frob_err_ordering_dinks_darts() public {
-        // high fee, high ceil, medium dust
+        // high fee, medium dust
         Vat(bank).filk(rilk, 'fee', bytes32(FEE_2X_ANN));
-        File(bank).file('ceil', bytes32(WAD * 10000));
         Vat(bank).filk(rilk, 'dust', bytes32(RAD));
 
         // accumulate pending fees
@@ -646,9 +626,6 @@ contract VatTest is Test, RicoSetUp {
         // 2 for accumulated debt, 1 for rounding
         rico.transfer(self, 3);
         vm.stopPrank();
-
-        // bypasses some checks when dink >= 0 and dart <= 0
-        File(bank).file('ceil', bytes32(WAD * 10000));
 
         // can't steal ink from someone else's urn
         vm.expectRevert(Vat.ErrWrongUrn.selector);
@@ -793,42 +770,6 @@ contract VatTest is Test, RicoSetUp {
         assertEq(ink, WAD);
     }
 
-    function test_ceil_big_rest() public {
-        // frob a billion rico
-        // simple way to quickly generate some rest
-        risk.mint(self, RAY * 1000);
-        File(bank).file('ceil', bytes32(RAY));
-        Vat(bank).filk(rilk, 'line', bytes32(UINT256_MAX));
-
-        // accumulate pending fees (none, because now - rho == 0)
-        skip(1);
-        Vat(bank).drip(rilk);
-        assertGt(Vat(bank).ilks(rilk).rack, RAY);
-
-        Vat(bank).frob(rilk, self, int(RAY), int(RAY * 2 / 3));
-
-        // make about 50 * RAY rest to exceed ceil while debt < ceil
-        for (uint i = 0; i < 100; i++) {
-            int dart = i % 2 == 0 ? -int(RAY / 2): int(RAY / 2);
-            Vat(bank).frob(rilk, self, int(0), dart);
-        }
-
-        // frob what space is left below ceil
-        // ceiling check should take rest into account
-        uint diff = Vat(bank).ceil() - Vat(bank).debt();
-        uint rack = Vat(bank).ilks(rilk).rack;
-        vm.expectRevert(Vat.ErrDebtCeil.selector);
-        Vat(bank).frob(rilk, self, int(RAY), int(rdiv(diff, rack)));
-
-        skip(1);
-        // drip to mod the rest so it's < RAY and recalculate dart
-        // frob should work now
-        Vat(bank).drip(rilk);
-        diff = Vat(bank).ceil() - Vat(bank).debt();
-        rack = Vat(bank).ilks(rilk).rack;
-        Vat(bank).frob(rilk, self, int(RAY), int(rdiv(diff, rack)));
-    }
-
     function test_bail_pop_pep_1() public {
         // set pep and pop to something awk
         uint pep = 3;
@@ -906,7 +847,7 @@ contract VatTest is Test, RicoSetUp {
         // should be able to pay down urns that are over ceiling
         Vat(bank).frob(rilk, self, int(2000 * WAD), int(1000 * WAD));
 
-        // over line, under ceil
+        // over line
         Vat(bank).filk(rilk, 'line', bytes32(0));
 
         // safer dart
@@ -918,15 +859,13 @@ contract VatTest is Test, RicoSetUp {
         // safer dart and dink
         Vat(bank).frob(rilk, self, int(WAD), -int(WAD));
 
-        // under line, over ceil
+        // under line
         Vat(bank).filk(rilk, 'line', bytes32(UINT256_MAX));
-        File(bank).file('ceil', bytes32(0));
         Vat(bank).frob(rilk, self, int(0), -int(WAD));
         Vat(bank).frob(rilk, self, int(WAD), 0);
 
-        // under line, under ceil
+        // under line
         Vat(bank).filk(rilk, 'line', bytes32(UINT256_MAX));
-        File(bank).file('ceil', bytes32(UINT256_MAX));
         Vat(bank).frob(rilk, self, int(0), -int(WAD));
         Vat(bank).frob(rilk, self, int(WAD), 0);
     }
@@ -934,7 +873,6 @@ contract VatTest is Test, RicoSetUp {
     function test_wipe_not_safer_over_ceilings() public {
         Vat(bank).frob(rilk, self, int(2000 * WAD), int(1000 * WAD));
 
-        File(bank).file('ceil', bytes32(0));
         Vat(bank).filk(rilk, 'line', bytes32(0));
 
         // shouldn't do ceiling check on wipe,

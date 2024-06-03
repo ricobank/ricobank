@@ -311,7 +311,6 @@ contract VowJsTest is Test, RicoSetUp {
         risk.mint(me, 16000 * WAD);
         risk.approve(bank, UINT256_MAX);
 
-        File(bank).file('ceil', bytes32(uint(10000 * RAD)));
         Vat(bank).filk(rilk, 'line', bytes32(10000 * RAD));
         Vat(bank).filk(rilk, 'chop', bytes32(RAY * 11 / 10));
 

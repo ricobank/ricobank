@@ -126,7 +126,6 @@ abstract contract RicoSetUp is BaseHelper {
             arico,
             arisk,
             INIT_PAR,
-            100000 * WAD,
             Bank.Ramp(block.timestamp, RAY)
         );
 

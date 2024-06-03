@@ -43,7 +43,6 @@ contract BallTest is BaseHelper {
             rico,
             risk,
             init_par,
-            100000 * WAD,
             Bank.Ramp(block.timestamp, RAY)
         );
 
@@ -175,31 +174,30 @@ contract BallTest is BaseHelper {
     }
 
     function test_ward() public {
-        File(bank).file('ceil', bytes32(WAD));
         assertEq(BankDiamond(bank).owner(), address(this));
 
         vm.prank(address(gf));
         vm.expectRevert("Ownable: sender must be owner");
-        File(bank).file('ceil', bytes32(WAD));
+        File(bank).file('par', bytes32(WAD));
 
         BankDiamond(bank).transferOwnership(address(gf));
         assertEq(BankDiamond(bank).owner(), address(this));
 
         vm.prank(address(gf));
         vm.expectRevert("Ownable: sender must be owner");
-        File(bank).file('ceil', bytes32(WAD));
+        File(bank).file('par', bytes32(WAD));
 
-        File(bank).file('ceil', bytes32(WAD));
+        File(bank).file('par', bytes32(WAD));
 
         vm.prank(address(gf));
         BankDiamond(bank).acceptOwnership();
         assertEq(BankDiamond(bank).owner(), address(gf));
 
         vm.expectRevert("Ownable: sender must be owner");
-        File(bank).file('ceil', bytes32(WAD));
+        File(bank).file('par', bytes32(WAD));
 
         vm.prank(address(gf));
-        File(bank).file('ceil', bytes32(WAD));
+        File(bank).file('par', bytes32(WAD));
     }
 
     function test_bounds_fee() public {

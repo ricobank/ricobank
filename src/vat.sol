@@ -33,7 +33,6 @@ contract Vat is Bank {
     function sin()  external view returns (uint) {return getVatStorage().sin;}
     function rest() external view returns (uint) {return getVatStorage().rest;}
     function debt() external view returns (uint) {return getVatStorage().debt;}
-    function ceil() external view returns (uint) {return getVatStorage().ceil;}
     function par()  external view returns (uint) {return getVatStorage().par;}
     function FEE_MAX() external pure returns (uint) {return _FEE_MAX;}
 
@@ -177,10 +176,9 @@ contract Vat is Bank {
         // urn has no debt, or a non-dusty amount
         if (art != 0 && rack * art < ilk.dust) revert ErrUrnDust();
 
-        // either debt has decreased, or debt ceilings are not exceeded
+        // either debt has decreased, or debt ceiling is not exceeded
         if (dart > 0) {
             if (ilk.tart * rack > ilk.line) revert ErrDebtCeil();
-            else if (_debt + (_rest / RAY) > vs.ceil) revert ErrDebtCeil();
         }
     }
 

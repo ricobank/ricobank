@@ -1,14 +1,12 @@
 {
     "arbitrum": {
         "par":  "1",
-        "ceil": "25",
         "ramp": {
             "wel": "0.1"
         }
     },
     "hardhat": {
         "par":  "1",
-        "ceil": "100000",
         "ramp": {
             "wel": "1"
         }

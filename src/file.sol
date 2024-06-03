@@ -20,7 +20,6 @@ contract File is Bank {
         uint _val = uint(val);
 
                if (key == "rico") { bankS.rico = Gem(address(bytes20(val)));
-        } else if (key == "ceil") { vatS.ceil = _val;
         } else if (key == "par") { vatS.par = _val;
         } else if (key == "bel") {
             must(_val, 0, block.timestamp);

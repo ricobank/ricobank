@@ -38,7 +38,6 @@ contract Ball is Math {
         address rico;
         address risk;
         uint256 par;
-        uint256 ceil;
         Vow.Ramp ramp;
     }
 
@@ -68,7 +67,7 @@ contract Ball is Math {
         if (done) revert('done');
         IDiamondCuttable.FacetCut[] memory facetCuts = new IDiamondCuttable.FacetCut[](4);
         bytes4[] memory filesels = new bytes4[](4);
-        bytes4[] memory vatsels  = new bytes4[](16);
+        bytes4[] memory vatsels  = new bytes4[](15);
         bytes4[] memory vowsels  = new bytes4[](5);
         bytes4[] memory voxsels  = new bytes4[](4);
         File fbank = File(bank);
@@ -88,11 +87,10 @@ contract Ball is Math {
         vatsels[8] = Vat.urns.selector;
         vatsels[9] = Vat.rest.selector;
         vatsels[10] = Vat.debt.selector;
-        vatsels[11] = Vat.ceil.selector;
-        vatsels[12] = Vat.par.selector;
-        vatsels[13] = Vat.drip.selector;
-        vatsels[14] = Vat.FEE_MAX.selector;
-        vatsels[15] = Vat.get.selector;
+        vatsels[11] = Vat.par.selector;
+        vatsels[12] = Vat.drip.selector;
+        vatsels[13] = Vat.FEE_MAX.selector;
+        vatsels[14] = Vat.get.selector;
         vowsels[0]  = Vow.keep.selector;
         vowsels[1]  = Vow.RISK.selector;
         vowsels[2]  = Vow.dam.selector;
@@ -114,7 +112,6 @@ contract Ball is Math {
         fbank.file("risk", bytes32(bytes20(risk)));
 
         fbank.file("par",  bytes32(args.par));
-        fbank.file("ceil", bytes32(args.ceil));
 
         fbank.file("dam", bytes32(RAY));
 

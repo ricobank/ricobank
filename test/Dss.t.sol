@@ -128,14 +128,6 @@ contract DssFrobTest is DssVatTest {
 
         // calm line
         Vat(bank).filk(rilk, 'line', bytes32(20 * RAD));
-
-        // but not ceil
-        File(bank).file('ceil', bytes32(10 * WAD));
-        vm.expectRevert(Vat.ErrDebtCeil.selector);
-        Vat(bank).frob(rilk, self, int(2 * WAD), int(2 * WAD));
-
-        // ok calm down
-        File(bank).file('ceil', bytes32(20 * WAD));
         Vat(bank).frob(rilk, self, int(2 * WAD), int(2 * WAD));
     }
 
@@ -463,7 +455,6 @@ contract DssBiteTest is DssVatTest {
 contract DssFoldTest is DssVatTest {
     function _fold_setup() internal {
         _vat_setUp();
-        File(bank).file('ceil', bytes32(100 * RAD));
         Vat(bank).filk(rilk, 'line', bytes32(100 * RAD));
     }
 
@@ -532,8 +523,6 @@ contract DssClipTest is DssJsTest {
         Vat(bank).filk(rilk, 'liqr', bytes32(2 * RAY)); // dss mat
         Vat(bank).filk(rilk, 'dust', bytes32(20 * RAD));
         Vat(bank).filk(rilk, 'line', bytes32(10000 * RAD));
-
-        File(bank).file('ceil', bytes32(10000 * RAD));
 
         // dss uses wad, rico uses ray
         Vat(bank).filk(rilk, 'chop', bytes32(11 * RAY / 10));
@@ -710,7 +699,6 @@ contract DssDogTest is DssJsTest {
     Usr gal;
 
     function _dog_setUp() internal {
-        File(bank).file('ceil', bytes32(10000 * RAD));
         Vat(bank).filk(rilk, 'line', bytes32(10000 * RAD));
 
         risk.mint(self, 100000 * WAD);
