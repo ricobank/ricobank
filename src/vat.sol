@@ -32,7 +32,6 @@ contract Vat is Bank {
     function joy()  external view returns (uint) {return getVatStorage().joy;}
     function sin()  external view returns (uint) {return getVatStorage().sin;}
     function rest() external view returns (uint) {return getVatStorage().rest;}
-    function debt() external view returns (uint) {return getVatStorage().debt;}
     function par()  external view returns (uint) {return getVatStorage().par;}
     function FEE_MAX() external pure returns (uint) {return _FEE_MAX;}
 
@@ -118,17 +117,14 @@ contract Vat is Bank {
         ilk.tart    = add(ilk.tart, dart);
         emit NewPalm1("tart", i, bytes32(ilk.tart));
 
-        uint _debt;
         uint _rest;
         {
             // rico mint/burn amount increases with rack
             int dtab = mul(rack, dart);
             if (dtab > 0) {
                 // borrow
-                // dtab is a rad, debt is a wad
+                // dtab is a rad
                 uint wad = uint(dtab) / RAY;
-                _debt    = vs.debt += wad;
-                emit NewPalm0("debt", bytes32(_debt));
 
                 // remainder is a ray
                 _rest = vs.rest += uint(dtab) % RAY;
@@ -139,9 +135,6 @@ contract Vat is Bank {
                 // paydown
                 // dtab is a rad, so burn one extra to round in system's favor
                 uint wad = (uint(-dtab) / RAY) + 1;
-                _debt = vs.debt -= wad;
-                emit NewPalm0("debt", bytes32(_debt));
-
                 // accrue excess from rounding to rest
                 _rest = vs.rest += add(wad * RAY, dtab);
                 emit NewPalm0("rest", bytes32(_rest));
@@ -286,9 +279,6 @@ contract Vat is Bank {
 
         ilk.rack     = rack;
         emit NewPalm1("rack", i, bytes32(rack));
-
-        vs.debt      = vs.debt + (all / RAY);
-        emit NewPalm0("debt", bytes32(vs.debt));
 
         // tart * rack is a rad, interest is a wad, rest is the change
         vs.rest      = all % RAY;

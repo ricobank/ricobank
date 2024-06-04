@@ -44,7 +44,6 @@ abstract contract Bank is Math, Flog, Palm, OwnableInternal {
         uint256 joy;   // [wad]
         uint256 sin;   // [rad]
         uint256 rest;  // [rad] Debt remainder
-        uint256 debt;  // [wad] Total Rico Issued
         uint256 par;   // [ray] System Price (rico/ref)
     }
 

@@ -653,21 +653,6 @@ contract VatTest is Test, RicoSetUp {
         Vat(bank).frob('hello', self, int(WAD), int(WAD));
     }
 
-    function test_debt_not_normalized() public {
-        // accumulate pending fees, then set fee high
-        Vat(bank).drip(rilk);
-        Vat(bank).filk(rilk, 'fee', bytes32(Vat(bank).FEE_MAX()));
-
-        // rack == 1, so debt should increase by dart
-        Vat(bank).frob(rilk, self, int(WAD), int(WAD));
-        assertEq(Vat(bank).debt(), WAD);
-
-        // if drip 10X rack, it should (roughly) 10X debt
-        skip(BANKYEAR);
-        Vat(bank).drip(rilk);
-        assertClose(Vat(bank).debt(), WAD * 10, 1_000_000_000);
-    }
-
     function test_dtab_not_normalized() public {
         // accumulate pending fees, then set fee high
         Vat(bank).drip(rilk);
@@ -675,7 +660,7 @@ contract VatTest is Test, RicoSetUp {
 
         // rack is 0, so debt should increase by dart
         Vat(bank).frob(rilk, self, int(100 * WAD), int(WAD));
-        assertEq(Vat(bank).debt(), WAD);
+        assertEq(Vat(bank).ilks(rilk).tart, WAD);
 
         skip(BANKYEAR);
         Vat(bank).drip(rilk);
@@ -706,15 +691,14 @@ contract VatTest is Test, RicoSetUp {
         Vat(bank).drip(rilk);
         Vat(bank).frob(rilk, self, int(1000), int(1));
         assertClose(Vat(bank).rest(), RAY / 2, 1_000_000);
-        assertEq(Vat(bank).debt(), 1);
+        assertEq(Vat(bank).ilks(rilk).tart, 1);
         // need to wait for drip to do anything...
         Vat(bank).drip(rilk);
-        assertEq(Vat(bank).debt(), 1);
         assertClose(Vat(bank).rest(), RAY / 2, 1_000_000);
 
         // frob again so rest reaches RAY
         Vat(bank).frob(rilk, self, int(1), int(1));
-        assertEq(Vat(bank).debt(), 2);
+        assertEq(Vat(bank).ilks(rilk).tart, 2);
         assertClose(Vat(bank).rest(), RAY, 1_000_000);
 
         // so regardless of fee next drip should drip 1 (== rest / RAY)
@@ -722,11 +706,11 @@ contract VatTest is Test, RicoSetUp {
         skip(1);
         Vat(bank).drip(rilk);
 
-        assertEq(Vat(bank).debt(), 3);
+        assertEq(Vat(bank).ilks(rilk).tart, 2);
         assertLt(Vat(bank).rest(), RAY / 1_000_000);
         assertEq(rico.totalSupply(), 2);
         assertEq(Vat(bank).joy(), 1);
-        assertEq(Vat(bank).joy() + rico.totalSupply(), Vat(bank).debt());
+        assertEq(Vat(bank).joy() + rico.totalSupply(), rmul(Vat(bank).ilks(rilk).tart, Vat(bank).ilks(rilk).rack));
     }
 
     function test_filk() public {

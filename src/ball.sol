@@ -70,7 +70,7 @@ contract Ball is Math {
         if (done) revert('done');
         IDiamondCuttable.FacetCut[] memory facetCuts = new IDiamondCuttable.FacetCut[](4);
         bytes4[] memory filesels = new bytes4[](4);
-        bytes4[] memory vatsels  = new bytes4[](15);
+        bytes4[] memory vatsels  = new bytes4[](14);
         bytes4[] memory vowsels  = new bytes4[](10);
         bytes4[] memory voxsels  = new bytes4[](4);
         File fbank = File(bank);
@@ -89,11 +89,10 @@ contract Ball is Math {
         vatsels[7] = Vat.ilks.selector;
         vatsels[8] = Vat.urns.selector;
         vatsels[9] = Vat.rest.selector;
-        vatsels[10] = Vat.debt.selector;
-        vatsels[11] = Vat.par.selector;
-        vatsels[12] = Vat.drip.selector;
-        vatsels[13] = Vat.FEE_MAX.selector;
-        vatsels[14] = Vat.get.selector;
+        vatsels[10] = Vat.par.selector;
+        vatsels[11] = Vat.drip.selector;
+        vatsels[12] = Vat.FEE_MAX.selector;
+        vatsels[13] = Vat.get.selector;
         vowsels[0]  = Vow.keep.selector;
         vowsels[1]  = Vow.RISK.selector;
         vowsels[2]  = Vow.dam.selector;

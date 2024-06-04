@@ -75,20 +75,15 @@ abstract contract RicoSetUp is BaseHelper {
     }
 
     function force_fees(uint gain) public {
-        // Create imaginary fees, add to debt and joy
+        // Create imaginary fees, add to joy
         // Avoid manipulating vat like this usually
-        uint256 debt_0   = Vat(bank).debt();
         uint256 joy_0    = Vat(bank).joy();
-
         uint256 joy_idx  = 2;
-        uint256 debt_idx = 5;
         bytes32 vat_info = 'vat.0';
         bytes32 vat_pos  = keccak256(abi.encodePacked(vat_info));
         bytes32 joy_pos  = bytes32(uint(vat_pos) + joy_idx);
-        bytes32 debt_pos = bytes32(uint(vat_pos) + debt_idx);
 
         vm.store(bank, joy_pos,  bytes32(joy_0  + gain));
-        vm.store(bank, debt_pos, bytes32(debt_0 + gain));
     }
 
     function force_sin(uint val) public {
@@ -173,13 +168,11 @@ abstract contract RicoSetUp is BaseHelper {
         uint sup  = rico.totalSupply();
         uint joy  = Vat(bank).joy();
         uint sin  = Vat(bank).sin();
-        uint debt = Vat(bank).debt();
         uint rest = Vat(bank).rest();
         uint tart = Vat(bank).ilks(rilk).tart;
         uint rack = Vat(bank).ilks(rilk).rack;
 
         assertEq(rico.balanceOf(bank), 0);
-        assertEq(joy + sup, debt);
         assertEq(tart * rack + sin, (sup + joy) * RAY + rest);
     }
 

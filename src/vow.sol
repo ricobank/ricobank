@@ -79,9 +79,6 @@ contract Vow is Bank {
 
         vs.joy  = (joy = vs.joy - wad);
         emit NewPalm0("joy", bytes32(joy));
-
-        vs.debt = vs.debt - wad;
-        emit NewPalm0("debt", bytes32(vs.debt));
     }
 
     // give msg.sender some RISK
