@@ -126,7 +126,10 @@ abstract contract RicoSetUp is BaseHelper {
             arico,
             arisk,
             INIT_PAR,
-            Bank.Ramp(block.timestamp, RAY)
+            Bank.Ramp(block.timestamp, RAY),
+            WAD, // gif (82400 RISK/yr)
+            999999978035500000000000000, // mop (~-50%/yr)
+            937000000000000000 // lax (~3%/yr)
         );
 
         ball = new Ball(bargs);

@@ -12,7 +12,6 @@ contract BallTest is BaseHelper {
 
     bytes32 constant rilk  = 'risk';
 
-
     GemFab           gf;
 
     address rico;
@@ -43,7 +42,10 @@ contract BallTest is BaseHelper {
             rico,
             risk,
             init_par,
-            Bank.Ramp(block.timestamp, RAY)
+            Bank.Ramp(block.timestamp, RAY),
+            WAD, // gif (82400 RISK/yr)
+            999999978035500000000000000, // mop (~-50%/yr)
+            937000000000000000 // lax (~3%/yr)
         );
 
         Ball ball = new Ball(bargs);
@@ -260,6 +262,22 @@ contract BallTest is BaseHelper {
 
         vm.expectRevert(Bank.ErrBound.selector);
         File(bank).file('dam', bytes32(RAY + 1));
+    }
+
+    function test_bounds_mine() public {
+        File(bank).file('gif', bytes32(UINT256_MAX));
+        File(bank).file('gif', 0);
+
+        File(bank).file('phi', 0);
+        File(bank).file('phi', bytes32(block.timestamp));
+        vm.expectRevert(Bank.ErrBound.selector);
+        File(bank).file('phi', bytes32(block.timestamp + 1));
+
+        uint laxmax = File(bank).LAX_MAX();
+        File(bank).file('lax', bytes32(laxmax));
+        File(bank).file('lax', 0);
+        vm.expectRevert(Bank.ErrBound.selector);
+        File(bank).file('lax', bytes32(laxmax + 1));
     }
 
 }

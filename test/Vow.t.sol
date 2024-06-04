@@ -287,6 +287,116 @@ contract VowTest is Test, RicoSetUp {
         assertEq(Vat(bank).sin() / RAY - Vat(bank).joy(), deficit);
     }
 
+    function test_mine() public {
+        File(bank).file('mop', bytes32(uint(999999978035500000000000000)));
+        assertEq(Vow(bank).phi(), block.timestamp);
+        uint prerisk = risk.totalSupply();
+        uint lax = Vow(bank).lax();
+        uint mop = Vow(bank).mop();
+
+        Vow(bank).mine();
+        assertEq(risk.totalSupply(), prerisk);
+        assertEq(Vow(bank).phi(), block.timestamp);
+
+        skip(1);
+        uint pregif = Vow(bank).gif();
+        uint flate = rmul(risk.totalSupply(), lax);
+        Vow(bank).mine();
+        assertEq(risk.totalSupply(), prerisk + Vow(bank).gif() + flate);
+        assertEq(Vow(bank).gif(), rmul(pregif, mop));
+        assertEq(Vow(bank).phi(), block.timestamp);
+
+        skip(BANKYEAR);
+        prerisk = risk.totalSupply();
+        pregif = Vow(bank).gif();
+        flate = rmul(risk.totalSupply(), lax);
+        Vow(bank).mine();
+        assertEq(risk.totalSupply(), prerisk + (Vow(bank).gif() + flate) * BANKYEAR);
+        assertClose(Vow(bank).gif(), pregif / 2, 1000000);
+        assertEq(Vow(bank).phi(), block.timestamp);
+
+        prerisk = risk.totalSupply();
+        pregif  = Vow(bank).gif();
+        Vow(bank).mine();
+        assertEq(risk.totalSupply(), prerisk);
+        assertEq(Vow(bank).phi(), block.timestamp);
+
+        assertEq(risk.totalSupply(), risk.balanceOf(self));
+    }
+
+    function test_gif() public {
+        File(bank).file('mop', bytes32(RAY));
+        File(bank).file('lax', 0);
+        File(bank).file('gif', bytes32(WAD * 3));
+
+        skip(BANKYEAR);
+        uint prerisk = risk.totalSupply();
+        Vow(bank).mine();
+        assertEq(risk.totalSupply(), prerisk + WAD * 3 * BANKYEAR);
+
+        skip(10);
+        File(bank).file('gif', 0);
+        prerisk = risk.totalSupply();
+        Vow(bank).mine();
+        assertEq(risk.totalSupply(), prerisk);
+    }
+
+    function test_mop() public {
+        File(bank).file('gif', bytes32(WAD));
+        File(bank).file('mop', 0);
+        File(bank).file('lax', 0);
+
+        skip(1);
+        uint prerisk = risk.totalSupply();
+        Vow(bank).mine();
+        assertEq(risk.totalSupply(), prerisk);
+        assertEq(Vow(bank).gif(), 0);
+
+        skip(1000);
+        prerisk = risk.totalSupply();
+        Vow(bank).mine();
+        assertEq(risk.totalSupply(), prerisk);
+        assertEq(Vow(bank).gif(), 0);
+
+        File(bank).file('gif', bytes32(WAD));
+        File(bank).file('mop', bytes32(RAY / 2));
+        skip(2);
+        prerisk = risk.totalSupply();
+        Vow(bank).mine();
+        assertEq(risk.totalSupply(), prerisk + WAD / 4 * 2);
+        assertEq(Vow(bank).gif(), WAD / 4);
+    }
+
+    function test_lax() public {
+        File(bank).file('gif', bytes32(WAD));
+        File(bank).file('mop', bytes32(RAY));
+        File(bank).file('lax', 0);
+
+        skip(1);
+        uint prerisk = risk.totalSupply();
+        Vow(bank).mine();
+        assertEq(risk.totalSupply(), prerisk + WAD);
+
+        skip(1);
+        prerisk = risk.totalSupply();
+        uint lax = RAY / 10000000000;
+        File(bank).file('lax', bytes32(lax));
+        Vow(bank).mine();
+        assertEq(risk.totalSupply(), prerisk + WAD + rmul(lax, prerisk));
+
+        skip(1);
+        prerisk = risk.totalSupply();
+        File(bank).file('lax', bytes32(lax));
+        Vow(bank).mine();
+        assertEq(risk.totalSupply(), prerisk + WAD + rmul(lax, prerisk));
+
+        File(bank).file('mop', 0);
+        skip(BANKYEAR);
+        prerisk = risk.totalSupply();
+        Vow(bank).mine();
+        assertEq(risk.totalSupply(), prerisk + rmul(lax, prerisk) * BANKYEAR);
+    }
+
 }
 
 contract VowJsTest is Test, RicoSetUp {

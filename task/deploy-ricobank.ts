@@ -72,6 +72,9 @@ task('deploy-ricobank', '')
             bel: (await ethers.provider.getBlock('latest')).timestamp,
             wel: ray(settings.ramp.wel)
         },
+        gif: wad(settings.gif),
+        mop: ray(settings.mop),
+        lax: ray(settings.lax)
     }
 
     let ilks = []

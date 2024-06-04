@@ -8,9 +8,9 @@ import { Bank } from "./bank.sol";
 
 contract File is Bank {
     uint constant _CAP_MAX = 1000000072964521287979890107; // ~10x/yr
-    uint constant _REL_MAX = 100 * RAY / BANKYEAR; // ~100x/yr
+    uint constant _LAX_MAX = 145929047899781146998; // ~100x/yr
     function CAP_MAX() external pure returns (uint) {return _CAP_MAX;}
-    function REL_MAX() external pure returns (uint) {return _REL_MAX;}
+    function LAX_MAX() external pure returns (uint) {return _LAX_MAX;}
 
     function file(bytes32 key, bytes32 val) external payable onlyOwner _flog_ {
         VatStorage storage vatS = getVatStorage();
@@ -31,6 +31,16 @@ contract File is Bank {
             must(_val, 0, RAY);
             vowS.dam = _val;
         } else if (key == "risk") { vowS.risk = Gem(address(bytes20(val)));
+        } else if (key == "gif") { vowS.gif = _val;
+        } else if (key == "mop") {
+            must(_val, 0, RAY);
+            vowS.mop = _val;
+        } else if (key == "phi") {
+            must(_val, 0, block.timestamp);
+            vowS.phi = _val;
+        } else if (key == "lax") {
+            must(_val, 0, _LAX_MAX);
+            vowS.lax = _val;
         } else if (key == "how") {
             must(_val, RAY, type(uint).max);
             voxS.how = _val;

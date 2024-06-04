@@ -64,6 +64,10 @@ abstract contract Bank is Math, Flog, Palm, OwnableInternal {
         Ramp    ramp;
         Gem     risk;
         uint256 dam;  // [ray] per-second flap discount
+        uint256 gif;  // initial RISK base mint rate
+        uint256 mop;  // per-second gif decay
+        uint256 phi;  // bang block timestamp
+        uint256 lax;  // mint-rate shift, as a positive fraction of totalSupply
     }
 
     struct VoxStorage {

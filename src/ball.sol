@@ -39,6 +39,9 @@ contract Ball is Math {
         address risk;
         uint256 par;
         Vow.Ramp ramp;
+        uint256 gif;
+        uint256 mop;
+        uint256 lax;
     }
 
     address public rico;
@@ -68,14 +71,14 @@ contract Ball is Math {
         IDiamondCuttable.FacetCut[] memory facetCuts = new IDiamondCuttable.FacetCut[](4);
         bytes4[] memory filesels = new bytes4[](4);
         bytes4[] memory vatsels  = new bytes4[](15);
-        bytes4[] memory vowsels  = new bytes4[](5);
+        bytes4[] memory vowsels  = new bytes4[](10);
         bytes4[] memory voxsels  = new bytes4[](4);
         File fbank = File(bank);
 
         filesels[0] = File.file.selector;
         filesels[1] = File.rico.selector;
         filesels[2] = File.CAP_MAX.selector;
-        filesels[3] = File.REL_MAX.selector;
+        filesels[3] = File.LAX_MAX.selector;
         vatsels[0]  = Vat.filk.selector;
         vatsels[1]  = Vat.init.selector;
         vatsels[2]  = Vat.frob.selector;
@@ -96,6 +99,11 @@ contract Ball is Math {
         vowsels[2]  = Vow.dam.selector;
         vowsels[3]  = Vow.pex.selector;
         vowsels[4]  = Vow.ramp.selector;
+        vowsels[5]  = Vow.mine.selector;
+        vowsels[6]  = Vow.gif.selector;
+        vowsels[7]  = Vow.mop.selector;
+        vowsels[8]  = Vow.phi.selector;
+        vowsels[9]  = Vow.lax.selector;
         voxsels[0]  = Vox.poke.selector;
         voxsels[1]  = Vox.way.selector;
         voxsels[2]  = Vox.how.selector;
@@ -118,10 +126,14 @@ contract Ball is Math {
         fbank.file("bel", bytes32(block.timestamp));
         fbank.file("wel", bytes32(args.ramp.wel));
 
+        fbank.file("gif", bytes32(args.gif));
+        fbank.file("mop", bytes32(args.mop));
+        fbank.file("phi", bytes32(block.timestamp));
+        fbank.file("lax", bytes32(args.lax));
+
         fbank.file("how", HOW);
         fbank.file("cap", CAP);
         fbank.file("way", bytes32(RAY));
-
     }
 
     function makeilk(IlkParams calldata ilkparams) external {

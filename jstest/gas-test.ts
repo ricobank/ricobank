@@ -69,7 +69,7 @@ describe('Gas', () => {
     })
 
     it('deploy gas', async () => {
-      await check(ethers.BigNumber.from(deploygas), 13463798)
+      await check(ethers.BigNumber.from(deploygas), 13871263)
     })
 
     it('frob cold gas', async () => {
@@ -120,7 +120,7 @@ describe('Gas', () => {
       await send(bank.file, b32('dam'), bn2b32(ray(1).div(wad(1))))
       await send(bank.file, b32('bel'), bn2b32(ethers.BigNumber.from(timestamp)))
       let gas = await bank.estimateGas.keep([])
-      await check(gas, 125984)
+      await check(gas, 126006)
     })
 
     it('drip gas', async () => {

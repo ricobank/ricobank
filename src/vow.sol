@@ -15,6 +15,11 @@ contract Vow is Bank {
     function ramp() external view returns (Ramp memory) { return getVowStorage().ramp; }
     function dam() external view returns (uint) { return getVowStorage().dam; }
     function pex() external pure returns (uint) { return _pex; }
+    function gif() external view returns (uint) { return getVowStorage().gif; }
+    function mop() external view returns (uint) { return getVowStorage().mop; }
+    function phi() external view returns (uint) { return getVowStorage().phi; }
+    function lax() external view returns (uint) { return getVowStorage().lax; }
+
     uint constant public _pex = RAY * WAD;
 
     error ErrReflop();
@@ -77,6 +82,21 @@ contract Vow is Bank {
 
         vs.debt = vs.debt - wad;
         emit NewPalm0("debt", bytes32(vs.debt));
+    }
+
+    // give msg.sender some RISK
+    function mine() external {
+        VowStorage storage vs = getVowStorage();
+        uint elapsed = block.timestamp - vs.phi;
+
+        vs.gif = grow(vs.gif, vs.mop, elapsed);
+        emit NewPalm0("gif", bytes32(vs.gif));
+
+        vs.phi = block.timestamp;
+        emit NewPalm0("phi", bytes32(block.timestamp));
+
+        uint flate = vs.gif + rmul(vs.risk.totalSupply(), vs.lax);
+        vs.risk.mint(msg.sender, flate * elapsed);
     }
 
 }
