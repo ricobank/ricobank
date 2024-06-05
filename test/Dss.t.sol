@@ -253,18 +253,18 @@ contract DssFrobTest is DssVatTest {
     function test_dust() public _frob_ {
         rico_mint(1, true); // +1 for rounding in system's favour
 
-        // frob a normal amount, but then set dust above urn's debt
+        // frob a normal amount, but then set dust above urn's ink
         Vat(bank).frob(rilk, self, int(9 * WAD), int(WAD));
-        Vat(bank).filk(rilk, 'dust', bytes32(5 * RAD));
+        Vat(bank).filk(rilk, 'dust', bytes32(RAY * 15 * WAD / risk.totalSupply()));
 
-        // draw to dusty amount
+        // lock dusty amount
         vm.expectRevert(Vat.ErrUrnDust.selector);
         Vat(bank).frob(rilk, self, int(5 * WAD), int(2 * WAD));
-        Vat(bank).frob(rilk, self, int(0), int(5 * WAD));
+        Vat(bank).frob(rilk, self, int(6 * WAD), int(5 * WAD));
 
-        // wipe to dusty amount
+        // free to dusty amount
         vm.expectRevert(Vat.ErrUrnDust.selector);
-        Vat(bank).frob(rilk, self, int(0), -int(5 * WAD));
+        Vat(bank).frob(rilk, self, -int(WAD), -int(5 * WAD));
         Vat(bank).frob(rilk, self, int(0), -int(6 * WAD));
     }
 }
@@ -521,7 +521,7 @@ contract DssClipTest is DssJsTest {
         risk.mint(self, 1000 * WAD);
 
         Vat(bank).filk(rilk, 'liqr', bytes32(2 * RAY)); // dss mat
-        Vat(bank).filk(rilk, 'dust', bytes32(20 * RAD));
+        Vat(bank).filk(rilk, 'dust', bytes32(RAY / 100000));
         Vat(bank).filk(rilk, 'line', bytes32(10000 * RAD));
 
         // dss uses wad, rico uses ray
@@ -746,11 +746,11 @@ contract DssDogTest is DssJsTest {
         // difference from dss: no dog
         risk.mint(self, 200000 * WAD);
 
-        uint dust = 200;
-        Vat(bank).filk(rilk, 'dust', bytes32(dust * RAD));
+        // difference from dss: dust refers to risk, not rico
+        Vat(bank).filk(rilk, 'dust', bytes32(RAY / 1000));
 
         vm.expectRevert(Vat.ErrUrnDust.selector);
-        Vat(bank).frob(rilk, self, int(200000 * WAD), int(199 * WAD));
+        Vat(bank).frob(rilk, self, int(WAD), int(1));
     }
 
     // test_bark_partial_liquidation_dirt_exceeds_hole_to_avoid_dusty_remnant

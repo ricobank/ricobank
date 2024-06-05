@@ -513,7 +513,7 @@ contract VatTest is Test, RicoSetUp {
     function test_frob_err_ordering_1() public {
         // high fee, medium dust
         Vat(bank).filk(rilk, 'fee', bytes32(FEE_2X_ANN));
-        Vat(bank).filk(rilk, 'dust', bytes32(RAD));
+        Vat(bank).filk(rilk, 'dust', bytes32(RAY / 100));
 
         // accumulate pending fees
         skip(BANKYEAR);
@@ -532,12 +532,12 @@ contract VatTest is Test, RicoSetUp {
         Vat(bank).frob(rilk, self, int(2 * WAD), int(WAD / 2 - 1));
 
         //non-dusty, should be good
-        Vat(bank).frob(rilk, self, int(2 * WAD), int((WAD + WAD / 1_000) / 2 ));
+        Vat(bank).frob(rilk, self, int(200 * WAD), int((WAD + WAD / 1_000) / 2 ));
     }
 
     function test_frob_err_ordering_darts() public {
         // medium dust
-        Vat(bank).filk(rilk, 'dust', bytes32(RAD));
+        Vat(bank).filk(rilk, 'dust', bytes32(RAY / 100));
 
         // check how it works with some fees dripped
         Vat(bank).filk(rilk, 'fee', bytes32(Vat(bank).FEE_MAX()));
@@ -548,36 +548,40 @@ contract VatTest is Test, RicoSetUp {
         risk.mint(fakesrc, 1000 * WAD);
         vm.startPrank(fakesrc);
         risk.approve(bank, 1000 * WAD);
-        Vat(bank).frob(rilk, fakesrc, int(WAD * 2), int(1 + WAD * RAY / Vat(bank).FEE_MAX()));
+        int dart = int(1 + WAD * RAY / Vat(bank).FEE_MAX());
+        Vat(bank).frob(rilk, fakesrc, int(200 * WAD), dart);
 
-        // send the rico back to self
-        rico.transfer(self, 100);
         vm.stopPrank();
 
         // bypasses most checks when dart <= 0
-        // can't help because dust
-        vm.expectRevert(Vat.ErrUrnDust.selector);
-        Vat(bank).frob(rilk, fakesrc, int(0), -int(1));
-
         // can't hurt because permissions
+        vm.expectRevert(Vat.ErrWrongUrn.selector);
+        Vat(bank).frob(rilk, fakesrc, -int(199 * WAD), int(0));
         vm.expectRevert(Vat.ErrWrongUrn.selector);
         Vat(bank).frob(rilk, fakesrc, int(0), int(1));
 
-        // ok now frob my own urn...but it's not safe
+        // ok now fakesrc frobs its own urn...but it's not safe
+        vm.startPrank(fakesrc);
         vm.expectRevert(Vat.ErrNotSafe.selector);
-        Vat(bank).frob(rilk, self, int(0), int(1));
+        Vat(bank).frob(rilk, fakesrc, -int(199 * WAD), 0);
+
+        // still can't free because dust
+        vm.expectRevert(Vat.ErrUrnDust.selector);
+        Vat(bank).frob(rilk, fakesrc, -int(199 * WAD), -dart + 100);
+        vm.stopPrank();
 
         // make it safe...should be dusty
         vm.expectRevert(Vat.ErrUrnDust.selector);
         Vat(bank).frob(rilk, self, int(WAD), int(1));
 
-        Vat(bank).frob(rilk, self, int(100 * WAD), int(WAD));
+        // not dusty, should be ok
+        Vat(bank).frob(rilk, self, int(500 * WAD), int(WAD));
     }
 
     function test_frob_err_ordering_dinks_1() public {
         // high fee, medium dust
         Vat(bank).filk(rilk, 'fee', bytes32(FEE_2X_ANN));
-        Vat(bank).filk(rilk, 'dust', bytes32(RAD));
+        Vat(bank).filk(rilk, 'dust', bytes32(RAY / 100));
 
         // accumulate pending fees
         skip(1);
@@ -589,7 +593,7 @@ contract VatTest is Test, RicoSetUp {
         // could prank any non-self address, just chose fakesrc's
         vm.startPrank(fakesrc);
         risk.approve(bank, 1000 * WAD);
-        Vat(bank).frob(rilk, fakesrc, int(WAD * 2), int(1 + WAD * RAY / FEE_2X_ANN));
+        Vat(bank).frob(rilk, fakesrc, int(500 * WAD), int(1 + WAD * RAY / FEE_2X_ANN));
         vm.stopPrank();
 
         // self removes some ink from fakesrc - should fail because unauthorized
@@ -599,7 +603,7 @@ contract VatTest is Test, RicoSetUp {
         // fakesrc removes some ink from fakesrc - should fail because not safe
         vm.prank(fakesrc);
         vm.expectRevert(Vat.ErrNotSafe.selector);
-        Vat(bank).frob(rilk, fakesrc, -int(WAD), int(0));
+        Vat(bank).frob(rilk, fakesrc, -int(500 * WAD), int(0));
 
         // ...but it's fine when dink >= 0
         Vat(bank).frob(rilk, fakesrc, int(0), int(0));
@@ -609,7 +613,7 @@ contract VatTest is Test, RicoSetUp {
     function test_frob_err_ordering_dinks_darts() public {
         // high fee, medium dust
         Vat(bank).filk(rilk, 'fee', bytes32(FEE_2X_ANN));
-        Vat(bank).filk(rilk, 'dust', bytes32(RAD));
+        Vat(bank).filk(rilk, 'dust', bytes32(RAY / 100));
 
         // accumulate pending fees
         skip(1);
@@ -620,31 +624,38 @@ contract VatTest is Test, RicoSetUp {
         // could prank anything non-self; chose fakesrc
         vm.startPrank(fakesrc);
         risk.approve(bank, 1000 * WAD);
-        Vat(bank).frob(rilk, fakesrc, int(WAD * 2), int(1 + WAD * RAY / FEE_2X_ANN));
+        int dart = int(1 + WAD * RAY / FEE_2X_ANN);
+        Vat(bank).frob(rilk, fakesrc, int(500 * WAD), dart);
 
         // 2 for accumulated debt, 1 for rounding
         rico.transfer(self, 3);
         vm.stopPrank();
 
-        // can't steal ink from someone else's urn
+        // can't steal ink or art from someone else's urn
         vm.expectRevert(Vat.ErrWrongUrn.selector);
-        Vat(bank).frob(rilk, fakesrc, -int(WAD), int(1));
+        Vat(bank).frob(rilk, fakesrc, -int(WAD), int(0));
+        vm.expectRevert(Vat.ErrWrongUrn.selector);
+        Vat(bank).frob(rilk, fakesrc, int(0), int(1));
 
         // ...can remove ink from your own, but it has to be safe
         vm.prank(fakesrc);
         vm.expectRevert(Vat.ErrNotSafe.selector);
-        Vat(bank).frob(rilk, fakesrc, -int(WAD), int(1));
+        Vat(bank).frob(rilk, fakesrc, -int(499 * WAD), int(1));
 
         // nothing wrong with frobbing 0
         Vat(bank).frob(rilk, fakesrc, int(0), int(0));
 
-        // can't reduce debt below dust
+        // can't reduce ink below dust
+        vm.prank(fakesrc);
         vm.expectRevert(Vat.ErrUrnDust.selector);
-        Vat(bank).frob(rilk, fakesrc, int(1), int(-1));
+        Vat(bank).frob(rilk, fakesrc, -int(499 * WAD), -dart + 100);
 
-        // ...raise dust - now it's fine
-        Vat(bank).filk(rilk, 'dust', bytes32(RAD / 2));
-        Vat(bank).frob(rilk, fakesrc, int(1), int(-1));
+        // ...lower dust - now it's fine
+        Vat(bank).filk(rilk, 'dust', bytes32(RAY / 1000000000000000));
+
+        vm.prank(fakesrc);
+        Vat(bank).frob(rilk, fakesrc, -int(499 * WAD), -dart + 100);
+        vm.stopPrank();
     }
 
     function test_frob_ilk_uninitialized() public {
@@ -923,6 +934,23 @@ contract VatTest is Test, RicoSetUp {
     function test_no_bail_unitialized_ilk() public {
         vm.expectRevert(Vat.ErrIlkInit.selector);
         Vat(bank).bail('hello', self);
+    }
+
+    function test_risk_denominated_dust() public {
+        uint sup = risk.totalSupply();
+        uint dust = RAY * 5 / sup;
+        Vat(bank).filk(rilk, 'dust', bytes32(dust));
+
+        // art is 0 so it's fine
+        Vat(bank).frob(rilk, self, int(1), 0);
+        Vat(bank).frob(rilk, self, -int(1), 0);
+
+        // art is nonzero so it's not fine
+        vm.expectRevert(Vat.ErrUrnDust.selector);
+        Vat(bank).frob(rilk, self, int(3), int(1));
+
+        Vat(bank).filk(rilk, 'dust', bytes32(dust / 2));
+        Vat(bank).frob(rilk, self, int(3), int(1));
     }
 
 }

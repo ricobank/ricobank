@@ -158,18 +158,17 @@ contract Vat is Bank {
             risk.transfer(u, uint(-dink));
         }
 
-        {
-            // urn is safer, or it is safe
-            bool safer = dink >= 0 && dart <= 0;
-            if (!safer) {
-                (uint deal,) = safe(i, u);
-                if (u != msg.sender)   revert ErrWrongUrn();
-                if (deal < SAFE) revert ErrNotSafe();
-            }
+        // urn is safer, or it is safe
+        if (dink < 0 || dart > 0) {
+            (uint deal,) = safe(i, u);
+            if (u != msg.sender)   revert ErrWrongUrn();
+            if (deal < SAFE) revert ErrNotSafe();
         }
 
-        // urn has no debt, or a non-dusty amount
-        if (art != 0 && rack * art < ilk.dust) revert ErrUrnDust();
+        // urn has no debt, or a non-dusty ink amount
+        if (art != 0 && urn.ink < rmul(risk.totalSupply(), ilk.dust)) {
+            revert ErrUrnDust();
+        }
 
         // either debt has decreased, or debt ceiling is not exceeded
         if (dart > 0) {
@@ -297,7 +296,9 @@ contract Vat is Bank {
         VatStorage storage vs = getVatStorage();
         Ilk storage i = vs.ilks[ilk];
                if (key == "line") { i.line = _val;
-        } else if (key == "dust") { i.dust = _val;
+        } else if (key == "dust") {
+            must(_val, 0, RAY);
+            i.dust = _val;
         } else if (key == "pep")  { i.plot.pep = _val;
         } else if (key == "pop")  { i.plot.pop = _val;
         } else if (key == "pup")  { i.plot.pup = int(_val);

@@ -86,7 +86,7 @@ task('deploy-ricobank', '')
         let ilk = {
             ilk: b32(i),
             chop: ray(params.chop),
-            dust: rad(params.dust),
+            dust: ray(params.dust),
             fee:  ray(params.fee),
             line: rad(params.line),
             liqr: ray(params.liqr),

@@ -110,7 +110,7 @@ abstract contract RicoSetUp is BaseHelper {
         ips[0] = Ball.IlkParams(
             'first',
             RAY, // chop
-            RAD / 10, // dust
+            RAY / 10, // dust
             1000000001546067052200000000, // fee
             100000 * RAD, // line
             RAY // liqr

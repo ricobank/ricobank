@@ -8,7 +8,7 @@ import 'forge-std/Test.sol';
 
 contract BallTest is BaseHelper {
     uint256 constant init_par = RAY * 4;
-    uint256 constant riskamt  = WAD;
+    uint256 riskamt;
 
     bytes32 constant rilk  = 'risk';
 
@@ -21,7 +21,7 @@ contract BallTest is BaseHelper {
     bytes32[] ilks;
 
     uint initial_risk_supply = 1000000 * WAD;
-    uint init_dust           = 90 * RAD / 2000;
+    uint init_dust           = RAY / 100;
     uint start_time;
 
     function setUp() public {
@@ -81,9 +81,10 @@ contract BallTest is BaseHelper {
         skip(BANKYEAR / 2);
 
         Gem(risk).approve(bank, type(uint).max);
-        Gem(risk).mint(self, riskamt * 100);
         Gem(risk).mint(address(this), initial_risk_supply);
 
+        Gem(risk).mint(self, initial_risk_supply);
+        riskamt = Gem(risk).totalSupply() / 100;
         // find a rico borrow amount which will be safe by about 10%
         // risk * riskref = art * par
         safedart = int(rdiv(riskamt, init_par) * 10 / 11);
@@ -171,10 +172,8 @@ contract BallTest is BaseHelper {
         Vat(bank).frob(rilk, self, int(0), dart);
 
         uint ink_aft = _ink(rilk, self);
-        uint art_aft = _art(rilk, self);
         assertEq(ink_aft, ink_pre);
-        assertGt(art_aft, dust / rack * 999 / 1000);
-        assertLt(art_aft, dust / rack * 1000 / 999);
+        assertGt(ink_aft, rmul(dust, Gem(risk).totalSupply()));
 
         // balanced now because already kept
     }

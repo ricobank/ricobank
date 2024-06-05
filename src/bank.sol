@@ -18,7 +18,7 @@ abstract contract Bank is Math, Flog, Palm, OwnableInternal {
         uint256 rack;  // [ray] Accumulated Rate
 
         uint256 line;  // [rad] Debt Ceiling
-        uint256 dust;  // [rad] Urn Debt Floor
+        uint256 dust;  // [ray] Urn Ink Floor, as a fraction of totalSupply
 
         uint256  fee;  // [ray] Collateral-specific, per-second compounding rate
         uint256  rho;  // [sec] Time of last drip
