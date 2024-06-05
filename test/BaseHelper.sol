@@ -6,8 +6,11 @@ import 'forge-std/Test.sol';
 import '../src/mixin/math.sol';
 import { Vat } from '../src/vat.sol';
 import { Vow } from '../src/vow.sol';
+import { Vox } from '../src/vox.sol';
 import { File } from '../src/file.sol';
+import { Bank } from '../src/bank.sol';
 import { BankDiamond } from '../src/diamond.sol';
+import { Diamond, IDiamondCuttable } from "../lib/solidstate-solidity/contracts/proxy/diamond/Diamond.sol";
 
 abstract contract BaseHelper is Math, Test {
     address immutable public self = payable(address(this));
@@ -43,9 +46,85 @@ abstract contract BaseHelper is Math, Test {
         res[0] = x;
     }
 
+    IDiamondCuttable.FacetCutAction internal constant REPLACE = IDiamondCuttable.FacetCutAction.REPLACE;
+
+    function file_imm(bytes32 key, bytes32 val) internal {
+        Bank.BankParams memory saved_bank = Bank.BankParams(
+            address(File(bank).rico()),
+            address(File(bank).risk())
+        );
+        Vow.VowParams memory saved_vow = Vow.VowParams(
+            Vow(bank).wel(),
+            Vow(bank).dam(),
+            Vow(bank).pex(),
+            Vow(bank).mop(),
+            Vow(bank).lax()
+        );
+        Vox.VoxParams memory saved_vox = Vox.VoxParams(
+            Vox(bank).how(),
+            Vox(bank).cap()
+        );
+
+        // bank
+             if (key == 'rico') { saved_bank.rico = address(bytes20(val)); }
+        else if (key == 'risk') { saved_bank.risk = address(bytes20(val)); }
+        // vat
+        // vow
+        else if (key == 'wel') { saved_vow.wel = uint(val); }
+        else if (key == 'dam') { saved_vow.dam = uint(val); }
+        else if (key == 'pex') { saved_vow.pex = uint(val); }
+        else if (key == 'mop') { saved_vow.mop = uint(val); }
+        else if (key == 'lax') { saved_vow.lax = uint(val); }
+        // vox
+        else if (key == 'how') { saved_vox.how = uint(val); }
+        else if (key == 'cap') { saved_vox.cap = uint(val); }
+        else { revert('file_imm: bad key'); }
+
+        Vat vat = new Vat(saved_bank);
+        Vow vow = new Vow(saved_bank, saved_vow);
+        Vox vox = new Vox(saved_bank, saved_vox);
+
+        bytes4[] memory vatsels = Diamond(bank).facetFunctionSelectors(
+            Diamond(bank).facetAddress(Vat.frob.selector)
+        );
+
+        bytes4[] memory vowsels = Diamond(bank).facetFunctionSelectors(
+            Diamond(bank).facetAddress(Vow.keep.selector)
+        );
+
+        bytes4[] memory voxsels = Diamond(bank).facetFunctionSelectors(
+            Diamond(bank).facetAddress(Vox.poke.selector)
+        );
+
+        IDiamondCuttable.FacetCut[] memory facetCuts = new IDiamondCuttable.FacetCut[](3);
+        facetCuts[0] = IDiamondCuttable.FacetCut(address(vat),  REPLACE, vatsels);
+        facetCuts[1] = IDiamondCuttable.FacetCut(address(vow),  REPLACE, vowsels);
+        facetCuts[2] = IDiamondCuttable.FacetCut(address(vox),  REPLACE, voxsels);
+
+        Diamond(bank).diamondCut(facetCuts, address(0), bytes(""));
+    }
+
+    function file(bytes32 key, bytes32 val) public {
+        if (
+            // bank
+            key == 'rico' || key == 'risk' ||
+            // vow
+            key == 'wel'  || key == 'dam'  || key == 'pex'  ||
+            key == 'mop'  || key == 'lax'  ||
+            // vox
+            key == 'cap'  || key == 'how'  ||
+            // vat
+            key == 'ceil'
+        ) {
+            file_imm(key, val);
+        } else {
+            File(bank).file(key, val);
+        }
+    }
+
     function set_dxm(bytes32 key, uint price) public {
-        File(bank).file(key, bytes32(rdiv(price, Vow(bank).pex())));
-        File(bank).file('bel', bytes32(block.timestamp - 1));
+        file(key, bytes32(rdiv(price, Vow(bank).pex())));
+        file('bel', bytes32(block.timestamp - 1));
     }
 
 }

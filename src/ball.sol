@@ -16,6 +16,7 @@ import {Gem} from "../lib/gemfab/src/gem.sol";
 import {Vat} from "./vat.sol";
 import {Vow} from "./vow.sol";
 import {Vox} from "./vox.sol";
+import {Bank} from "./bank.sol";
 import {File} from "./file.sol";
 import {Math} from "./mixin/math.sol";
 
@@ -38,10 +39,14 @@ contract Ball is Math {
         address rico;
         address risk;
         uint256 par;
-        Vow.Ramp ramp;
+        uint256 wel;
+        uint256 dam;
+        uint256 pex;
         uint256 gif;
         uint256 mop;
         uint256 lax;
+        uint256 how;
+        uint256 cap;
     }
 
     address public rico;
@@ -55,10 +60,13 @@ contract Ball is Math {
     File public file;
 
     constructor(BallArgs memory args) {
-        vat  = new Vat();
-        vow  = new Vow();
-        vox  = new Vox();
-        file = new File();
+        Bank.BankParams memory bp = Bank.BankParams(args.rico, args.risk);
+        vat  = new Vat(bp);
+        vow  = new Vow(bp, Vow.VowParams(
+            args.wel, args.dam, args.pex, args.mop, args.lax
+        ));
+        vox  = new Vox(bp, Vox.VoxParams(args.how, args.cap));
+        file = new File(bp);
 
         bank = args.bank;
         rico = args.rico;
@@ -69,16 +77,15 @@ contract Ball is Math {
     function setup(BallArgs calldata args) external {
         if (done) revert('done');
         IDiamondCuttable.FacetCut[] memory facetCuts = new IDiamondCuttable.FacetCut[](4);
-        bytes4[] memory filesels = new bytes4[](4);
+        bytes4[] memory filesels = new bytes4[](3);
         bytes4[] memory vatsels  = new bytes4[](14);
-        bytes4[] memory vowsels  = new bytes4[](10);
-        bytes4[] memory voxsels  = new bytes4[](4);
+        bytes4[] memory vowsels  = new bytes4[](11);
+        bytes4[] memory voxsels  = new bytes4[](5);
         File fbank = File(bank);
 
         filesels[0] = File.file.selector;
-        filesels[1] = File.rico.selector;
-        filesels[2] = File.CAP_MAX.selector;
-        filesels[3] = File.LAX_MAX.selector;
+        filesels[1] = bytes4(keccak256(abi.encodePacked('rico()')));
+        filesels[2] = bytes4(keccak256(abi.encodePacked('risk()')));
         vatsels[0]  = Vat.filk.selector;
         vatsels[1]  = Vat.init.selector;
         vatsels[2]  = Vat.frob.selector;
@@ -91,22 +98,24 @@ contract Ball is Math {
         vatsels[9] = Vat.rest.selector;
         vatsels[10] = Vat.par.selector;
         vatsels[11] = Vat.drip.selector;
-        vatsels[12] = Vat.FEE_MAX.selector;
+        vatsels[12] = bytes4(keccak256(abi.encodePacked('FEE_MAX()')));
         vatsels[13] = Vat.get.selector;
         vowsels[0]  = Vow.keep.selector;
-        vowsels[1]  = Vow.RISK.selector;
-        vowsels[2]  = Vow.dam.selector;
-        vowsels[3]  = Vow.pex.selector;
-        vowsels[4]  = Vow.ramp.selector;
+        vowsels[1]  = bytes4(keccak256(abi.encodePacked('dam()')));
+        vowsels[2]  = bytes4(keccak256(abi.encodePacked('pex()')));
+        vowsels[3]  = Vow.bel.selector;
+        vowsels[4]  = bytes4(keccak256(abi.encodePacked('wel()')));
         vowsels[5]  = Vow.mine.selector;
         vowsels[6]  = Vow.gif.selector;
-        vowsels[7]  = Vow.mop.selector;
+        vowsels[7]  = bytes4(keccak256(abi.encodePacked('mop()')));
         vowsels[8]  = Vow.phi.selector;
-        vowsels[9]  = Vow.lax.selector;
+        vowsels[9] = bytes4(keccak256(abi.encodePacked('lax()')));
+        vowsels[10] = bytes4(keccak256(abi.encodePacked('LAX_MAX()')));
         voxsels[0]  = Vox.poke.selector;
         voxsels[1]  = Vox.way.selector;
-        voxsels[2]  = Vox.how.selector;
-        voxsels[3]  = Vox.cap.selector;
+        voxsels[2]  = bytes4(keccak256(abi.encodePacked('how()')));
+        voxsels[3]  = bytes4(keccak256(abi.encodePacked('cap()')));
+        voxsels[4]  = bytes4(keccak256(abi.encodePacked('CAP_MAX()')));
 
         facetCuts[0] = IDiamondCuttable.FacetCut(address(file), ADD, filesels);
         facetCuts[1] = IDiamondCuttable.FacetCut(address(vat),  ADD, vatsels);
@@ -115,23 +124,12 @@ contract Ball is Math {
         Diamond(payable(address(fbank))).acceptOwnership();
         Diamond(payable(address(fbank))).diamondCut(facetCuts, address(0), bytes(""));
 
-        fbank.file("rico", bytes32(bytes20(rico)));
-        fbank.file("risk", bytes32(bytes20(risk)));
-
         fbank.file("par",  bytes32(args.par));
-
-        fbank.file("dam", bytes32(RAY));
-
         fbank.file("bel", bytes32(block.timestamp));
-        fbank.file("wel", bytes32(args.ramp.wel));
 
         fbank.file("gif", bytes32(args.gif));
-        fbank.file("mop", bytes32(args.mop));
         fbank.file("phi", bytes32(block.timestamp));
-        fbank.file("lax", bytes32(args.lax));
 
-        fbank.file("how", HOW);
-        fbank.file("cap", CAP);
         fbank.file("way", bytes32(RAY));
     }
 

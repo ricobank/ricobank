@@ -64,8 +64,8 @@ contract VowTest is Test, RicoSetUp {
 
         // set dam and bel so it just takes one second to reach target price
         uint dam = rmul(rinv(Vow(bank).pex()), rico_price_in_risk * RAY);
-        File(bank).file('dam', bytes32(dam));
-        File(bank).file('bel', bytes32(block.timestamp));
+        file('dam', bytes32(dam));
+        file('bel', bytes32(block.timestamp));
         skip(1);
 
         Vow(bank).keep(empty);
@@ -103,9 +103,9 @@ contract VowTest is Test, RicoSetUp {
         risk.mint(self, 3000 * WAD);
         // set fee > 1 so rack changes
         Vat(bank).filk(rilk, 'fee', bytes32(FEE_2X_ANN));
-        File(bank).file('wel', bytes32(RAY / 2));
-        File(bank).file('bel', bytes32(block.timestamp - 1));
-        File(bank).file('dam', bytes32(RAY / WAD));
+        file('wel', bytes32(RAY / 2));
+        file('bel', bytes32(block.timestamp - 1));
+        file('dam', bytes32(RAY / WAD));
 
         Vat(bank).frob(rilk, self, int(WAD * 3000), int(WAD * 3000));
 
@@ -167,8 +167,8 @@ contract VowTest is Test, RicoSetUp {
         skip(BANKYEAR);
 
         // set dam and bel so it just takes one second to reach target price
-        File(bank).file('dam', bytes32(rinv(Vow(bank).pex())));
-        File(bank).file('bel', bytes32(block.timestamp));
+        file('dam', bytes32(rinv(Vow(bank).pex())));
+        file('bel', bytes32(block.timestamp));
         skip(1);
 
         assertEq(Vat(bank).joy(), 0);
@@ -208,10 +208,10 @@ contract VowTest is Test, RicoSetUp {
     {
         // can't flap more rico than surplus
         vm.expectRevert(Bank.ErrBound.selector);
-        File(bank).file('wel', bytes32(RAY + 1));
+        new Vow(Bank.BankParams(arico, arisk), Vow.VowParams(RAY + 1, RAY, RAY, 0, 0));
 
         uint wel = RAY / 7;
-        File(bank).file('wel', bytes32(wel));
+        file('wel', bytes32(wel));
         Vat(bank).frob(rilk, self, int(WAD), int(WAD));
 
         // drip a bunch of joy
@@ -225,8 +225,8 @@ contract VowTest is Test, RicoSetUp {
         uint pre_risk = risk.balanceOf(self);
 
         // set dam and bel so it just takes one second to reach target price
-        File(bank).file('dam', bytes32(rinv(Vow(bank).pex())));
-        File(bank).file('bel', bytes32(block.timestamp - 1));
+        file('dam', bytes32(rinv(Vow(bank).pex())));
+        file('bel', bytes32(block.timestamp - 1));
         Vow(bank).keep(empty);
 
         uint aft_rico = rico.balanceOf(self);
@@ -240,9 +240,9 @@ contract VowTest is Test, RicoSetUp {
 
     function test_dam() public {
         risk.mint(self, UINT256_MAX - risk.totalSupply());
-        File(bank).file('bel', bytes32(block.timestamp));
-        File(bank).file('wel', bytes32(RAY));
-        File(bank).file('dam', bytes32(RAY / 10));
+        file('bel', bytes32(block.timestamp));
+        file('wel', bytes32(RAY));
+        file('dam', bytes32(RAY / 10));
 
         // no time elapsed, price == pex
         force_fees(Vat(bank).sin() / RAY + WAD);
@@ -288,7 +288,7 @@ contract VowTest is Test, RicoSetUp {
     }
 
     function test_mine() public {
-        File(bank).file('mop', bytes32(uint(999999978035500000000000000)));
+        file('mop', bytes32(uint(999999978035500000000000000)));
         assertEq(Vow(bank).phi(), block.timestamp);
         uint prerisk = risk.totalSupply();
         uint lax = Vow(bank).lax();
@@ -325,9 +325,9 @@ contract VowTest is Test, RicoSetUp {
     }
 
     function test_gif() public {
-        File(bank).file('mop', bytes32(RAY));
-        File(bank).file('lax', 0);
-        File(bank).file('gif', bytes32(WAD * 3));
+        file('mop', bytes32(RAY));
+        file('lax', 0);
+        file('gif', bytes32(WAD * 3));
 
         skip(BANKYEAR);
         uint prerisk = risk.totalSupply();
@@ -335,16 +335,16 @@ contract VowTest is Test, RicoSetUp {
         assertEq(risk.totalSupply(), prerisk + WAD * 3 * BANKYEAR);
 
         skip(10);
-        File(bank).file('gif', 0);
+        file('gif', 0);
         prerisk = risk.totalSupply();
         Vow(bank).mine();
         assertEq(risk.totalSupply(), prerisk);
     }
 
     function test_mop() public {
-        File(bank).file('gif', bytes32(WAD));
-        File(bank).file('mop', 0);
-        File(bank).file('lax', 0);
+        file('gif', bytes32(WAD));
+        file('mop', 0);
+        file('lax', 0);
 
         skip(1);
         uint prerisk = risk.totalSupply();
@@ -358,8 +358,8 @@ contract VowTest is Test, RicoSetUp {
         assertEq(risk.totalSupply(), prerisk);
         assertEq(Vow(bank).gif(), 0);
 
-        File(bank).file('gif', bytes32(WAD));
-        File(bank).file('mop', bytes32(RAY / 2));
+        file('gif', bytes32(WAD));
+        file('mop', bytes32(RAY / 2));
         skip(2);
         prerisk = risk.totalSupply();
         Vow(bank).mine();
@@ -368,9 +368,9 @@ contract VowTest is Test, RicoSetUp {
     }
 
     function test_lax() public {
-        File(bank).file('gif', bytes32(WAD));
-        File(bank).file('mop', bytes32(RAY));
-        File(bank).file('lax', 0);
+        file('gif', bytes32(WAD));
+        file('mop', bytes32(RAY));
+        file('lax', 0);
 
         skip(1);
         uint prerisk = risk.totalSupply();
@@ -380,17 +380,17 @@ contract VowTest is Test, RicoSetUp {
         skip(1);
         prerisk = risk.totalSupply();
         uint lax = RAY / 10000000000;
-        File(bank).file('lax', bytes32(lax));
+        file('lax', bytes32(lax));
         Vow(bank).mine();
         assertEq(risk.totalSupply(), prerisk + WAD + rmul(lax, prerisk));
 
         skip(1);
         prerisk = risk.totalSupply();
-        File(bank).file('lax', bytes32(lax));
+        file('lax', bytes32(lax));
         Vow(bank).mine();
         assertEq(risk.totalSupply(), prerisk + WAD + rmul(lax, prerisk));
 
-        File(bank).file('mop', 0);
+        file('mop', 0);
         skip(BANKYEAR);
         prerisk = risk.totalSupply();
         Vow(bank).mine();
@@ -441,7 +441,7 @@ contract VowJsTest is Test, RicoSetUp {
         rico.transfer(address(1), 4000 * WAD);
         risk.transfer(address(1), 2000 * WAD);
 
-        File(bank).file('bel', bytes32(block.timestamp));
+        file('bel', bytes32(block.timestamp));
 
         guy = new Guy(bank);
     }

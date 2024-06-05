@@ -20,7 +20,7 @@ contract VoxTest is Test, RicoSetUp {
     enum MarLev {HIGH, LOW}
 
     modifier _orig_ {
-        File(bank).file(bytes32('cap'), bytes32(pre_cap));
+        file(bytes32('cap'), bytes32(pre_cap));
         _;
     }
 
@@ -32,10 +32,10 @@ contract VoxTest is Test, RicoSetUp {
         uint orig_risk = risk.balanceOf(self);
 
         if(lev == MarLev.HIGH) {
-            File(bank).file('dam', bytes32(RAY));
+            file('dam', bytes32(RAY));
             risk.mint(self, type(uint256).max - risk.totalSupply());
         } else {
-            File(bank).file('dam', bytes32(0));
+            file('dam', bytes32(0));
         }
 
         skip(dt);
@@ -44,7 +44,7 @@ contract VoxTest is Test, RicoSetUp {
         uint256 end_risk = risk.balanceOf(self);
         (end_risk > orig_risk) ? risk.burn(self, end_risk - orig_risk) : risk.mint(self, orig_risk - end_risk);
 
-        File(bank).file('dam', bytes32(orig_dam));
+        file('dam', bytes32(orig_dam));
     }
 
     function setUp() public {
@@ -54,9 +54,9 @@ contract VoxTest is Test, RicoSetUp {
         risk.approve(bank, type(uint256).max);
 
         pre_cap = Vox(bank).cap();
-        File(bank).file('cap', bytes32(File(bank).CAP_MAX()));
-        File(bank).file('par', bytes32(init_par));
-        File(bank).file('dam', bytes32(RAY / 10));
+        file('cap', bytes32(Vox(bank).CAP_MAX()));
+        file('par', bytes32(init_par));
+        file('dam', bytes32(RAY / 10));
 
         // accumulate surplus
         Vat(bank).frob(rilk, self, int(1000 * WAD), int(100 * WAD));
@@ -68,7 +68,7 @@ contract VoxTest is Test, RicoSetUp {
         par0 = Vat(bank).par();
 
         // reset flap and poke timer
-        File(bank).file('bel', bytes32(block.timestamp));
+        file('bel', bytes32(block.timestamp));
     }
 
     function test_poke_sender() public {
@@ -134,7 +134,7 @@ contract VoxTest is Test, RicoSetUp {
         assertEq(Vat(bank).par(), init_par);
 
         // way == 2 -> par should 10X every year
-        File(bank).file(bytes32('way'), bytes32(File(bank).CAP_MAX()));
+        file(bytes32('way'), bytes32(Vox(bank).CAP_MAX()));
         skip(2 * BANKYEAR);
         Vow(bank).keep(single(rilk));
         assertClose(Vat(bank).par(), init_par * 100, 1_000_000_000);
@@ -144,7 +144,7 @@ contract VoxTest is Test, RicoSetUp {
     {
         // how > 0 and mar < par
         uint how = RAY + (RAY * 12 / 10) / (10 ** 16);
-        File(bank).file(bytes32('how'), bytes32(how));
+        file(bytes32('how'), bytes32(how));
 
         // no more time has passed -> par and way unchanged
         risk.mint(self, Vow(bank).pex());

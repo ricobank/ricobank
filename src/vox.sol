@@ -18,6 +18,7 @@
 pragma solidity ^0.8.25;
 
 import { Bank } from "./bank.sol";
+import { File } from "./file.sol";
 
 // price rate controller
 // ensures that market price (mar) roughly tracks par
@@ -27,8 +28,24 @@ import { Bank } from "./bank.sol";
 // borrowers are rewarded about 1%/yr for borrowing and shorting rico
 contract Vox is Bank {
     function way() external view returns (uint256) {return getVoxStorage().way;}
-    function how() external view returns (uint256) {return getVoxStorage().how;}
-    function cap() external view returns (uint256) {return getVoxStorage().cap;}
+
+    struct VoxParams {
+        uint256 how;
+        uint256 cap;
+    }
+
+    uint256 immutable public how;
+    uint256 immutable public cap;
+
+    uint constant public CAP_MAX = 1000000072964521287979890107; // ~10x/yr
+
+    constructor(BankParams memory bp, VoxParams memory vp) Bank(bp) {
+        how = vp.how;
+        cap = vp.cap;
+
+        must(how, RAY, type(uint).max);
+        must(cap, RAY, CAP_MAX);
+    }
 
     error ErrSender();
 
@@ -52,9 +69,9 @@ contract Vox is Bank {
         // raise the price rate when mar < par
         // this is how mar tracks par and rcs pays down deficits
         if (mar < par_) {
-            way_ = min(voxS.cap, grow(way_, voxS.how, dt));
+            way_ = min(cap, grow(way_, how, dt));
         } else if (mar > par_) {
-            way_ = max(rinv(voxS.cap), grow(way_, rinv(voxS.how), dt));
+            way_ = max(rinv(cap), grow(way_, rinv(how), dt));
         }
 
         voxS.way = way_;

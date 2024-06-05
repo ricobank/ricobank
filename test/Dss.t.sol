@@ -75,7 +75,7 @@ contract DssJsTest is Test, RicoSetUp {
         c = address(cat);
 
         // mint ramp has been charging for 1s
-        File(bank).file('bel', bytes32(block.timestamp - 1));
+        file('bel', bytes32(block.timestamp - 1));
     }
 
 }
@@ -320,7 +320,7 @@ contract DssBiteTest is DssVatTest {
 
     function test_happy_bite() public _bite_ {
         // create urn (push, frob)
-        File(bank).file('par', bytes32(RAY * 4 / 10));
+        file('par', bytes32(RAY * 4 / 10));
         Vat(bank).frob(rilk, self, int(40 * WAD), int(100 * WAD));
         risk.mint(self, 10000 * WAD);
         risk.burn(self, risk.balanceOf(self) - 960 * WAD);
@@ -398,7 +398,7 @@ contract DssBiteTest is DssVatTest {
 
     function test_floppy_bite() public _bite_ {
         Vat(bank).filk(rilk, 'fee', bytes32(FEE_2X_ANN));
-        File(bank).file('par', bytes32(RAY * 4 / 10));
+        file('par', bytes32(RAY * 4 / 10));
         uint ricoamt = 100 * WAD;
 
         Vat(bank).frob(rilk, self, int(40 * WAD), int(ricoamt));
@@ -533,9 +533,9 @@ contract DssClipTest is DssJsTest {
         // frob some rico, then make the urn unsafe
         // use par to mint so much tab because no other way currently
         // direct par modification doesn't happen in practice
-        File(bank).file('par', bytes32(RAY / 10));
+        file('par', bytes32(RAY / 10));
         Vat(bank).frob(rilk, self, int(40 * WAD), int(100 * WAD));
-        File(bank).file('par', bytes32(RAY));
+        file('par', bytes32(RAY));
 
         // dss me/ali/bob hope clip N/A, rico vat wards vow
 
@@ -647,7 +647,7 @@ contract DssVowTest is DssJsTest {
     function _vow_setUp() internal {
         risk.mint(self, 10000 * WAD);
         risk.approve(bank, UINT256_MAX);
-        File(bank).file('bel', bytes32(block.timestamp));
+        file('bel', bytes32(block.timestamp));
     }
     modifier _vow_ { _vow_setUp(); _; }
 
@@ -716,7 +716,7 @@ contract DssDogTest is DssJsTest {
     function test_bark_basic() public _dog_ {
         uint init_ink = WAD;
         Vat(bank).filk(rilk, 'fee', bytes32(FEE_2X_ANN));
-        File(bank).file('par', bytes32(RAY / 2000));
+        file('par', bytes32(RAY / 2000));
         setUrn(init_ink, 2000 * WAD);
 
         // make unsafe
@@ -732,7 +732,7 @@ contract DssDogTest is DssJsTest {
     }
 
     function test_bark_not_unsafe() public _dog_ {
-        File(bank).file('par', bytes32(RAY / 500));
+        file('par', bytes32(RAY / 500));
         setUrn(WAD, 500 * WAD);
 
         // fee is RAY, no effect

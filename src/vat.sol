@@ -33,9 +33,9 @@ contract Vat is Bank {
     function sin()  external view returns (uint) {return getVatStorage().sin;}
     function rest() external view returns (uint) {return getVatStorage().rest;}
     function par()  external view returns (uint) {return getVatStorage().par;}
-    function FEE_MAX() external pure returns (uint) {return _FEE_MAX;}
 
-    uint256 constant _FEE_MAX  = 1000000072964521287979890107; // ~10x/yr
+    uint256 constant public FEE_MAX = 1000000072964521287979890107; // ~10x/yr
+
     uint256 constant SAFE = RAY;
 
     error ErrDebtCeil();
@@ -45,6 +45,8 @@ contract Vat is Bank {
     error ErrSafeBail();
     error ErrUrnDust();
     error ErrWrongUrn();
+
+    constructor(BankParams memory bp) Bank(bp) {}
 
     function init(bytes32 ilk)
       external payable onlyOwner _flog_
@@ -130,7 +132,7 @@ contract Vat is Bank {
                 _rest = vs.rest += uint(dtab) % RAY;
                 emit NewPalm0("rest", bytes32(_rest));
 
-                getBankStorage().rico.mint(msg.sender, wad);
+                rico.mint(msg.sender, wad);
             } else if (dtab < 0) {
                 // paydown
                 // dtab is a rad, so burn one extra to round in system's favor
@@ -139,7 +141,7 @@ contract Vat is Bank {
                 _rest = vs.rest += add(wad * RAY, dtab);
                 emit NewPalm0("rest", bytes32(_rest));
 
-                getBankStorage().rico.burn(msg.sender, wad);
+                rico.burn(msg.sender, wad);
             }
         }
 
@@ -150,10 +152,10 @@ contract Vat is Bank {
 
         if (dink > 0) {
             // pull tokens from sender
-            getVowStorage().risk.transferFrom(msg.sender, address(this), uint(dink));
+            risk.transferFrom(msg.sender, address(this), uint(dink));
         } else if (dink < 0) {
             // return tokens to urn holder
-            getVowStorage().risk.transfer(u, uint(-dink));
+            risk.transfer(u, uint(-dink));
         }
 
         {
@@ -229,8 +231,8 @@ contract Vat is Bank {
         }
 
         // trade collateral with keeper for rico
-        getBankStorage().rico.burn(msg.sender, earn);
-        getVowStorage().risk.transfer(msg.sender, sell);
+        rico.burn(msg.sender, earn);
+        risk.transfer(msg.sender, sell);
     }
 
     // Update joy and possibly line. Workaround for stack too deep
@@ -306,7 +308,7 @@ contract Vat is Bank {
             must(_val, RAY, 10 * RAY);
             i.chop = _val;
         } else if (key == "fee") {
-            must(_val, RAY, _FEE_MAX);
+            must(_val, RAY, FEE_MAX);
             _drip(ilk);
             i.fee = _val;
         } else { revert ErrWrongKey(); }

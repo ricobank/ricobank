@@ -42,10 +42,14 @@ contract BallTest is BaseHelper {
             rico,
             risk,
             init_par,
-            Bank.Ramp(block.timestamp, RAY),
+            RAY, // wel
+            RAY, // dam
+            RAY * WAD, // pex
             WAD, // gif (82400 RISK/yr)
             999999978035500000000000000, // mop (~-50%/yr)
-            937000000000000000 // lax (~3%/yr)
+            937000000000000000, // lax (~3%/yr)
+            1000000000000003652500000000, // how
+            1000000021970000000000000000 // cap
         );
 
         Ball ball = new Ball(bargs);
@@ -154,7 +158,7 @@ contract BallTest is BaseHelper {
         uint ink_pre = _ink(rilk, self);
         uint art_pre = _art(rilk, self);
 
-        assertEq(Vow(bank).ramp().wel, RAY);
+        assertEq(Vow(bank).wel(), RAY);
 
         set_dxm('dam', RAY);
         vm.expectCall(rico, abi.encodePacked(Gem.mint.selector));
@@ -180,26 +184,26 @@ contract BallTest is BaseHelper {
 
         vm.prank(address(gf));
         vm.expectRevert("Ownable: sender must be owner");
-        File(bank).file('par', bytes32(WAD));
+        File(bank).file('par', bytes32(RAY));
 
         BankDiamond(bank).transferOwnership(address(gf));
         assertEq(BankDiamond(bank).owner(), address(this));
 
         vm.prank(address(gf));
         vm.expectRevert("Ownable: sender must be owner");
-        File(bank).file('par', bytes32(WAD));
+        File(bank).file('par', bytes32(RAY));
 
-        File(bank).file('par', bytes32(WAD));
+        File(bank).file('par', bytes32(RAY));
 
         vm.prank(address(gf));
         BankDiamond(bank).acceptOwnership();
         assertEq(BankDiamond(bank).owner(), address(gf));
 
         vm.expectRevert("Ownable: sender must be owner");
-        File(bank).file('par', bytes32(WAD));
+        File(bank).file('par', bytes32(RAY));
 
         vm.prank(address(gf));
-        File(bank).file('par', bytes32(WAD));
+        File(bank).file('par', bytes32(RAY));
     }
 
     function test_bounds_fee() public {
@@ -231,53 +235,66 @@ contract BallTest is BaseHelper {
     }
 
     function test_bounds_2() public {
-        File(bank).file('way', bytes32(RAY));
-        File(bank).file('wel', bytes32(0));
-        File(bank).file('wel', bytes32(RAY));
+        uint wel = Vow(bank).wel();
+        uint dam = Vow(bank).dam();
+        uint pex = Vow(bank).pex();
+        uint mop = Vow(bank).mop();
+        uint lax = Vow(bank).lax();
+
+        file('way', bytes32(RAY));
+        file('wel', bytes32(0));
+        file('wel', bytes32(RAY));
         vm.expectRevert(Bank.ErrBound.selector);
-        File(bank).file('wel', bytes32(RAY+1));
+        new Vow(Bank.BankParams(rico, risk), Vow.VowParams(RAY + 1, dam, pex, mop, lax));
 
-        File(bank).file('how', bytes32(RAY));
-        File(bank).file('how', bytes32(UINT256_MAX));
+        file('how', bytes32(RAY));
+        file('how', bytes32(UINT256_MAX));
         vm.expectRevert(Bank.ErrBound.selector);
-        File(bank).file('how', bytes32(RAY-1));
+        new Vox(Bank.BankParams(rico, risk), Vox.VoxParams(RAY - 1, RAY + 1));
 
-        File(bank).file('how', bytes32(RAY));
-        uint cap_max = File(bank).CAP_MAX();
-        File(bank).file('cap', bytes32(RAY));
-        File(bank).file('cap', bytes32(cap_max));
+        file('how', bytes32(RAY));
+        uint cap_max = Vox(bank).CAP_MAX();
+        file('cap', bytes32(RAY));
+        file('cap', bytes32(cap_max));
         vm.expectRevert(Bank.ErrBound.selector);
-        File(bank).file('cap', bytes32(cap_max+1));
+        new Vox(Bank.BankParams(rico, risk), Vox.VoxParams(RAY + 1, cap_max + 1));
 
-        File(bank).file('how', bytes32(RAY * 3 / 2));
-        File(bank).file('way', bytes32(RAY));
+        file('how', bytes32(RAY * 3 / 2));
+        file('way', bytes32(RAY));
 
-        File(bank).file('way', bytes32(cap_max));
-        File(bank).file('how', bytes32(uint(1000000000000003652500000000)));
+        file('way', bytes32(cap_max));
+        file('how', bytes32(uint(1000000000000003652500000000)));
         vm.expectRevert(Bank.ErrBound.selector);
-        File(bank).file('way', bytes32(cap_max+1));
+        file('way', bytes32(cap_max+1));
 
-        File(bank).file('dam', 0);
-        File(bank).file('dam', bytes32(RAY));
+        file('dam', 0);
+        file('dam', bytes32(RAY));
 
         vm.expectRevert(Bank.ErrBound.selector);
-        File(bank).file('dam', bytes32(RAY + 1));
+        new Vow(Bank.BankParams(rico, risk), Vow.VowParams(wel, RAY + 1, pex, mop, lax));
     }
 
     function test_bounds_mine() public {
-        File(bank).file('gif', bytes32(UINT256_MAX));
-        File(bank).file('gif', 0);
+        uint wel = Vow(bank).wel();
+        uint dam = Vow(bank).dam();
+        uint pex = Vow(bank).pex();
+        uint mop = Vow(bank).mop();
 
-        File(bank).file('phi', 0);
-        File(bank).file('phi', bytes32(block.timestamp));
+        file('gif', bytes32(UINT256_MAX));
+        file('gif', 0);
+
+        file('phi', 0);
+        file('phi', bytes32(block.timestamp));
         vm.expectRevert(Bank.ErrBound.selector);
         File(bank).file('phi', bytes32(block.timestamp + 1));
 
-        uint laxmax = File(bank).LAX_MAX();
-        File(bank).file('lax', bytes32(laxmax));
-        File(bank).file('lax', 0);
+        uint laxmax = Vow(bank).LAX_MAX();
+        file('lax', bytes32(laxmax));
+        file('lax', 0);
         vm.expectRevert(Bank.ErrBound.selector);
-        File(bank).file('lax', bytes32(laxmax + 1));
+        new Vow(Bank.BankParams(rico, risk), Vow.VowParams(
+            wel, dam, pex, mop, laxmax + 1
+        ));
     }
 
 }

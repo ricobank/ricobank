@@ -68,13 +68,14 @@ task('deploy-ricobank', '')
         rico: deps.rico.address,
         risk: deps.risk.address,
         par: ray(settings.par),
-        ramp:   {
-            bel: (await ethers.provider.getBlock('latest')).timestamp,
-            wel: ray(settings.ramp.wel)
-        },
+        wel: ray(settings.wel),
+        dam: ray(settings.dam),
+        pex: ray(settings.pex),
         gif: wad(settings.gif),
         mop: ray(settings.mop),
-        lax: ray(settings.lax)
+        lax: ray(settings.lax),
+        how: ray(settings.how),
+        cap: ray(settings.cap)
     }
 
     let ilks = []

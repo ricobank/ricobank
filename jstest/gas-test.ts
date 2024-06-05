@@ -69,13 +69,13 @@ describe('Gas', () => {
     })
 
     it('deploy gas', async () => {
-      await check(ethers.BigNumber.from(deploygas), 13719783)
+      await check(ethers.BigNumber.from(deploygas), 13416917)
     })
 
     it('frob cold gas', async () => {
       let dink = ethers.utils.solidityPack(['int'], [wad(5)])
       let gas = await bank.estimateGas.frob(rilk, ALI, dink, wad(2))
-      await check(gas, 257516)
+      await check(gas, 252887)
     })
 
     it('frob hot gas', async () => {
@@ -86,7 +86,7 @@ describe('Gas', () => {
       let gas = await bank.estimateGas.frob(
         rilk, ALI, ethers.utils.solidityPack(['int'], [wad(5)]), wad(2)
       )
-      await check(gas, 138074)
+      await check(gas, 133445)
     })
 
     it('bail gas', async () => {
@@ -96,7 +96,7 @@ describe('Gas', () => {
       await mine(hh, BANKYEAR * 1000)
 
       let gas = await bank.estimateGas.bail(rilk, ALI)
-      await check(gas, 196606)
+      await check(gas, 191473)
     })
 
     it('keep surplus gas', async () => {
@@ -116,11 +116,8 @@ describe('Gas', () => {
       await mine(hh, BANKYEAR)
       await send(bank.drip, rilk)
 
-      let timestamp = (await ali.provider.getBlock('latest')).timestamp
-      await send(bank.file, b32('dam'), bn2b32(ray(1).div(wad(1))))
-      await send(bank.file, b32('bel'), bn2b32(ethers.BigNumber.from(timestamp)))
       let gas = await bank.estimateGas.keep([])
-      await check(gas, 119319)
+      await check(gas, 119313)
     })
 
     it('drip gas', async () => {
@@ -128,7 +125,7 @@ describe('Gas', () => {
       await send(bank.frob, rilk, ALI, dink, wad(2))
       await mine(hh, BANKYEAR)
       let gas = await bank.estimateGas.drip(rilk)
-      await check(gas, 85026)
+      await check(gas, 85048)
     })
   })
 })

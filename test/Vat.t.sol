@@ -505,7 +505,7 @@ contract VatTest is Test, RicoSetUp {
 
         // par increase should increase collateral requirement
         // -> urn sinks
-        File(bank).file('par', bytes32(RAY * 3));
+        file('par', bytes32(RAY * 3));
         (deal,) = Vat(bank).safe(rilk, self);
         assertLt(deal, RAY);
     }
@@ -533,7 +533,6 @@ contract VatTest is Test, RicoSetUp {
 
         //non-dusty, should be good
         Vat(bank).frob(rilk, self, int(2 * WAD), int((WAD + WAD / 1_000) / 2 ));
-
     }
 
     function test_frob_err_ordering_darts() public {
