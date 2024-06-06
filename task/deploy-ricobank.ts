@@ -50,7 +50,7 @@ task('deploy-ricobank', '')
     const pb = new dpack.PackBuilder(hre.network.name)
 
     const tokens   = args.tokens ? require(args.tokens)[args.netname] : {}
-    const settings = require('./settings.json')[hre.network.name]
+    const settings = require('./settings.json')[args.netname]
 
     // base diamond contract (address will be bank address)
     const diamond_artifact = require('../artifacts/src/diamond.sol/BankDiamond.json')
@@ -74,6 +74,7 @@ task('deploy-ricobank', '')
         gif: wad(settings.gif),
         mop: ray(settings.mop),
         lax: ray(settings.lax),
+        wal: wad(settings.wal),
         how: ray(settings.how),
         cap: ray(settings.cap)
     }

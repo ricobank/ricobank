@@ -25,15 +25,18 @@ contract VoxTest is Test, RicoSetUp {
     }
 
     function skip_and_keep(MarLev lev, uint dt) public {
-        /* Temporarily modify dam to allow both waiting a long time and selecting poke direction.
-        Calculating dam is difficult, just use limits and mint RISK. */
+        // Temporarily modify dam to allow both waiting a long time and selecting poke direction.
+        // Calculating dam is difficult, just use limits and mint RISK.
+        // NOTE: manually modifies wal - this shouldn't be used for testing vow
 
         uint orig_dam  = Vow(bank).dam();
+        uint orig_wal  = Vow(bank).wal();
         uint orig_risk = risk.balanceOf(self);
 
         if(lev == MarLev.HIGH) {
             file('dam', bytes32(RAY));
             risk.mint(self, type(uint256).max - risk.totalSupply());
+            File(bank).file('wal', bytes32(RAD));
         } else {
             file('dam', bytes32(0));
         }
@@ -45,6 +48,7 @@ contract VoxTest is Test, RicoSetUp {
         (end_risk > orig_risk) ? risk.burn(self, end_risk - orig_risk) : risk.mint(self, orig_risk - end_risk);
 
         file('dam', bytes32(orig_dam));
+        file('wal', bytes32(orig_wal));
     }
 
     function setUp() public {
@@ -144,7 +148,8 @@ contract VoxTest is Test, RicoSetUp {
     {
         // how > 0 and mar < par
         uint how = RAY + (RAY * 12 / 10) / (10 ** 16);
-        file(bytes32('how'), bytes32(how));
+        file('how', bytes32(how));
+        file('wal', bytes32(RAD));
 
         // no more time has passed -> par and way unchanged
         risk.mint(self, Vow(bank).pex());

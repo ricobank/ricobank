@@ -47,6 +47,7 @@ contract Ball is Math, Ownable {
         uint256 gif;
         uint256 mop;
         uint256 lax;
+        uint256 wal;
         uint256 how;
         uint256 cap;
     }
@@ -80,7 +81,7 @@ contract Ball is Math, Ownable {
         IDiamondCuttable.FacetCut[] memory facetCuts = new IDiamondCuttable.FacetCut[](4);
         bytes4[] memory filesels = new bytes4[](3);
         bytes4[] memory vatsels  = new bytes4[](14);
-        bytes4[] memory vowsels  = new bytes4[](11);
+        bytes4[] memory vowsels  = new bytes4[](12);
         bytes4[] memory voxsels  = new bytes4[](5);
         File fbank = File(bank);
 
@@ -110,8 +111,9 @@ contract Ball is Math, Ownable {
         vowsels[6]  = Vow.gif.selector;
         vowsels[7]  = bytes4(keccak256(abi.encodePacked('mop()')));
         vowsels[8]  = Vow.phi.selector;
-        vowsels[9] = bytes4(keccak256(abi.encodePacked('lax()')));
+        vowsels[9]  = bytes4(keccak256(abi.encodePacked('lax()')));
         vowsels[10] = bytes4(keccak256(abi.encodePacked('LAX_MAX()')));
+        vowsels[11] = Vow.wal.selector;
         voxsels[0]  = Vox.poke.selector;
         voxsels[1]  = Vox.way.selector;
         voxsels[2]  = bytes4(keccak256(abi.encodePacked('how()')));
@@ -130,6 +132,7 @@ contract Ball is Math, Ownable {
 
         fbank.file("gif", bytes32(args.gif));
         fbank.file("phi", bytes32(block.timestamp));
+        fbank.file("wal", bytes32(args.wal));
 
         fbank.file("way", bytes32(RAY));
     }

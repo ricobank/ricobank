@@ -24,6 +24,9 @@ contract File is Bank {
         } else if (key == "phi") {
             must(_val, 0, block.timestamp);
             vowS.phi = _val;
+        } else if (key == "wal") {
+            must(_val, 0, RAD);
+            vowS.wal = _val;
         } else if (key == "way") {
             uint cap = Vox(address(this)).cap();
             must(_val, rinv(cap), cap);

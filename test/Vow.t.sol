@@ -227,6 +227,7 @@ contract VowTest is Test, RicoSetUp {
         // set dam and bel so it just takes one second to reach target price
         file('dam', bytes32(rinv(Vow(bank).pex())));
         file('bel', bytes32(block.timestamp - 1));
+        file('wal', bytes32(RAD));
         Vow(bank).keep(empty);
 
         uint aft_rico = rico.balanceOf(self);
@@ -242,6 +243,7 @@ contract VowTest is Test, RicoSetUp {
         risk.mint(self, UINT256_MAX - risk.totalSupply());
         file('bel', bytes32(block.timestamp));
         file('wel', bytes32(RAY));
+        file('wal', bytes32(RAD));
         file('dam', bytes32(RAY / 10));
 
         // no time elapsed, price == pex
@@ -300,7 +302,7 @@ contract VowTest is Test, RicoSetUp {
 
         skip(1);
         uint pregif = Vow(bank).gif();
-        uint flate = rmul(risk.totalSupply(), lax);
+        uint flate = rmul(Vow(bank).wal(), lax);
         Vow(bank).mine();
         assertEq(risk.totalSupply(), prerisk + Vow(bank).gif() + flate);
         assertEq(Vow(bank).gif(), rmul(pregif, mop));
@@ -309,7 +311,7 @@ contract VowTest is Test, RicoSetUp {
         skip(BANKYEAR);
         prerisk = risk.totalSupply();
         pregif = Vow(bank).gif();
-        flate = rmul(risk.totalSupply(), lax);
+        flate = rmul(Vow(bank).wal(), lax);
         Vow(bank).mine();
         assertEq(risk.totalSupply(), prerisk + (Vow(bank).gif() + flate) * BANKYEAR);
         assertClose(Vow(bank).gif(), pregif / 2, 1000000);
@@ -379,22 +381,48 @@ contract VowTest is Test, RicoSetUp {
 
         skip(1);
         prerisk = risk.totalSupply();
+        uint prewal = Vow(bank).wal();
         uint lax = RAY / 10000000000;
         file('lax', bytes32(lax));
         Vow(bank).mine();
-        assertEq(risk.totalSupply(), prerisk + WAD + rmul(lax, prerisk));
+        assertEq(risk.totalSupply(), prerisk + WAD + rmul(lax, prewal));
 
         skip(1);
+        prewal = Vow(bank).wal();
         prerisk = risk.totalSupply();
         file('lax', bytes32(lax));
         Vow(bank).mine();
-        assertEq(risk.totalSupply(), prerisk + WAD + rmul(lax, prerisk));
+        assertEq(risk.totalSupply(), prerisk + WAD + rmul(lax, prewal));
 
         file('mop', 0);
         skip(BANKYEAR);
+        prewal = Vow(bank).wal();
         prerisk = risk.totalSupply();
         Vow(bank).mine();
-        assertEq(risk.totalSupply(), prerisk + rmul(lax, prerisk) * BANKYEAR);
+        assertEq(risk.totalSupply(), prerisk + rmul(lax, prewal) * BANKYEAR);
+    }
+
+    function test_keep_wal() public {
+        force_fees(Vat(bank).sin() / RAY + 1000 * WAD);
+        set_dxm('dam', RAY);
+
+        // keep creates equal changes in risk supply and wal
+        uint prewal = Vow(bank).wal();
+        uint prerisk = risk.totalSupply();
+        Vow(bank).keep(empty);
+        assertFalse(prewal == Vow(bank).wal());
+        assertFalse(prerisk == risk.totalSupply());
+        assertEq(prewal - Vow(bank).wal(), prerisk - risk.totalSupply());
+
+        skip(1000);
+
+        // so does mine
+        prewal = Vow(bank).wal();
+        prerisk = risk.totalSupply();
+        Vow(bank).mine();
+        assertFalse(prewal == Vow(bank).wal());
+        assertFalse(prerisk == risk.totalSupply());
+        assertEq(Vow(bank).wal() - prewal, risk.totalSupply() - prerisk);
     }
 
 }

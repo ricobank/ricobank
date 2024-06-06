@@ -152,10 +152,10 @@ contract Vat is Bank {
 
         if (dink > 0) {
             // pull tokens from sender
-            risk.transferFrom(msg.sender, address(this), uint(dink));
+            risk.burn(msg.sender, uint(dink));
         } else if (dink < 0) {
             // return tokens to urn holder
-            risk.transfer(u, uint(-dink));
+            risk.mint(u, uint(-dink));
         }
 
         // urn is safer, or it is safe
@@ -166,7 +166,7 @@ contract Vat is Bank {
         }
 
         // urn has no debt, or a non-dusty ink amount
-        if (art != 0 && urn.ink < rmul(risk.totalSupply(), ilk.dust)) {
+        if (art != 0 && urn.ink < rmul(getVowStorage().wal, ilk.dust)) {
             revert ErrUrnDust();
         }
 
@@ -231,7 +231,7 @@ contract Vat is Bank {
 
         // trade collateral with keeper for rico
         rico.burn(msg.sender, earn);
-        risk.transfer(msg.sender, sell);
+        risk.mint(msg.sender, sell);
     }
 
     // Update joy and possibly line. Workaround for stack too deep

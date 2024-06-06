@@ -14,6 +14,7 @@ contract Vow is Bank {
     function bel() external view returns (uint) { return getVowStorage().bel; }
     function gif() external view returns (uint) { return getVowStorage().gif; }
     function phi() external view returns (uint) { return getVowStorage().phi; }
+    function wal() external view returns (uint) { return getVowStorage().wal; }
 
     uint256 immutable public pex; // [ray] start price
     uint256 immutable public wel; // [ray] fraction of joy/flap
@@ -78,8 +79,10 @@ contract Vow is Bank {
             emit NewPalm0("joy", bytes32(joy));
 
             // swap rico for RISK, pay protocol fee
-            Gem(risk).burn(msg.sender, earn);
-            Gem(rico).mint(msg.sender, flap);
+            rico.mint(msg.sender, flap);
+            risk.burn(msg.sender, earn);
+            vowS.wal -= earn;
+            emit NewPalm0("wal", bytes32(vowS.wal));
         }
         vowS.bel = block.timestamp;
         emit NewPalm0("bel", bytes32(block.timestamp));
@@ -107,8 +110,11 @@ contract Vow is Bank {
         vs.phi = block.timestamp;
         emit NewPalm0("phi", bytes32(block.timestamp));
 
-        uint flate = vs.gif + rmul(risk.totalSupply(), lax);
-        risk.mint(msg.sender, flate * elapsed);
+        uint flate = (vs.gif + rmul(vs.wal, lax)) * elapsed;
+        risk.mint(msg.sender, flate);
+
+        vs.wal  += flate;
+        emit NewPalm0("wal", bytes32(vs.wal));
     }
 
 }

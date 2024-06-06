@@ -50,6 +50,7 @@ contract BallTest is BaseHelper {
             WAD, // gif (82400 RISK/yr)
             999999978035500000000000000, // mop (~-50%/yr)
             937000000000000000, // lax (~3%/yr)
+            initial_risk_supply, // wal
             1000000000000003652500000000, // how
             1000000021970000000000000000 // cap
         );
@@ -83,7 +84,7 @@ contract BallTest is BaseHelper {
         skip(BANKYEAR / 2);
 
         Gem(risk).approve(bank, type(uint).max);
-        Gem(risk).mint(address(this), initial_risk_supply);
+        Gem(risk).mint(self, initial_risk_supply);
 
         Gem(risk).mint(self, initial_risk_supply);
         riskamt = Gem(risk).totalSupply() / 100;

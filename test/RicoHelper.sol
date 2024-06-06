@@ -127,6 +127,7 @@ abstract contract RicoSetUp is BaseHelper {
             WAD, // gif (82400 RISK/yr)
             999999978035500000000000000, // mop (~-50%/yr)
             937000000000000000, // lax (~3%/yr)
+            init_mint * WAD, // wal
             1000000000000003652500000000, // how
             1000000021970000000000000000 // cap
         );

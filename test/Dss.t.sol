@@ -255,7 +255,7 @@ contract DssFrobTest is DssVatTest {
 
         // frob a normal amount, but then set dust above urn's ink
         Vat(bank).frob(rilk, self, int(9 * WAD), int(WAD));
-        Vat(bank).filk(rilk, 'dust', bytes32(RAY * 15 * WAD / risk.totalSupply()));
+        Vat(bank).filk(rilk, 'dust', bytes32(RAY * 15 * WAD / Vow(bank).wal()));
 
         // lock dusty amount
         vm.expectRevert(Vat.ErrUrnDust.selector);
