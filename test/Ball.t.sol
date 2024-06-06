@@ -283,22 +283,20 @@ contract BallTest is BaseHelper {
         Vat(bank).filk(hilk, 'line', bytes32(RAD));
         File(bank).file('par', bytes32(RAY));
 
+        /* lock sequence */
+        Diamond(bank).transferOwnership(address(ball));
         ball.accept();
-        ball.close();
+        ball.transferOwnership(address(0));
+        /* end of lock sequence. bank owned by ball, ball owned by 0x0 */
 
-        vm.expectRevert('DiamondBase: no facet found for function signature');
-        Vat(bank).init('hello');
-
-        vm.expectRevert('DiamondBase: no facet found for function signature');
-        Vat(bank).filk(hilk, 'line', bytes32(RAD));
-
-        vm.expectRevert('DiamondBase: no facet found for function signature');
+        vm.expectRevert('Ownable: sender must be owner');
         File(bank).file('par', bytes32(RAY));
 
         vm.expectRevert('Ownable: sender must be owner');
-        File(bank).close();
+        ball.approve(self);
 
-        assertEq(Diamond(bank).owner(), bank);
+        assertEq(Diamond(bank).owner(), address(ball));
+        assertEq(ball.owner(), address(0));
     }
 
     function test_bounds_mine() public {

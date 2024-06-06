@@ -25,7 +25,6 @@ contract Ball is Math, Ownable {
     bytes32 internal constant HOW = bytes32(uint256(1000000000000003652500000000));
     bytes32 internal constant CAP = bytes32(uint256(1000000021970000000000000000));
     IDiamondCuttable.FacetCutAction internal constant ADD = IDiamondCuttable.FacetCutAction.ADD;
-    IDiamondCuttable.FacetCutAction internal constant REMOVE = IDiamondCuttable.FacetCutAction.REMOVE;
     using OwnableStorage for OwnableStorage.Layout;
 
     struct IlkParams {
@@ -79,7 +78,7 @@ contract Ball is Math, Ownable {
 
     function setup(BallArgs calldata args) external onlyOwner {
         IDiamondCuttable.FacetCut[] memory facetCuts = new IDiamondCuttable.FacetCut[](4);
-        bytes4[] memory filesels = new bytes4[](4);
+        bytes4[] memory filesels = new bytes4[](3);
         bytes4[] memory vatsels  = new bytes4[](14);
         bytes4[] memory vowsels  = new bytes4[](11);
         bytes4[] memory voxsels  = new bytes4[](5);
@@ -88,7 +87,6 @@ contract Ball is Math, Ownable {
         filesels[0] = File.file.selector;
         filesels[1] = bytes4(keccak256(abi.encodePacked('rico()')));
         filesels[2] = bytes4(keccak256(abi.encodePacked('risk()')));
-        filesels[3] = File.close.selector;
         vatsels[0]  = Vat.filk.selector;
         vatsels[1]  = Vat.init.selector;
         vatsels[2]  = Vat.frob.selector;
@@ -154,23 +152,6 @@ contract Ball is Math, Ownable {
 
     function accept() external onlyOwner {
         Diamond(bank).acceptOwnership();
-    }
-
-    function close() external onlyOwner {
-        IDiamondCuttable.FacetCut[] memory facetCuts = new IDiamondCuttable.FacetCut[](2);
-        bytes4[] memory filesels = new bytes4[](1);
-        bytes4[] memory vatsels  = new bytes4[](2);
-
-        filesels[0] = File.file.selector;
-        vatsels[0] = Vat.init.selector;
-        vatsels[1] = Vat.filk.selector;
-
-        facetCuts[0] = IDiamondCuttable.FacetCut(address(0), REMOVE, filesels);
-        facetCuts[1] = IDiamondCuttable.FacetCut(address(0),  REMOVE, vatsels);
-        Diamond(bank).diamondCut(facetCuts, address(0), bytes(""));
-
-        Diamond(bank).transferOwnership(bank);
-        File(bank).close();
     }
 
 }
