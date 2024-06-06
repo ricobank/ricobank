@@ -5,6 +5,7 @@
 pragma solidity ^0.8.25;
 import { Gem }  from "../lib/gemfab/src/gem.sol";
 import { Bank } from "./bank.sol";
+import { Diamond } from "./diamond.sol";
 import { Vox } from "./vox.sol";
 
 contract File is Bank {
@@ -31,6 +32,10 @@ contract File is Bank {
         } else revert ErrWrongKey();
 
         emit NewPalm0(key, val);
+    }
+
+    function close() external onlyOwner {
+        Diamond(payable(address(this))).acceptOwnership();
     }
 
 }

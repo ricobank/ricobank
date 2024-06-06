@@ -10,6 +10,7 @@
 pragma solidity ^0.8.25;
 
 import {Diamond, IDiamondCuttable} from "../lib/solidstate-solidity/contracts/proxy/diamond/Diamond.sol";
+import {Ownable, OwnableStorage} from "../lib/solidstate-solidity/contracts/access/Ownable.sol";
 
 import {Gem} from "../lib/gemfab/src/gem.sol";
 
@@ -20,10 +21,12 @@ import {Bank} from "./bank.sol";
 import {File} from "./file.sol";
 import {Math} from "./mixin/math.sol";
 
-contract Ball is Math {
+contract Ball is Math, Ownable {
     bytes32 internal constant HOW = bytes32(uint256(1000000000000003652500000000));
     bytes32 internal constant CAP = bytes32(uint256(1000000021970000000000000000));
     IDiamondCuttable.FacetCutAction internal constant ADD = IDiamondCuttable.FacetCutAction.ADD;
+    IDiamondCuttable.FacetCutAction internal constant REMOVE = IDiamondCuttable.FacetCutAction.REMOVE;
+    using OwnableStorage for OwnableStorage.Layout;
 
     struct IlkParams {
         bytes32 ilk;
@@ -71,13 +74,12 @@ contract Ball is Math {
         bank = args.bank;
         rico = args.rico;
         risk = args.risk;
+        OwnableStorage.layout().setOwner(msg.sender);
     }
 
-    bool done;
-    function setup(BallArgs calldata args) external {
-        if (done) revert('done');
+    function setup(BallArgs calldata args) external onlyOwner {
         IDiamondCuttable.FacetCut[] memory facetCuts = new IDiamondCuttable.FacetCut[](4);
-        bytes4[] memory filesels = new bytes4[](3);
+        bytes4[] memory filesels = new bytes4[](4);
         bytes4[] memory vatsels  = new bytes4[](14);
         bytes4[] memory vowsels  = new bytes4[](11);
         bytes4[] memory voxsels  = new bytes4[](5);
@@ -86,6 +88,7 @@ contract Ball is Math {
         filesels[0] = File.file.selector;
         filesels[1] = bytes4(keccak256(abi.encodePacked('rico()')));
         filesels[2] = bytes4(keccak256(abi.encodePacked('risk()')));
+        filesels[3] = File.close.selector;
         vatsels[0]  = Vat.filk.selector;
         vatsels[1]  = Vat.init.selector;
         vatsels[2]  = Vat.frob.selector;
@@ -133,8 +136,7 @@ contract Ball is Math {
         fbank.file("way", bytes32(RAY));
     }
 
-    function makeilk(IlkParams calldata ilkparams) external {
-        if (done) revert('done');
+    function makeilk(IlkParams calldata ilkparams) external onlyOwner {
         bytes32 ilk = ilkparams.ilk;
         Vat(bank).init(ilk);
         Vat(bank).filk(ilk, "chop", bytes32(ilkparams.chop));
@@ -146,10 +148,29 @@ contract Ball is Math {
         Vat(bank).filk(ilk, "pop",  bytes32(RAY));
     }
 
-    function approve(address usr) external {
-        if (done) revert('done');
+    function approve(address usr) external onlyOwner {
         Diamond(bank).transferOwnership(usr);
-        done = true;
+    }
+
+    function accept() external onlyOwner {
+        Diamond(bank).acceptOwnership();
+    }
+
+    function close() external onlyOwner {
+        IDiamondCuttable.FacetCut[] memory facetCuts = new IDiamondCuttable.FacetCut[](2);
+        bytes4[] memory filesels = new bytes4[](1);
+        bytes4[] memory vatsels  = new bytes4[](2);
+
+        filesels[0] = File.file.selector;
+        vatsels[0] = Vat.init.selector;
+        vatsels[1] = Vat.filk.selector;
+
+        facetCuts[0] = IDiamondCuttable.FacetCut(address(0), REMOVE, filesels);
+        facetCuts[1] = IDiamondCuttable.FacetCut(address(0),  REMOVE, vatsels);
+        Diamond(bank).diamondCut(facetCuts, address(0), bytes(""));
+
+        Diamond(bank).transferOwnership(bank);
+        File(bank).close();
     }
 
 }

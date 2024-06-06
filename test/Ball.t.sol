@@ -4,6 +4,7 @@ import {
     File, Bank, Vat, Vow, Vox, BaseHelper, BankDiamond,
     Gem, GemFab, Ball
 } from './RicoHelper.sol';
+import { Diamond } from '../src/diamond.sol';
 import 'forge-std/Test.sol';
 
 contract BallTest is BaseHelper {
@@ -23,6 +24,7 @@ contract BallTest is BaseHelper {
     uint initial_risk_supply = 1000000 * WAD;
     uint init_dust           = RAY / 100;
     uint start_time;
+    Ball ball;
 
     function setUp() public {
         start_time = block.timestamp;
@@ -52,7 +54,7 @@ contract BallTest is BaseHelper {
             1000000021970000000000000000 // cap
         );
 
-        Ball ball = new Ball(bargs);
+        ball = new Ball(bargs);
 
         BankDiamond(bank).transferOwnership(address(ball));
 
@@ -271,6 +273,32 @@ contract BallTest is BaseHelper {
 
         vm.expectRevert(Bank.ErrBound.selector);
         new Vow(Bank.BankParams(rico, risk), Vow.VowParams(wel, RAY + 1, pex, mop, lax));
+    }
+
+    function test_close() public {
+        Diamond(bank).transferOwnership(address(ball));
+
+        bytes32 hilk = 'hello';
+        Vat(bank).init(hilk);
+        Vat(bank).filk(hilk, 'line', bytes32(RAD));
+        File(bank).file('par', bytes32(RAY));
+
+        ball.accept();
+        ball.close();
+
+        vm.expectRevert('DiamondBase: no facet found for function signature');
+        Vat(bank).init('hello');
+
+        vm.expectRevert('DiamondBase: no facet found for function signature');
+        Vat(bank).filk(hilk, 'line', bytes32(RAD));
+
+        vm.expectRevert('DiamondBase: no facet found for function signature');
+        File(bank).file('par', bytes32(RAY));
+
+        vm.expectRevert('Ownable: sender must be owner');
+        File(bank).close();
+
+        assertEq(Diamond(bank).owner(), bank);
     }
 
     function test_bounds_mine() public {
