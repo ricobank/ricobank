@@ -13,7 +13,7 @@ contract IntegrationTest is Test, RicoSetUp {
     function setUp() public {
         make_bank();
         init_risk();
-        risk.mint(self, 10_000 * WAD);
+        risk_mint(self, 10_000 * WAD);
     }
     
     function test_joy_accounting() public {
@@ -68,7 +68,7 @@ contract IntegrationTest is Test, RicoSetUp {
         Vat(bank).frob(rilk, self, int(10 * WAD), int(5 * WAD));
         skip(100);
         Vat(bank).drip(rilk);
-        risk.mint(self, 10_000 * WAD);
+        risk_mint(self, 10_000 * WAD);
 
         uint rico_sup0 = rico.totalSupply();
         uint risk_sup0 = risk.totalSupply();
@@ -87,7 +87,7 @@ contract IntegrationTest is Test, RicoSetUp {
     }
 
     function test_flop_joy_direction() public _check_integrity_after_ {
-        risk.mint(self, 10_000 * WAD);
+        risk_mint(self, 10_000 * WAD);
         skip(100);
 
         // open an urn and bail it when ink is worthless

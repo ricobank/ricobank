@@ -45,7 +45,7 @@ contract VoxTest is Test, RicoSetUp {
         Vow(bank).keep(single(rilk));
 
         uint256 end_risk = risk.balanceOf(self);
-        (end_risk > orig_risk) ? risk.burn(self, end_risk - orig_risk) : risk.mint(self, orig_risk - end_risk);
+        (end_risk > orig_risk) ? risk.burn(self, end_risk - orig_risk) : risk_mint(self, orig_risk - end_risk);
 
         file('dam', bytes32(orig_dam));
         file('wal', bytes32(orig_wal));
@@ -67,7 +67,7 @@ contract VoxTest is Test, RicoSetUp {
         skip(BANKYEAR);
         Vat(bank).drip(rilk);
 
-        risk.mint(self, WAD * 1_000_000);
+        risk_mint(self, WAD * 1_000_000);
         way0 = Vox(bank).way();
         par0 = Vat(bank).par();
 

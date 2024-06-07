@@ -56,7 +56,7 @@ abstract contract RicoSetUp is BaseHelper {
         // create fake account and mint some risk to it
         _bob = new Guy(bank);
         uint risk_amt = amt * 1000;
-        risk.mint(address(_bob), risk_amt);
+        risk_mint(address(_bob), risk_amt);
         _bob.approve(arisk, bank, risk_amt);
 
         // bob borrows the rico and sends back to self
@@ -71,7 +71,19 @@ abstract contract RicoSetUp is BaseHelper {
         }
 
         // restore previous risk supply
-        risk.burn(self, risk.balanceOf(self) - start_risk);
+        risk_burn(self, risk.balanceOf(self) - start_risk);
+    }
+
+    // use to modify risk and wal together
+    function risk_mint(address usr, uint wad) internal {
+        risk.mint(usr, wad);
+        uint orig_wal = Vow(bank).wal();
+        file('wal', bytes32(orig_wal + wad));
+    }
+    function risk_burn(address usr, uint wad) internal {
+        risk.burn(usr, wad);
+        uint orig_wal = Vow(bank).wal();
+        file('wal', bytes32(orig_wal - wad));
     }
 
     function force_fees(uint gain) public {
@@ -127,7 +139,6 @@ abstract contract RicoSetUp is BaseHelper {
             WAD, // gif (82400 RISK/yr)
             999999978035500000000000000, // mop (~-50%/yr)
             937000000000000000, // lax (~3%/yr)
-            init_mint * WAD, // wal
             1000000000000003652500000000, // how
             1000000021970000000000000000 // cap
         );
@@ -159,7 +170,7 @@ abstract contract RicoSetUp is BaseHelper {
     }
 
     function init_risk() public {
-        risk.mint(self, init_mint * WAD);
+        risk_mint(self, init_mint * WAD);
         init_risk_ilk(rilk);
     }
 

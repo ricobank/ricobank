@@ -10,11 +10,10 @@ import { constants } from 'ethers'
 import { send, fail, wad, ray, rad, BANKYEAR, warp, mine } from 'minihat'
 const { hexZeroPad } = ethers.utils
 
-import { b32, revert_pop, revert_name, revert_clear, snapshot_name, join_pool, gettime } from './helpers'
+import { b32, revert_pop, revert_name, revert_clear, snapshot_name } from './helpers'
 const dpack = require('@etherpacks/dpack')
 
 const bn2b32 = (bn) => hexZeroPad(bn.toHexString(), 32)
-const TAG = Buffer.from('feed'.repeat(16), 'hex')
 
 describe('Gas', () => {
   let ali, bob, cat
@@ -42,9 +41,10 @@ describe('Gas', () => {
 
     await send(bank.file, b32('par'), b32(wad(7)))
 
-    await send(risk.mint, ALI, wad(100))
     await send(risk.approve, bank.address, constants.MaxUint256)
-    await send(risk.mint, ALI, wad(100000));
+    const risk_mint = wad(100000)
+    await send(risk.mint, ALI, risk_mint );
+    await send(bank.file, b32('wal'), b32(risk_mint ))
 
     await snapshot_name(hh);
   })
@@ -69,7 +69,7 @@ describe('Gas', () => {
     })
 
     it('deploy gas', async () => {
-      await check(ethers.BigNumber.from(deploygas), 13741048)
+      await check(ethers.BigNumber.from(deploygas), 13759959)
     })
 
     it('frob cold gas', async () => {

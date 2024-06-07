@@ -58,10 +58,10 @@ contract DssJsTest is Test, RicoSetUp {
         // no fee, lower line a bit, burn the risk
         Vat(bank).filk(rilk, bytes32('fee'), bytes32(uint(RAY)));
         Vat(bank).filk(rilk, 'line', bytes32(1000 * RAD));
-        risk.burn(self, risk.balanceOf(self));
+        risk_burn(self, risk.balanceOf(self));
 
         // mint some RISK so rates relative to total supply aren't zero
-        risk.mint(address(1), 2620000 * WAD);
+        risk_mint(address(1), 2620000 * WAD);
 
         ali = new Usr(bank);
         bob = new Usr(bank);
@@ -88,7 +88,7 @@ contract DssVatTest is DssJsTest {
 contract DssFrobTest is DssVatTest {
 
     function _frob_setUp() internal _vat_ {
-        risk.mint(self, 1000 * WAD);
+        risk_mint(self, 1000 * WAD);
     }
 
     modifier _frob_ { _frob_setUp(); _; }
@@ -189,9 +189,9 @@ contract DssFrobTest is DssVatTest {
     }
 
     function test_alt_callers() public _frob_ {
-        risk.mint(a, 20 * WAD);
-        risk.mint(b, 20 * WAD);
-        risk.mint(c, 20 * WAD);
+        risk_mint(a, 20 * WAD);
+        risk_mint(b, 20 * WAD);
+        risk_mint(c, 20 * WAD);
 
         // ali opens an urn to see what bob and cat can do with it
         ali.frob(rilk, a, int(10 * WAD), int(5 * WAD));
@@ -233,9 +233,9 @@ contract DssFrobTest is DssVatTest {
     }
 
     function test_hope() public _frob_ {
-        risk.mint(a, 20 * WAD);
-        risk.mint(b, 20 * WAD);
-        risk.mint(c, 20 * WAD);
+        risk_mint(a, 20 * WAD);
+        risk_mint(b, 20 * WAD);
+        risk_mint(c, 20 * WAD);
 
         // ali opens an urn to test what bob and cat can do with it
         ali.frob(rilk, a, int(10 * WAD), int(5 * WAD));
@@ -274,13 +274,13 @@ contract DssBiteTest is DssVatTest {
     function _bite_setUp() internal
     {
         _vat_setUp();
-        risk.mint(self, 100 * WAD);
+        risk_mint(self, 100 * WAD);
 
         // jug N/A
         //   rico has fee, no jug
         //   dss setup doesn't actually set the fee, just creates the jug
 
-        risk.mint(self, 1000 * WAD);
+        risk_mint(self, 1000 * WAD);
 
         // normal line, no liquidation penalty
         Vat(bank).filk(rilk, 'line', bytes32(1000 * RAD));
@@ -322,8 +322,8 @@ contract DssBiteTest is DssVatTest {
         // create urn (push, frob)
         file('par', bytes32(RAY * 4 / 10));
         Vat(bank).frob(rilk, self, int(40 * WAD), int(100 * WAD));
-        risk.mint(self, 10000 * WAD);
-        risk.burn(self, risk.balanceOf(self) - 960 * WAD);
+        risk_mint(self, 10000 * WAD);
+        risk_burn(self, risk.balanceOf(self) - 960 * WAD);
 
         // make urn unsafe, set liquidation penalty
         Vat(bank).filk(rilk, 'liqr', bytes32(RAY * 2));
@@ -461,7 +461,7 @@ contract DssFoldTest is DssVatTest {
     modifier _fold_ { _fold_setup(); _; }
 
     function draw(bytes32 ilk, uint amt) internal {
-        risk.mint(self, amt);
+        risk_mint(self, amt);
         Vat(bank).drip(rilk);
         Vat(bank).frob(ilk, self, int(WAD), int(amt));
     }
@@ -518,7 +518,7 @@ contract DssClipTest is DssJsTest {
         // no need to join
 
         riskprice = 5 * RAY;
-        risk.mint(self, 1000 * WAD);
+        risk_mint(self, 1000 * WAD);
 
         Vat(bank).filk(rilk, 'liqr', bytes32(2 * RAY)); // dss mat
         Vat(bank).filk(rilk, 'dust', bytes32(RAY / 100000));
@@ -645,7 +645,7 @@ contract DssClipTest is DssJsTest {
 
 contract DssVowTest is DssJsTest {
     function _vow_setUp() internal {
-        risk.mint(self, 10000 * WAD);
+        risk_mint(self, 10000 * WAD);
         risk.approve(bank, UINT256_MAX);
         file('bel', bytes32(block.timestamp));
     }
@@ -658,7 +658,7 @@ contract DssVowTest is DssJsTest {
     //   N/A no flop
 
     function test_flap_1() public _vow_ {
-        risk.mint(self, 10000 * WAD);
+        risk_mint(self, 10000 * WAD);
         Vat(bank).drip(rilk);
         Vat(bank).filk(rilk, bytes32('chop'), bytes32(RAY * 11 / 10));
         Vat(bank).filk(rilk, 'fee', bytes32(Vat(bank).FEE_MAX()));
@@ -701,7 +701,7 @@ contract DssDogTest is DssJsTest {
     function _dog_setUp() internal {
         Vat(bank).filk(rilk, 'line', bytes32(10000 * RAD));
 
-        risk.mint(self, 100000 * WAD);
+        risk_mint(self, 100000 * WAD);
 
         Vow(bank).keep(single(rilk));
     }
@@ -744,7 +744,7 @@ contract DssDogTest is DssJsTest {
 
     function test_bark_dusty_vault() public {
         // difference from dss: no dog
-        risk.mint(self, 200000 * WAD);
+        risk_mint(self, 200000 * WAD);
 
         // difference from dss: dust refers to risk, not rico
         Vat(bank).filk(rilk, 'dust', bytes32(RAY / 1000));

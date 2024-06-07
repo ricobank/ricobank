@@ -19,7 +19,7 @@ contract VatTest is Test, RicoSetUp {
     function setUp() public {
         make_bank();
         init_risk();
-        risk.mint(bank, init_join * WAD);
+        risk_mint(bank, init_join * WAD);
 
         // non-self user
         guy = new Guy(bank);
@@ -251,7 +251,7 @@ contract VatTest is Test, RicoSetUp {
         Vat(bank).filk(rilk, "pup", bytes32(uint(pup)));
 
         // 2 * borrow because skipped bankyear
-        risk.mint(self, 10000 * WAD);
+        risk_mint(self, 10000 * WAD);
         Vat(bank).frob(rilk, self, int(2 * borrow), int(borrow));
 
         // skip a bunch so mash clamps to 0
@@ -545,7 +545,7 @@ contract VatTest is Test, RicoSetUp {
         Vat(bank).drip(rilk);
 
         // frob while pranking fakesrc address
-        risk.mint(fakesrc, 1000 * WAD);
+        risk_mint(fakesrc, 1000 * WAD);
         vm.startPrank(fakesrc);
         risk.approve(bank, 1000 * WAD);
         int dart = int(1 + WAD * RAY / Vat(bank).FEE_MAX());
@@ -587,7 +587,7 @@ contract VatTest is Test, RicoSetUp {
         skip(1);
         Vat(bank).drip(rilk);
 
-        risk.mint(fakesrc, 1000 * WAD);
+        risk_mint(fakesrc, 1000 * WAD);
 
         // frob from fakesrc address
         // could prank any non-self address, just chose fakesrc's
@@ -619,7 +619,7 @@ contract VatTest is Test, RicoSetUp {
         skip(1);
         Vat(bank).drip(rilk);
 
-        risk.mint(fakesrc, 1000 * WAD);
+        risk_mint(fakesrc, 1000 * WAD);
 
         // could prank anything non-self; chose fakesrc
         vm.startPrank(fakesrc);

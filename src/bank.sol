@@ -63,10 +63,10 @@ abstract contract Bank is Math, Flog, Palm, OwnableInternal {
     }
 
     struct VowStorage {
-        uint256 bel; // [sec] last flap timestamp
+        uint256 bel;  // [sec] last flap timestamp
         uint256 gif;  // initial RISK base mint rate
-        uint256 phi;  // bang block timestamp
-        uint256 wal;
+        uint256 phi;  // [sec] last mine timestamp
+        uint256 wal;  // risk deposited + risk totalSupply
     }
 
     struct VoxStorage {

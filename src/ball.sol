@@ -47,7 +47,6 @@ contract Ball is Math, Ownable {
         uint256 gif;
         uint256 mop;
         uint256 lax;
-        uint256 wal;
         uint256 how;
         uint256 cap;
     }
@@ -129,11 +128,9 @@ contract Ball is Math, Ownable {
 
         fbank.file("par",  bytes32(args.par));
         fbank.file("bel", bytes32(block.timestamp));
-
         fbank.file("gif", bytes32(args.gif));
         fbank.file("phi", bytes32(block.timestamp));
-        fbank.file("wal", bytes32(args.wal));
-
+        fbank.file("wal", bytes32(Gem(risk).totalSupply()));
         fbank.file("way", bytes32(RAY));
     }
 

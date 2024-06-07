@@ -74,7 +74,6 @@ task('deploy-ricobank', '')
         gif: wad(settings.gif),
         mop: ray(settings.mop),
         lax: ray(settings.lax),
-        wal: wad(settings.wal),
         how: ray(settings.how),
         cap: ray(settings.cap)
     }

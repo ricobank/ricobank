@@ -27,7 +27,7 @@ contract VowTest is Test, RicoSetUp {
         // mint some rico and risk for hysteresis
         rico_mint(2000 * WAD, true);
         rico.transfer(address(1), rico.balanceOf(self));
-        risk.mint(self, 100000 * WAD);
+        risk_mint(self, 100000 * WAD);
 
         // non-self user
         guy = new Guy(bank);
@@ -58,7 +58,7 @@ contract VowTest is Test, RicoSetUp {
         uint expected_risk_cost = surplus * rico_price_in_risk;
 
         // do the surplus auction
-        risk.mint(self, WAD * 1_000);
+        risk_mint(self, WAD * 1_000);
         uint self_rico_1 = rico.balanceOf(self);
         uint self_risk_1 = risk.balanceOf(self);
 
@@ -100,7 +100,7 @@ contract VowTest is Test, RicoSetUp {
 
     function test_basic_keep_surplus() public
     {
-        risk.mint(self, 3000 * WAD);
+        risk_mint(self, 3000 * WAD);
         // set fee > 1 so rack changes
         Vat(bank).filk(rilk, 'fee', bytes32(FEE_2X_ANN));
         file('wel', bytes32(RAY / 2));
@@ -446,7 +446,7 @@ contract VowJsTest is Test, RicoSetUp {
         b = address(bob);
         c = address(cat);
 
-        risk.mint(me, 16000 * WAD);
+        risk_mint(me, 16000 * WAD);
         risk.approve(bank, UINT256_MAX);
 
         Vat(bank).filk(rilk, 'line', bytes32(10000 * RAD));
@@ -459,7 +459,7 @@ contract VowJsTest is Test, RicoSetUp {
         Vat(bank).frob(rilk, me, int(0), int(99 * WAD));
 
         // cat frobs some rico and transfers to me
-        risk.mint(c, 7000 * WAD);
+        risk_mint(c, 7000 * WAD);
         cat.approve(arisk, bank, UINT256_MAX);
         cat.frob(rilk, c, int(4001 * WAD), int(4000 * WAD));
         cat.transfer(arico, me, 4000 * WAD);
@@ -559,7 +559,7 @@ contract VowJsTest is Test, RicoSetUp {
         uint risk_initial_supply = risk.totalSupply();
         skip(BANKYEAR);
 
-        risk.mint(address(guy), 1000 * WAD);
+        risk_mint(address(guy), 1000 * WAD);
 
         set_dxm('dam', RAY / 2);
         guy.keep(single(rilk));

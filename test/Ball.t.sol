@@ -50,7 +50,6 @@ contract BallTest is BaseHelper {
             WAD, // gif (82400 RISK/yr)
             999999978035500000000000000, // mop (~-50%/yr)
             937000000000000000, // lax (~3%/yr)
-            initial_risk_supply, // wal
             1000000000000003652500000000, // how
             1000000021970000000000000000 // cap
         );
@@ -85,8 +84,8 @@ contract BallTest is BaseHelper {
 
         Gem(risk).approve(bank, type(uint).max);
         Gem(risk).mint(self, initial_risk_supply);
+        file('wal', bytes32(Gem(risk).totalSupply()));
 
-        Gem(risk).mint(self, initial_risk_supply);
         riskamt = Gem(risk).totalSupply() / 100;
         // find a rico borrow amount which will be safe by about 10%
         // risk * riskref = art * par
