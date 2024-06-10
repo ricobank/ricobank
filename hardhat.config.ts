@@ -2,8 +2,6 @@ import '@nomiclabs/hardhat-ethers'
 import '@nomicfoundation/hardhat-verify'
 
 import './lib/gemfab/task/deploy-gemfab'
-import './lib/weth/task/deploy-mock-weth'
-import './lib/uniswapv3/task/deploy-uniswapv3'
 
 import './task/combine-packs'
 import './task/deploy-tokens'
