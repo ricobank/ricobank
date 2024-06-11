@@ -5,22 +5,14 @@ import { b32, send } from 'minihat'
 import { createAndInitializePoolIfNecessary } from './helpers'
 
 task('deploy-tokens', '')
-.addOptionalParam('tokens', 'JSON file with token addresses')
 .addOptionalParam('gfpackcid', 'gemfab pack passed as cid cli string, alternative to gf_pack obj passed from another task')
 .addOptionalParam('outfile', 'output JSON file')
 .addOptionalParam('mock', 'mock mode')
 .addOptionalParam('gasLimit', 'per-tx gas limit')
-.addOptionalParam('netname', 'network to read in tokens file')
 .setAction(async (args, hre) => {
   debug('deploy tokens')
 
   const [ ali ]  = await hre.ethers.getSigners()
-
-  let tokens : any = {}
-  if (args.tokens) {
-      const fromjson = require(args.tokens)[args.netname]
-      if (fromjson) tokens = fromjson.erc20 ?? tokens
-  }
 
   debug('deploy rico')
   const gf_dapp = await dpack.load(args.gf_pack ?? args.gfpackcid, hre.ethers, ali)

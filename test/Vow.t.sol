@@ -12,14 +12,12 @@ import { Math } from '../src/mixin/math.sol';
 contract VowTest is Test, RicoSetUp {
     uint256   init_join = 1000;
     uint      stack = WAD * 10;
-    bytes32[] ilks;
     uint      back_count;
 
     function setUp() public
     {
         make_bank();
         init_risk();
-        ilks.push(rilk);
 
         // have 10k each of rico, risk and risk
         risk.approve(bank, type(uint256).max);
@@ -40,15 +38,15 @@ contract VowTest is Test, RicoSetUp {
         // risk:rico price 0.1
         uint rico_price_in_risk = 10;
 
-        Vat(bank).frob(rilk, self, int(WAD), int(borrow));
+        Vat(bank).frob(self, int(WAD), int(borrow));
 
         // accumulate a bunch of fees
         skip(BANKYEAR);
-        Vat(bank).drip(rilk);
+        Vat(bank).drip();
 
         // joy depends on tart and change in rack
         uint surplus = Vat(bank).joy();
-        uint rack    = Vat(bank).ilks(rilk).rack;
+        uint rack    = Vat(bank).rack();
         assertClose(surplus, rmul(rack, borrow) - borrow, 1_000_000_000);
 
         // cancel out any sin so only joy needs to be considered
@@ -68,7 +66,12 @@ contract VowTest is Test, RicoSetUp {
         file('bel', bytes32(block.timestamp));
         skip(1);
 
-        Vow(bank).keep(empty);
+        uint pre_drip_joy = Vat(bank).joy();
+        Vat(bank).drip();
+        uint aft_drip_joy = Vat(bank).joy();
+        surplus = surplus + aft_drip_joy - pre_drip_joy;
+
+        Vow(bank).keep();
 
         uint rico_gain = rico.balanceOf(self) - self_rico_1;
         uint risk_cost = self_risk_1 - risk.balanceOf(self);
@@ -80,21 +83,19 @@ contract VowTest is Test, RicoSetUp {
 
     function test_basic_keep_deficit() public
     {
-        Vat(bank).frob(rilk, self, int(WAD), int(WAD));
+        Vat(bank).frob(self, int(WAD), int(WAD));
 
         // bail creates some sin
-        Vat(bank).filk(rilk, 'fee', bytes32(FEE_2X_ANN));
+        file('fee', bytes32(FEE_2X_ANN));
         skip(BANKYEAR * 2);
-        Vat(bank).bail(rilk, self);
+        Vat(bank).bail(self);
 
         // create some rico to pay for the flop
         rico_mint(1000 * WAD, false);
 
         // add on a couple ilks so keep does more than one loop iteration
         skip(1);
-        bytes32[] memory rilks = new bytes32[](2);
-        rilks[0] = rilk; rilks[1] = rilk;
-        Vow(bank).keep(rilks);
+        Vow(bank).keep();
         assertGt(Vat(bank).sin() / RAY, Vat(bank).joy());
     }
 
@@ -102,52 +103,49 @@ contract VowTest is Test, RicoSetUp {
     {
         risk_mint(self, 3000 * WAD);
         // set fee > 1 so rack changes
-        Vat(bank).filk(rilk, 'fee', bytes32(FEE_2X_ANN));
+        file('fee', bytes32(FEE_2X_ANN));
         file('wel', bytes32(RAY / 2));
         file('bel', bytes32(block.timestamp - 1));
         file('dam', bytes32(RAY / WAD));
 
-        Vat(bank).frob(rilk, self, int(WAD * 3000), int(WAD * 3000));
+        Vat(bank).frob(self, int(WAD * 3000), int(WAD * 3000));
 
         skip(BANKYEAR);
 
-        // add on a couple ilks so keep does more than one loop iteration
-        bytes32[] memory rilks = new bytes32[](2);
-        rilks[0] = rilk; rilks[1] = rilk;
-        Vow(bank).keep(rilks);
+        Vow(bank).keep();
         assertGt(Vat(bank).joy(), Vat(bank).sin() / RAY);
     }
 
     function test_drip_1() public
     {
         // should be 0 pending fees
-        uint rho = Vat(bank).ilks(rilk).rho;
+        uint rho = Vat(bank).rho();
         assertEq(rho, block.timestamp);
         assertEq(rico.balanceOf(self), 0);
 
         // set high fee, risk:ref price 1k
-        Vat(bank).filk(rilk, 'fee', bytes32(FEE_2X_ANN));
-        Vat(bank).frob(rilk, address(this), int(WAD), int(WAD));
+        file('fee', bytes32(FEE_2X_ANN));
+        Vat(bank).frob(address(this), int(WAD), int(WAD));
 
         // wipe previous frob
         uint firstrico = rico.balanceOf(self);
         rico_mint(1, false); // vat burns 1 extra to round in system's favor
-        Vat(bank).frob(rilk, address(this), -int(WAD), -int(WAD));
+        Vat(bank).frob(address(this), -int(WAD), -int(WAD));
 
         skip(BANKYEAR);
 
         // test rack, frob auto drips so same dart should draw double after a year at 2X fee
-        Vat(bank).frob(rilk, address(this), int(WAD * 2), int(WAD));
+        Vat(bank).frob(address(this), int(WAD * 2), int(WAD));
         assertClose(rico.balanceOf(self), firstrico * 2, 1_000_000);
 
         rico_mint(1, false); // rounding
-        Vat(bank).frob(rilk, address(this), -int(WAD), -int(WAD));
+        Vat(bank).frob(address(this), -int(WAD), -int(WAD));
     }
 
     function test_keep_balanced() public
     {
         force_fees(Vat(bank).sin() / RAY);
-        Vow(bank).keep(empty);
+        Vow(bank).keep();
 
         // budget balanced; shouldn't do anything, not even heal
         assertGt(Vat(bank).joy(), 1);
@@ -157,7 +155,7 @@ contract VowTest is Test, RicoSetUp {
     function test_keep_unbalanced_slightly_more_rico() public
     {
         // set fee == 2 so easy to predict djoy
-        Vat(bank).filk(rilk, 'fee', bytes32(FEE_2X_ANN));
+        file('fee', bytes32(FEE_2X_ANN));
 
         // frob enough rico to cover sin later, plus a lil extra
         uint amt = Vat(bank).sin() / RAY + 1;
@@ -173,7 +171,7 @@ contract VowTest is Test, RicoSetUp {
 
         assertEq(Vat(bank).joy(), 0);
         uint self_risk_1 = risk.balanceOf(self);
-        Vow(bank).keep(single(rilk));
+        Vow(bank).keep();
         uint self_risk_2 = risk.balanceOf(self);
 
         // unlike test_keep_balanced, budget was not balanced
@@ -187,7 +185,7 @@ contract VowTest is Test, RicoSetUp {
         // joy > sin, but joy too small to flap
         force_sin(0);
         force_fees(1);
-        Vow(bank).keep(empty);
+        Vow(bank).keep();
 
         assertEq(Vat(bank).sin(), 0);
         assertEq(Vat(bank).joy(), 1);
@@ -196,7 +194,7 @@ contract VowTest is Test, RicoSetUp {
         // so this keep should flap 0
         uint pre_rico = rico.balanceOf(self);
         uint pre_risk = risk.balanceOf(self);
-        Vow(bank).keep(empty);
+        Vow(bank).keep();
         uint aft_rico = rico.balanceOf(self);
         uint aft_risk = risk.balanceOf(self);
 
@@ -212,12 +210,12 @@ contract VowTest is Test, RicoSetUp {
 
         uint wel = RAY / 7;
         file('wel', bytes32(wel));
-        Vat(bank).frob(rilk, self, int(WAD), int(WAD));
+        Vat(bank).frob(self, int(WAD), int(WAD));
 
         // drip a bunch of joy
-        Vat(bank).filk(rilk, 'fee', bytes32(Vat(bank).FEE_MAX()));
+        file('fee', bytes32(Vat(bank).FEE_MAX()));
         skip(5 * BANKYEAR);
-        Vat(bank).drip(rilk);
+        Vat(bank).drip();
 
         // keep should flap 1/7 the joy
         uint joy = Vat(bank).joy() - Vat(bank).sin() / RAY;
@@ -228,7 +226,7 @@ contract VowTest is Test, RicoSetUp {
         file('dam', bytes32(rinv(Vow(bank).pex())));
         file('bel', bytes32(block.timestamp - 1));
         file('wal', bytes32(RAD));
-        Vow(bank).keep(empty);
+        Vow(bank).keep();
 
         uint aft_rico = rico.balanceOf(self);
         uint aft_risk = risk.balanceOf(self);
@@ -249,7 +247,7 @@ contract VowTest is Test, RicoSetUp {
         // no time elapsed, price == pex
         force_fees(Vat(bank).sin() / RAY + WAD);
         uint prerisk = risk.balanceOf(self);
-        Vow(bank).keep(empty);
+        Vow(bank).keep();
 
         assertClose(prerisk - risk.balanceOf(self), rmul(WAD, Vow(bank).pex()), BLN);
 
@@ -257,7 +255,7 @@ contract VowTest is Test, RicoSetUp {
         skip(1);
         force_fees(Vat(bank).sin() / RAY + WAD);
         prerisk = risk.balanceOf(self);
-        Vow(bank).keep(empty);
+        Vow(bank).keep();
 
         assertClose(prerisk - risk.balanceOf(self), rmul(WAD, Vow(bank).pex()) / 10, BLN);
 
@@ -265,7 +263,7 @@ contract VowTest is Test, RicoSetUp {
         skip(4);
         force_fees(Vat(bank).sin() / RAY + WAD);
         prerisk = risk.balanceOf(self);
-        Vow(bank).keep(empty);
+        Vow(bank).keep();
 
         assertClose(
             prerisk - risk.balanceOf(self), rmul(WAD, Vow(bank).pex()) / 10000, BLN
@@ -275,7 +273,7 @@ contract VowTest is Test, RicoSetUp {
         skip(BANKYEAR);
         force_fees(Vat(bank).sin() / RAY + WAD);
         prerisk = risk.balanceOf(self);
-        Vow(bank).keep(empty);
+        Vow(bank).keep();
         assertEq(prerisk - risk.balanceOf(self), 0);
     }
 
@@ -284,7 +282,7 @@ contract VowTest is Test, RicoSetUp {
         force_sin(Vat(bank).joy() * RAY + RAD);
 
         uint deficit = Vat(bank).sin() / RAY - Vat(bank).joy();
-        Vow(bank).keep(empty);
+        Vow(bank).keep();
 
         assertEq(Vat(bank).sin() / RAY - Vat(bank).joy(), deficit);
     }
@@ -409,7 +407,7 @@ contract VowTest is Test, RicoSetUp {
         // keep creates equal changes in risk supply and wal
         uint prewal = Vow(bank).wal();
         uint prerisk = risk.totalSupply();
-        Vow(bank).keep(empty);
+        Vow(bank).keep();
         assertFalse(prewal == Vow(bank).wal());
         assertFalse(prerisk == risk.totalSupply());
         assertEq(prewal - Vow(bank).wal(), prerisk - risk.totalSupply());
@@ -449,19 +447,19 @@ contract VowJsTest is Test, RicoSetUp {
         risk_mint(me, 16000 * WAD);
         risk.approve(bank, UINT256_MAX);
 
-        Vat(bank).filk(rilk, 'line', bytes32(10000 * RAD));
-        Vat(bank).filk(rilk, 'chop', bytes32(RAY * 11 / 10));
+        file('line', bytes32(10000 * RAD));
+        file('chop', bytes32(RAY * 11 / 10));
 
         // fee == 5%/yr == ray(1.05 ** (1/BANKYEAR))
         uint fee = 1000000001546067052200000000;
-        Vat(bank).filk(rilk, 'fee', bytes32(fee));
-        Vat(bank).frob(rilk, me, int(100 * WAD), 0);
-        Vat(bank).frob(rilk, me, int(0), int(99 * WAD));
+        file('fee', bytes32(fee));
+        Vat(bank).frob(me, int(100 * WAD), 0);
+        Vat(bank).frob(me, int(0), int(99 * WAD));
 
         // cat frobs some rico and transfers to me
         risk_mint(c, 7000 * WAD);
         cat.approve(arisk, bank, UINT256_MAX);
-        cat.frob(rilk, c, int(4001 * WAD), int(4000 * WAD));
+        cat.frob(c, int(4001 * WAD), int(4000 * WAD));
         cat.transfer(arico, me, 4000 * WAD);
 
         // used to setup uni pools here, no more though
@@ -478,7 +476,7 @@ contract VowJsTest is Test, RicoSetUp {
     {
         // frobbed the rico and no time has passed, so should be safe
         assertEq(rico.balanceOf(me), 99 * WAD);
-        (uint deal,) = Vat(bank).safe(rilk, me);
+        (uint deal,) = Vat(bank).safe(me);
         assertEq(deal, RAY);
     }
 
@@ -489,9 +487,9 @@ contract VowJsTest is Test, RicoSetUp {
 
         // risk:rico price 1
         set_dxm('dam', RAY);
-        Vow(bank).keep(single(rilk));
+        Vow(bank).keep();
 
-        (uint deal,) = Vat(bank).safe(rilk, me);
+        (uint deal,) = Vat(bank).safe(me);
         assertLt(deal, RAY);
 
         // should be balanced (enough)
@@ -499,11 +497,11 @@ contract VowJsTest is Test, RicoSetUp {
         assertEq(Vat(bank).joy(), 1);
 
         // bail the urn frobbed in setup
-        assertGt(_ink(rilk, me), 0);
-        Vat(bank).bail(rilk, me);
+        assertGt(_ink(me), 0);
+        Vat(bank).bail(me);
 
         // urn should be bailed, excess ink should be sent back to urn holder
-        uint ink = _ink(rilk, me); uint art = _art(rilk, me);
+        uint ink = _ink(me); uint art = _art(me);
         assertEq(art, 0);
         assertEq(ink, 0);
 
@@ -518,7 +516,7 @@ contract VowJsTest is Test, RicoSetUp {
     {
         // can't bail a safe urn
         vm.expectRevert(Vat.ErrSafeBail.selector);
-        Vat(bank).bail(rilk, me);
+        Vat(bank).bail(me);
 
         uint sin0 = Vat(bank).sin();
         assertEq(sin0 / RAY, 0);
@@ -526,11 +524,11 @@ contract VowJsTest is Test, RicoSetUp {
         skip(BANKYEAR);
 
         // it's unsafe now; can bail
-        Vat(bank).bail(rilk, me);
+        Vat(bank).bail(me);
 
         // was just bailed, so now it's safe
         vm.expectRevert(Vat.ErrSafeBail.selector);
-        Vat(bank).bail(rilk, me);
+        Vat(bank).bail(me);
     }
 
     function test_keep_vow_1yr_drip_flap() public
@@ -543,7 +541,7 @@ contract VowJsTest is Test, RicoSetUp {
         set_dxm('dam', RAY);
 
         // should flap
-        Vow(bank).keep(single(rilk));
+        Vow(bank).keep();
 
         // minted 4099, fee is 1.05. 0.05*4099 as no surplus buffer
         uint final_total = rico.totalSupply();
@@ -555,21 +553,21 @@ contract VowJsTest is Test, RicoSetUp {
     {
         // run a flap and ensure risk is burnt
         // pep a little bit more to account for chop >1 now that liqr is in hook
-        Vat(bank).filk(rilk, 'pep', bytes32(uint(3)));
+        file('pep', bytes32(uint(3)));
         uint risk_initial_supply = risk.totalSupply();
         skip(BANKYEAR);
 
         risk_mint(address(guy), 1000 * WAD);
 
         set_dxm('dam', RAY / 2);
-        guy.keep(single(rilk));
+        guy.keep();
 
         uint risk_post_flap_supply = risk.totalSupply();
         assertLt(risk_post_flap_supply, risk_initial_supply + 1000 * WAD * 2);
 
         // confirm bail trades the risk for rico
         uint joy0 = Vat(bank).joy();
-        Vat(bank).bail(rilk, me);
+        Vat(bank).bail(me);
         uint joy1 = Vat(bank).joy();
         assertGt(joy1, joy0);
     }

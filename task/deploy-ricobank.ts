@@ -9,7 +9,6 @@ task('deploy-ricobank', '')
   .addOptionalParam('mock', 'Ignore dependency args and deploy new mock dependencies')
   .addOptionalParam('dependencies', 'Pack with all required dependencies')
   .addOptionalParam('arb', 'Arbitrum deploy')
-  .addOptionalParam('tokens', 'JSON file with token addresses')
   .addOptionalParam('writepack', 'write pack to pack dir')
   .addOptionalParam('gasLimit', 'per-tx gas limit')
   .addOptionalParam('ipfs', 'add packs to ipfs')
@@ -36,7 +35,6 @@ task('deploy-ricobank', '')
           'deploy-dependencies',
           {
               mock:    args.mock,
-              tokens:  args.tokens,
               netname: args.netname,
               gfpackcid: args.gfpackcid,
               risk: args.risk,
@@ -49,7 +47,6 @@ task('deploy-ricobank', '')
 
     const pb = new dpack.PackBuilder(hre.network.name)
 
-    const tokens   = args.tokens ? require(args.tokens)[args.netname] : {}
     const settings = require('./settings.json')[args.netname]
 
     // base diamond contract (address will be bank address)
@@ -67,32 +64,20 @@ task('deploy-ricobank', '')
         bank: diamond.address,
         rico: deps.rico.address,
         risk: deps.risk.address,
-        par: ray(settings.par),
-        wel: ray(settings.wel),
-        dam: ray(settings.dam),
-        pex: ray(settings.pex),
-        gif: wad(settings.gif),
-        mop: ray(settings.mop),
-        lax: ray(settings.lax),
-        how: ray(settings.how),
-        cap: ray(settings.cap)
-    }
-
-    let ilks = []
-    for (let i in tokens.erc20) {
-        const params = tokens.erc20[i]
-        debug(`setting ilk ${i}`)
-
-        let ilk = {
-            ilk: b32(i),
-            chop: ray(params.chop),
-            dust: ray(params.dust),
-            fee:  ray(params.fee),
-            line: rad(params.line),
-            liqr: ray(params.liqr),
-        }
-
-        ilks.push(ilk)
+        par:  ray(settings.par),
+        wel:  ray(settings.wel),
+        dam:  ray(settings.dam),
+        pex:  ray(settings.pex),
+        gif:  wad(settings.gif),
+        mop:  ray(settings.mop),
+        lax:  ray(settings.lax),
+        how:  ray(settings.how),
+        cap:  ray(settings.cap),
+        chop: ray(settings.chop),
+        dust: ray(settings.dust),
+        fee:  ray(settings.fee),
+        line: rad(settings.line),
+        liqr: ray(settings.liqr),
     }
 
     debug('deploying ball...')
@@ -102,11 +87,7 @@ task('deploy-ricobank', '')
 
     debug('running ball setup...')
     await send(ball.setup, ballargs)
-    debug(`done deploying ball at ${ball.address}...making ilks`)
-    for (let ilk of ilks) {
-        debug("making ilk: ", ilk)
-        await send(ball.makeilk, ilk)
-    }
+    debug(`done deploying ball at ${ball.address}`)
 
     // take diamond back
     await send(ball.approve, ali.address);

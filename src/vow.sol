@@ -44,14 +44,11 @@ contract Vow is Bank {
 
     error ErrReflop();
 
-    function keep(bytes32[] calldata ilks) external payable _flog_ {
+    function keep() external payable _flog_ {
         VowStorage storage  vowS  = getVowStorage();
         VatStorage storage  vatS  = getVatStorage();
 
-        for (uint256 i = 0; i < ilks.length;) {
-            Vat(address(this)).drip(ilks[i]);
-            unchecked {++i;}
-        }
+        Vat(address(this)).drip();
 
         // use equal scales for sin and joy
         uint joy   = vatS.joy;

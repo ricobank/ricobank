@@ -27,15 +27,6 @@ contract Ball is Math, Ownable {
     IDiamondCuttable.FacetCutAction internal constant ADD = IDiamondCuttable.FacetCutAction.ADD;
     using OwnableStorage for OwnableStorage.Layout;
 
-    struct IlkParams {
-        bytes32 ilk;
-        uint256 chop;
-        uint256 dust;
-        uint256 fee;
-        uint256 line;
-        uint256 liqr;
-    }
-
     struct BallArgs {
         address payable bank; // diamond
         address rico;
@@ -49,6 +40,11 @@ contract Ball is Math, Ownable {
         uint256 lax;
         uint256 how;
         uint256 cap;
+        uint256 chop;
+        uint256 dust;
+        uint256 fee;
+        uint256 line;
+        uint256 liqr;
     }
 
     address public rico;
@@ -64,9 +60,7 @@ contract Ball is Math, Ownable {
     constructor(BallArgs memory args) {
         Bank.BankParams memory bp = Bank.BankParams(args.rico, args.risk);
         vat  = new Vat(bp);
-        vow  = new Vow(bp, Vow.VowParams(
-            args.wel, args.dam, args.pex, args.mop, args.lax
-        ));
+        vow  = new Vow(bp, Vow.VowParams(args.wel, args.dam, args.pex, args.mop, args.lax));
         vox  = new Vox(bp, Vox.VoxParams(args.how, args.cap));
         file = new File(bp);
 
@@ -79,7 +73,7 @@ contract Ball is Math, Ownable {
     function setup(BallArgs calldata args) external onlyOwner {
         IDiamondCuttable.FacetCut[] memory facetCuts = new IDiamondCuttable.FacetCut[](4);
         bytes4[] memory filesels = new bytes4[](3);
-        bytes4[] memory vatsels  = new bytes4[](14);
+        bytes4[] memory vatsels  = new bytes4[](20);
         bytes4[] memory vowsels  = new bytes4[](12);
         bytes4[] memory voxsels  = new bytes4[](5);
         File fbank = File(bank);
@@ -87,20 +81,26 @@ contract Ball is Math, Ownable {
         filesels[0] = File.file.selector;
         filesels[1] = bytes4(keccak256(abi.encodePacked('rico()')));
         filesels[2] = bytes4(keccak256(abi.encodePacked('risk()')));
-        vatsels[0]  = Vat.filk.selector;
-        vatsels[1]  = Vat.init.selector;
-        vatsels[2]  = Vat.frob.selector;
-        vatsels[3]  = Vat.bail.selector;
-        vatsels[4]  = Vat.safe.selector;
-        vatsels[5]  = Vat.joy.selector;
-        vatsels[6] = Vat.sin.selector;
-        vatsels[7] = Vat.ilks.selector;
-        vatsels[8] = Vat.urns.selector;
-        vatsels[9] = Vat.rest.selector;
-        vatsels[10] = Vat.par.selector;
-        vatsels[11] = Vat.drip.selector;
-        vatsels[12] = bytes4(keccak256(abi.encodePacked('FEE_MAX()')));
-        vatsels[13] = Vat.get.selector;
+        vatsels[0]  = Vat.frob.selector;
+        vatsels[1]  = Vat.bail.selector;
+        vatsels[2]  = Vat.safe.selector;
+        vatsels[3]  = Vat.joy.selector;
+        vatsels[4]  = Vat.sin.selector;
+        vatsels[5]  = Vat.urns.selector;
+        vatsels[6]  = Vat.rest.selector;
+        vatsels[7]  = Vat.par.selector;
+        vatsels[8]  = Vat.drip.selector;
+        vatsels[9]  = bytes4(keccak256(abi.encodePacked('FEE_MAX()')));
+        vatsels[10] = Vat.get.selector;
+        vatsels[11] = Vat.tart.selector;
+        vatsels[12] = Vat.rack.selector;
+        vatsels[13] = Vat.line.selector;
+        vatsels[14] = Vat.dust.selector;
+        vatsels[15] = Vat.fee.selector;
+        vatsels[16] = Vat.rho.selector;
+        vatsels[17] = Vat.chop.selector;
+        vatsels[18] = Vat.liqr.selector;
+        vatsels[19] = Vat.plot.selector;
         vowsels[0]  = Vow.keep.selector;
         vowsels[1]  = bytes4(keccak256(abi.encodePacked('dam()')));
         vowsels[2]  = bytes4(keccak256(abi.encodePacked('pex()')));
@@ -127,23 +127,20 @@ contract Ball is Math, Ownable {
         Diamond(payable(address(fbank))).diamondCut(facetCuts, address(0), bytes(""));
 
         fbank.file("par",  bytes32(args.par));
-        fbank.file("bel", bytes32(block.timestamp));
-        fbank.file("gif", bytes32(args.gif));
-        fbank.file("phi", bytes32(block.timestamp));
-        fbank.file("wal", bytes32(Gem(risk).totalSupply()));
-        fbank.file("way", bytes32(RAY));
-    }
-
-    function makeilk(IlkParams calldata ilkparams) external onlyOwner {
-        bytes32 ilk = ilkparams.ilk;
-        Vat(bank).init(ilk);
-        Vat(bank).filk(ilk, "chop", bytes32(ilkparams.chop));
-        Vat(bank).filk(ilk, "dust", bytes32(ilkparams.dust));
-        Vat(bank).filk(ilk, "fee",  bytes32(ilkparams.fee));
-        Vat(bank).filk(ilk, "line", bytes32(ilkparams.line));
-        Vat(bank).filk(ilk, "liqr", bytes32(ilkparams.liqr));
-        Vat(bank).filk(ilk, "pep",  bytes32(uint(2)));
-        Vat(bank).filk(ilk, "pop",  bytes32(RAY));
+        fbank.file("bel",  bytes32(block.timestamp));
+        fbank.file("gif",  bytes32(args.gif));
+        fbank.file("phi",  bytes32(block.timestamp));
+        fbank.file("wal",  bytes32(Gem(risk).totalSupply()));
+        fbank.file("way",  bytes32(RAY));
+        fbank.file("chop", bytes32(args.chop));
+        fbank.file("dust", bytes32(args.dust));
+        fbank.file("fee",  bytes32(args.fee));
+        fbank.file("line", bytes32(args.line));
+        fbank.file("liqr", bytes32(args.liqr));
+        fbank.file("pep",  bytes32(uint(2)));
+        fbank.file("pop",  bytes32(RAY));
+        fbank.file("rack", bytes32(RAY));
+        fbank.file("rho",  bytes32(block.timestamp));
     }
 
     function approve(address usr) external onlyOwner {

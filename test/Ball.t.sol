@@ -11,15 +11,11 @@ contract BallTest is BaseHelper {
     uint256 constant init_par = RAY * 4;
     uint256 riskamt;
 
-    bytes32 constant rilk  = 'risk';
-
-    GemFab           gf;
+    GemFab  gf;
 
     address rico;
     address risk;
     int256  safedart;
-
-    bytes32[] ilks;
 
     uint initial_risk_supply = 1000000 * WAD;
     uint init_dust           = RAY / 100;
@@ -35,9 +31,7 @@ contract BallTest is BaseHelper {
         rico = address(gf.build(bytes32("Rico"), bytes32("RICO")));
         risk = address(gf.build(bytes32("Rico Riskshare"), bytes32("RISK")));
 
-        // bank with two ilks
         bank    = make_diamond();
-        ilks    = single(rilk);
 
         Ball.BallArgs memory bargs = Ball.BallArgs(
             bank,
@@ -51,25 +45,20 @@ contract BallTest is BaseHelper {
             999999978035500000000000000, // mop (~-50%/yr)
             937000000000000000, // lax (~3%/yr)
             1000000000000003652500000000, // how
-            1000000021970000000000000000 // cap
-        );
-
-        ball = new Ball(bargs);
-
-        BankDiamond(bank).transferOwnership(address(ball));
-
-        // setup bank and ilks
-        ball.setup(bargs);
-
-        Ball.IlkParams memory ips = Ball.IlkParams(
-            'risk',
+            1000000021970000000000000000, // cap
             RAY, // chop
             init_dust, // dust
             1000000001546067052200000000, // fee
             100000 * RAD, // line
             RAY // liqr
         );
-        ball.makeilk(ips);
+
+        ball = new Ball(bargs);
+
+        BankDiamond(bank).transferOwnership(address(ball));
+
+        // setup bank
+        ball.setup(bargs);
 
         // transfer root access to self
         ball.approve(self);
@@ -96,9 +85,7 @@ contract BallTest is BaseHelper {
     modifier _flap_after_ {
         _;
         Gem(risk).mint(self, 10000 * WAD);
-        for(uint i; i < ilks.length; ++i) {
-            Vat(bank).drip(ilks[i]);
-        }
+        Vat(bank).drip();
 
         uint pre_bank_risk = Gem(risk).balanceOf(bank);
         uint pre_bank_rico = Gem(rico).balanceOf(bank);
@@ -109,7 +96,7 @@ contract BallTest is BaseHelper {
 
         vm.expectCall(rico, abi.encodePacked(Gem.mint.selector));
         vm.expectCall(risk, abi.encodePacked(Gem.burn.selector));
-        Vow(bank).keep(ilks);
+        Vow(bank).keep();
 
         uint aft_bank_risk = Gem(risk).balanceOf(bank);
         uint aft_bank_rico = Gem(rico).balanceOf(bank);
@@ -136,7 +123,7 @@ contract BallTest is BaseHelper {
         uint me_risk_1 = Gem(risk).balanceOf(self);
         uint me_rico_1 = Gem(rico).balanceOf(self);
 
-        Vow(bank).keep(ilks);
+        Vow(bank).keep();
 
         uint me_risk_2 = Gem(risk).balanceOf(self);
         uint me_rico_2 = Gem(rico).balanceOf(self);
@@ -147,33 +134,33 @@ contract BallTest is BaseHelper {
 
     function test_ball_1() public {
         // simple bail
-        Vat(bank).frob(rilk, self, int(riskamt), safedart);
+        Vat(bank).frob(self, int(riskamt), safedart);
         vm.expectRevert(Vat.ErrNotSafe.selector);
-        Vat(bank).frob(rilk, self, int(0), safedart);
+        Vat(bank).frob(self, int(0), safedart);
     }
 
     // frob, then flap (with wel == 100%), and check balanced
     function test_ball_pay_flap_success() public  _balanced_after_ {
-        Vat(bank).frob(rilk, self, int(riskamt), safedart);
+        Vat(bank).frob(self, int(riskamt), safedart);
 
         skip(BANKYEAR * 100);
 
-        uint ink_pre = _ink(rilk, self);
-        uint art_pre = _art(rilk, self);
+        uint ink_pre = _ink(self);
+        uint art_pre = _art(self);
 
         assertEq(Vow(bank).wel(), RAY);
 
         set_dxm('dam', RAY);
         vm.expectCall(rico, abi.encodePacked(Gem.mint.selector));
-        Vow(bank).keep(ilks); // drips
+        Vow(bank).keep(); // drips
 
-        uint rack = Vat(bank).ilks(rilk).rack;
-        uint dust = Vat(bank).ilks(rilk).dust;
+        uint rack = Vat(bank).rack();
+        uint dust = Vat(bank).dust();
         int  dart = -int((art_pre * rack - dust) / rack);
 
-        Vat(bank).frob(rilk, self, int(0), dart);
+        Vat(bank).frob(self, int(0), dart);
 
-        uint ink_aft = _ink(rilk, self);
+        uint ink_aft = _ink(self);
         assertEq(ink_aft, ink_pre);
         assertGt(ink_aft, rmul(dust, Gem(risk).totalSupply()));
 
@@ -208,31 +195,28 @@ contract BallTest is BaseHelper {
     }
 
     function test_bounds_fee() public {
-        bytes32 rilk2 = 'risk2';
-        Vat(bank).init(rilk2);
-
         // shouldn't be able to go under min
         vm.expectRevert(Bank.ErrBound.selector);
-        Vat(bank).filk(rilk2, 'fee', bytes32(RAY - 1));
+        file('fee', bytes32(RAY - 1));
 
         // test minimum...rack should stick
-        Vat(bank).filk(rilk2, 'fee', bytes32(RAY));
-
+        file('fee', bytes32(RAY));
+        uint rack0 = Vat(bank).rack();
         skip(BANKYEAR);
-        Vat(bank).drip(rilk2);
-        assertEq(Vat(bank).ilks(rilk2).rack, RAY);
+        Vat(bank).drip();
+        assertEq(Vat(bank).rack(), rack0);
 
         // test max...rack should grow 10x/yr
         uint fee_max = Vat(bank).FEE_MAX();
-        Vat(bank).filk(rilk2, 'fee', bytes32(fee_max));
+        file('fee', bytes32(fee_max));
 
         skip(BANKYEAR * 2);
-        Vat(bank).drip(rilk2);
-        assertClose(Vat(bank).ilks(rilk2).rack, 100 * RAY, 1000000000000);
+        Vat(bank).drip();
+        assertClose(Vat(bank).rack(), 100 * rack0, 1000000000000);
 
         // shouldn't be able to go over max
         vm.expectRevert(Bank.ErrBound.selector);
-        Vat(bank).filk(rilk2, 'fee', bytes32(fee_max + 1));
+        file('fee', bytes32(fee_max + 1));
     }
 
     function test_bounds_2() public {
@@ -278,10 +262,8 @@ contract BallTest is BaseHelper {
     function test_close() public {
         Diamond(bank).transferOwnership(address(ball));
 
-        bytes32 hilk = 'hello';
-        Vat(bank).init(hilk);
-        Vat(bank).filk(hilk, 'line', bytes32(RAD));
-        File(bank).file('par', bytes32(RAY));
+        file('line', bytes32(RAD));
+        file('par', bytes32(RAY));
 
         /* lock sequence */
         Diamond(bank).transferOwnership(address(ball));
@@ -290,7 +272,7 @@ contract BallTest is BaseHelper {
         /* end of lock sequence. bank owned by ball, ball owned by 0x0 */
 
         vm.expectRevert('Ownable: sender must be owner');
-        File(bank).file('par', bytes32(RAY));
+        file('par', bytes32(RAY));
 
         vm.expectRevert('Ownable: sender must be owner');
         ball.approve(self);

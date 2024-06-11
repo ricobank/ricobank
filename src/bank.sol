@@ -12,23 +12,6 @@ import { Gem }  from "../lib/gemfab/src/gem.sol";
 
 abstract contract Bank is Math, Flog, Palm, OwnableInternal {
 
-    // per-collateral type accounting
-    struct Ilk {
-        uint256 tart;  // [wad] Total Normalised Debt
-        uint256 rack;  // [ray] Accumulated Rate
-
-        uint256 line;  // [rad] Debt Ceiling
-        uint256 dust;  // [ray] Urn Ink Floor, as a fraction of totalSupply
-
-        uint256  fee;  // [ray] Collateral-specific, per-second compounding rate
-        uint256  rho;  // [sec] Time of last drip
-
-        uint256 chop;  // [ray] Liquidation Penalty
-        uint256 liqr;  // [ray] Liquidation Ratio
-
-        Plx     plot;  // [obj] discount exponent and offset
-    }
-
     struct BankParams {
         address rico;
         address risk;
@@ -48,12 +31,22 @@ abstract contract Bank is Math, Flog, Palm, OwnableInternal {
     }
 
     struct VatStorage {
-        mapping (bytes32 => Ilk) ilks; // collaterals
-        mapping (bytes32 => mapping (address => Urn )) urns; // CDPs
+        mapping (address => Urn ) urns; // CDPs
         uint256 joy;   // [wad]
         uint256 sin;   // [rad]
         uint256 rest;  // [rad] Debt remainder
         uint256 par;   // [ray] System Price (rico/ref)
+
+        // Ilk params
+        uint256 tart;  // [wad] Total Normalised Debt
+        uint256 rack;  // [ray] Accumulated Rate
+        uint256 line;  // [rad] Debt Ceiling
+        uint256 dust;  // [ray] Urn Ink Floor, as a fraction of totalSupply
+        uint256  fee;  // [ray] Collateral-specific, per-second compounding rate
+        uint256  rho;  // [sec] Time of last drip
+        uint256 chop;  // [ray] Liquidation Penalty
+        uint256 liqr;  // [ray] Liquidation Ratio
+        Plx     plot;  // [obj] discount exponent and offset
     }
 
     struct Plx {

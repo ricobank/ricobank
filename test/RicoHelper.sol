@@ -18,22 +18,21 @@ contract Guy {
     function approve(address gem, address dst, uint amt) public {
         Gem(gem).approve(dst, amt);
     }
-    function frob(bytes32 ilk, address usr, int dink, int dart) public {
-        Vat(bank).frob(ilk, usr, dink, dart);
+    function frob(address usr, int dink, int dart) public {
+        Vat(bank).frob(usr, dink, dart);
     }
     function transfer(address gem, address dst, uint amt) public {
         Gem(gem).transfer(dst, amt);
     }
-    function bail(bytes32 i, address u) public returns (uint) {
-        return Vat(bank).bail(i, u);
+    function bail(address u) public returns (uint) {
+        return Vat(bank).bail(u);
     }
-    function keep(bytes32[] calldata ilks) public {
-        Vow(bank).keep(ilks);
+    function keep() public {
+        Vow(bank).keep();
     }
 }
 
 abstract contract RicoSetUp is BaseHelper {
-    bytes32 constant public rilk  = "risk";
     uint256 constant public INIT_PAR   = RAY;
     uint256 constant public init_mint  = 10000;
     uint256 constant public FEE_2X_ANN = uint(1000000021964508944519921664);
@@ -60,14 +59,14 @@ abstract contract RicoSetUp is BaseHelper {
         _bob.approve(arisk, bank, risk_amt);
 
         // bob borrows the rico and sends back to self
-        _bob.frob(rilk, address(_bob), int(risk_amt), int(amt));
+        _bob.frob(address(_bob), int(risk_amt), int(amt));
         _bob.transfer(arico, self, amt);
 
         if (bail) {
-            uint liqr = uint(Vat(bank).get(rilk, 'liqr'));
-            Vat(bank).filk(rilk, 'liqr', bytes32(UINT256_MAX));
-            Vat(bank).bail(rilk, address(_bob));
-            Vat(bank).filk(rilk, 'liqr', bytes32(liqr));
+            uint liqr = uint(Vat(bank).get('liqr'));
+            file('liqr', bytes32(UINT256_MAX));
+            Vat(bank).bail(address(_bob));
+            file('liqr', bytes32(liqr));
         }
 
         // restore previous risk supply
@@ -90,7 +89,7 @@ abstract contract RicoSetUp is BaseHelper {
         // Create imaginary fees, add to joy
         // Avoid manipulating vat like this usually
         uint256 joy_0    = Vat(bank).joy();
-        uint256 joy_idx  = 2;
+        uint256 joy_idx  = 1;
         bytes32 vat_info = 'vat.0';
         bytes32 vat_pos  = keccak256(abi.encodePacked(vat_info));
         bytes32 joy_pos  = bytes32(uint(vat_pos) + joy_idx);
@@ -100,7 +99,7 @@ abstract contract RicoSetUp is BaseHelper {
 
     function force_sin(uint val) public {
         // set sin as if it was covered by a good bail
-        uint256 sin_idx  = 3;
+        uint256 sin_idx  = 2;
         bytes32 vat_info = 'vat.0';
         bytes32 vat_pos  = keccak256(abi.encodePacked(vat_info));
         bytes32 sin_pos  = bytes32(uint(vat_pos) + sin_idx);
@@ -117,17 +116,6 @@ abstract contract RicoSetUp is BaseHelper {
 
         bank       = make_diamond();
 
-        // deploy bank with one ERC20 ilk and one NFPM ilk
-        Ball.IlkParams[] memory ips = new Ball.IlkParams[](1);
-        ips[0] = Ball.IlkParams(
-            'first',
-            RAY, // chop
-            RAY / 10, // dust
-            1000000001546067052200000000, // fee
-            100000 * RAD, // line
-            RAY // liqr
-        );
-
         Ball.BallArgs memory bargs = Ball.BallArgs(
             bank,
             arico,
@@ -140,7 +128,12 @@ abstract contract RicoSetUp is BaseHelper {
             999999978035500000000000000, // mop (~-50%/yr)
             937000000000000000, // lax (~3%/yr)
             1000000000000003652500000000, // how
-            1000000021970000000000000000 // cap
+            1000000021970000000000000000, // cap
+            RAY, // chop
+            0, // dust
+            1000000001546067052200000000, // fee
+            init_mint * 10 * RAD, // line
+            RAY // liqr
         );
 
         ball = new Ball(bargs);
@@ -148,7 +141,6 @@ abstract contract RicoSetUp is BaseHelper {
         BankDiamond(bank).transferOwnership(address(ball));
 
         ball.setup(bargs);
-        ball.makeilk(ips[0]);
         ball.approve(self);
         BankDiamond(bank).acceptOwnership();
 
@@ -158,20 +150,18 @@ abstract contract RicoSetUp is BaseHelper {
         //////////
     }
 
-    function init_risk_ilk(bytes32 ilk) public {
+    function init_risk_ilk() public {
         risk.approve(bank, type(uint256).max);
-        Vat(bank).init(ilk);
-        Vat(bank).filk(ilk, 'liqr', bytes32(RAY));
-        Vat(bank).filk(ilk, 'pep',  bytes32(uint(2)));
-        Vat(bank).filk(ilk, 'pop',  bytes32(RAY));
-        Vat(bank).filk(ilk, 'chop', bytes32(RAY));
-        Vat(bank).filk(ilk, 'line', bytes32(init_mint * 10 * RAD));
-        Vat(bank).filk(ilk, 'fee',  bytes32(uint(1000000001546067052200000000)));  // 5%
+        file('pep',  bytes32(uint(2)));
+        file('pop',  bytes32(RAY));
+        file('chop', bytes32(RAY));
+        file('dust', bytes32(0));
+        file('liqr', bytes32(RAY));
     }
 
     function init_risk() public {
         risk_mint(self, init_mint * WAD);
-        init_risk_ilk(rilk);
+        init_risk_ilk();
     }
 
     // mint some new rico and give it to guy
@@ -185,8 +175,8 @@ abstract contract RicoSetUp is BaseHelper {
         uint joy  = Vat(bank).joy();
         uint sin  = Vat(bank).sin();
         uint rest = Vat(bank).rest();
-        uint tart = Vat(bank).ilks(rilk).tart;
-        uint rack = Vat(bank).ilks(rilk).rack;
+        uint tart = Vat(bank).tart();
+        uint rack = Vat(bank).rack();
 
         assertEq(rico.balanceOf(bank), 0);
         assertEq(tart * rack + sin, (sup + joy) * RAY + rest);

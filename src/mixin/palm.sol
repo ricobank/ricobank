@@ -14,10 +14,4 @@ abstract contract Palm {
       , bytes32 indexed idx0
       , bytes32 val
     );
-    event NewPalm2(
-        bytes32 indexed key
-      , bytes32 indexed idx0
-      , bytes32 indexed idx1
-      , bytes32 val
-    );
 }

@@ -26,8 +26,6 @@ task('deploy-dependencies', '')
           gf_pack: gf_pack,
           gfpackcid: args.gfpackcid,
           risk: args.risk,
-          tokens: args.tokens,
-          netname: args.netname,
           mock: args.mock,
           gasLimit: args.gasLimit
       }

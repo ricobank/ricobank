@@ -20,13 +20,13 @@ abstract contract BaseHelper is Math, Test {
 
     receive () payable external {}
 
-    function _ink(bytes32 ilk, address usr) internal view returns (uint) {
-        Vat.Urn memory urn = Vat(bank).urns(ilk, usr);
+    function _ink(address usr) internal view returns (uint) {
+        Vat.Urn memory urn = Vat(bank).urns(usr);
         return urn.ink;
     }
 
-    function _art(bytes32 ilk, address usr) internal view returns (uint) {
-        Vat.Urn memory urn = Vat(bank).urns(ilk, usr);
+    function _art(address usr) internal view returns (uint) {
+        Vat.Urn memory urn = Vat(bank).urns(usr);
         return urn.art;
     }
 

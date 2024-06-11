@@ -5,6 +5,7 @@
 pragma solidity ^0.8.25;
 import { Gem }  from "../lib/gemfab/src/gem.sol";
 import { Bank } from "./bank.sol";
+import { Vat } from "./vat.sol";
 import { Vox } from "./vox.sol";
 
 contract File is Bank {
@@ -16,7 +17,30 @@ contract File is Bank {
         VoxStorage storage voxS = getVoxStorage();
         uint _val = uint(val);
 
-               if (key == "par") { vatS.par = _val;
+               if (key == "par")  { vatS.par = _val;
+        } else if (key == "line") { vatS.line = _val;
+        } else if (key == "dust") {
+            must(_val, 0, RAY);
+            vatS.dust = _val;
+        } else if (key == "pep")  { vatS.plot.pep = _val;
+        } else if (key == "pop")  { vatS.plot.pop = _val;
+        } else if (key == "pup")  { vatS.plot.pup = int(_val);
+        } else if (key == "liqr") {
+            must(_val, RAY, type(uint).max);
+            vatS.liqr = _val;
+        } else if (key == "chop") {
+            must(_val, RAY, 10 * RAY);
+            vatS.chop = _val;
+        } else if (key == "fee") {
+            must(_val, RAY, Vat(address(this)).FEE_MAX());
+            Vat(address(this)).drip();
+            vatS.fee = _val;
+        } else if (key == "rack") {
+            must(_val, RAY, type(uint).max);
+            vatS.rack = _val;
+        } else if (key == "rho") {
+            must(_val, 0, block.timestamp);
+            vatS.rho = _val;
         } else if (key == "bel") {
             must(_val, 0, block.timestamp);
             vowS.bel = _val;
