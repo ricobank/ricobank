@@ -40,7 +40,7 @@ contract VowTest is Test, RicoSetUp {
 
         // accumulate a bunch of fees
         skip(BANKYEAR);
-        bank.drip();
+        bank.frob(self, 0, 0);
 
         // joy depends on tart and change in rack
         uint surplus = bank.joy();
@@ -65,7 +65,7 @@ contract VowTest is Test, RicoSetUp {
         skip(1);
 
         uint pre_drip_joy = bank.joy();
-        bank.drip();
+        bank.frob(self, 0, 0);
         uint aft_drip_joy = bank.joy();
         surplus = surplus + aft_drip_joy - pre_drip_joy;
 
@@ -214,7 +214,7 @@ contract VowTest is Test, RicoSetUp {
         // drip a bunch of joy
         file('fee', bytes32(bank.FEE_MAX()));
         skip(5 * BANKYEAR);
-        bank.drip();
+        bank.frob(self, 0, 0);
 
         // keep should flap 1/7 the joy
         uint joy = bank.joy() - bank.sin() / RAY;

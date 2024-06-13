@@ -455,7 +455,6 @@ contract DssFoldTest is DssVatTest {
 
     function draw(uint amt) internal {
         risk_mint(self, amt);
-        bank.drip();
         bank.frob(self, int(WAD), int(amt));
     }
 
@@ -478,7 +477,7 @@ contract DssFoldTest is DssVatTest {
         // fee_max is 10X/year: 668226 sec for 5% growth; log(1.05)/log(10)*seconds/year
         skip(668226);
         uint mejoy0 = bank.joy() * RAY; // rad
-        bank.drip();
+        bank.frob(self, 0, 0);
         uint djoy = bank.joy() * RAY - mejoy0;
         uint tol = RAD / 1000;
 
@@ -651,7 +650,7 @@ contract DssVowTest is DssJsTest {
 
     function test_flap_1() public _vow_ {
         risk_mint(self, 10000 * WAD);
-        bank.drip();
+        bank.frob(self, 0, 0);
         file(bytes32('chop'), bytes32(RAY * 11 / 10));
         file('fee', bytes32(bank.FEE_MAX()));
 

@@ -58,7 +58,7 @@ contract VoxTest is Test, RicoSetUp {
         // accumulate surplus
         bank.frob(self, int(1000 * WAD), int(100 * WAD));
         skip(BANKYEAR);
-        bank.drip();
+        bank.frob(self, 0, 0);
 
         risk_mint(self, WAD * 1_000_000);
         way0 = bank.way();

@@ -30,14 +30,14 @@ contract VatTest is Test, RicoSetUp {
 
     function test_drip_basic() public {
         // set fee to something >1 so joy changes
-        bank.drip();
+        bank.frob(self, 0, 0);
         file('fee', bytes32(FEE_2X_ANN));
 
         skip(1);
 
         // frob retroactively, drip the profits
         bank.frob(self, int(100 * WAD), int(50 * WAD));
-        bank.drip();
+        bank.frob(self, 0, 0);
     }
 
     ///////////////////////////////////////////////
@@ -68,7 +68,7 @@ contract VatTest is Test, RicoSetUp {
 
         // accumulate fees to 2x...position should sink underwater
         skip(BANKYEAR);
-        bank.drip();
+        bank.frob(self, 0, 0);
         (deal, tot) = bank.safe(self);
         assertTrue(deal < RAY);
 
@@ -92,7 +92,7 @@ contract VatTest is Test, RicoSetUp {
 
         // accrue some interest to sink
         skip(100);
-        bank.drip();
+        bank.frob(self, 0, 0);
         (deal,) = bank.safe(self);
         assertTrue(deal < RAY);
 
@@ -134,7 +134,7 @@ contract VatTest is Test, RicoSetUp {
 
         // sink the urn
         skip(BANKYEAR);
-        bank.drip();
+        bank.frob(self, 0, 0);
         (deal,) = bank.safe(self);
         assertTrue(deal < RAY);
 
@@ -152,7 +152,7 @@ contract VatTest is Test, RicoSetUp {
 
         // sink it
         skip(BANKYEAR);
-        bank.drip();
+        bank.frob(self, 0, 0);
         (deal,) = bank.safe(self);
         assertTrue(deal < RAY);
 
@@ -347,7 +347,7 @@ contract VatTest is Test, RicoSetUp {
     // amount of rico owed to pay down the CDP
     function owed() internal returns (uint) {
         // update rack first
-        bank.drip();
+        bank.frob(self, 0, 0);
 
         uint rack = bank.rack();
         uint art = _art(self);
@@ -360,7 +360,7 @@ contract VatTest is Test, RicoSetUp {
 
         // drip a little bit so this isn't the first fee accumulation
         skip(1);
-        bank.drip();
+        bank.frob(self, 0, 0);
         bank.frob(self, int(100 * WAD), int(50 * WAD));
 
         // wait a second, just so it's more realistic
@@ -382,12 +382,12 @@ contract VatTest is Test, RicoSetUp {
 
         // drip to accumulate to rest
         skip(1);
-        bank.drip();
+        bank.frob(self, 0, 0);
         assertEq(bank.rest(), 2 * WAD + 2);
 
         // drip again, should have more rest now
         skip(1);
-        bank.drip();
+        bank.frob(self, 0, 0);
         assertGt(bank.rest(), 2 * WAD + 2);
     }
 
@@ -398,18 +398,18 @@ contract VatTest is Test, RicoSetUp {
 
         // didn't frob any fractional rico, so rest should be (fee - RAY) * WAD
         skip(1);
-        bank.drip();
+        bank.frob(self, 0, 0);
         assertEq(bank.rest(), WAD);
 
         // do it again, should double
         skip(1);
-        bank.drip();
+        bank.frob(self, 0, 0);
         assertEq(bank.rest(), 2 * WAD);
 
         // no more fee - rest should stop increasing
         file('fee', bytes32(RAY));
         skip(1);
-        bank.drip();
+        bank.frob(self, 0, 0);
         assertEq(bank.rest(), 2 * WAD);
     }
 
@@ -417,7 +417,7 @@ contract VatTest is Test, RicoSetUp {
         // drip with no fees
         file('fee', bytes32(RAY));
         file('dust', bytes32(0));
-        bank.drip();
+        bank.frob(self, 0, 0);
 
         // mint 1 to deal with rounding
         // then lock 1 and wipe 1
@@ -426,19 +426,19 @@ contract VatTest is Test, RicoSetUp {
         bank.frob(self, -int(1), -int(1));
 
         // rest from rounding should be RAD / WAD == RAY
-        bank.drip();
+        bank.frob(self, 0, 0);
         assertEq(bank.rest(), RAY);
 
         // dripping should clear rest
         skip(1);
-        bank.drip();
+        bank.frob(self, 0, 0);
         assertEq(bank.rest(), 0);
     }
 
     function test_rest_drip_toggle_wads() public {
         // drip with no fees
         file('fee', bytes32(RAY));
-        bank.drip();
+        bank.frob(self, 0, 0);
 
         // tiny fee, no dust
         file('fee', bytes32(RAY + 1));
@@ -448,7 +448,7 @@ contract VatTest is Test, RicoSetUp {
         rico_mint(1, true);
         bank.frob(self, int(WAD), int(WAD));
         skip(1);
-        bank.drip();
+        bank.frob(self, 0, 0);
 
         // rest should be (fee - RAY) * WAD
         assertEq(bank.rest(), WAD);
@@ -461,7 +461,7 @@ contract VatTest is Test, RicoSetUp {
 
         // rest is RAY (rest % RAY == 0), so should accumulate to joy
         skip(1);
-        bank.drip();
+        bank.frob(self, 0, 0);
         assertEq(bank.rest(), 0);
     }
 
@@ -504,7 +504,7 @@ contract VatTest is Test, RicoSetUp {
 
         // accumulate pending fees
         skip(BANKYEAR);
-        bank.drip();
+        bank.frob(self, 0, 0);
 
         // ceily, not safe, wrong urn, dusty...should be wrong urn
         vm.expectRevert(Bank.ErrWrongUrn.selector);
@@ -529,7 +529,7 @@ contract VatTest is Test, RicoSetUp {
         // check how it works with some fees dripped
         file('fee', bytes32(bank.FEE_MAX()));
         skip(1);
-        bank.drip();
+        bank.frob(self, 0, 0);
 
         // frob while pranking fakesrc address
         risk_mint(fakesrc, 1000 * WAD);
@@ -571,7 +571,7 @@ contract VatTest is Test, RicoSetUp {
 
         // accumulate pending fees
         skip(1);
-        bank.drip();
+        bank.frob(self, 0, 0);
 
         risk_mint(fakesrc, 1000 * WAD);
 
@@ -602,7 +602,7 @@ contract VatTest is Test, RicoSetUp {
 
         // accumulate pending fees
         skip(1);
-        bank.drip();
+        bank.frob(self, 0, 0);
 
         risk_mint(fakesrc, 1000 * WAD);
 
@@ -644,7 +644,7 @@ contract VatTest is Test, RicoSetUp {
 
     function test_dtab_not_normalized() public {
         // accumulate pending fees, then set fee high
-        bank.drip();
+        bank.frob(self, 0, 0);
         file('fee', bytes32(FEE_2X_ANN));
 
         // rack is 0, so debt should increase by dart
@@ -652,7 +652,7 @@ contract VatTest is Test, RicoSetUp {
         assertEq(bank.tart(), WAD);
 
         skip(BANKYEAR);
-        bank.drip();
+        bank.frob(self, 0, 0);
 
         // dart > 0, so dtab > 0
         // dart == 1, rack == 2, so dtab should be 2
@@ -677,12 +677,12 @@ contract VatTest is Test, RicoSetUp {
         skip(BANKYEAR);
         // now frob 1, so debt is 1
         // and rest is 0.5 * RAY
-        bank.drip();
+        bank.frob(self, 0, 0);
         bank.frob(self, int(1000), int(1));
         assertClose(bank.rest(), RAY / 2, 1_000_000);
         assertEq(bank.tart(), 1);
         // need to wait for drip to do anything...
-        bank.drip();
+        bank.frob(self, 0, 0);
         assertClose(bank.rest(), RAY / 2, 1_000_000);
 
         // frob again so rest reaches RAY
@@ -693,7 +693,7 @@ contract VatTest is Test, RicoSetUp {
         // so regardless of fee next drip should drip 1 (== rest / RAY)
         file('fee', bytes32(RAY));
         skip(1);
-        bank.drip();
+        bank.frob(self, 0, 0);
 
         assertEq(bank.tart(), 2);
         assertLt(bank.rest(), RAY / 1_000_000);

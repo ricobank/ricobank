@@ -306,8 +306,6 @@ contract Bank is Math, Flog, Palm {
         emit NewPalm0("joy", bytes32(mood));
     }
 
-    function drip() external payable _flog_ { _drip(); }
-
     // drip without flog
     function _drip() internal returns (uint _rack) {
         // multiply rack by fee every second

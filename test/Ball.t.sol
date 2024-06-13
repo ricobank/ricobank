@@ -71,7 +71,7 @@ contract BallTest is BaseHelper {
     modifier _flap_after_ {
         _;
         risk.mint(self, 10000 * WAD);
-        bank.drip();
+        bank.frob(self, 0, 0); // just drip
 
         uint pre_bank_risk = risk.balanceOf(abank);
         uint pre_bank_rico = rico.balanceOf(abank);

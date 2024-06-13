@@ -18,7 +18,7 @@ contract IntegrationTest is Test, RicoSetUp {
         // accumulate some fees
         bank.frob(self, int(10 * WAD), int(5 * WAD));
         skip(100);
-        bank.drip();
+        bank.frob(self, 0, 0);
         check_integrity();
 
         // system is in surplus, flap
@@ -65,7 +65,7 @@ contract IntegrationTest is Test, RicoSetUp {
         // open an urn to accumulate fees, mint some risk to fill the flop
         bank.frob(self, int(10 * WAD), int(5 * WAD));
         skip(100);
-        bank.drip();
+        bank.frob(self, 0, 0);
         risk_mint(self, 10_000 * WAD);
 
         uint rico_sup0 = rico.totalSupply();
