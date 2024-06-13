@@ -841,58 +841,6 @@ contract VatTest is Test, RicoSetUp {
         bank.frob(self, -int(WAD), -int(WAD));
     }
 
-    function test_bail_moves_line() public {
-        // defensive line
-        uint dink   = WAD * 500;
-        uint borrow = WAD * 500;
-        uint line0  = RAD * 1000;
-
-        // set some semi-normal values for line liqr pep pop
-        // doesn't matter too much, this test just cares about change in sin
-        file('line', bytes32(line0));
-        file("liqr", bytes32(RAY));
-        file("pep",  bytes32(uint(1)));
-        file("pop",  bytes32(RAY));
-        file("fee",  bytes32(FEE_2X_ANN));
-
-
-        // frob to edge of safety and line (pending year wait)
-        bank.frob(self, int(dink), int(borrow));
-
-        // double tab
-        skip(BANKYEAR);
-
-        uint sr0   = rico.balanceOf(self);
-        uint sg0   = risk.balanceOf(self);
-        bank.bail(self);
-        uint line1 = bank.line();
-        uint sr1   = rico.balanceOf(self);
-        uint sg1   = risk.balanceOf(self);
-
-        // rico recovery will be borrowed amount * 0.5 for ink/tab * 0.5 for deal
-        // line should have decreased to 50% capacity
-        assertClose(line0 / 4, line1, 10000);
-        assertClose(sr0, sr1 + borrow * 2 / 4, 10000);
-        assertEq(sg0, sg1 - dink);
-
-        // line got defensive, so should be barely too low now
-        vm.expectRevert(Bank.ErrDebtCeil.selector);
-        bank.frob(self, int(dink), int(borrow / 4 * 100001 / 100000));
-        // barely under line
-        bank.frob(self, int(dink), int(borrow / 4));
-
-        // set really low line to test defensive line underflow
-        file('line', bytes32(line0 / 10));
-
-        // another big fee accumulation, then bail
-        skip(2 * BANKYEAR);
-        bank.bail(self);
-
-        // fees or line modifications can lead to loss > capacity, check no underflow
-        uint line2 = bank.line();
-        assertEq(line2, 0);
-    }
-
     function test_risk_denominated_dust() public {
         uint sup = risk.totalSupply();
         uint dust = RAY * 5 / sup;

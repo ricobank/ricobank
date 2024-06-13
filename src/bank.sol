@@ -255,7 +255,8 @@ contract Bank is Math, Flog, Palm {
             sell = urn.ink;
         }
 
-        vsync(earn, dtab / RAY);
+        uint _joy = joy += earn;
+        emit NewPalm0("joy", bytes32(_joy));
 
         // update collateral balance
         unchecked {
@@ -266,24 +267,6 @@ contract Bank is Math, Flog, Palm {
         // trade collateral with keeper for rico
         rico.burn(msg.sender, earn);
         risk.mint(msg.sender, sell);
-    }
-
-    // Update joy and possibly line. Workaround for stack too deep
-    function vsync(uint earn, uint owed) internal {
-
-        if (earn < owed) {
-            // drop line value as precaution
-            uint prev = line;
-            uint loss = RAY * (owed - earn);
-            uint next = loss > prev ? 0 : prev - loss;
-            line = next;
-            emit NewPalm0("line", bytes32(next));
-        }
-
-        // update joy to help cancel out sin
-        uint mood = joy + earn;
-        joy = mood;
-        emit NewPalm0("joy", bytes32(mood));
     }
 
     // drip without flog
