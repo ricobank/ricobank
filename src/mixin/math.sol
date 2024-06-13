@@ -114,14 +114,6 @@ contract Math {
         }
     }
 
-    function concat(bytes32 a, bytes32 b) internal pure returns (bytes32 res) {
-        uint i;
-        while (i < 32 && a[i] != 0) {
-            unchecked{ i++; }
-        }
-        res = a | (b >> (i << 3));
-    }
-
     function rmash(uint deal, uint pep, uint pop, int pup)
       internal pure returns (uint res) {
         res = rmul(pop, rpow(deal, pep));

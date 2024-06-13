@@ -52,9 +52,8 @@ contract DssJsTest is Test, RicoSetUp {
     function setUp() public {
         make_bank();
 
-        // no fee, lower line a bit, burn the risk
+        // no fee, burn the risk
         file(bytes32('fee'), bytes32(uint(RAY)));
-        file('line', bytes32(1000 * RAD));
         risk_burn(self, risk.balanceOf(self));
 
         // mint some RISK so rates relative to total supply aren't zero
@@ -104,36 +103,6 @@ contract DssFrobTest is DssVatTest {
         bank.frob(self, -int(6 * WAD), 0);
         assertEq(_ink(self), 0);
         assertEq(risk.balanceOf(self), 1000 * WAD);
-    }
-
-    function test_calm() public _frob_ {
-        // calm means that the debt ceiling is not exceeded
-        // it's ok to increase debt as long as you remain calm
-        file('line', bytes32(10 * RAD));
-        bank.frob(self, int(10 * WAD), int(9 * WAD));
-
-        // only if under debt ceiling
-        vm.expectRevert(Bank.ErrDebtCeil.selector);
-        bank.frob(self, int(WAD), int(2 * WAD));
-
-        // but safe check comes first
-        vm.expectRevert(Bank.ErrNotSafe.selector);
-        bank.frob(self, int(0), int(2 * WAD));
-
-        // calm line
-        file('line', bytes32(20 * RAD));
-        bank.frob(self, int(2 * WAD), int(2 * WAD));
-    }
-
-    function test_cool() public _frob_ {
-        // cool means that the debt has decreased
-        // it's ok to be over the debt ceiling as long as you're cool
-        file('line', bytes32(10 * RAD));
-        bank.frob(self, int(10 * WAD), int(8 * WAD));
-        file('line', bytes32(5 * RAD));
-
-        // can decrease debt when over ceiling
-        bank.frob(self, int(0), -int(WAD));
     }
 
     function test_safe() public _frob_ {
@@ -276,8 +245,7 @@ contract DssBiteTest is DssVatTest {
 
         risk_mint(self, 1000 * WAD);
 
-        // normal line, no liquidation penalty
-        file('line', bytes32(1000 * RAD));
+        // no liquidation penalty
         file('chop', bytes32(RAY));
 
         // cat.box - ***N/A bail liquidates entire urn***
@@ -447,7 +415,6 @@ contract DssBiteTest is DssVatTest {
 contract DssFoldTest is DssVatTest {
     function _fold_setup() internal {
         _vat_setUp();
-        file('line', bytes32(100 * RAD));
     }
 
     modifier _fold_ { _fold_setup(); _; }
@@ -513,7 +480,6 @@ contract DssClipTest is DssJsTest {
 
         file('liqr', bytes32(2 * RAY)); // dss mat
         file('dust', bytes32(RAY / 100000));
-        file('line', bytes32(10000 * RAD));
 
         // dss uses wad, rico uses ray
         file('chop', bytes32(11 * RAY / 10));
@@ -689,8 +655,6 @@ contract DssDogTest is DssJsTest {
     Usr gal;
 
     function _dog_setUp() internal {
-        file('line', bytes32(10000 * RAD));
-
         risk_mint(self, 100000 * WAD);
 
         bank.keep();

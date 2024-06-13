@@ -443,7 +443,6 @@ contract VowJsTest is Test, RicoSetUp {
 
         risk_mint(me, 16000 * WAD);
 
-        file('line', bytes32(10000 * RAD));
         file('chop', bytes32(RAY * 11 / 10));
 
         // fee == 5%/yr == ray(1.05 ** (1/BANKYEAR))

@@ -33,7 +33,6 @@ contract Bank is Math, Flog, Palm {
         uint256 chop;
         uint256 dust;
         uint256 fee;
-        uint256 line;
         uint256 liqr;
         uint256 pep;
         uint256 pop;
@@ -51,7 +50,6 @@ contract Bank is Math, Flog, Palm {
     uint256 public par;   // [ray] System Price (rico/ref)
     uint256 public tart;  // [wad] Total Normalised Debt
     uint256 public rack;  // [ray] Accumulated Rate
-    uint256 public line;  // [rad] Debt Ceiling
     uint256 public rho;   // [sec] Time of last drip
     uint256 immutable public fee;   // [ray] per-second compounding rate
     uint256 immutable public dust;  // [ray] Urn Ink Floor, as a fraction of totalSupply
@@ -81,7 +79,6 @@ contract Bank is Math, Flog, Palm {
     uint256 immutable public cap;
     uint256 constant  public CAP_MAX = 1000000072964521287979890107; // ~10x/yr
 
-    error ErrDebtCeil();
     error ErrNotSafe();
     error ErrSafeBail();
     error ErrUrnDust();
@@ -106,7 +103,7 @@ contract Bank is Math, Flog, Palm {
         must(how, RAY, type(uint).max);
         must(cap, RAY, CAP_MAX);
 
-        (par, line, dust) = (p.par, p.line, p.dust);
+        (par, dust) = (p.par, p.dust);
         must(dust, 0, RAY);
 
         (pep, pop, pup) = (p.pep, p.pop, p.pup);
@@ -125,7 +122,6 @@ contract Bank is Math, Flog, Palm {
         must(way, rinv(cap), cap);
 
         emit NewPalm0("par", bytes32(par));
-        emit NewPalm0("line", bytes32(line));
         emit NewPalm0("rho",  bytes32(rho));
         emit NewPalm0("bel", bytes32(bel));
         emit NewPalm0("gif", bytes32(gif));
@@ -164,7 +160,6 @@ contract Bank is Math, Flog, Palm {
         urn.art     = art;
         emit NewPalm1("art", bytes32(bytes20(u)), bytes32(art));
 
-        // keep track of total so it denorm doesn't exceed line
         tart    = add(tart, dart);
         emit NewPalm0("tart", bytes32(tart));
 
@@ -214,9 +209,6 @@ contract Bank is Math, Flog, Palm {
 
         // urn has no debt, or a non-dusty ink amount
         if (art != 0 && urn.ink < rmul(wal, dust)) revert ErrUrnDust();
-
-        // either debt has decreased, or debt ceiling is not exceeded
-        if (dart > 0) if (tart * _rack > line) revert ErrDebtCeil();
     }
 
     // liquidate CDP

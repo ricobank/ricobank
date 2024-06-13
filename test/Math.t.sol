@@ -100,58 +100,6 @@ contract MathTest is Test, Math {
         assertEq(grow(RAY / BLN, RAY, 5), RAY / BLN);
     }
 
-    function test_concat() public pure {
-        assertEq(concat('hello ', 'world'), 'hello world');
-        assertEq(concat('hello', ''), 'hello');
-        assertEq(concat('', 'world'), 'world');
-        assertEq(concat('', ''), '');
-    }
-
-    function test_concat_big_first() public pure {
-        // test for off-by-one errors at the start
-        bytes32 big_s = '1234567890123456789012345678901';
-        assertEq(bytes31(concat(big_s, 'i')), bytes31(big_s));
-
-        assertEq(big_s, concat(big_s, ''));
-        assertEq(
-            concat(big_s, bytes32(bytes1(0x11))),
-            concat(big_s, bytes32(bytes2(0x1122)))
-        );
-        assertEq(
-            concat(big_s, bytes32(bytes1(0x11))),
-            concat(big_s, bytes32(bytes2(0x1100)))
-        );
-        assertEq(
-            concat(big_s, 'i'),
-            concat(big_s, 'ii')
-        );
-        assertEq(
-            bytes1(bytes32(uint(concat(big_s, 'i')) << (31 * 8))),
-            bytes1('i')
-        );
-
-        // yes should get cut
-        bytes32 bigger_s = concat(big_s, 'i');
-        bytes32 bigger_s_yes = concat(bigger_s, 'yes');
-        assertEq(bigger_s_yes, bigger_s);
-    }
-
-    function test_concat_big_second() public pure {
-        // test for off-by-one errors at the end
-        bytes32 big_s = '1234567890123456789012345678901';
-        assertEq(big_s, concat('', big_s));
-        assertEq(bytes1(concat(bytes32(bytes1(0x11)), big_s)), bytes1(0x11));
-        assertEq(bytes32(uint(concat(bytes32(bytes1(0x11)), big_s)) << 8), big_s);
-
-        // bigger_s should get cut
-        bytes32 bigger_s     = concat(big_s, 'i');
-        bytes32 bigger_s_yes = concat('yes', bigger_s);
-        assertEq(
-            bytes32(uint(bigger_s_yes) << (3 << 3)),
-            bytes32(uint(bigger_s) >> (3 << 3) << (3 << 3))
-        );
-    }
-
     function test_rmash() public pure {
         assertEq(rmash(RAY, 0, RAY, 0), RAY);
         assertEq(rmash(RAY, 1, RAY, 0), RAY);

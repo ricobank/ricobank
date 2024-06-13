@@ -804,43 +804,6 @@ contract VatTest is Test, RicoSetUp {
         bank.bail(self);
     }
 
-    function test_frob_safer_over_ceilings() public {
-        // should be able to pay down urns that are over ceiling
-        bank.frob(self, int(2000 * WAD), int(1000 * WAD));
-
-        // over line
-        file('line', bytes32(0));
-
-        // safer dart
-        bank.frob(self, int(0), -int(WAD));
-
-        // safer dink (hook property - vat doesn't care)
-        bank.frob(self, int(WAD), 0);
-
-        // safer dart and dink
-        bank.frob(self, int(WAD), -int(WAD));
-
-        // under line
-        file('line', bytes32(UINT256_MAX));
-        bank.frob(self, int(0), -int(WAD));
-        bank.frob(self, int(WAD), 0);
-
-        // under line
-        file('line', bytes32(UINT256_MAX));
-        bank.frob(self, int(0), -int(WAD));
-        bank.frob(self, int(WAD), 0);
-    }
-
-    function test_wipe_not_safer_over_ceilings() public {
-        bank.frob(self, int(2000 * WAD), int(1000 * WAD));
-
-        file('line', bytes32(0));
-
-        // shouldn't do ceiling check on wipe,
-        // even if frob makes CDP less safe
-        bank.frob(self, -int(WAD), -int(WAD));
-    }
-
     function test_risk_denominated_dust() public {
         uint sup = risk.totalSupply();
         uint dust = RAY * 5 / sup;

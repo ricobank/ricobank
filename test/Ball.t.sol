@@ -43,7 +43,6 @@ contract BallTest is BaseHelper {
             RAY, // chop
             init_dust, // dust
             1000000001546067052200000000, // fee
-            100000 * RAD, // line
             RAY, // liqr
             2, // pep
             RAY, // pop

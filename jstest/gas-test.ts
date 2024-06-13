@@ -83,13 +83,13 @@ describe('Gas', () => {
     }
 
     it('deploy gas', async () => {
-      await check(ethers.BigNumber.from(deploygas), 5672890)
+      await check(ethers.BigNumber.from(deploygas), 5619785)
     })
 
     it('frob cold gas', async () => {
       let dink = ethers.utils.solidityPack(['int'], [wad(5)])
       let gas = await bank.estimateGas.frob(ALI, dink, wad(2))
-      await check(gas, 218403)
+      await check(gas, 216014)
     })
 
     it('frob hot gas', async () => {
@@ -100,7 +100,7 @@ describe('Gas', () => {
       let gas = await bank.estimateGas.frob(
         ALI, ethers.utils.solidityPack(['int'], [wad(5)]), wad(2)
       )
-      await check(gas, 118327)
+      await check(gas, 115938)
     })
 
     it('bail gas', async () => {
@@ -110,7 +110,7 @@ describe('Gas', () => {
       await mine(hh, BANKYEAR * 1000)
 
       let gas = await bank.estimateGas.bail(ALI)
-      await check(gas, 162309)
+      await check(gas, 162333)
     })
 
     it('keep surplus gas', async () => {

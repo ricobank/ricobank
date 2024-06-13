@@ -76,7 +76,6 @@ task('deploy-ricobank', '')
         chop: ray(settings.chop),
         dust: ray(settings.dust),
         fee:  ray(settings.fee),
-        line: rad(settings.line),
         liqr: ray(settings.liqr),
         pep: settings.pep,
         pop: ray(settings.pop),

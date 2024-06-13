@@ -49,7 +49,6 @@ abstract contract BaseHelper is Math, Test {
         RAY, // chop
         0, // dust
         1000000001546067052200000000, // fee
-        100000 * RAD, // line
         RAY, // liqr
         2, // pep
         RAY, // pop
@@ -91,7 +90,6 @@ abstract contract BaseHelper is Math, Test {
             bank.chop(),
             bank.dust(),
             bank.fee(),
-            bank.line(),
             bank.liqr(),
             bank.pep(),
             bank.pop(),
@@ -128,19 +126,18 @@ abstract contract BaseHelper is Math, Test {
     function file_sto(bytes32 key, bytes32 val) internal {
 
         uint pos;
-             if (key ==  'joy') pos = 1;
-        else if (key ==  'sin') pos = 2;
-        else if (key ==  'rest') pos = 3;
-        else if (key ==  'par') pos = 4;
-        else if (key ==  'tart') pos = 5;
-        else if (key ==  'rack') pos = 6;
-        else if (key ==  'line') pos = 7;
-        else if (key ==  'rho') pos = 8;
-        else if (key ==  'bel') pos = 9;
-        else if (key ==  'gif') pos = 10;
-        else if (key ==  'phi') pos = 11;
-        else if (key ==  'wal') pos = 12;
-        else if (key ==  'way') pos = 13;
+             if (key == 'joy')  pos = 1;
+        else if (key == 'sin')  pos = 2;
+        else if (key == 'rest') pos = 3;
+        else if (key == 'par')  pos = 4;
+        else if (key == 'tart') pos = 5;
+        else if (key == 'rack') pos = 6;
+        else if (key == 'rho')  pos = 7;
+        else if (key == 'bel')  pos = 8;
+        else if (key == 'gif')  pos = 9;
+        else if (key == 'phi')  pos = 10;
+        else if (key == 'wal')  pos = 11;
+        else if (key == 'way')  pos = 12;
         else revert('file_sto: key not found');
 
         vm.store(abank, bytes32(pos), val);
@@ -180,7 +177,6 @@ abstract contract BaseHelper is Math, Test {
         file('par', bytes32(f.par()));
         file('tart', bytes32(f.tart()));
         file('rack', bytes32(f.rack()));
-        file('line', bytes32(f.line()));
         file('rho', bytes32(f.rho()));
         file('bel', bytes32(f.bel()));
         file('gif', bytes32(f.gif()));
