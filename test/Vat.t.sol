@@ -16,7 +16,6 @@ contract VatTest is Test, RicoSetUp {
 
     function setUp() public {
         make_bank();
-        init_risk();
         risk_mint(abank, init_join * WAD);
 
         // non-self user

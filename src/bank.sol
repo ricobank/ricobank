@@ -44,7 +44,7 @@ contract Bank is Math, Flog, Palm {
     Gem immutable public risk;
 
     // vat
-    mapping (address => Urn ) public _urns; // CDPs
+    mapping (address => Urn ) public urns; // CDPs
     uint256 public joy;   // [wad]
     uint256 public sin;   // [rad]
     uint256 public rest;  // [rad] Debt remainder
@@ -81,11 +81,6 @@ contract Bank is Math, Flog, Palm {
     uint256 immutable public cap;
     uint256 constant  public CAP_MAX = 1000000072964521287979890107; // ~10x/yr
 
-    function urns(address u) external view returns (Urn memory) {
-        return _urns[u];
-    }
-
-    error ErrWrongKey();
     error ErrDebtCeil();
     error ErrNotSafe();
     error ErrSafeBail();
@@ -142,7 +137,7 @@ contract Bank is Math, Flog, Palm {
     function safe(address u)
       public view returns (uint deal, uint tot)
     {
-        Urn storage urn = _urns[u];
+        Urn storage urn = urns[u];
         uint ink = urn.ink;
 
         // par acts as a multiplier for collateral requirements
@@ -160,7 +155,7 @@ contract Bank is Math, Flog, Palm {
     function frob(address u, int dink, int dart)
       external payable _flog_
     {
-        Urn storage urn = _urns[u];
+        Urn storage urn = urns[u];
 
         uint _rack = _drip();
 
@@ -231,7 +226,7 @@ contract Bank is Math, Flog, Palm {
         uint _rack = _drip();
         (uint deal, uint tot) = safe(u);
         if (deal == SAFE) revert ErrSafeBail();
-        Urn storage urn = _urns[u];
+        Urn storage urn = urns[u];
 
         uint art = urn.art;
         urn.art  = 0;

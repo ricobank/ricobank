@@ -10,7 +10,6 @@ contract IntegrationTest is Test, RicoSetUp {
 
     function setUp() public {
         make_bank();
-        init_risk();
         risk_mint(self, 10_000 * WAD);
     }
     

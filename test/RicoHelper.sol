@@ -111,14 +111,6 @@ abstract contract RicoSetUp is BaseHelper {
         //////////
     }
 
-    function init_risk() public {
-        file('pep',  bytes32(uint(2)));
-        file('pop',  bytes32(RAY));
-        file('chop', bytes32(RAY));
-        file('dust', bytes32(0));
-        file('liqr', bytes32(RAY));
-    }
-
     // mint some new rico and give it to guy
     function prepguyrico(uint amt, bool bail) internal {
         rico_mint(amt, bail);

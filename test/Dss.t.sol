@@ -51,7 +51,6 @@ contract DssJsTest is Test, RicoSetUp {
 
     function setUp() public {
         make_bank();
-        init_risk();
 
         // no fee, lower line a bit, burn the risk
         file(bytes32('fee'), bytes32(uint(RAY)));

@@ -17,7 +17,6 @@ contract VowTest is Test, RicoSetUp {
     function setUp() public
     {
         make_bank();
-        init_risk();
 
         // have 10k each of rico, risk and risk
         // mint some rico and risk for hysteresis
@@ -435,7 +434,6 @@ contract VowJsTest is Test, RicoSetUp {
     function setUp() public
     {
         make_bank();
-        init_risk();
 
         me = address(this);
         bob = new Guy(bank);

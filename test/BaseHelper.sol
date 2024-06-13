@@ -47,7 +47,7 @@ abstract contract BaseHelper is Math, Test {
         RAY, // way
 
         RAY, // chop
-        RAY / 100, // dust
+        0, // dust
         1000000001546067052200000000, // fee
         100000 * RAD, // line
         RAY, // liqr
@@ -59,25 +59,19 @@ abstract contract BaseHelper is Math, Test {
     receive () payable external {}
 
     function _ink(address usr) internal view returns (uint) {
-        Bank.Urn memory urn = bank.urns(usr);
-        return urn.ink;
+        (uint256 ink,) = bank.urns(usr);
+        return ink;
     }
 
     function _art(address usr) internal view returns (uint) {
-        Bank.Urn memory urn = bank.urns(usr);
-        return urn.art;
+        (,uint256 art) = bank.urns(usr);
+        return art;
     }
 
     function assertClose(uint v1, uint v2, uint rel) internal pure {
         uint abs = v1 / rel;
         assertGt(v1 + abs, v2);
         assertLt(v1 - abs, v2);
-    }
-
-    // useful for clarity wrt which ilks keep drips
-    function single(bytes32 x) internal pure returns (bytes32[] memory res) {
-        res = new bytes32[](1);
-        res[0] = x;
     }
 
     function file_imm(bytes32 key, bytes32 val) internal {

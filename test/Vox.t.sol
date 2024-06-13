@@ -48,7 +48,6 @@ contract VoxTest is Test, RicoSetUp {
 
     function setUp() public {
         make_bank();
-        init_risk();
 
         pre_cap = bank.cap();
         file('cap', bytes32(bank.CAP_MAX()));
