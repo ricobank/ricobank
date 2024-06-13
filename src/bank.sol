@@ -52,8 +52,8 @@ contract Bank is Math, Flog, Palm {
     uint256 public tart;  // [wad] Total Normalised Debt
     uint256 public rack;  // [ray] Accumulated Rate
     uint256 public line;  // [rad] Debt Ceiling
-    uint256 public fee;   // [ray] per-second compounding rate
     uint256 public rho;   // [sec] Time of last drip
+    uint256 immutable public fee;   // [ray] per-second compounding rate
     uint256 immutable public dust;  // [ray] Urn Ink Floor, as a fraction of totalSupply
     uint256 immutable public chop;  // [ray] Liquidation Penalty
     uint256 immutable public liqr;  // [ray] Liquidation Ratio
@@ -80,6 +80,10 @@ contract Bank is Math, Flog, Palm {
     uint256 immutable public how;
     uint256 immutable public cap;
     uint256 constant  public CAP_MAX = 1000000072964521287979890107; // ~10x/yr
+
+    function urns(address u) external view returns (Urn memory) {
+        return _urns[u];
+    }
 
     error ErrWrongKey();
     error ErrDebtCeil();
@@ -126,18 +130,15 @@ contract Bank is Math, Flog, Palm {
         must(way, rinv(cap), cap);
 
         emit NewPalm0("par", bytes32(par));
+        emit NewPalm0("line", bytes32(line));
+        emit NewPalm0("fee", bytes32(fee));
+        emit NewPalm0("rho",  bytes32(rho));
         emit NewPalm0("bel", bytes32(bel));
         emit NewPalm0("gif", bytes32(gif));
         emit NewPalm0("phi", bytes32(phi));
         emit NewPalm0("wal", bytes32(wal));
         emit NewPalm0("way", bytes32(way));
         emit NewPalm0("tart", bytes32(tart));
-        emit NewPalm0("rack", bytes32(rack));
-        emit NewPalm0("rho",  bytes32(rho));
-    }
-
-    function urns(address u) external view returns (Urn memory) {
-        return _urns[u];
     }
 
     function safe(address u)

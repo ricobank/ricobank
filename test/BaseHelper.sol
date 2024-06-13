@@ -108,6 +108,7 @@ abstract contract BaseHelper is Math, Test {
              if (key == 'rico') { saved_bank.rico = address(bytes20(val)); }
         else if (key == 'risk') { saved_bank.risk = address(bytes20(val)); }
         // vat
+        else if (key == 'fee') { saved_bank.fee = uint(val); }
         else if (key == 'dust') { saved_bank.dust = uint(val); }
         else if (key == 'chop') { saved_bank.chop = uint(val); }
         else if (key == 'liqr') { saved_bank.liqr = uint(val); }
@@ -140,13 +141,12 @@ abstract contract BaseHelper is Math, Test {
         else if (key ==  'tart') pos = 5;
         else if (key ==  'rack') pos = 6;
         else if (key ==  'line') pos = 7;
-        else if (key ==  'fee') { pos = 8; }
-        else if (key ==  'rho') pos = 9;
-        else if (key ==  'bel') pos = 10;
-        else if (key ==  'gif') pos = 11;
-        else if (key ==  'phi') pos = 12;
-        else if (key ==  'wal') pos = 13;
-        else if (key ==  'way') pos = 14;
+        else if (key ==  'rho') pos = 8;
+        else if (key ==  'bel') pos = 9;
+        else if (key ==  'gif') pos = 10;
+        else if (key ==  'phi') pos = 11;
+        else if (key ==  'wal') pos = 12;
+        else if (key ==  'way') pos = 13;
         else revert('file_sto: key not found');
 
         vm.store(abank, bytes32(pos), val);
@@ -157,6 +157,7 @@ abstract contract BaseHelper is Math, Test {
             // bank
             key == 'rico' || key == 'risk' ||
             // vat
+            key == 'fee'  ||
             key == 'dust' || key == 'chop' || key == 'liqr' ||
             key == 'pep'  || key == 'pop'  || key == 'pup'  ||
             // vow
@@ -186,7 +187,6 @@ abstract contract BaseHelper is Math, Test {
         file('tart', bytes32(f.tart()));
         file('rack', bytes32(f.rack()));
         file('line', bytes32(f.line()));
-        file('fee', bytes32(f.fee()));
         file('rho', bytes32(f.rho()));
         file('bel', bytes32(f.bel()));
         file('gif', bytes32(f.gif()));
