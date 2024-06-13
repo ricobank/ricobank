@@ -131,14 +131,12 @@ contract Bank is Math, Flog, Palm {
 
         emit NewPalm0("par", bytes32(par));
         emit NewPalm0("line", bytes32(line));
-        emit NewPalm0("fee", bytes32(fee));
         emit NewPalm0("rho",  bytes32(rho));
         emit NewPalm0("bel", bytes32(bel));
         emit NewPalm0("gif", bytes32(gif));
         emit NewPalm0("phi", bytes32(phi));
         emit NewPalm0("wal", bytes32(wal));
         emit NewPalm0("way", bytes32(way));
-        emit NewPalm0("tart", bytes32(tart));
     }
 
     function safe(address u)
@@ -176,29 +174,27 @@ contract Bank is Math, Flog, Palm {
         emit NewPalm0("tart", bytes32(tart));
 
         uint _rest;
-        {
-            // rico mint/burn amount increases with rack
-            int dtab = mul(_rack, dart);
-            if (dtab > 0) {
-                // borrow
-                // dtab is a rad
-                uint wad = uint(dtab) / RAY;
+        // rico mint/burn amount increases with rack
+        int dtab = mul(_rack, dart);
+        if (dtab > 0) {
+            // borrow
+            // dtab is a rad
+            uint wad = uint(dtab) / RAY;
 
-                // remainder is a ray
-                _rest = rest += uint(dtab) % RAY;
-                emit NewPalm0("rest", bytes32(_rest));
+            // remainder is a ray
+            _rest = rest += uint(dtab) % RAY;
+            emit NewPalm0("rest", bytes32(_rest));
 
-                rico.mint(msg.sender, wad);
-            } else if (dtab < 0) {
-                // paydown
-                // dtab is a rad, so burn one extra to round in system's favor
-                uint wad = (uint(-dtab) / RAY) + 1;
-                // accrue excess from rounding to rest
-                _rest = rest += add(wad * RAY, dtab);
-                emit NewPalm0("rest", bytes32(_rest));
+            rico.mint(msg.sender, wad);
+        } else if (dtab < 0) {
+            // paydown
+            // dtab is a rad, so burn one extra to round in system's favor
+            uint wad = (uint(-dtab) / RAY) + 1;
+            // accrue excess from rounding to rest
+            _rest = rest += add(wad * RAY, dtab);
+            emit NewPalm0("rest", bytes32(_rest));
 
-                rico.burn(msg.sender, wad);
-            }
+            rico.burn(msg.sender, wad);
         }
 
         // update balance before transferring tokens
@@ -222,14 +218,10 @@ contract Bank is Math, Flog, Palm {
         }
 
         // urn has no debt, or a non-dusty ink amount
-        if (art != 0 && urn.ink < rmul(wal, dust)) {
-            revert ErrUrnDust();
-        }
+        if (art != 0 && urn.ink < rmul(wal, dust)) revert ErrUrnDust();
 
         // either debt has decreased, or debt ceiling is not exceeded
-        if (dart > 0) {
-            if (tart * _rack > line) revert ErrDebtCeil();
-        }
+        if (dart > 0) if (tart * _rack > line) revert ErrDebtCeil();
     }
 
     // liquidate CDP
@@ -237,21 +229,16 @@ contract Bank is Math, Flog, Palm {
       external payable _flog_ returns (uint sell)
     {
         uint _rack = _drip();
-        uint deal; uint tot; uint dtab;
-        {
-            (deal, tot) = safe(u);
-            if (deal == SAFE) revert ErrSafeBail();
-        }
+        (uint deal, uint tot) = safe(u);
+        if (deal == SAFE) revert ErrSafeBail();
         Urn storage urn = _urns[u];
 
-        {
-            uint art = urn.art;
-            urn.art = 0;
-            emit NewPalm1("art", bytes32(bytes20(u)), bytes32(uint(0)));
+        uint art = urn.art;
+        urn.art  = 0;
+        emit NewPalm1("art", bytes32(bytes20(u)), bytes32(uint(0)));
 
-            dtab = art * _rack;
-            tart -= art;
-        }
+        uint dtab = art * _rack;
+        tart     -= art;
 
         emit NewPalm0("tart", bytes32(tart));
 
@@ -263,16 +250,14 @@ contract Bank is Math, Flog, Palm {
         uint mash = rmash(deal, pep, pop, pup);
         uint earn = rmul(tot / RAY, mash);
 
-        {
-            // bill is the debt to attempt to cover when auctioning ink
-            uint bill = rmul(chop, dtab / RAY);
-            // clamp `sell` so bank only gets enough to underwrite urn.
-            if (earn > bill) {
-                sell = (urn.ink * bill) / earn;
-                earn = bill;
-            } else {
-                sell = urn.ink;
-            }
+        // bill is the debt to attempt to cover when auctioning ink
+        uint bill = rmul(chop, dtab / RAY);
+        // clamp `sell` so bank only gets enough to underwrite urn.
+        if (earn > bill) {
+            sell = (urn.ink * bill) / earn;
+            earn = bill;
+        } else {
+            sell = urn.ink;
         }
 
         vsync(earn, dtab / RAY);
@@ -311,9 +296,7 @@ contract Bank is Math, Flog, Palm {
         // multiply rack by fee every second
         uint prev = rack;
 
-        if (block.timestamp == rho) {
-            return rack;
-        }
+        if (block.timestamp == rho) return rack;
 
         // multiply rack by fee every second
         _rack = grow(prev, fee, block.timestamp - rho);
@@ -337,25 +320,16 @@ contract Bank is Math, Flog, Palm {
         emit NewPalm0("joy", bytes32(joy));
     }
 
-    // total system profit balancing mechanism
-    // triggers surplus (flap) auctions
-    struct VowParams {
-        uint256 wel;
-        uint256 dam;
-        uint256 pex;
-        uint256 mop;
-        uint256 lax;
-    }
-
     function keep() external payable _flog_ {
         _drip();
 
         // use equal scales for sin and joy
         uint _joy   = joy;
         uint _sin   = sin / RAY;
+
         // in case of deficit max price should always lead to decrease in way
         uint price = type(uint256).max;
-        uint dt = block.timestamp - bel;
+        uint dt    = block.timestamp - bel;
 
         if (_joy > _sin) {
 
