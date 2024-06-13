@@ -17,20 +17,23 @@ task('deploy-tokens', '')
   debug('deploy rico')
   const gf_dapp = await dpack.load(args.gf_pack ?? args.gfpackcid, hre.ethers, ali)
   let rico_addr = await gf_dapp.gemfab.callStatic.build(
-    b32("Rico"), b32("RICO")
+    b32(args.riconame), b32(args.ricosym)
   );
   await send(gf_dapp.gemfab.build, b32("Rico"), b32("RICO"), {gasLimit: args.gasLimit})
 
-  debug('deploy risk')
+  debug('deploy risk', args.riskname, args.risksym)
   let risk_addr
   if (args.risk) {
     // risk already deployed
     risk_addr = args.risk
   } else {
     risk_addr = await gf_dapp.gemfab.callStatic.build(
-      b32("Rico Riskshare"), b32("RISK")
+        b32(args.riskname), b32(args.risksym)
     )
-    await send(gf_dapp.gemfab.build, b32("Rico Riskshare"), b32("RISK"), {gasLimit: args.gasLimit})
+    await send(
+      gf_dapp.gemfab.build,
+      b32(args.riskname), b32(args.risksym), {gasLimit: args.gasLimit}
+    )
   }
 
   // pack the system-required tokens

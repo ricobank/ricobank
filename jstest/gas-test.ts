@@ -15,6 +15,19 @@ const dpack = require('@etherpacks/dpack')
 
 const bn2b32 = (bn) => hexZeroPad(bn.toHexString(), 32)
 
+// convert hex string to a human-readable string
+const xtos = (_x) : string => {
+    let x = _x
+    if (typeof(_x) == 'string') {
+        x = Buffer.from(_x.slice(2), 'hex')
+    } else if (_x.length == 0) {
+        x = ethers.constants.HashZero
+    }
+    let last = x.indexOf(0)
+    let sliced = last == -1 ? x : x.slice(0, last)
+    return sliced.toString('utf8')
+}
+
 describe('Gas', () => {
   let ali, bob, cat
   let ALI, BOB, CAT
@@ -29,7 +42,15 @@ describe('Gas', () => {
     [ALI, BOB, CAT] = [ali, bob, cat].map(signer => signer.address)
 
     const risk_mint = wad(100000)
-    ;[deploygas, pack] = await task_total_gas(hh, 'deploy-ricobank', {mock:'true', netname: 'ethereum', mint: risk_mint})
+    ;[deploygas, pack] = await task_total_gas(hh, 'deploy-ricobank', {
+        mock:'true',
+        netname: 'ethereum',
+        mint: risk_mint,
+        ricosym: 'RICOOO',
+        riconame: 'RICOY',
+        risksym: 'RISKKK',
+        riskname: 'RISKY'
+    })
     dapp = await dpack.load(pack, ethers, ali)
 
     bank = dapp.bank
@@ -37,6 +58,11 @@ describe('Gas', () => {
     risk = dapp.risk
     rico = dapp.rico
     risk = dapp.risk
+
+    debug(`RICO symbol: ${xtos(await rico.symbol())}`)
+    debug(`RICO name: ${xtos(await rico.name())}`)
+    debug(`RISK symbol: ${xtos(await risk.symbol())}`)
+    debug(`RISK name: , ${xtos(await risk.name())}`)
 
     await snapshot_name(hh);
   })
@@ -57,7 +83,7 @@ describe('Gas', () => {
     }
 
     it('deploy gas', async () => {
-      await check(ethers.BigNumber.from(deploygas), 5715997)
+      await check(ethers.BigNumber.from(deploygas), 5715913)
     })
 
     it('frob cold gas', async () => {

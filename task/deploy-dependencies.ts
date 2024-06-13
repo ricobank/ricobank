@@ -28,7 +28,11 @@ task('deploy-dependencies', '')
           risk: args.risk,
           mock: args.mock,
           gasLimit: args.gasLimit,
-          mint: args.mint
+          mint: args.mint,
+          riconame: args.riconame,
+          riskname: args.riskname,
+          ricosym: args.ricosym,
+          risksym: args.risksym
       }
   )
   debug('deployed (or loaded) tokens')

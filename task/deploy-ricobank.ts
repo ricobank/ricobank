@@ -39,7 +39,11 @@ task('deploy-ricobank', '')
               gfpackcid: args.gfpackcid,
               risk: args.risk,
               ipfs: args.ipfs,
-              mint: args.mint
+              mint: args.mint,
+              riconame: args.riconame,
+              riskname: args.riskname,
+              ricosym: args.ricosym,
+              risksym: args.risksym
           }
         )
     }
