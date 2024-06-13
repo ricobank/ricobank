@@ -38,7 +38,8 @@ task('deploy-ricobank', '')
               netname: args.netname,
               gfpackcid: args.gfpackcid,
               risk: args.risk,
-              ipfs: args.ipfs
+              ipfs: args.ipfs,
+              mint: args.mint
           }
         )
     }
@@ -50,18 +51,11 @@ task('deploy-ricobank', '')
     const settings = require('./settings.json')[args.netname]
 
     // base diamond contract (address will be bank address)
-    const diamond_artifact = require('../artifacts/src/diamond.sol/BankDiamond.json')
-    const diamond_type = ethers.ContractFactory.fromSolidity(diamond_artifact, ali)
-    debug('deploying diamond')
-    const diamond = await diamond_type.deploy({gasLimit: args.gasLimit})
+    const bank_artifact = require('../artifacts/src/bank.sol/Bank.json')
+    const bank_type = ethers.ContractFactory.fromSolidity(bank_artifact, ali)
+    debug('deploying bank')
 
-    // deployer rollup
-    debug('deploying ball rollup')
-    const ball_artifact = require('../artifacts/src/ball.sol/Ball.json')
-    const ball_type = ethers.ContractFactory.fromSolidity(ball_artifact, ali)
-
-    const ballargs = {
-        bank: diamond.address,
+    const bankargs = {
         rico: deps.rico.address,
         risk: deps.risk.address,
         par:  ray(settings.par),
@@ -73,57 +67,38 @@ task('deploy-ricobank', '')
         lax:  ray(settings.lax),
         how:  ray(settings.how),
         cap:  ray(settings.cap),
+        way:  ray(settings.way),
+
         chop: ray(settings.chop),
         dust: ray(settings.dust),
         fee:  ray(settings.fee),
         line: rad(settings.line),
         liqr: ray(settings.liqr),
+        pep: settings.pep,
+        pop: ray(settings.pop),
+        pup: ray(settings.pup),
     }
 
-    debug('deploying ball...')
-    const ball = await ball_type.deploy(ballargs, {gasLimit: args.gasLimit})
-    debug('transferring diamond to ball')
-    await send(diamond.transferOwnership, ball.address)
+    const bank = await bank_type.deploy(bankargs, {gasLimit: args.gasLimit})
 
-    debug('running ball setup...')
-    await send(ball.setup, ballargs)
-    debug(`done deploying ball at ${ball.address}`)
-
-    // take diamond back
-    await send(ball.approve, ali.address);
+    debug(`done deploying bank at ${bank.address}`)
 
     debug('ward rico and risk')
-    await send(deps.rico.ward, diamond.address, 1)
-    await send(deps.risk.ward, diamond.address, 1)
+    await send(deps.rico.ward, bank.address, 1)
+    await send(deps.risk.ward, bank.address, 1)
 
-    debug('accept ownership')
-    await send(diamond.acceptOwnership)
 
-    debug('creating pack')
-    const getartifact = async (ty) => {
-        debug(`getting artifact for ${ty}`)
-        return dpack.getIpfsJson(deps.types[ty].artifact['/']);
-    }
-
-    debug('packing ball')
-    await pb.packObject({
-        objectname: 'ball',
-        address: ball.address,
-        typename: 'Ball',
-        artifact: require('../artifacts/src/ball.sol/Ball.json')
-    })
-
-    debug('packing Ricobank diamond')
-
+    debug('packing bank')
     await pb.packObject({
         objectname: 'bank',
-        address: diamond.address,
-        typename: 'BankDiamond',
-        artifact: getDiamondArtifact()
+        address: bank.address,
+        typename: 'Bank',
+        artifact: bank_artifact
     }, true)
     debug('all packed, merging')
 
     const pack = (await pb.merge(deps_pack)).build()
+
     if (args.writepack) {
         const outfile = require('path').join(
             __dirname, `../pack/ricobank_${hre.network.name}.dpack.json`

@@ -36,6 +36,11 @@ task('deploy-tokens', '')
   // pack the system-required tokens
   const pb = new dpack.PackBuilder(hre.network.name)
   const gem_artifact = await dpack.getIpfsJson(gf_dapp._types.Gem.artifact['/'])
+  if (args.mint) {
+    const gem_type = await ethers.ContractFactory.fromSolidity(gem_artifact, ali)
+    await gem_type.attach(risk_addr).mint(ali.address, args.mint)
+  }
+
   await pb.packObject({
     objectname: 'rico',
     typename: 'Gem',

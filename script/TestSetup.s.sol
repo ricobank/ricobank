@@ -9,7 +9,7 @@ contract SetupScript is Script, RicoSetUp {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
         make_bank();
-        console.log('bank @ %s', bank);
+        console.log('bank @ %s', address(bank));
         vm.stopBroadcast();
     }
 }

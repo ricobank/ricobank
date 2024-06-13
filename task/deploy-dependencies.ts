@@ -27,7 +27,8 @@ task('deploy-dependencies', '')
           gfpackcid: args.gfpackcid,
           risk: args.risk,
           mock: args.mock,
-          gasLimit: args.gasLimit
+          gasLimit: args.gasLimit,
+          mint: args.mint
       }
   )
   debug('deployed (or loaded) tokens')

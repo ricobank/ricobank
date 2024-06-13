@@ -28,7 +28,8 @@ describe('Gas', () => {
     [ali, bob, cat] = await ethers.getSigners();
     [ALI, BOB, CAT] = [ali, bob, cat].map(signer => signer.address)
 
-    ;[deploygas, pack] = await task_total_gas(hh, 'deploy-ricobank', {mock:'true', netname: 'ethereum'})
+    const risk_mint = wad(100000)
+    ;[deploygas, pack] = await task_total_gas(hh, 'deploy-ricobank', {mock:'true', netname: 'ethereum', mint: risk_mint})
     dapp = await dpack.load(pack, ethers, ali)
 
     bank = dapp.bank
@@ -36,13 +37,6 @@ describe('Gas', () => {
     risk = dapp.risk
     rico = dapp.rico
     risk = dapp.risk
-
-    await send(bank.file, b32('par'), b32(wad(7)))
-
-    await send(risk.approve, bank.address, constants.MaxUint256)
-    const risk_mint = wad(100000)
-    await send(risk.mint, ALI, risk_mint );
-    await send(bank.file, b32('wal'), b32(risk_mint ))
 
     await snapshot_name(hh);
   })
@@ -62,18 +56,14 @@ describe('Gas', () => {
       }
     }
 
-    beforeEach(async () => {
-      await send(bank.file, b32('par'), b32(ray(1)))
-    })
-
     it('deploy gas', async () => {
-      await check(ethers.BigNumber.from(deploygas), 13436268)
+      await check(ethers.BigNumber.from(deploygas), 5811395)
     })
 
     it('frob cold gas', async () => {
       let dink = ethers.utils.solidityPack(['int'], [wad(5)])
       let gas = await bank.estimateGas.frob(ALI, dink, wad(2))
-      await check(gas, 234783)
+      await check(gas, 220503)
     })
 
     it('frob hot gas', async () => {
@@ -84,7 +74,7 @@ describe('Gas', () => {
       let gas = await bank.estimateGas.frob(
         ALI, ethers.utils.solidityPack(['int'], [wad(5)]), wad(2)
       )
-      await check(gas, 132707)
+      await check(gas, 120427)
     })
 
     it('bail gas', async () => {
@@ -94,28 +84,15 @@ describe('Gas', () => {
       await mine(hh, BANKYEAR * 1000)
 
       let gas = await bank.estimateGas.bail(ALI)
-      await check(gas, 190825, 190938)
+      await check(gas, 170947)
     })
 
     it('keep surplus gas', async () => {
-      const FEE_2X_ANN = bn2b32(ethers.BigNumber.from('1000000021964508944519921664'))
-      await send(bank.file, b32('fee'), FEE_2X_ANN)
-      await send(rico.mint, ALI, wad(100000))
-
       let dink = ethers.utils.solidityPack(['int'], [wad(5)])
       await send(bank.frob, ALI, dink, wad(1))
-
-      await mine(hh, BANKYEAR * 3)
-      await send(bank.bail, ALI)
-
-      dink = ethers.utils.solidityPack(['int'], [wad(40)])
-      await send(bank.frob, ALI, dink, wad(4))
-
       await mine(hh, BANKYEAR)
-      await send(bank.drip)
-
       let gas = await bank.estimateGas.keep()
-      await check(gas, 160595)
+      await check(gas, 149760)
     })
 
     it('drip gas', async () => {
@@ -123,7 +100,7 @@ describe('Gas', () => {
       await send(bank.frob, ALI, dink, wad(2))
       await mine(hh, BANKYEAR)
       let gas = await bank.estimateGas.drip()
-      await check(gas, 83640)
+      await check(gas, 77219)
     })
   })
 })
