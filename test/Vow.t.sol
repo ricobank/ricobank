@@ -203,7 +203,7 @@ contract VowTest is Test, RicoSetUp {
     {
         // can't flap more rico than surplus
         // TODO
-        //vm.expectRevert(Bank.ErrBound.selector);
+        //vm.expectRevert(Math.ErrBound.selector);
         //new Vow(Bank.BankParams(arico, arisk), Vow.VowParams(RAY + 1, RAY, RAY, 0, 0));
 
         uint wel = RAY / 7;

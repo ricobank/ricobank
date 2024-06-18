@@ -1,6 +1,6 @@
 pragma solidity ^0.8.25;
 
-import { BaseHelper, Gem, GemFab, Bank } from './RicoHelper.sol';
+import { BaseHelper, Gem, GemFab, Bank, Math } from './RicoHelper.sol';
 import 'forge-std/Test.sol';
 
 contract BallTest is BaseHelper {
@@ -155,7 +155,7 @@ contract BallTest is BaseHelper {
         Bank.BankParams memory p = basic_params;
         // shouldn't be able to go under min
         p.fee = RAY - 1;
-        vm.expectRevert(Bank.ErrBound.selector);
+        vm.expectRevert(Math.ErrBound.selector);
         new Bank(p);
 
         // test minimum
@@ -169,7 +169,7 @@ contract BallTest is BaseHelper {
 
         // shouldn't be able to go over max
         p.fee = fee_max + 1;
-        vm.expectRevert(Bank.ErrBound.selector);
+        vm.expectRevert(Math.ErrBound.selector);
         new Bank(p);
     }
 
@@ -184,7 +184,7 @@ contract BallTest is BaseHelper {
         p.wel = RAY;
         new Bank(p);
         p.wel = RAY + 1;
-        vm.expectRevert(Bank.ErrBound.selector);
+        vm.expectRevert(Math.ErrBound.selector);
         new Bank(p);
         p.wel = RAY;
 
@@ -193,7 +193,7 @@ contract BallTest is BaseHelper {
         p.how = UINT256_MAX;
         new Bank(p);
         p.how = RAY - 1;
-        vm.expectRevert(Bank.ErrBound.selector);
+        vm.expectRevert(Math.ErrBound.selector);
         new Bank(p);
         p.how = RAY;
 
@@ -203,10 +203,10 @@ contract BallTest is BaseHelper {
         p.cap = cap_max;
         new Bank(p);
         p.cap = cap_max + 1;
-        vm.expectRevert(Bank.ErrBound.selector);
+        vm.expectRevert(Math.ErrBound.selector);
         new Bank(p);
         p.cap = RAY - 1;
-        vm.expectRevert(Bank.ErrBound.selector);
+        vm.expectRevert(Math.ErrBound.selector);
         new Bank(p);
         p.cap = cap_max;
 
@@ -220,7 +220,7 @@ contract BallTest is BaseHelper {
         p.how = uint(1000000000000003652500000000);
         new Bank(p);
         p.way = cap_max + 1;
-        vm.expectRevert(Bank.ErrBound.selector);
+        vm.expectRevert(Math.ErrBound.selector);
         new Bank(p);
         p.way = RAY;
 
@@ -229,7 +229,7 @@ contract BallTest is BaseHelper {
         p.dam = RAY;
         new Bank(p);
         p.dam = RAY + 1;
-        vm.expectRevert(Bank.ErrBound.selector);
+        vm.expectRevert(Math.ErrBound.selector);
         new Bank(p);
     }
 
@@ -247,7 +247,7 @@ contract BallTest is BaseHelper {
         p.lax = 0;
         new Bank(p);
         p.lax = laxmax + 1;
-        vm.expectRevert(Bank.ErrBound.selector);
+        vm.expectRevert(Math.ErrBound.selector);
         new Bank(p);
     }
 

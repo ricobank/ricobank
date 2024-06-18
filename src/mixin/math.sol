@@ -31,6 +31,7 @@ contract Math {
     error ErrUintUnder();
     error ErrIntUnder();
     error ErrIntOver();
+    error ErrBound();
 
     uint256 internal constant BLN = 10 **  9;
     uint256 internal constant WAD = 10 ** 18;
@@ -120,4 +121,10 @@ contract Math {
         if (pup < 0 && uint(-pup) > res) return 0;
         res = add(res, pup);
     }
+
+
+    function must(uint actual, uint lo, uint hi) internal pure {
+        if (actual < lo || actual > hi) revert ErrBound();
+    }
+
 }

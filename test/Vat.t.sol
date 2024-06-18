@@ -98,7 +98,7 @@ contract VatTest is Test, RicoSetUp {
         // fee must be >=1
         Bank.BankParams memory p = basic_params;
         p.fee = RAY - 1;
-        vm.expectRevert(Bank.ErrBound.selector);
+        vm.expectRevert(Math.ErrBound.selector);
         new Bank(p);
     }
 
@@ -116,7 +116,7 @@ contract VatTest is Test, RicoSetUp {
         // can't have liqr < 1
         Bank.BankParams memory p = basic_params;
         p.liqr = RAY - 1;
-        vm.expectRevert(Bank.ErrBound.selector);
+        vm.expectRevert(Math.ErrBound.selector);
         new Bank(p);
 
         // lower liqr back down...should refloat the urn
@@ -468,7 +468,7 @@ contract VatTest is Test, RicoSetUp {
         // can't set fee < RAY
         Bank.BankParams memory p = basic_params;
         p.fee = RAY / 2;
-        vm.expectRevert(Bank.ErrBound.selector);
+        vm.expectRevert(Math.ErrBound.selector);
         new Bank(p);
 
         file('fee', bytes32(RAY));

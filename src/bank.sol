@@ -85,11 +85,6 @@ contract Bank is Math, Flog, Palm {
     error ErrSafeBail();
     error ErrUrnDust();
     error ErrWrongUrn();
-    error ErrBound();
-
-    function must(uint actual, uint lo, uint hi) internal pure {
-        if (actual < lo || actual > hi) revert ErrBound();
-    }
 
     constructor(BankParams memory p) {
         (rico, risk) = (Gem(p.rico), Gem(p.risk));
