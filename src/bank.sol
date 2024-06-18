@@ -146,7 +146,7 @@ contract Bank is Math, Flog, Palm {
     function frob(address u, int dink, int dart) external payable _flog_ {
         Urn storage urn = urns[u];
 
-        uint _rack = _drip();
+        uint _rack = drip();
 
         // modify normalized debt
         uint256 art = add(urn.art, dart);
@@ -206,7 +206,7 @@ contract Bank is Math, Flog, Palm {
 
     // liquidate CDP
     function bail(address u) external payable _flog_ returns (uint sell) {
-        uint _rack = _drip();
+        uint _rack = drip();
         (uint deal, uint tot) = safe(u);
         if (deal == SAFE) revert ErrSafeBail();
         Urn storage urn = urns[u];
@@ -252,8 +252,7 @@ contract Bank is Math, Flog, Palm {
         risk.mint(msg.sender, sell);
     }
 
-    // drip without flog
-    function _drip() internal returns (uint _rack) {
+    function drip() internal returns (uint _rack) {
         // multiply rack by fee every second
         uint prev = rack;
 
@@ -282,7 +281,7 @@ contract Bank is Math, Flog, Palm {
     }
 
     function keep() external payable _flog_ {
-        _drip();
+        drip();
 
         // use equal scales for sin and joy
         uint _joy   = joy;
@@ -297,7 +296,7 @@ contract Bank is Math, Flog, Palm {
             // pay down sin, then auction off surplus RICO for RISK
             if (_sin > 1) {
                 // gas - don't zero sin
-                _joy = _heal(_sin - 1);
+                _joy = heal(_sin - 1);
             }
 
             // price decreases with time
@@ -321,7 +320,7 @@ contract Bank is Math, Flog, Palm {
         poke(price, dt);
     }
 
-    function _heal(uint wad) internal returns (uint _joy) {
+    function heal(uint wad) internal returns (uint _joy) {
 
         sin  = sin  - (wad * RAY);
         emit NewPalm0("sin", bytes32(sin));

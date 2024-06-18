@@ -54,13 +54,6 @@ contract MathTest is Test, Math {
         assertEq(mul(uint(type(int).max - 1), -1), type(int).min);
     }
 
-    function test_wmul() public pure {
-        assertEq(wmul(WAD, 1), 1);
-        assertEq(wmul(WAD, WAD), WAD);
-        assertEq(wmul(WAD, 0), 0);
-        assertEq(wmul(WAD, 2 * WAD), 2 * WAD);
-    }
-
     function test_rmul() public pure {
         assertEq(rmul(RAY, 1), 1);
         assertEq(rmul(RAY, RAY), RAY);

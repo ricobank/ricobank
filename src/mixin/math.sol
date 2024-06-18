@@ -66,13 +66,6 @@ contract Math {
         }
     }
 
-    function wmul(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        z = x * y / WAD;
-    }
-    function wdiv(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        z = x * WAD / y;
-    }
-
     function rmul(uint256 x, uint256 y) internal pure returns (uint256 z) {
         z = x * y / RAY;
     }
