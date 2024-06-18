@@ -31,22 +31,22 @@ contract BallTest is BaseHelper {
             arico,
             arisk,
             init_par,
+            1000000001546067052200000000, // fee
+            init_dust, // dust
+            RAY, // chop
+            RAY, // liqr
+            2, // pep
+            RAY, // pop
+            0, // pup
+            WAD, // gif (82400 RISK/yr)
+            RAY * WAD, // pex
             RAY, // wel
             RAY * 9999999 / 10000000, // dam
-            RAY * WAD, // pex
-            WAD, // gif (82400 RISK/yr)
             999999978035500000000000000, // mop (~-50%/yr)
             937000000000000000, // lax (~3%/yr)
             1000000000000003652500000000, // how
             1000000021970000000000000000, // cap
-            RAY, // way
-            RAY, // chop
-            init_dust, // dust
-            1000000001546067052200000000, // fee
-            RAY, // liqr
-            2, // pep
-            RAY, // pop
-            0 // pup
+            RAY // way
         );
 
         risk.mint(self, initial_risk_supply);

@@ -31,7 +31,7 @@ const xtos = (_x) : string => {
 describe('Gas', () => {
   let ali, bob, cat
   let ALI, BOB, CAT
-  let bank, ball
+  let bank
   let risk, rico
   let pack
   let deploygas
@@ -54,10 +54,8 @@ describe('Gas', () => {
     dapp = await dpack.load(pack, ethers, ali)
 
     bank = dapp.bank
-    ball = dapp.ball
     risk = dapp.risk
     rico = dapp.rico
-    risk = dapp.risk
 
     debug(`RICO symbol: ${xtos(await rico.symbol())}`)
     debug(`RICO name: ${xtos(await rico.name())}`)
@@ -83,39 +81,33 @@ describe('Gas', () => {
     }
 
     it('deploy gas', async () => {
-      await check(ethers.BigNumber.from(deploygas), 5619785)
+      await check(ethers.BigNumber.from(deploygas), 5619697)
     })
 
     it('frob cold gas', async () => {
-      let dink = ethers.utils.solidityPack(['int'], [wad(5)])
-      let gas = await bank.estimateGas.frob(ALI, dink, wad(2))
-      await check(gas, 216014)
+      let gas = await bank.estimateGas.frob(ALI, wad(5), wad(2))
+      await check(gas, 216058)
     })
 
     it('frob hot gas', async () => {
-      let dink = ethers.utils.solidityPack(['int'], [wad(5)])
-      await send(bank.frob, ALI, dink, wad(2), {gasLimit: 30000000})
+      await send(bank.frob, ALI, wad(5), wad(2), {gasLimit: 30000000})
       await mine(hh, 100)
       await send(bank.frob, ALI, 0, 0)
-      let gas = await bank.estimateGas.frob(
-        ALI, ethers.utils.solidityPack(['int'], [wad(5)]), wad(2)
-      )
-      await check(gas, 115938)
+      let gas = await bank.estimateGas.frob(ALI, wad(5), wad(2))
+      await check(gas, 115982)
     })
 
     it('bail gas', async () => {
-      let dink = ethers.utils.solidityPack(['int'], [wad(5)])
-      await send(bank.frob, ALI, dink, wad(2))
+      await send(bank.frob, ALI, wad(5), wad(2))
 
       await mine(hh, BANKYEAR * 1000)
 
       let gas = await bank.estimateGas.bail(ALI)
-      await check(gas, 162333)
+      await check(gas, 162309)
     })
 
     it('keep surplus gas', async () => {
-      let dink = ethers.utils.solidityPack(['int'], [wad(5)])
-      await send(bank.frob, ALI, dink, wad(1))
+      await send(bank.frob, ALI, wad(5), wad(1))
       await mine(hh, BANKYEAR)
       let gas = await bank.estimateGas.keep()
       await check(gas, 147644)

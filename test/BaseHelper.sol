@@ -36,23 +36,22 @@ abstract contract BaseHelper is Math, Test {
         arico,
         arisk,
         INIT_PAR, // par
+        1000000001546067052200000000, // fee
+        0, // dust
+        RAY, // chop
+        RAY, // liqr
+        2, // pep
+        RAY, // pop
+        0, // pup
+        WAD, // gif (82400 RISK/yr)
+        RAY * WAD, // pex
         RAY, // wel
         RAY, // dam
-        RAY * WAD, // pex
-        WAD, // gif (82400 RISK/yr)
         999999978035500000000000000, // mop (~-50%/yr)
         937000000000000000, // lax (~3%/yr)
         1000000000000003652500000000, // how
         1000000021970000000000000000, // cap
-        RAY, // way
-
-        RAY, // chop
-        0, // dust
-        1000000001546067052200000000, // fee
-        RAY, // liqr
-        2, // pep
-        RAY, // pop
-        0 // pup
+        RAY // way
     );
 
     receive () payable external {}
@@ -78,22 +77,22 @@ abstract contract BaseHelper is Math, Test {
             address(bank.rico()),
             address(bank.risk()),
             bank.par(),
+            bank.fee(),
+            bank.dust(),
+            bank.chop(),
+            bank.liqr(),
+            bank.pep(),
+            bank.pop(),
+            bank.pup(),
+            bank.gif(),
+            bank.pex(),
             bank.wel(),
             bank.dam(),
-            bank.pex(),
-            bank.gif(),
             bank.mop(),
             bank.lax(),
             bank.how(),
             bank.cap(),
-            bank.way(),
-            bank.chop(),
-            bank.dust(),
-            bank.fee(),
-            bank.liqr(),
-            bank.pep(),
-            bank.pop(),
-            bank.pup()
+            bank.way()
         );
 
         // bank
@@ -135,7 +134,7 @@ abstract contract BaseHelper is Math, Test {
         else if (key == 'rho')  pos = 7;
         else if (key == 'bel')  pos = 8;
         else if (key == 'gif')  pos = 9;
-        else if (key == 'phi')  pos = 10;
+        else if (key == 'chi')  pos = 10;
         else if (key == 'wal')  pos = 11;
         else if (key == 'way')  pos = 12;
         else revert('file_sto: key not found');
@@ -180,7 +179,7 @@ abstract contract BaseHelper is Math, Test {
         file('rho', bytes32(f.rho()));
         file('bel', bytes32(f.bel()));
         file('gif', bytes32(f.gif()));
-        file('phi', bytes32(f.phi()));
+        file('chi', bytes32(f.chi()));
         file('wal', bytes32(f.wal()));
         file('way', bytes32(f.way()));
     }

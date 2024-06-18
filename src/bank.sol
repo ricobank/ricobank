@@ -19,24 +19,26 @@ contract Bank is Math, Flog, Palm {
     struct BankParams {
         address rico;
         address risk;
-        uint256 par;
-        uint256 wel;
-        uint256 dam;
-        uint256 pex;
-        uint256 gif;
-        uint256 mop;
-        uint256 lax;
-        uint256 how;
-        uint256 cap;
-        uint256 way;
 
-        uint256 chop;
-        uint256 dust;
+        uint256 par;
         uint256 fee;
+        uint256 dust;
+        uint256 chop;
         uint256 liqr;
         uint256 pep;
         uint256 pop;
         int256  pup;
+
+        uint256 gif;
+        uint256 pex;
+        uint256 wel;
+        uint256 dam;
+        uint256 mop;
+        uint256 lax;
+
+        uint256 how;
+        uint256 cap;
+        uint256 way;
    }
 
     Gem immutable public rico;
@@ -63,7 +65,7 @@ contract Bank is Math, Flog, Palm {
     // vow
     uint256 public bel;  // [sec] last flap timestamp
     uint256 public gif;  // initial RISK base mint rate
-    uint256 public phi;  // [sec] last mine timestamp
+    uint256 public chi;  // [sec] last mine timestamp
     uint256 public wal;  // risk deposited + risk totalSupply
     uint256 immutable public pex; // [ray] start price
     uint256 immutable public wel; // [ray] fraction of joy/flap
@@ -115,7 +117,7 @@ contract Bank is Math, Flog, Palm {
 
         (rack, rho, bel) = (RAY, block.timestamp, block.timestamp);
 
-        (gif, phi, wal) = (p.gif, block.timestamp, risk.totalSupply());
+        (gif, chi, wal) = (p.gif, block.timestamp, risk.totalSupply());
         must(wal, 0, RAD);
 
         way = p.way;
@@ -125,14 +127,12 @@ contract Bank is Math, Flog, Palm {
         emit NewPalm0("rho",  bytes32(rho));
         emit NewPalm0("bel", bytes32(bel));
         emit NewPalm0("gif", bytes32(gif));
-        emit NewPalm0("phi", bytes32(phi));
+        emit NewPalm0("chi", bytes32(chi));
         emit NewPalm0("wal", bytes32(wal));
         emit NewPalm0("way", bytes32(way));
     }
 
-    function safe(address u)
-      public view returns (uint deal, uint tot)
-    {
+    function safe(address u) public view returns (uint deal, uint tot) {
         Urn storage urn = urns[u];
         uint ink = urn.ink;
 
@@ -148,9 +148,7 @@ contract Bank is Math, Flog, Palm {
     }
 
     // modify CDP
-    function frob(address u, int dink, int dart)
-      external payable _flog_
-    {
+    function frob(address u, int dink, int dart) external payable _flog_ {
         Urn storage urn = urns[u];
 
         uint _rack = _drip();
@@ -212,9 +210,7 @@ contract Bank is Math, Flog, Palm {
     }
 
     // liquidate CDP
-    function bail(address u)
-      external payable _flog_ returns (uint sell)
-    {
+    function bail(address u) external payable _flog_ returns (uint sell) {
         uint _rack = _drip();
         (uint deal, uint tot) = safe(u);
         if (deal == SAFE) revert ErrSafeBail();
@@ -341,13 +337,13 @@ contract Bank is Math, Flog, Palm {
 
     // give msg.sender some RISK
     function mine() external _flog_ {
-        uint elapsed = block.timestamp - phi;
+        uint elapsed = block.timestamp - chi;
 
         gif = grow(gif, mop, elapsed);
         emit NewPalm0("gif", bytes32(gif));
 
-        phi = block.timestamp;
-        emit NewPalm0("phi", bytes32(block.timestamp));
+        chi = block.timestamp;
+        emit NewPalm0("chi", bytes32(block.timestamp));
 
         uint flate = (gif + rmul(wal, lax)) * elapsed;
         risk.mint(msg.sender, flate);

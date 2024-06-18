@@ -287,14 +287,14 @@ contract VowTest is Test, RicoSetUp {
 
     function test_mine() public {
         file('mop', bytes32(uint(999999978035500000000000000)));
-        assertEq(bank.phi(), block.timestamp);
+        assertEq(bank.chi(), block.timestamp);
         uint prerisk = risk.totalSupply();
         uint lax = bank.lax();
         uint mop = bank.mop();
 
         bank.mine();
         assertEq(risk.totalSupply(), prerisk);
-        assertEq(bank.phi(), block.timestamp);
+        assertEq(bank.chi(), block.timestamp);
 
         skip(1);
         uint pregif = bank.gif();
@@ -302,7 +302,7 @@ contract VowTest is Test, RicoSetUp {
         bank.mine();
         assertEq(risk.totalSupply(), prerisk + bank.gif() + flate);
         assertEq(bank.gif(), rmul(pregif, mop));
-        assertEq(bank.phi(), block.timestamp);
+        assertEq(bank.chi(), block.timestamp);
 
         skip(BANKYEAR);
         prerisk = risk.totalSupply();
@@ -311,13 +311,13 @@ contract VowTest is Test, RicoSetUp {
         bank.mine();
         assertEq(risk.totalSupply(), prerisk + (bank.gif() + flate) * BANKYEAR);
         assertClose(bank.gif(), pregif / 2, 1000000);
-        assertEq(bank.phi(), block.timestamp);
+        assertEq(bank.chi(), block.timestamp);
 
         prerisk = risk.totalSupply();
         pregif  = bank.gif();
         bank.mine();
         assertEq(risk.totalSupply(), prerisk);
-        assertEq(bank.phi(), block.timestamp);
+        assertEq(bank.chi(), block.timestamp);
 
         assertEq(risk.totalSupply(), risk.balanceOf(self));
     }
