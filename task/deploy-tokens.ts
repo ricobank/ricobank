@@ -2,7 +2,6 @@ import { task } from 'hardhat/config'
 const debug = require('debug')('ricobank:task')
 const dpack = require('@etherpacks/dpack')
 import { b32, send } from 'minihat'
-import { createAndInitializePoolIfNecessary } from './helpers'
 
 task('deploy-tokens', '')
 .addOptionalParam('gfpackcid', 'gemfab pack passed as cid cli string, alternative to gf_pack obj passed from another task')
@@ -40,7 +39,7 @@ task('deploy-tokens', '')
   const pb = new dpack.PackBuilder(hre.network.name)
   const gem_artifact = await dpack.getIpfsJson(gf_dapp._types.Gem.artifact['/'])
   if (args.mint) {
-    const gem_type = await ethers.ContractFactory.fromSolidity(gem_artifact, ali)
+    const gem_type = await hre.ethers.ContractFactory.fromSolidity(gem_artifact, ali)
     await gem_type.attach(risk_addr).mint(ali.address, args.mint)
   }
 

@@ -8,18 +8,11 @@ import './task/deploy-tokens'
 
 import './task/deploy-dependencies'
 import './task/deploy-ricobank'
-import './task/make-usdc-ref'
-import 'hardhat-diamond-abi'
 
 /**
  * @type import('hardhat/config').HardhatUserConfig
  */
 export default {
-  diamondAbi: {
-      name: 'BankDiamond',
-      include: ['Vat', 'Vow', 'Vox', 'Bank', 'File', 'BankDiamond'],
-      strict: false
-  },
   solidity: {
     compilers: [
         {

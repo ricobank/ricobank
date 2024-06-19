@@ -3,7 +3,6 @@ import { task } from 'hardhat/config'
 const debug = require('debug')('ricobank:task')
 const dpack = require('@etherpacks/dpack')
 import { b32, ray, rad, send, wad, BANKYEAR } from 'minihat'
-import { getDiamondArtifact } from './helpers'
 
 task('deploy-ricobank', '')
   .addOptionalParam('mock', 'Ignore dependency args and deploy new mock dependencies')
