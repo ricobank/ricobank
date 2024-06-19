@@ -23,20 +23,20 @@ contract VatTest is Test, RicoSetUp {
     }
 
     function test_frob_basic() public {
-        bank.frob(self, int(WAD), int(WAD));
-        bank.frob(self, int(WAD), int(WAD));
+        bank.frob(int(WAD), int(WAD));
+        bank.frob(int(WAD), int(WAD));
     }
 
     function test_drip_basic() public {
         // set fee to something >1 so joy changes
-        bank.frob(self, 0, 0);
+        bank.frob(0, 0);
         file('fee', bytes32(FEE_2X_ANN));
 
         skip(1);
 
         // frob retroactively, drip the profits
-        bank.frob(self, int(100 * WAD), int(50 * WAD));
-        bank.frob(self, 0, 0);
+        bank.frob(int(100 * WAD), int(50 * WAD));
+        bank.frob(0, 0);
     }
 
     ///////////////////////////////////////////////
@@ -47,12 +47,12 @@ contract VatTest is Test, RicoSetUp {
     function test_create_unsafe() public {
         // art should not exceed ink, because price par liqr all == 1
         vm.expectRevert(Bank.ErrNotSafe.selector);
-        bank.frob(address(this), int(stack), int(stack) + 1);
+        bank.frob(int(stack), int(stack) + 1);
     }
 
     function test_safe_return_vals() public {
         file('fee', bytes32(FEE_2X_ANN));
-        bank.frob(address(this), int(stack), int(stack));
+        bank.frob(int(stack), int(stack));
         (uint deal, uint tot) = bank.safe(self);
 
         // position should be (barely) safe
@@ -67,7 +67,7 @@ contract VatTest is Test, RicoSetUp {
 
         // accumulate fees to 2x...position should sink underwater
         skip(BANKYEAR);
-        bank.frob(self, 0, 0);
+        bank.frob(0, 0);
         (deal, tot) = bank.safe(self);
         assertTrue(deal < RAY);
 
@@ -78,20 +78,20 @@ contract VatTest is Test, RicoSetUp {
 
         // always safe if debt is zero
         rico_mint(1000 * WAD, true);
-        bank.frob(address(this), int(0), - int(_art(self)));
+        bank.frob(int(0), - int(_art(self)));
         (deal, tot) = bank.safe(self);
         assertTrue(deal == RAY);
     }
 
     function test_rack_puts_urn_underwater() public {
         // frob till barely safe
-        bank.frob(address(this), int(stack), int(stack));
+        bank.frob(int(stack), int(stack));
         (uint deal,) = bank.safe(self);
         assertTrue(deal == RAY);
 
         // accrue some interest to sink
         skip(100);
-        bank.frob(self, 0, 0);
+        bank.frob(0, 0);
         (deal,) = bank.safe(self);
         assertTrue(deal < RAY);
 
@@ -104,7 +104,7 @@ contract VatTest is Test, RicoSetUp {
 
     function test_liqr_puts_urn_underwater() public {
         // frob till barely safe
-        bank.frob(address(this), int(stack), int(stack));
+        bank.frob(int(stack), int(stack));
         (uint deal,) = bank.safe(self);
         assertTrue(deal == RAY);
 
@@ -127,63 +127,63 @@ contract VatTest is Test, RicoSetUp {
 
     function test_frob_refloat() public {
         // frob till barely safe
-        bank.frob(address(this), int(stack), int(stack));
+        bank.frob(int(stack), int(stack));
         (uint deal,) = bank.safe(self);
         assertTrue(deal == RAY);
 
         // sink the urn
         skip(BANKYEAR);
-        bank.frob(self, 0, 0);
+        bank.frob(0, 0);
         (deal,) = bank.safe(self);
         assertTrue(deal < RAY);
 
         // add ink to refloat
-        bank.frob(address(this), int(stack), int(0));
+        bank.frob(int(stack), int(0));
         (deal,) = bank.safe(self);
         assertTrue(deal == RAY);
     }
 
     function test_increasing_risk_sunk_urn() public {
         // frob till barely safe
-        bank.frob(address(this), int(stack), int(stack));
+        bank.frob(int(stack), int(stack));
         (uint deal,) = bank.safe(self);
         assertTrue(deal == RAY);
 
         // sink it
         skip(BANKYEAR);
-        bank.frob(self, 0, 0);
+        bank.frob(0, 0);
         (deal,) = bank.safe(self);
         assertTrue(deal < RAY);
 
         // should always be able to decrease art or increase ink, even when sunk
-        bank.frob(address(this), int(0), int(-1));
-        bank.frob(address(this), int(1), int(0));
+        bank.frob(int(0), int(-1));
+        bank.frob(int(1), int(0));
 
         // should not be able to decrease ink or increase art of sunk urn
         vm.expectRevert(Bank.ErrNotSafe.selector);
-        bank.frob(address(this), int(10), int(1));
+        bank.frob(int(10), int(1));
         vm.expectRevert(Bank.ErrNotSafe.selector);
-        bank.frob(address(this), int(-1), int(-1));
+        bank.frob(int(-1), int(-1));
     }
 
     function test_increasing_risk_safe_urn() public {
         // frob till very safe
-        bank.frob(address(this), int(stack), int(10));
+        bank.frob(int(stack), int(10));
         (uint deal,) = bank.safe(self);
         assertTrue(deal == RAY);
 
         // should always be able to decrease art or increase ink
-        bank.frob(address(this), int(0), int(-1));
-        bank.frob(address(this), int(1), int(0));
+        bank.frob(int(0), int(-1));
+        bank.frob(int(1), int(0));
 
         // should be able to decrease ink or increase art of safe urn
         // as long as resulting urn is safe
-        bank.frob(address(this), int(0), int(1));
-        bank.frob(address(this), int(-1), int(0));
+        bank.frob(int(0), int(1));
+        bank.frob(int(-1), int(0));
     }
 
     function test_basic_bail() public {
-        bank.frob(self, int(WAD), int(WAD));
+        bank.frob(int(WAD), int(WAD));
         skip(BANKYEAR);
         bank.bail(self);
     }
@@ -192,7 +192,7 @@ contract VatTest is Test, RicoSetUp {
         // frob to edge of safety
         uint borrow = WAD * 1000;
         file('liqr', bytes32(RAY));
-        bank.frob(self, int(borrow), int(borrow));
+        bank.frob(int(borrow), int(borrow));
 
         // raise urn's debt to 1.5x original...pep is 2, so earn is cubic
         file('fee', bytes32(FEE_1_5X_ANN));
@@ -225,7 +225,7 @@ contract VatTest is Test, RicoSetUp {
         file("pup", bytes32(uint(pup)));
         file("fee", bytes32(FEE_1_5X_ANN));
 
-        bank.frob(self, int(1000 * WAD), int(borrow));
+        bank.frob(int(1000 * WAD), int(borrow));
 
         // drop ink/tab to 66%...pep is 1, so earn is linear
         skip(BANKYEAR);
@@ -247,7 +247,7 @@ contract VatTest is Test, RicoSetUp {
 
         // 2 * borrow because skipped bankyear
         risk_mint(self, 10000 * WAD);
-        bank.frob(self, int(2 * borrow), int(borrow));
+        bank.frob(int(2 * borrow), int(borrow));
 
         // skip a bunch so mash clamps to 0
         skip(BANKYEAR * 10);
@@ -269,7 +269,7 @@ contract VatTest is Test, RicoSetUp {
         file("fee",  bytes32(FEE_1_5X_ANN));
 
         // frob to edge of safety
-        bank.frob(self, int(dink), int(borrow));
+        bank.frob(int(dink), int(borrow));
 
         // drop to 66%...position is still overcollateralized
         skip(BANKYEAR);
@@ -306,18 +306,18 @@ contract VatTest is Test, RicoSetUp {
 
         // revert for trying to join more gems than owned
         vm.expectRevert(Gem.ErrUnderflow.selector);
-        bank.frob(self, int(self_risk_bal0 + 1), 0);
+        bank.frob(int(self_risk_bal0 + 1), 0);
 
         // revert for trying to exit too much rico
         vm.expectRevert(Bank.ErrNotSafe.selector);
-        bank.frob(self, int(10), int(11));
+        bank.frob(int(10), int(11));
 
         // revert for trying to exit gems from other users
         vm.expectRevert(Math.ErrUintUnder.selector);
-        bank.frob(self, int(-1), 0);
+        bank.frob(int(-1), 0);
 
         // gems are taken from user when joining, and rico given to user
-        bank.frob(self, int(stack), int(stack / 2));
+        bank.frob(int(stack), int(stack / 2));
         uint self_risk_bal1 = risk.balanceOf(self);
         uint self_rico_bal1 = rico.balanceOf(self);
         assertEq(self_risk_bal1 + stack, self_risk_bal0);
@@ -325,7 +325,7 @@ contract VatTest is Test, RicoSetUp {
 
         // close, even without drip need 1 extra rico as rounding is in systems favour
         rico_mint(1, false);
-        bank.frob(self, -int(stack), -int(stack / 2));
+        bank.frob(-int(stack), -int(stack / 2));
         uint self_risk_bal2 = risk.balanceOf(self);
         uint self_rico_bal2 = rico.balanceOf(self);
         assertEq(self_risk_bal0, self_risk_bal2);
@@ -340,13 +340,13 @@ contract VatTest is Test, RicoSetUp {
 
         // no collateral...shouldn't be able to borrow
         vm.expectRevert(Bank.ErrNotSafe.selector);
-        bank.frob(self, int(0), int(WAD));
+        bank.frob(int(0), int(WAD));
     }
 
     // amount of rico owed to pay down the CDP
     function owed() internal returns (uint) {
         // update rack first
-        bank.frob(self, 0, 0);
+        bank.frob(0, 0);
 
         uint rack = bank.rack();
         uint art = _art(self);
@@ -359,8 +359,8 @@ contract VatTest is Test, RicoSetUp {
 
         // drip a little bit so this isn't the first fee accumulation
         skip(1);
-        bank.frob(self, 0, 0);
-        bank.frob(self, int(100 * WAD), int(50 * WAD));
+        bank.frob(0, 0);
+        bank.frob(int(100 * WAD), int(50 * WAD));
 
         // wait a second, just so it's more realistic
         skip(1);
@@ -377,38 +377,38 @@ contract VatTest is Test, RicoSetUp {
         file('dust', bytes32(0));
 
         // frob a tiny bit more than a wad so lower bits of fee go to rest
-        bank.frob(self, int(WAD + 1), int(WAD + 1));
+        bank.frob(int(WAD + 1), int(WAD + 1));
 
         // drip to accumulate to rest
         skip(1);
-        bank.frob(self, 0, 0);
+        bank.frob(0, 0);
         assertEq(bank.rest(), 2 * WAD + 2);
 
         // drip again, should have more rest now
         skip(1);
-        bank.frob(self, 0, 0);
+        bank.frob(0, 0);
         assertGt(bank.rest(), 2 * WAD + 2);
     }
 
     function test_rest_drip_0() public {
         // set a tiny fee and frob
         file('fee', bytes32(RAY + 1));
-        bank.frob(self, int(WAD), int(WAD));
+        bank.frob(int(WAD), int(WAD));
 
         // didn't frob any fractional rico, so rest should be (fee - RAY) * WAD
         skip(1);
-        bank.frob(self, 0, 0);
+        bank.frob(0, 0);
         assertEq(bank.rest(), WAD);
 
         // do it again, should double
         skip(1);
-        bank.frob(self, 0, 0);
+        bank.frob(0, 0);
         assertEq(bank.rest(), 2 * WAD);
 
         // no more fee - rest should stop increasing
         file('fee', bytes32(RAY));
         skip(1);
-        bank.frob(self, 0, 0);
+        bank.frob(0, 0);
         assertEq(bank.rest(), 2 * WAD);
     }
 
@@ -416,28 +416,28 @@ contract VatTest is Test, RicoSetUp {
         // drip with no fees
         file('fee', bytes32(RAY));
         file('dust', bytes32(0));
-        bank.frob(self, 0, 0);
+        bank.frob(0, 0);
 
         // mint 1 to deal with rounding
         // then lock 1 and wipe 1
         rico_mint(1, true);
-        bank.frob(self, int(1), int(1));
-        bank.frob(self, -int(1), -int(1));
+        bank.frob(int(1), int(1));
+        bank.frob(-int(1), -int(1));
 
         // rest from rounding should be RAD / WAD == RAY
-        bank.frob(self, 0, 0);
+        bank.frob(0, 0);
         assertEq(bank.rest(), RAY);
 
         // dripping should clear rest
         skip(1);
-        bank.frob(self, 0, 0);
+        bank.frob(0, 0);
         assertEq(bank.rest(), 0);
     }
 
     function test_rest_drip_toggle_wads() public {
         // drip with no fees
         file('fee', bytes32(RAY));
-        bank.frob(self, 0, 0);
+        bank.frob(0, 0);
 
         // tiny fee, no dust
         file('fee', bytes32(RAY + 1));
@@ -445,9 +445,9 @@ contract VatTest is Test, RicoSetUp {
 
         // mint 1 for rounding, then frob and drip
         rico_mint(1, true);
-        bank.frob(self, int(WAD), int(WAD));
+        bank.frob(int(WAD), int(WAD));
         skip(1);
-        bank.frob(self, 0, 0);
+        bank.frob(0, 0);
 
         // rest should be (fee - RAY) * WAD
         assertEq(bank.rest(), WAD);
@@ -455,12 +455,12 @@ contract VatTest is Test, RicoSetUp {
         // wipe the urn...rest should be WAD + (WAD * (RAY + 1)) / RAY + 1
         // or iow the debt change minus the debt change rounded down by 1
         uint art = _art(self);
-        bank.frob(self, int(0), -int(art));
+        bank.frob(int(0), -int(art));
         assertEq(bank.rest(), RAY);
 
         // rest is RAY (rest % RAY == 0), so should accumulate to joy
         skip(1);
-        bank.frob(self, 0, 0);
+        bank.frob(0, 0);
         assertEq(bank.rest(), 0);
     }
 
@@ -485,7 +485,7 @@ contract VatTest is Test, RicoSetUp {
 
     function test_par() public {
         assertEq(bank.par(), RAY);
-        bank.frob(self, int(100 * WAD), int(50 * WAD));
+        bank.frob(int(100 * WAD), int(50 * WAD));
         (uint deal,) = bank.safe(self);
         assertEq(deal, RAY);
 
@@ -503,22 +503,18 @@ contract VatTest is Test, RicoSetUp {
 
         // accumulate pending fees
         skip(BANKYEAR);
-        bank.frob(self, 0, 0);
+        bank.frob(0, 0);
 
-        // ceily, not safe, wrong urn, dusty...should be wrong urn
-        vm.expectRevert(Bank.ErrWrongUrn.selector);
-        bank.frob(abank, int(WAD / 2), int(WAD / 2));
-
-        // right urn, should be unsafe
+        // ceily, not safe -> should be unsafe
         vm.expectRevert(Bank.ErrNotSafe.selector);
-        bank.frob(self, int(WAD / 2), int(WAD / 2 - 1));
+        bank.frob(int(WAD / 2), int(WAD / 2 - 1));
 
         // safe, should be dusty
         vm.expectRevert(Bank.ErrUrnDust.selector);
-        bank.frob(self, int(2 * WAD), int(WAD / 2 - 1));
+        bank.frob(int(2 * WAD), int(WAD / 2 - 1));
 
         //non-dusty, should be good
-        bank.frob(self, int(200 * WAD), int((WAD + WAD / 1_000) / 2 ));
+        bank.frob(int(200 * WAD), int((WAD + WAD / 1_000) / 2 ));
     }
 
     function test_frob_err_ordering_darts() public {
@@ -528,39 +524,28 @@ contract VatTest is Test, RicoSetUp {
         // check how it works with some fees dripped
         file('fee', bytes32(bank.FEE_MAX()));
         skip(1);
-        bank.frob(self, 0, 0);
+        bank.frob(0, 0);
 
         // frob while pranking fakesrc address
         risk_mint(fakesrc, 1000 * WAD);
         vm.startPrank(fakesrc);
         int dart = int(1 + WAD * RAY / bank.FEE_MAX());
-        bank.frob(fakesrc, int(200 * WAD), dart);
+        bank.frob(int(200 * WAD), dart);
 
-        vm.stopPrank();
-
-        // bypasses most checks when dart <= 0
-        // can't hurt because permissions
-        vm.expectRevert(Bank.ErrWrongUrn.selector);
-        bank.frob(fakesrc, -int(199 * WAD), int(0));
-        vm.expectRevert(Bank.ErrWrongUrn.selector);
-        bank.frob(fakesrc, int(0), int(1));
-
-        // ok now fakesrc frobs its own urn...but it's not safe
-        vm.startPrank(fakesrc);
         vm.expectRevert(Bank.ErrNotSafe.selector);
-        bank.frob(fakesrc, -int(199 * WAD), 0);
+        bank.frob(-int(199 * WAD), 0);
 
         // still can't free because dust
         vm.expectRevert(Bank.ErrUrnDust.selector);
-        bank.frob(fakesrc, -int(199 * WAD), -dart + 100);
+        bank.frob(-int(199 * WAD), -dart + 100);
         vm.stopPrank();
 
         // make it safe...should be dusty
         vm.expectRevert(Bank.ErrUrnDust.selector);
-        bank.frob(self, int(WAD), int(1));
+        bank.frob(int(WAD), int(1));
 
         // not dusty, should be ok
-        bank.frob(self, int(500 * WAD), int(WAD));
+        bank.frob(int(500 * WAD), int(WAD));
     }
 
     function test_frob_err_ordering_dinks_1() public {
@@ -570,28 +555,23 @@ contract VatTest is Test, RicoSetUp {
 
         // accumulate pending fees
         skip(1);
-        bank.frob(self, 0, 0);
+        bank.frob(0, 0);
 
         risk_mint(fakesrc, 1000 * WAD);
 
         // frob from fakesrc address
         // could prank any non-self address, just chose fakesrc's
         vm.startPrank(fakesrc);
-        bank.frob(fakesrc, int(500 * WAD), int(1 + WAD * RAY / FEE_2X_ANN));
-        vm.stopPrank();
+        bank.frob(int(500 * WAD), int(1 + WAD * RAY / FEE_2X_ANN));
 
-        // self removes some ink from fakesrc - should fail because unauthorized
-        vm.expectRevert(Bank.ErrWrongUrn.selector);
-        bank.frob(fakesrc, -int(WAD), int(0));
-
-        // fakesrc removes some ink from fakesrc - should fail because not safe
-        vm.prank(fakesrc);
+        // removes some ink - should fail because not safe
         vm.expectRevert(Bank.ErrNotSafe.selector);
-        bank.frob(fakesrc, -int(500 * WAD), int(0));
+        bank.frob(-int(500 * WAD), int(0));
 
         // ...but it's fine when dink >= 0
-        bank.frob(fakesrc, int(0), int(0));
-        bank.frob(fakesrc, int(1), int(0));
+        bank.frob(int(0), int(0));
+        bank.frob(int(1), int(0));
+        vm.stopPrank();
     }
 
     function test_frob_err_ordering_dinks_darts() public {
@@ -601,62 +581,55 @@ contract VatTest is Test, RicoSetUp {
 
         // accumulate pending fees
         skip(1);
-        bank.frob(self, 0, 0);
+        bank.frob(0, 0);
 
         risk_mint(fakesrc, 1000 * WAD);
 
         // could prank anything non-self; chose fakesrc
         vm.startPrank(fakesrc);
         int dart = int(1 + WAD * RAY / FEE_2X_ANN);
-        bank.frob(fakesrc, int(500 * WAD), dart);
+        bank.frob(int(500 * WAD), dart);
 
         // 2 for accumulated debt, 1 for rounding
         rico.transfer(self, 3);
-        vm.stopPrank();
 
-        // can't steal ink or art from someone else's urn
-        vm.expectRevert(Bank.ErrWrongUrn.selector);
-        bank.frob(fakesrc, -int(WAD), int(0));
-        vm.expectRevert(Bank.ErrWrongUrn.selector);
-        bank.frob(fakesrc, int(0), int(1));
-
-        // ...can remove ink from your own, but it has to be safe
-        vm.prank(fakesrc);
+        // ...can remove ink, but it has to be safe
         vm.expectRevert(Bank.ErrNotSafe.selector);
-        bank.frob(fakesrc, -int(499 * WAD), int(1));
+        bank.frob(-int(499 * WAD), int(1));
+
 
         // nothing wrong with frobbing 0
-        bank.frob(fakesrc, int(0), int(0));
+        bank.frob(int(0), int(0));
 
         // can't reduce ink below dust
-        vm.prank(fakesrc);
         vm.expectRevert(Bank.ErrUrnDust.selector);
-        bank.frob(fakesrc, -int(499 * WAD), -dart + 100);
+        bank.frob(-int(499 * WAD), -dart + 100);
+
+        vm.stopPrank();
 
         // ...lower dust - now it's fine
         file('dust', bytes32(RAY / 1000000000000000));
 
         vm.prank(fakesrc);
-        bank.frob(fakesrc, -int(499 * WAD), -dart + 100);
-        vm.stopPrank();
+        bank.frob(-int(499 * WAD), -dart + 100);
     }
 
     function test_dtab_not_normalized() public {
         // accumulate pending fees, then set fee high
-        bank.frob(self, 0, 0);
+        bank.frob(0, 0);
         file('fee', bytes32(FEE_2X_ANN));
 
         // rack is 0, so debt should increase by dart
-        bank.frob(self, int(100 * WAD), int(WAD));
+        bank.frob(int(100 * WAD), int(WAD));
         assertEq(bank.tart(), WAD);
 
         skip(BANKYEAR);
-        bank.frob(self, 0, 0);
+        bank.frob(0, 0);
 
         // dart > 0, so dtab > 0
         // dart == 1, rack == 2, so dtab should be 2
         uint ricobefore = rico.balanceOf(self);
-        bank.frob(self, int(WAD), int(WAD));
+        bank.frob(int(WAD), int(WAD));
         uint ricoafter  = rico.balanceOf(self);
         assertClose(ricoafter, ricobefore + WAD * 2, 1_000_000);
 
@@ -664,7 +637,7 @@ contract VatTest is Test, RicoSetUp {
         // dart == -1, rack == 2 -> dtab should be -2
         // minus some change for rounding
         ricobefore = rico.balanceOf(self);
-        bank.frob(self, int(0), -int(WAD));
+        bank.frob(int(0), -int(WAD));
         ricoafter = rico.balanceOf(self);
         assertClose(ricoafter, ricobefore - (WAD * 2 + 1), 1_000_000);
     }
@@ -676,23 +649,23 @@ contract VatTest is Test, RicoSetUp {
         skip(BANKYEAR);
         // now frob 1, so debt is 1
         // and rest is 0.5 * RAY
-        bank.frob(self, 0, 0);
-        bank.frob(self, int(1000), int(1));
+        bank.frob(0, 0);
+        bank.frob(int(1000), int(1));
         assertClose(bank.rest(), RAY / 2, 1_000_000);
         assertEq(bank.tart(), 1);
         // need to wait for drip to do anything...
-        bank.frob(self, 0, 0);
+        bank.frob(0, 0);
         assertClose(bank.rest(), RAY / 2, 1_000_000);
 
         // frob again so rest reaches RAY
-        bank.frob(self, int(1), int(1));
+        bank.frob(int(1), int(1));
         assertEq(bank.tart(), 2);
         assertClose(bank.rest(), RAY, 1_000_000);
 
         // so regardless of fee next drip should drip 1 (== rest / RAY)
         file('fee', bytes32(RAY));
         skip(1);
-        bank.frob(self, 0, 0);
+        bank.frob(0, 0);
 
         assertEq(bank.tart(), 2);
         assertLt(bank.rest(), RAY / 1_000_000);
@@ -702,7 +675,7 @@ contract VatTest is Test, RicoSetUp {
     }
 
     function test_bail_drips() public {
-        bank.frob(self, int(WAD), int(WAD));
+        bank.frob(int(WAD), int(WAD));
 
         // accrue fees for a year
         skip(BANKYEAR);
@@ -717,7 +690,7 @@ contract VatTest is Test, RicoSetUp {
     // make sure bailed ink decodes properly
     function test_bail_return_value() public {
         file('fee', bytes32(FEE_2X_ANN));
-        bank.frob(self, int(WAD), int(WAD));
+        bank.frob(int(WAD), int(WAD));
 
         // skip a lot so no refund
         skip(BANKYEAR * 10);
@@ -726,7 +699,7 @@ contract VatTest is Test, RicoSetUp {
     }
 
     function test_ink_return_value() public {
-        bank.frob(self, int(WAD), int(WAD));
+        bank.frob(int(WAD), int(WAD));
         uint ink = _ink(self);
         assertEq(ink, WAD);
     }
@@ -739,7 +712,7 @@ contract VatTest is Test, RicoSetUp {
         file('pop', bytes32(pop));
         file('fee', bytes32(FEE_2X_ANN));
 
-        bank.frob(self, int(WAD), int(WAD));
+        bank.frob(int(WAD), int(WAD));
 
         // make it very unsafe
         skip(3 * BANKYEAR);
@@ -769,7 +742,7 @@ contract VatTest is Test, RicoSetUp {
         file('pop', bytes32(pop));
         file('fee', bytes32(FEE_2X_ANN));
 
-        bank.frob(self, int(WAD), int(WAD));
+        bank.frob(int(WAD), int(WAD));
 
         // set high liqr, low price
         file('liqr', bytes32(liqr));
@@ -792,7 +765,7 @@ contract VatTest is Test, RicoSetUp {
     }
 
     function test_deal_but_not_wild() public {
-        bank.frob(self, int(WAD), int(WAD));
+        bank.frob(int(WAD), int(WAD));
 
         file('pep', bytes32(uint(4)));
 
@@ -810,15 +783,15 @@ contract VatTest is Test, RicoSetUp {
         file('dust', bytes32(dust));
 
         // art is 0 so it's fine
-        bank.frob(self, int(1), 0);
-        bank.frob(self, -int(1), 0);
+        bank.frob(int(1), 0);
+        bank.frob(-int(1), 0);
 
         // art is nonzero so it's not fine
         vm.expectRevert(Bank.ErrUrnDust.selector);
-        bank.frob(self, int(3), int(1));
+        bank.frob(int(3), int(1));
 
         file('dust', bytes32(dust / 2));
-        bank.frob(self, int(3), int(1));
+        bank.frob(int(3), int(1));
     }
 
 }

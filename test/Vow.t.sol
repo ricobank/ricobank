@@ -35,11 +35,11 @@ contract VowTest is Test, RicoSetUp {
         // risk:rico price 0.1
         uint rico_price_in_risk = 10;
 
-        bank.frob(self, int(WAD), int(borrow));
+        bank.frob(int(WAD), int(borrow));
 
         // accumulate a bunch of fees
         skip(BANKYEAR);
-        bank.frob(self, 0, 0);
+        bank.frob(0, 0);
 
         // joy depends on tart and change in rack
         uint surplus = bank.joy();
@@ -64,7 +64,7 @@ contract VowTest is Test, RicoSetUp {
         skip(1);
 
         uint pre_drip_joy = bank.joy();
-        bank.frob(self, 0, 0);
+        bank.frob(0, 0);
         uint aft_drip_joy = bank.joy();
         surplus = surplus + aft_drip_joy - pre_drip_joy;
 
@@ -80,7 +80,7 @@ contract VowTest is Test, RicoSetUp {
 
     function test_basic_keep_deficit() public
     {
-        bank.frob(self, int(WAD), int(WAD));
+        bank.frob(int(WAD), int(WAD));
 
         // bail creates some sin
         file('fee', bytes32(FEE_2X_ANN));
@@ -105,7 +105,7 @@ contract VowTest is Test, RicoSetUp {
         file('bel', bytes32(block.timestamp - 1));
         file('dam', bytes32(RAY / WAD));
 
-        bank.frob(self, int(WAD * 3000), int(WAD * 3000));
+        bank.frob(int(WAD * 3000), int(WAD * 3000));
 
         skip(BANKYEAR);
 
@@ -122,21 +122,21 @@ contract VowTest is Test, RicoSetUp {
 
         // set high fee, risk:ref price 1k
         file('fee', bytes32(FEE_2X_ANN));
-        bank.frob(address(this), int(WAD), int(WAD));
+        bank.frob(int(WAD), int(WAD));
 
         // wipe previous frob
         uint firstrico = rico.balanceOf(self);
         rico_mint(1, false); // vat burns 1 extra to round in system's favor
-        bank.frob(address(this), -int(WAD), -int(WAD));
+        bank.frob(-int(WAD), -int(WAD));
 
         skip(BANKYEAR);
 
         // test rack, frob auto drips so same dart should draw double after a year at 2X fee
-        bank.frob(address(this), int(WAD * 2), int(WAD));
+        bank.frob(int(WAD * 2), int(WAD));
         assertClose(rico.balanceOf(self), firstrico * 2, 1_000_000);
 
         rico_mint(1, false); // rounding
-        bank.frob(address(this), -int(WAD), -int(WAD));
+        bank.frob(-int(WAD), -int(WAD));
     }
 
     function test_keep_balanced() public
@@ -208,12 +208,12 @@ contract VowTest is Test, RicoSetUp {
 
         uint wel = RAY / 7;
         file('wel', bytes32(wel));
-        bank.frob(self, int(WAD), int(WAD));
+        bank.frob(int(WAD), int(WAD));
 
         // drip a bunch of joy
         file('fee', bytes32(bank.FEE_MAX()));
         skip(5 * BANKYEAR);
-        bank.frob(self, 0, 0);
+        bank.frob(0, 0);
 
         // keep should flap 1/7 the joy
         uint joy = bank.joy() - bank.sin() / RAY;
@@ -448,12 +448,12 @@ contract VowJsTest is Test, RicoSetUp {
         // fee == 5%/yr == ray(1.05 ** (1/BANKYEAR))
         uint fee = 1000000001546067052200000000;
         file('fee', bytes32(fee));
-        bank.frob(me, int(100 * WAD), 0);
-        bank.frob(me, int(0), int(99 * WAD));
+        bank.frob(int(100 * WAD), 0);
+        bank.frob(int(0), int(99 * WAD));
 
         // cat frobs some rico and transfers to me
         risk_mint(c, 7000 * WAD);
-        cat.frob(c, int(4001 * WAD), int(4000 * WAD));
+        cat.frob(int(4001 * WAD), int(4000 * WAD));
         cat.transfer(arico, me, 4000 * WAD);
 
         // used to setup uni pools here, no more though

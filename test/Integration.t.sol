@@ -15,9 +15,9 @@ contract IntegrationTest is Test, RicoSetUp {
     
     function test_joy_accounting() public {
         // accumulate some fees
-        bank.frob(self, int(10 * WAD), int(5 * WAD));
+        bank.frob(int(10 * WAD), int(5 * WAD));
         skip(100);
-        bank.frob(self, 0, 0);
+        bank.frob(0, 0);
         check_integrity();
 
         // system is in surplus, flap
@@ -40,7 +40,7 @@ contract IntegrationTest is Test, RicoSetUp {
 
     function test_bail_joy_direction() public _check_integrity_after_ {
         // open an urn to bail
-        bank.frob(self, int(10 * WAD), int(5 * WAD));
+        bank.frob(int(10 * WAD), int(5 * WAD));
 
         // mint some rico to fill the bail
         rico_mint(6 * WAD, false);
@@ -62,9 +62,9 @@ contract IntegrationTest is Test, RicoSetUp {
 
     function test_flap_joy_direction() public _check_integrity_after_ {
         // open an urn to accumulate fees, mint some risk to fill the flop
-        bank.frob(self, int(10 * WAD), int(5 * WAD));
+        bank.frob(int(10 * WAD), int(5 * WAD));
         skip(100);
-        bank.frob(self, 0, 0);
+        bank.frob(0, 0);
         risk_mint(self, 10_000 * WAD);
 
         uint rico_sup0 = rico.totalSupply();

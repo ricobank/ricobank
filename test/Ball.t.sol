@@ -70,7 +70,7 @@ contract BallTest is BaseHelper {
     modifier _flap_after_ {
         _;
         risk.mint(self, 10000 * WAD);
-        bank.frob(self, 0, 0); // just drip
+        bank.frob(0, 0); // just drip
 
         uint pre_bank_risk = risk.balanceOf(abank);
         uint pre_bank_rico = rico.balanceOf(abank);
@@ -119,14 +119,14 @@ contract BallTest is BaseHelper {
 
     function test_ball_1() public {
         // simple bail
-        bank.frob(self, int(riskamt), safedart);
+        bank.frob(int(riskamt), safedart);
         vm.expectRevert(Bank.ErrNotSafe.selector);
-        bank.frob(self, int(0), safedart);
+        bank.frob(int(0), safedart);
     }
 
     // frob, then flap (with wel == 100%), and check balanced
     function test_ball_pay_flap_success() public  _balanced_after_ {
-        bank.frob(self, int(riskamt), safedart);
+        bank.frob(int(riskamt), safedart);
 
         skip(BANKYEAR * 100);
 
@@ -142,7 +142,7 @@ contract BallTest is BaseHelper {
         uint dust = bank.dust();
         int  dart = -int((art_pre * rack - dust) / rack);
 
-        bank.frob(self, int(0), dart);
+        bank.frob(int(0), dart);
 
         uint ink_aft = _ink(self);
         assertEq(ink_aft, ink_pre);

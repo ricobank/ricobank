@@ -143,15 +143,15 @@ contract Bank is Math, Flog, Palm {
     }
 
     // modify CDP
-    function frob(address u, int dink, int dart) external payable _flog_ {
-        Urn storage urn = urns[u];
+    function frob(int dink, int dart) external payable _flog_ {
+        Urn storage urn = urns[msg.sender];
 
         uint _rack = drip();
 
         // modify normalized debt
         uint256 art = add(urn.art, dart);
         urn.art     = art;
-        emit NewPalm1("art", bytes32(bytes20(u)), bytes32(art));
+        emit NewPalm1("art", bytes32(bytes20(msg.sender)), bytes32(art));
 
         tart    = add(tart, dart);
         emit NewPalm0("tart", bytes32(tart));
@@ -183,20 +183,19 @@ contract Bank is Math, Flog, Palm {
         // update balance before transferring tokens
         uint ink = add(urn.ink, dink);
         urn.ink = ink;
-        emit NewPalm1("ink", bytes32(bytes20(u)), bytes32(ink));
+        emit NewPalm1("ink", bytes32(bytes20(msg.sender)), bytes32(ink));
 
         if (dink > 0) {
             // pull tokens from sender
             risk.burn(msg.sender, uint(dink));
         } else if (dink < 0) {
             // return tokens to urn holder
-            risk.mint(u, uint(-dink));
+            risk.mint(msg.sender, uint(-dink));
         }
 
         // urn is safer, or it is safe
         if (dink < 0 || dart > 0) {
-            (uint deal,) = safe(u);
-            if (u != msg.sender) revert ErrWrongUrn();
+            (uint deal,) = safe(msg.sender);
             if (deal < SAFE) revert ErrNotSafe();
         }
 

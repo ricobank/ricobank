@@ -17,8 +17,8 @@ contract Guy {
     function approve(address gem, address dst, uint amt) public {
         Gem(gem).approve(dst, amt);
     }
-    function frob(address usr, int dink, int dart) public {
-        bank.frob(usr, dink, dart);
+    function frob(int dink, int dart) public {
+        bank.frob(dink, dart);
     }
     function transfer(address gem, address dst, uint amt) public {
         Gem(gem).transfer(dst, amt);
@@ -51,7 +51,7 @@ abstract contract RicoSetUp is BaseHelper {
         risk_mint(address(_bob), risk_amt);
 
         // bob borrows the rico and sends back to self
-        _bob.frob(address(_bob), int(risk_amt), int(amt));
+        _bob.frob(int(risk_amt), int(amt));
         _bob.transfer(arico, self, amt);
 
         if (bail) {

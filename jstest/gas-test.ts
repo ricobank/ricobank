@@ -81,33 +81,33 @@ describe('Gas', () => {
     }
 
     it('deploy gas', async () => {
-      await check(ethers.BigNumber.from(deploygas), 5619697)
+      await check(ethers.BigNumber.from(deploygas), 5590884)
     })
 
     it('frob cold gas', async () => {
-      let gas = await bank.estimateGas.frob(ALI, wad(5), wad(2))
-      await check(gas, 216058)
+      let gas = await bank.estimateGas.frob(wad(5), wad(2))
+      await check(gas, 215306)
     })
 
     it('frob hot gas', async () => {
-      await send(bank.frob, ALI, wad(5), wad(2), {gasLimit: 30000000})
+      await send(bank.frob, wad(5), wad(2), {gasLimit: 30000000})
       await mine(hh, 100)
-      await send(bank.frob, ALI, 0, 0)
-      let gas = await bank.estimateGas.frob(ALI, wad(5), wad(2))
-      await check(gas, 115982)
+      await send(bank.frob, 0, 0)
+      let gas = await bank.estimateGas.frob(wad(5), wad(2))
+      await check(gas, 115230)
     })
 
     it('bail gas', async () => {
-      await send(bank.frob, ALI, wad(5), wad(2))
+      await send(bank.frob, wad(5), wad(2))
 
       await mine(hh, BANKYEAR * 1000)
 
       let gas = await bank.estimateGas.bail(ALI)
-      await check(gas, 162309)
+      await check(gas, 162270)
     })
 
     it('keep surplus gas', async () => {
-      await send(bank.frob, ALI, wad(5), wad(1))
+      await send(bank.frob, wad(5), wad(1))
       await mine(hh, BANKYEAR)
       let gas = await bank.estimateGas.keep()
       await check(gas, 147644)
