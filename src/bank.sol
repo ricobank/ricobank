@@ -41,14 +41,14 @@ contract Bank is Math, Flog, Palm {
         uint256 way;
    }
 
-    Gem immutable public rico;
-    Gem immutable public risk;
+    Gem immutable public rico; // stability primitive
+    Gem immutable public risk; // buy-and-burn token
 
     // vat
-    mapping (address => Urn ) public urns; // CDPs
-    uint256 public joy;   // [wad]
-    uint256 public sin;   // [rad]
-    uint256 public rest;  // [rad] Debt remainder
+    mapping (address => Urn) public urns; // CDPs
+    uint256 public joy;   // [wad] System revenue
+    uint256 public sin;   // [rad] Unbacked debt
+    uint256 public rest;  // [rad] System revenue remainder
     uint256 public par;   // [ray] System Price (rico/ref)
     uint256 public tart;  // [wad] Total Normalised Debt
     uint256 public rack;  // [ray] Accumulated Rate
@@ -119,7 +119,7 @@ contract Bank is Math, Flog, Palm {
         must(way, rinv(cap), cap);
 
         emit NewPalm0("par", bytes32(par));
-        emit NewPalm0("rho",  bytes32(rho));
+        emit NewPalm0("rho", bytes32(rho));
         emit NewPalm0("bel", bytes32(bel));
         emit NewPalm0("gif", bytes32(gif));
         emit NewPalm0("chi", bytes32(chi));
@@ -153,7 +153,7 @@ contract Bank is Math, Flog, Palm {
         urn.art     = art;
         emit NewPalm1("art", bytes32(bytes20(msg.sender)), bytes32(art));
 
-        tart    = add(tart, dart);
+        tart = add(tart, dart);
         emit NewPalm0("tart", bytes32(tart));
 
         uint _rest;
@@ -173,6 +173,7 @@ contract Bank is Math, Flog, Palm {
             // paydown
             // dtab is a rad, so burn one extra to round in system's favor
             uint wad = (uint(-dtab) / RAY) + 1;
+
             // accrue excess from rounding to rest
             _rest = rest += add(wad * RAY, dtab);
             emit NewPalm0("rest", bytes32(_rest));
@@ -182,7 +183,7 @@ contract Bank is Math, Flog, Palm {
 
         // update balance before transferring tokens
         uint ink = add(urn.ink, dink);
-        urn.ink = ink;
+        urn.ink  = ink;
         emit NewPalm1("ink", bytes32(bytes20(msg.sender)), bytes32(ink));
 
         if (dink > 0) {
@@ -208,15 +209,14 @@ contract Bank is Math, Flog, Palm {
         uint _rack = drip();
         (uint deal, uint tot) = safe(u);
         if (deal == SAFE) revert ErrSafeBail();
-        Urn storage urn = urns[u];
 
+        Urn storage urn = urns[u];
         uint art = urn.art;
         urn.art  = 0;
-        emit NewPalm1("art", bytes32(bytes20(u)), bytes32(uint(0)));
+        emit NewPalm1("art", bytes32(bytes20(u)), 0);
 
-        uint dtab = art * _rack;
-        tart     -= art;
-
+        uint dtab  = art * _rack;
+        tart      -= art;
         emit NewPalm0("tart", bytes32(tart));
 
         // record the bad debt for vow to heal
@@ -265,26 +265,27 @@ contract Bank is Math, Flog, Palm {
         uint256 rad  = tart * delt;
         uint256 all  = rest + rad;
 
-        rho      = block.timestamp;
+        rho  = block.timestamp;
         emit NewPalm0("rho", bytes32(block.timestamp));
 
-        rack     = _rack;
+        rack = _rack;
         emit NewPalm0("rack", bytes32(_rack));
 
         // tart * rack is a rad, interest is a wad, rest is the change
-        rest      = all % RAY;
+        rest = all % RAY;
         emit NewPalm0("rest", bytes32(rest));
 
-        joy       = joy + (all / RAY);
+        joy  = joy + (all / RAY);
         emit NewPalm0("joy", bytes32(joy));
     }
 
+    // balance system revenue with bad debt, auction off surplus
     function keep() external payable _flog_ {
         drip();
 
         // use equal scales for sin and joy
-        uint _joy   = joy;
-        uint _sin   = sin / RAY;
+        uint _joy = joy;
+        uint _sin = sin / RAY;
 
         // in case of deficit max price should always lead to decrease in way
         uint price = type(uint256).max;
@@ -302,10 +303,10 @@ contract Bank is Math, Flog, Palm {
             price = grow(pex, dam, dt);
 
             // buy-and-burn risk with remaining (`flap`) rico
-            uint flap  = rmul(_joy - 1, wel);
-            uint earn  = rmul(flap, price);
-            _joy      -= flap;
-            joy        = _joy;
+            uint flap = rmul(_joy - 1, wel);
+            uint earn = rmul(flap, price);
+            _joy     -= flap;
+            joy       = _joy;
             emit NewPalm0("joy", bytes32(_joy));
 
             // swap rico for RISK, pay protocol fee
@@ -314,13 +315,13 @@ contract Bank is Math, Flog, Palm {
             wal -= earn;
             emit NewPalm0("wal", bytes32(wal));
         }
+
         bel = block.timestamp;
         emit NewPalm0("bel", bytes32(block.timestamp));
         poke(price, dt);
     }
 
     function heal(uint wad) internal returns (uint _joy) {
-
         sin  = sin  - (wad * RAY);
         emit NewPalm0("sin", bytes32(sin));
 
@@ -341,7 +342,7 @@ contract Bank is Math, Flog, Palm {
         uint flate = (gif + rmul(wal, lax)) * elapsed;
         risk.mint(msg.sender, flate);
 
-        wal  += flate;
+        wal += flate;
         emit NewPalm0("wal", bytes32(wal));
     }
 
