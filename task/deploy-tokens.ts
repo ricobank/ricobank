@@ -8,30 +8,32 @@ task('deploy-tokens', '')
 .addOptionalParam('outfile', 'output JSON file')
 .addOptionalParam('mock', 'mock mode')
 .addOptionalParam('gasLimit', 'per-tx gas limit')
+.addParam('netname', 'network to load from')
 .setAction(async (args, hre) => {
   debug('deploy tokens')
 
   const [ ali ]  = await hre.ethers.getSigners()
+  const settings = require('./settings.json')[args.netname]
 
   debug('deploy rico')
   const gf_dapp = await dpack.load(args.gf_pack ?? args.gfpackcid, hre.ethers, ali)
   let rico_addr = await gf_dapp.gemfab.callStatic.build(
-    b32(args.riconame), b32(args.ricosym)
+    b32(settings.rico_name), b32(settings.rico_symbol)
   );
-  await send(gf_dapp.gemfab.build, b32("Rico"), b32("RICO"), {gasLimit: args.gasLimit})
+  await send(gf_dapp.gemfab.build, b32(settings.rico_name), b32(settings.rico_symbol), {gasLimit: args.gasLimit})
 
   debug('deploy risk', args.riskname, args.risksym)
   let risk_addr
-  if (args.risk) {
+  if (settings.risk) {
     // risk already deployed
     risk_addr = args.risk
   } else {
     risk_addr = await gf_dapp.gemfab.callStatic.build(
-        b32(args.riskname), b32(args.risksym)
+        b32(settings.risk_name), b32(settings.risk_symbol)
     )
     await send(
       gf_dapp.gemfab.build,
-      b32(args.riskname), b32(args.risksym), {gasLimit: args.gasLimit}
+      b32(settings.risk_name), b32(settings.risk_symbol), {gasLimit: args.gasLimit}
     )
   }
 

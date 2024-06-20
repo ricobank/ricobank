@@ -25,14 +25,10 @@ task('deploy-dependencies', '')
       {
           gf_pack: gf_pack,
           gfpackcid: args.gfpackcid,
-          risk: args.risk,
           mock: args.mock,
           gasLimit: args.gasLimit,
           mint: args.mint,
-          riconame: args.riconame,
-          riskname: args.riskname,
-          ricosym: args.ricosym,
-          risksym: args.risksym
+          netname: args.netname
       }
   )
   debug('deployed (or loaded) tokens')

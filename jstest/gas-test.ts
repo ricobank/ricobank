@@ -45,11 +45,7 @@ describe('Gas', () => {
     ;[deploygas, pack] = await task_total_gas(hh, 'deploy-ricobank', {
         mock:'true',
         netname: 'ethereum',
-        mint: risk_mint,
-        ricosym: 'RICOOO',
-        riconame: 'RICOY',
-        risksym: 'RISKKK',
-        riskname: 'RISKY'
+        mint: risk_mint
     })
     dapp = await dpack.load(pack, ethers, ali)
 
@@ -60,7 +56,7 @@ describe('Gas', () => {
     debug(`RICO symbol: ${xtos(await rico.symbol())}`)
     debug(`RICO name: ${xtos(await rico.name())}`)
     debug(`RISK symbol: ${xtos(await risk.symbol())}`)
-    debug(`RISK name: , ${xtos(await risk.name())}`)
+    debug(`RISK name: ${xtos(await risk.name())}`)
 
     await snapshot_name(hh);
   })
@@ -81,7 +77,7 @@ describe('Gas', () => {
     }
 
     it('deploy gas', async () => {
-      await check(ethers.BigNumber.from(deploygas), 5590884)
+      await check(ethers.BigNumber.from(deploygas), 5591208)
     })
 
     it('frob cold gas', async () => {

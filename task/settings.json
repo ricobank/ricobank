@@ -1,5 +1,8 @@
 {
     "arbitrum": {
+        "rico_name": "KOLA Rico Token",
+        "rico_symbol": "KOLA",
+        "risk": "0x883DF9307095669a06C673e0D9026bedDBc7545a",
         "par": "1",
         "wel": "0.1",
         "dam": "1",
@@ -20,6 +23,10 @@
         "pup": "0"
     },
     "hardhat": {
+        "rico_name": "RICO token",
+        "rico_symbol": "RICO",
+        "risk_name": "RISK token",
+        "risk_symbol": "RISK",
         "par": "1",
         "wel": "1",
         "dam": "1",
@@ -39,6 +46,10 @@
         "pup": "0"
     },
     "ethereum": {
+        "rico_name": "KOLA token",
+        "rico_symbol": "KOLA",
+        "risk_name": "RISK token kola edition",
+        "risk_symbol": "RISK KOLA",
         "par": "1",
         "wel": "1",
         "dam": "1",

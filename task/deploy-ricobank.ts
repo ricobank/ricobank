@@ -36,13 +36,9 @@ task('deploy-ricobank', '')
               mock:    args.mock,
               netname: args.netname,
               gfpackcid: args.gfpackcid,
-              risk: args.risk,
               ipfs: args.ipfs,
               mint: args.mint,
-              riconame: args.riconame,
-              riskname: args.riskname,
-              ricosym: args.ricosym,
-              risksym: args.risksym
+              netname: args.netname
           }
         )
     }
