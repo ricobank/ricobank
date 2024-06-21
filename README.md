@@ -1,32 +1,15 @@
+## Rico Credit System
 
-## ricobank
+RICO is an ERC20 token that's designed to be stable with respect to RISK, an ERC20 token used to purchase accumulated fees from debt positions.
 
-Rico is fork of Dai with some important differences, including:
-
-- Target Rate Feedback Mechanism re-added as a tick controller, see `vox`.
-- Composable price feeds, see `feedbase`.
-- Endgamed incentive structure, see `vow` and `hook` and `feedbase`.
-- Simpler implementation, see everything.
-
-For a brief primer, see the [Litepaper](https://bank.dev/rico0_lite).
-
-For a more in-depth overview, see the [Brightpaper](https://bank.dev/rico0_bright).
-
-## autobank
-
-`autobank` is a generic term for the synthetic asset system used in Dai, Rai, and Rico. The behavior of the synthetic depends on the type of controller used. See [bank.dev/vox](https://bank.dev/vox) for a description of how these controllers can be used to implement synthetics that behave like a variety of instruments, from "wrapped perps" to fiat-like synthetic assets.
+For a brief primer, see the [Litepaper](https://bank.dev/rico1_lite).
 
 ### overview
 
-- `ball.sol` -- Deployment rollup.
-- `diamond.sol` -- ERC-2535 diamond.
-- `bank.sol` -- Storage and some internal utilities common between core modules.
-- `vat.sol` -- The core CDP engine.
-- `vow.sol` -- Triggers liquidations and processes debt/surplus auctions.
-- `vox.sol` -- Adjusts `par` and `way`.
-- `file.sol` -- Modify and read core parameters.
-- `ERC20hook.sol` -- `hook` `vat` uses to handle ERC20 moves and pricing.
-- `UniNFTHook.sol` -- `hook` `vat` uses to handle NonfungiblePositionManager moves and pricing.
+- `bank.sol` -- core RCS functions
+- `math.sol` -- internal math funcitons
+- `flog.sol` -- external function call events
+- `palm.sol` -- storage variable modified events
 
 ### developing
 
@@ -46,7 +29,7 @@ To run js tests with `ipfs daemon` running:
 
 To deploy from hardhat console:
 
-- `pack = await hre.run('deploy-ricobank', { writepack: 'true', netname: <pack's network name>, tokens: './tokens.json', mock: 'true', gasLimit: <gas limit> })`
+- `pack = await hre.run('deploy-ricobank', { writepack: 'true', netname: <network name from which to load settings>, tokens: './tokens.json', mock: 'true', gasLimit: <gas limit> })`
 
 ### dpack
 
@@ -58,9 +41,8 @@ To deploy ricobank and create a new `pack` for it, run the `deploy-ricobank` tas
 
 `dapp` contains `bank`, the core `ricobank` object and some other contracts, all as ethers.js Contract objects.  
 
-To create a CDP, approve your tokens to `bank`, and run `bank.frob(ilk, usr, dink, dart)` using the ethers Solidity ABI.
+To create a CDP, approve your tokens to `bank`, and run `bank.frob(dink, dart)` using the ethers Solidity ABI.
 
-- `bank.poke()` - update the par price
-- `bank.keep([])` - balance surplus/deficit
-- `bank.bail(ilk, usr)` - liquidate a position
+- `bank.keep()` - balance surplus/deficit and poke the par price
+- `bank.bail(usr)` - liquidate a position
 
