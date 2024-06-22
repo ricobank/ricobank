@@ -64,9 +64,9 @@ contract Bank is Math, Flog, Palm {
 
     // vow
     uint256 public bel;  // [sec] last flap timestamp
-    uint256 public gif;  // initial RISK base mint rate
+    uint256 public gif;  // [wad] RISK base mint rate
     uint256 public chi;  // [sec] last mine timestamp
-    uint256 public wal;  // risk deposited + risk totalSupply
+    uint256 public wal;  // [wad] risk deposited + risk totalSupply
     uint256 immutable public pex; // [ray] start price
     uint256 immutable public wel; // [ray] fraction of joy/flap
     uint256 immutable public dam; // [ray] per-second flap discount
@@ -146,6 +146,7 @@ contract Bank is Math, Flog, Palm {
     function frob(int dink, int dart) external payable _flog_ {
         Urn storage urn = urns[msg.sender];
 
+        // update rack
         uint _rack = drip();
 
         // modify normalized debt
@@ -237,6 +238,7 @@ contract Bank is Math, Flog, Palm {
             sell = urn.ink;
         }
 
+        // Rico paid for the liquidation is revenue
         uint _joy = joy += earn;
         emit NewPalm0("joy", bytes32(_joy));
 
@@ -312,17 +314,22 @@ contract Bank is Math, Flog, Palm {
             // swap rico for RISK, pay protocol fee
             rico.mint(msg.sender, flap);
             risk.burn(msg.sender, earn);
+
+            // burning RISK without putting it in a CDP - update wal
             wal -= earn;
             emit NewPalm0("wal", bytes32(wal));
         }
 
+        // price is max uint in deficit, so poke always ticks down in deficit
         bel = block.timestamp;
         emit NewPalm0("bel", bytes32(block.timestamp));
         poke(price, dt);
     }
 
+    // balance revenue and bad debt
+    // can flap left over profit, or tick down to cover left over deficit
     function heal(uint wad) internal returns (uint _joy) {
-        sin  = sin  - (wad * RAY);
+        sin  = sin - (wad * RAY);
         emit NewPalm0("sin", bytes32(sin));
 
         joy  = (_joy = joy - wad);
@@ -333,15 +340,18 @@ contract Bank is Math, Flog, Palm {
     function mine() external _flog_ {
         uint elapsed = block.timestamp - chi;
 
+        // base mint rate uses right hand rule - decay it first
         gif = grow(gif, mop, elapsed);
         emit NewPalm0("gif", bytes32(gif));
 
         chi = block.timestamp;
         emit NewPalm0("chi", bytes32(block.timestamp));
 
+        // inflation rate is base rate plus shift-up
         uint flate = (gif + rmul(wal, lax)) * elapsed;
         risk.mint(msg.sender, flate);
 
+        // minted RISK wasn't sitting in a CDP before - update wal
         wal += flate;
         emit NewPalm0("wal", bytes32(wal));
     }

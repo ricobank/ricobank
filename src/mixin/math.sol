@@ -115,7 +115,6 @@ contract Math {
         res = add(res, pup);
     }
 
-
     function must(uint actual, uint lo, uint hi) internal pure {
         if (actual < lo || actual > hi) revert ErrBound();
     }
