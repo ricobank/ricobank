@@ -30,18 +30,13 @@ export default {
             }
         },
         {
-            version: "0.7.6",
-            settings: {
-              optimizer: {
-                enabled: true,
-                runs: 2000
-              },
-              outputSelection: {
-                "*": {
-                  "*": ["storageLayout"]
-                }
-              }
+          version: "0.8.19",
+          settings: {
+            optimizer: {
+              enabled: true,
+              runs: 20000
             }
+          }
         }
     ]
   },
@@ -90,7 +85,8 @@ export default {
   },
   etherscan: {
     apiKey: {
-      arbitrumOne: process.env.ARBISCAN_API_KEY
+      arbitrumOne: process.env.ARBISCAN_API_KEY,
+      arbitrumSepolia: process.env.ARBISCAN_API_KEY
     }
   }
 

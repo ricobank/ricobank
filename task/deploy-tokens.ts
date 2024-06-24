@@ -17,16 +17,21 @@ task('deploy-tokens', '')
 
   debug('deploy rico')
   const gf_dapp = await dpack.load(args.gf_pack ?? args.gfpackcid, hre.ethers, ali)
-  let rico_addr = await gf_dapp.gemfab.callStatic.build(
-    b32(settings.rico_name), b32(settings.rico_symbol)
-  );
-  await send(gf_dapp.gemfab.build, b32(settings.rico_name), b32(settings.rico_symbol), {gasLimit: args.gasLimit})
+  let rico_addr
+  if (settings.rico) {
+    rico_addr = settings.rico
+  } else {
+    rico_addr = await gf_dapp.gemfab.callStatic.build(
+      b32(settings.rico_name), b32(settings.rico_symbol)
+    );
+    await send(gf_dapp.gemfab.build, b32(settings.rico_name), b32(settings.rico_symbol), {gasLimit: args.gasLimit})
+  }
 
   debug('deploy risk', args.riskname, args.risksym)
   let risk_addr
   if (settings.risk) {
     // risk already deployed
-    risk_addr = args.risk
+    risk_addr = settings.risk
   } else {
     risk_addr = await gf_dapp.gemfab.callStatic.build(
         b32(settings.risk_name), b32(settings.risk_symbol)
