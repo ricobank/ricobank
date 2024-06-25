@@ -6,8 +6,8 @@ import "forge-std/Test.sol";
 import { RicoSetUp } from "./RicoHelper.sol";
 
 contract VoxTest is Test, RicoSetUp {
-    uint constant skip_period_low_mar  = 18 + 1;
-    uint constant skip_period_high_mar = 18 - 1;
+    uint constant skip_period_low_mar  = 9 + 1;
+    uint constant skip_period_high_mar = 9 - 1;
     uint constant init_par = 7 * RAY;
     uint pre_cap;
     uint way0;
@@ -139,7 +139,7 @@ contract VoxTest is Test, RicoSetUp {
         file('wal', bytes32(RAD));
 
         // no more time has passed -> par and way unchanged
-        risk.mint(self, bank.pex());
+        risk.mint(self, RAY * WAD);
         bank.keep();
         assertEq(bank.par(), 7 * RAY);
         assertEq(bank.way(), RAY);

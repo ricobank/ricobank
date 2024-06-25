@@ -44,7 +44,7 @@ abstract contract BaseHelper is Math, Test {
         RAY, // pop
         0, // pup
         WAD, // gif (82400 RISK/yr)
-        RAY * WAD, // pex
+        BLN, // pex
         RAY, // wel
         RAY, // dam
         999999978035500000000000000, // mop (~-50%/yr)
@@ -163,7 +163,7 @@ abstract contract BaseHelper is Math, Test {
     }
 
     function set_flap_price(uint price) public {
-        file('dam', bytes32(rdiv(price, bank.pex())));
+        file('dam', bytes32(price / bank.pex()));
         file('bel', bytes32(block.timestamp - 1));
     }
 

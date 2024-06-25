@@ -39,7 +39,7 @@ contract BallTest is BaseHelper {
             RAY, // pop
             0, // pup
             WAD, // gif (82400 RISK/yr)
-            RAY * WAD, // pex
+            BLN, // pex
             RAY, // wel
             RAY * 9999999 / 10000000, // dam
             999999978035500000000000000, // mop (~-50%/yr)

@@ -92,7 +92,7 @@ contract Bank is Math, Flog, Palm {
         (wel, dam, pex, mop, lax) = (p.wel, p.dam, p.pex, p.mop, p.lax);
         must(wel, 0, RAY);
         must(dam, 0, RAY);
-        must(pex, RAY, RAY * WAD);
+        must(pex, 0, BLN);
         must(mop, 0, RAY);
         must(lax, 0, LAX_MAX);
 
@@ -302,7 +302,8 @@ contract Bank is Math, Flog, Palm {
             }
 
             // price decreases with time
-            price = grow(pex, dam, dt);
+            price = rmul(par * pex, rpow(dam, dt));
+            if (price < par / pex) price = 0;
 
             // buy-and-burn risk with remaining (`flap`) rico
             uint flap = rmul(_joy - 1, wel);

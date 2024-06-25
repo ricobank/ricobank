@@ -58,7 +58,7 @@ contract VowTest is Test, RicoSetUp {
         uint self_risk_1 = risk.balanceOf(self);
 
         // set dam and bel so it just takes one second to reach target price
-        uint dam = rmul(rinv(bank.pex()), rico_price_in_risk * RAY);
+        uint dam = rico_price_in_risk * RAY / bank.pex();
         file('dam', bytes32(dam));
         file('bel', bytes32(block.timestamp));
         skip(1);
@@ -78,8 +78,7 @@ contract VowTest is Test, RicoSetUp {
         assertEq(rico_gain, surplus);
     }
 
-    function test_basic_keep_deficit() public
-    {
+    function test_basic_keep_deficit() public {
         bank.frob(int(WAD), int(WAD));
 
         // bail creates some sin
@@ -162,7 +161,7 @@ contract VowTest is Test, RicoSetUp {
         skip(BANKYEAR);
 
         // set dam and bel so it just takes one second to reach target price
-        file('dam', bytes32(rinv(bank.pex())));
+        file('dam', bytes32(RAY / bank.pex()));
         file('bel', bytes32(block.timestamp));
         skip(1);
 
@@ -221,7 +220,7 @@ contract VowTest is Test, RicoSetUp {
         uint pre_risk = risk.balanceOf(self);
 
         // set dam and bel so it just takes one second to reach target price
-        file('dam', bytes32(rinv(bank.pex())));
+        file('dam', bytes32(RAY / bank.pex()));
         file('bel', bytes32(block.timestamp - 1));
         file('wal', bytes32(RAD));
         bank.keep();
@@ -247,7 +246,7 @@ contract VowTest is Test, RicoSetUp {
         uint prerisk = risk.balanceOf(self);
         bank.keep();
 
-        assertClose(prerisk - risk.balanceOf(self), rmul(WAD, bank.pex()), BLN);
+        assertClose(prerisk - risk.balanceOf(self), WAD * bank.pex(), BLN);
 
         // 1s elapsed, price == pex / 10
         skip(1);
@@ -255,7 +254,7 @@ contract VowTest is Test, RicoSetUp {
         prerisk = risk.balanceOf(self);
         bank.keep();
 
-        assertClose(prerisk - risk.balanceOf(self), rmul(WAD, bank.pex()) / 10, BLN);
+        assertClose(prerisk - risk.balanceOf(self), WAD * bank.pex() / 10, BLN);
 
         // 4s elapsed, price == pex / 10000
         skip(4);
@@ -264,7 +263,7 @@ contract VowTest is Test, RicoSetUp {
         bank.keep();
 
         assertClose(
-            prerisk - risk.balanceOf(self), rmul(WAD, bank.pex()) / 10000, BLN
+            prerisk - risk.balanceOf(self), WAD * bank.pex() / 10000, BLN
         );
 
         // lots of time elapsed, dam lowers price to 0
@@ -566,4 +565,45 @@ contract VowJsTest is Test, RicoSetUp {
         assertGt(joy1, joy0);
     }
 
+    function test_flap_price_floor() public {
+        uint surplus = 1000 * WAD;
+        force_fees(bank.sin() / RAY + surplus);
+        
+        file('dam', bytes32(RAY / 10));
+        file('pex', bytes32(uint(100)));
+        file('wel', bytes32(RAY / 2));
+
+        uint prerisk = risk.balanceOf(self);
+        uint prerico = rico.balanceOf(self);
+        skip(5);
+        bank.keep();
+
+        assertEq(risk.balanceOf(self), prerisk);
+        assertGt(rico.balanceOf(self), prerico);
+
+        prerisk = risk.balanceOf(self);
+        prerico = rico.balanceOf(self);
+        skip(4);
+        bank.keep();
+        assertLt(risk.balanceOf(self), prerisk);
+        assertGt(rico.balanceOf(self), prerico);
+
+        // check that price moves around par
+        file('par', bytes32(RAY / 3));
+        prerisk = risk.balanceOf(self);
+        prerico = rico.balanceOf(self);
+        skip(2);
+        bank.keep();
+        uint drisk = prerisk - risk.balanceOf(self);
+        uint drico = rico.balanceOf(self) - prerico;
+        assertClose(drico, drisk * 3, 10000000);
+
+        file('par', bytes32(RAY / 3));
+        prerisk = risk.balanceOf(self);
+        prerico = rico.balanceOf(self);
+        bank.keep();
+        drisk = prerisk - risk.balanceOf(self);
+        drico = rico.balanceOf(self) - prerico;
+        assertClose(drico, drisk * 3 / 100, 1000000000);
+    }
 }

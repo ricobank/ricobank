@@ -77,7 +77,7 @@ describe('Gas', () => {
     }
 
     it('deploy gas', async () => {
-      await check(ethers.BigNumber.from(deploygas), 5591208)
+      await check(ethers.BigNumber.from(deploygas), 5606502)
     })
 
     it('frob cold gas', async () => {
@@ -106,7 +106,7 @@ describe('Gas', () => {
       await send(bank.frob, wad(5), wad(1))
       await mine(hh, BANKYEAR)
       let gas = await bank.estimateGas.keep()
-      await check(gas, 147644)
+      await check(gas, 148022)
     })
 
   })

@@ -66,7 +66,7 @@ task('deploy-ricobank', '')
         pop: ray(settings.pop),
         pup: ray(settings.pup),
         gif:  wad(settings.gif),
-        pex:  ray(settings.pex),
+        pex:  settings.pex,
         wel:  ray(settings.wel),
         dam:  ray(settings.dam),
         mop:  ray(settings.mop),
