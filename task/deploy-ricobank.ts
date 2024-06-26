@@ -34,7 +34,6 @@ task('deploy-ricobank', '')
           'deploy-dependencies',
           {
               mock:    args.mock,
-              netname: args.netname,
               gfpackcid: args.gfpackcid,
               ipfs: args.ipfs,
               mint: args.mint,

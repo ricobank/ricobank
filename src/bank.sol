@@ -57,7 +57,7 @@ contract Bank is Math, Flog, Palm {
     uint256 immutable public dust;  // [ray] Urn Ink Floor, as a fraction of totalSupply
     uint256 immutable public chop;  // [ray] Liquidation Penalty
     uint256 immutable public liqr;  // [ray] Liquidation Ratio
-    uint256 immutable public pep;   // [ray] discount exponent
+    uint256 immutable public pep;   // [num] discount exponent
     uint256 immutable public pop;   // [ray] discount offset
     int256  immutable public pup;   // [ray] signed discount shift
     uint256 constant  public FEE_MAX = 1000000072964521287979890107; // ~10x/yr
@@ -76,9 +76,9 @@ contract Bank is Math, Flog, Palm {
     uint256 constant         SAFE = RAY;
 
     // vox
-    uint256 public way; // [ray] System Rate (SP growth rate)
-    uint256 immutable public how;
-    uint256 immutable public cap;
+    uint256 public way; // [ray] Price Rate (system price growth rate)
+    uint256 immutable public how; // [ray] Sensitivity Parameter (way growth rate)
+    uint256 immutable public cap; // [ray] Price Rate Clamp (1/cap <= way <= cap)
     uint256 constant  public CAP_MAX = 1000000072964521287979890107; // ~10x/yr
 
     error ErrNotSafe();
