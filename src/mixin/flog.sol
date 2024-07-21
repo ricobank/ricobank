@@ -1,7 +1,6 @@
 /// SPDX-License-Identifier: AGPL-3.0
 
-// In loving memory of Nikolai Mushegian
-// Copyright (C) 2024 Free Software Foundation
+// Copyright (C) 2024 Free Software Foundation, in loving memory of Nikolai
 
 pragma solidity ^0.8.25;
 
