@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+// In loving memory of Nikolai Mushegian
+// Copyright (C) 2024 Free Software Foundation
 // Copyright (C) 2021-2024 halys
 // Copyright (C) 2021 .
 // Copyright (C) 2020 Maker Ecosystem Growth Holdings, INC.
