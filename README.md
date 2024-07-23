@@ -46,3 +46,6 @@ To create a CDP, approve your tokens to `bank`, and run `bank.frob(dink, dart)` 
 - `bank.keep()` - balance surplus/deficit and poke the par price
 - `bank.bail(usr)` - liquidate a position
 
+### Notice
+
+See NOTICE file for copyrights and credits.
