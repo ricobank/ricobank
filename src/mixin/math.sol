@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-// Copyright (C) 2024 Free Software Foundation, in loving memory of Nikolai
-// Copyright (C) 2021-2024 halys
-// Copyright (C) 2021 .
+// Copyright (C) 2021-2024 Free Software Foundation, in loving memory of Nikolai
 // Copyright (C) 2020 Maker Ecosystem Growth Holdings, INC.
 // Copyright (C) 2018 Rain <rainbreak@riseup.net>
 // Copyright (C) 2018 Lev Livnev <lev@liv.nev.org.uk>
