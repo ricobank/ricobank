@@ -1,6 +1,6 @@
 pragma solidity ^0.8.25;
 
-// Copyright (C) 2021-2024 Free Software Foundation, in loving memory of Nikolai
+// Copyright (C) 2024 Free Software Foundation, in memoriam of Nikolai Mushegian
 
 import { BaseHelper, Gem, GemFab, Bank, Math } from './RicoHelper.sol';
 import 'forge-std/Test.sol';
